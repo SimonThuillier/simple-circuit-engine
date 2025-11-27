@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+dist-demo/
+*.tsbuildinfo
+
+# Test & Coverage
+coverage/
+
+# Vite
+*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.*
+
+# Editor backup files
+*.bak
+*.tmp
+
+# Optional: local dev notes (comment if you dont' want them)
+NOTES.md
+TODO.local.md
+
+# Claude Code - ignore cache, keep config
+.claude/cache/
+.claude/*.token

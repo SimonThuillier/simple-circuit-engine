@@ -1,50 +1,150 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# Simple Circuit Engine Constitution
+
+## Project Identity
+
+**Name**: simple-circuit-engine
+**Purpose**: A standalone, framework-agnostic boolean circuit simulation engine with 3D visualization, designed for educational purposes.
+**License**: MIT (open source, usable by everyone)
+
+### Vision Statement
+Enable anyone to understand digital electronics by visualizing how electricity propagates through circuits step-by-step. The engine must be reusable across different projects and frameworks while providing beautiful, interactive 3D visualization.
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Framework Agnosticism
+The engine MUST NOT depend on any UI framework (React, Vue, Angular, etc.). It is a pure TypeScript library that:
+- Accepts an HTMLElement for mounting
+- Manages its own rendering lifecycle
+- Communicates through an event-driven API
+- Can be wrapped by any framework's binding layer
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Modular Separation
+Three distinct layers with strict dependency rules:
+```
+core/       → Pure TypeScript, zero dependencies, works in Node.js
+rendering/  → Three.js visualization, depends only on core/
+playback/   → Scenario orchestration, depends on core/ and rendering/
+```
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+The `core/` module is publishable separately for headless/server use.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+**Hexagonal Architecture Philosophy**: 
+The `core/` module is the innermost hexagon—pure domain logic with no knowledge of how it will be rendered or consumed. 
+`rendering/` and `playback/` are adapters that plug into core without contaminating it. 
+Zooming out, the entire `simple-circuit-engine` library is itself a core that client applications should be able to adapt easily to their own UI frameworks and needs. 
+Dependencies point inward, not outward.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### III. Discrete Boolean Model
+This is NOT a SPICE simulator. The electrical model is intentionally very simplified:
+- No analog voltages or currents. Electrical states are boolean (is there tension or not, is there current flow or not)
+- Wires have zero resistance and ideal conductivity
+- Only Direct Current (DC) No capacitance or inductance
+- Time is discrete (step-by-step ticks)
+- Components have transitional delays (e.g., a transistor take N (integer only) ticks to change output after input changes)
+- the *ground* is the 0V source of electrons and the *power* is a positive voltage source
+- In a circuit there can be several *grounds*, and they will always be at the same potential. The same goes for *powers*
+- Propagation is deterministic
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+Educational clarity over physical accuracy.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### IV. Data-Driven Circuits
+Circuits and scenarios are saved as JSON files, not code. They are loadable, savable, and validatable without recompilation.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+### V. Specification-Driven Development
+Define interfaces → Write tests → Implement. Tests are non-negotiable.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### VI. Developer Experience First
+This library is open source and must be welcoming to external developers. 
+Every public interface, class, and function must have clear JSDoc documentation explaining purpose, parameters, and usage. 
+The README.md must enable a developer to install and see a working example within minutes. 
+The demo application must be runnable with a single command. Sample circuits must showcase real capabilities, not just toy examples. 
+Integration examples must be copy-paste ready. 
+If a developer needs to read source code to understand how to use the library, the documentation has failed.
+
+---
+
+## Architectural Constraints
+
+### Module Rules
+
+| Module | May Import | May NOT Import | DOM Access            |
+|--------|-----------|----------------|-----------------------|
+| `core/` | nothing | three, rendering, playback | ❌                     |
+| `rendering/` | core, three | playback | ✅ mainly via Three.js |
+| `playback/` | core, rendering | - | ❌                     |
+
+### Public API Shape
+- Single `CircuitEngine` facade class as main entry point
+- Event-based communication (no callbacks in method signatures)
+- Chainable methods where it makes sense (`engine.loadCircuit(c).play()`)
+- All Three.js internals hidden from consumers
+
+### Resource Management
+- `dispose()` must clean up all WebGL resources
+- No global state - everything scoped to engine instance
+- Circuits are immutable after loading
+
+---
+
+## Technology Stack
+
+- **Language**: TypeScript (strict mode), targeting ES2022
+- **Runtime**: ES2022+ environments (modern browsers, Node 18+)
+- **3D**: Three.js 0.181+ (optional for core-only use but heavily used for rendering and playback)
+- **Build**: Vite 7.2+ (library mode)
+- **Test**: Vitest 4.0+
+- **Package Manager**: npm 11.6+
+
+**Version Source of Truth**: All dependency versions are defined in `package.json`. Always read it to determine current versions before suggesting upgrades or checking compatibility.
+
+
+---
+
+## Quality Standards
+
+- No `any` types
+- Public APIs have JSDoc
+- Core module: 80% test coverage minimum
+- All tests pass before merge
+
+---
+
+## Repository Structure
+```
+src/
+  core/           # Simulation logic, types
+  rendering/      # Three.js visualization  
+  playback/       # Scenario player
+  CircuitEngine.ts
+  index.ts
+
+demo/             # Standalone vanilla TS demo
+samples/          # Sample circuits and scenarios (JSON)
+examples/         # Framework integration examples
+tests/
+    core/           # Core module tests
+    rendering/      # Rendering module tests
+    playback/       # Playback module tests
+docs/
+```
+
+---
+
+## What This Constitution Does NOT Define
+
+- Exact type shapes (define in code, evolve with implementation)
+- Detailed API signatures (emerge from TDD)
+- Implementation phases (track in issues/roadmap)
+- Component visual designs (discover during rendering work)
+
+These details belong in code and working documents, not constitutional law.
+
+---
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution defines boundaries and principles. Implementation details are decided during development.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+Amendments require documented rationale.
+
+**Version**: 1.0.0 | **Ratified**: 2025-11-XX
