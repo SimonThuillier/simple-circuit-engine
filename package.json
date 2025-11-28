@@ -30,7 +30,9 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "typecheck": "tsc --noEmit",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "keywords": [
     "circuit",
@@ -47,11 +49,12 @@
   "devDependencies": {
     "@types/node": "^22.10.2",
     "@types/three": "^0.181.0",
-    "@vitest/ui": "^4.0.0",
+    "@vitest/ui": "^3.2.4",
     "typescript": "^5.9.2",
     "vite": "^7.2.0",
     "vite-plugin-dts": "^4.3.0",
-    "vitest": "^4.0.0"
+    "vitest": "^3.2.4",
+    "prettier": "3.7.1"
   },
   "dependencies": {
     "three": "^0.181.0"

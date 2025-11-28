@@ -1,130 +1,133 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Simple Circuit Engine - Demo</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            background: #1a1a1a;
-            color: #ffffff;
-        }
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background: #1a1a1a;
+        color: #ffffff;
+      }
 
-        #app {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
+      #app {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
 
-        header {
-            padding: 1rem 2rem;
-            background: #2a2a2a;
-            border-bottom: 1px solid #3a3a3a;
-        }
+      header {
+        padding: 1rem 2rem;
+        background: #2a2a2a;
+        border-bottom: 1px solid #3a3a3a;
+      }
 
-        h1 {
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
+      h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+      }
 
-        main {
-            flex: 1;
-            display: flex;
-            overflow: hidden;
-        }
+      main {
+        flex: 1;
+        display: flex;
+        overflow: hidden;
+      }
 
-        #canvas-container {
-            flex: 1;
-            position: relative;
-            background: #0a0a0a;
-        }
+      #canvas-container {
+        flex: 1;
+        position: relative;
+        background: #0a0a0a;
+      }
 
-        #controls {
-            width: 300px;
-            padding: 1.5rem;
-            background: #2a2a2a;
-            border-left: 1px solid #3a3a3a;
-            overflow-y: auto;
-        }
+      #controls {
+        width: 300px;
+        padding: 1.5rem;
+        background: #2a2a2a;
+        border-left: 1px solid #3a3a3a;
+        overflow-y: auto;
+      }
 
-        .control-group {
-            margin-bottom: 1.5rem;
-        }
+      .control-group {
+        margin-bottom: 1.5rem;
+      }
 
-        .control-group h2 {
-            font-size: 0.875rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            color: #888;
-            margin-bottom: 0.75rem;
-        }
+      .control-group h2 {
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: #888;
+        margin-bottom: 0.75rem;
+      }
 
-        .button-group {
-            display: flex;
-            gap: 0.5rem;
-        }
+      .button-group {
+        display: flex;
+        gap: 0.5rem;
+      }
 
-        button {
-            padding: 0.5rem 1rem;
-            background: #3a3a3a;
-            color: #fff;
-            border: 1px solid #4a4a4a;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.875rem;
-            transition: background 0.2s;
-        }
+      button {
+        padding: 0.5rem 1rem;
+        background: #3a3a3a;
+        color: #fff;
+        border: 1px solid #4a4a4a;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.875rem;
+        transition: background 0.2s;
+      }
 
-        button:hover {
-            background: #4a4a4a;
-        }
+      button:hover {
+        background: #4a4a4a;
+      }
 
-        button:active {
-            background: #2a2a2a;
-        }
+      button:active {
+        background: #2a2a2a;
+      }
 
-        #status {
-            padding: 0.75rem;
-            background: #1a1a1a;
-            border: 1px solid #3a3a3a;
-            border-radius: 4px;
-            font-family: monospace;
-            font-size: 0.75rem;
-            color: #888;
-        }
+      #status {
+        padding: 0.75rem;
+        background: #1a1a1a;
+        border: 1px solid #3a3a3a;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 0.75rem;
+        color: #888;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div id="app">
-        <header>
-            <h1>Simple Circuit Engine - Demo</h1>
-        </header>
-        <main>
-            <div id="canvas-container"></div>
-            <aside id="controls">
-                <div class="control-group">
-                    <h2>Playback</h2>
-                    <div class="button-group">
-                        <button id="btn-play">Play</button>
-                        <button id="btn-pause">Pause</button>
-                        <button id="btn-step">Step</button>
-                        <button id="btn-reset">Reset</button>
-                    </div>
-                </div>
-                <div class="control-group">
-                    <h2>Status</h2>
-                    <div id="status">Ready</div>
-                </div>
-            </aside>
-        </main>
+      <header>
+        <h1>Simple Circuit Engine - Demo</h1>
+      </header>
+      <main>
+        <div id="canvas-container"></div>
+        <aside id="controls">
+          <div class="control-group">
+            <h2>Playback</h2>
+            <div class="button-group">
+              <button id="btn-play">Play</button>
+              <button id="btn-pause">Pause</button>
+              <button id="btn-step">Step</button>
+              <button id="btn-reset">Reset</button>
+            </div>
+          </div>
+          <div class="control-group">
+            <h2>Status</h2>
+            <div id="status">Ready</div>
+          </div>
+        </aside>
+      </main>
     </div>
     <script type="module" src="/main.ts"></script>
-</body>
+  </body>
 </html>

@@ -42,3 +42,6 @@ TODO.local.md
 # Claude Code - ignore cache, keep config
 .claude/cache/
 .claude/*.token
+
+# legacy : old code for reference TODO remove when not needed anymore
+legacy/

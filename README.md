@@ -29,11 +29,11 @@ const container = document.getElementById('canvas');
 const engine = new CircuitEngine(container);
 
 // Load a circuit
-const circuit = await fetch('/circuits/and-gate.json').then(r => r.json());
+const circuit = await fetch('/circuits/and-gate.json').then((r) => r.json());
 engine.loadCircuit(circuit);
 
 // Load and play a scenario
-const scenario = await fetch('/scenarios/truth-table.json').then(r => r.json());
+const scenario = await fetch('/scenarios/truth-table.json').then((r) => r.json());
 engine.loadScenario(scenario).play();
 
 // Listen to events

@@ -80,17 +80,23 @@ onUnmounted(() => {
 });
 
 // Watch for prop changes
-watch(() => props.circuit, (newCircuit) => {
-  if (newCircuit && engine) {
-    engine.loadCircuit(newCircuit);
+watch(
+  () => props.circuit,
+  (newCircuit) => {
+    if (newCircuit && engine) {
+      engine.loadCircuit(newCircuit);
+    }
   }
-});
+);
 
-watch(() => props.scenario, (newScenario) => {
-  if (newScenario && engine) {
-    engine.loadScenario(newScenario);
+watch(
+  () => props.scenario,
+  (newScenario) => {
+    if (newScenario && engine) {
+      engine.loadScenario(newScenario);
+    }
   }
-});
+);
 
 // Control functions
 function play() {

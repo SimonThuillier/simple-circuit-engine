@@ -90,13 +90,14 @@ function calculateDelay(component: any) {
 
 Respect the dependency rules defined in the constitution:
 
-| Module | May Import | May NOT Import |
-|--------|-----------|----------------|
-| `core/` | nothing | three, rendering, playback |
-| `rendering/` | core, three | playback |
-| `playback/` | core, rendering | - |
+| Module       | May Import      | May NOT Import             |
+| ------------ | --------------- | -------------------------- |
+| `core/`      | nothing         | three, rendering, playback |
+| `rendering/` | core, three     | playback                   |
+| `playback/`  | core, rendering | -                          |
 
 **Example violation (BAD):**
+
 ```typescript
 // In src/core/Circuit.ts
 import { SceneManager } from '../rendering/SceneManager.js'; // ❌ WRONG!
@@ -106,7 +107,7 @@ import { SceneManager } from '../rendering/SceneManager.js'; // ❌ WRONG!
 
 All public APIs must have JSDoc comments:
 
-```typescript
+````typescript
 /**
  * Loads a circuit definition from JSON data.
  *
@@ -123,7 +124,7 @@ All public APIs must have JSDoc comments:
 loadCircuit(circuitData: Circuit): this {
   // Implementation
 }
-```
+````
 
 ### Testing
 
@@ -164,6 +165,7 @@ Bad:
 ### Hexagonal Architecture
 
 The project follows hexagonal architecture principles:
+
 - **Core** contains pure domain logic
 - **Rendering** and **Playback** are adapters
 - Dependencies point inward
@@ -171,6 +173,7 @@ The project follows hexagonal architecture principles:
 ### Immutability
 
 Circuits are immutable after loading:
+
 - Don't modify circuit structure during simulation
 - Create new instances for modifications
 - Use readonly types where appropriate
@@ -178,6 +181,7 @@ Circuits are immutable after loading:
 ### Resource Management
 
 Always clean up resources:
+
 - WebGL contexts in `dispose()`
 - Event listeners
 - Animation loops

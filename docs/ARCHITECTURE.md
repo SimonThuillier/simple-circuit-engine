@@ -30,7 +30,7 @@ Simple Circuit Engine follows a hexagonal (ports and adapters) architecture with
 │  │   - WireRenderer               │  │
 │  │   - CameraController           │  │
 │  └─────────────┬──────────────────┘  │
-│                │                      │
+│                │                     │
 │  ┌─────────────▼──────────────────┐  │
 │  │   core/                        │  │  ← Domain Core
 │  │   - Circuit types              │  │
@@ -39,7 +39,7 @@ Simple Circuit Engine follows a hexagonal (ports and adapters) architecture with
 │  │   - Wire propagation           │  │
 │  │   - State management           │  │
 │  │   - Validators                 │  │
-│  │   Pure TypeScript, zero deps   │  │
+│  │   Pure TypeScript, minimal deps│  │
 │  └────────────────────────────────┘  │
 └──────────────────────────────────────┘
 ```
