@@ -1,0 +1,63 @@
+{
+  "name": "simple-circuit-engine",
+  "version": "0.1.0",
+  "description": "A standalone, framework-agnostic boolean circuit simulation engine with 3D visualization, designed for educational purposes",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "dev:demo": "vite demo",
+    "build": "tsc && vite build",
+    "build:demo": "vite build --config vite.demo.config.ts",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit"
+  },
+  "keywords": [
+    "circuit",
+    "simulation",
+    "boolean",
+    "digital-electronics",
+    "education",
+    "3d",
+    "threejs",
+    "visualization"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/three": "^0.181.0",
+    "@vitest/ui": "^4.0.0",
+    "typescript": "^5.9.2",
+    "vite": "^7.2.0",
+    "vite-plugin-dts": "^4.3.0",
+    "vitest": "^4.0.0"
+  },
+  "dependencies": {
+    "three": "^0.181.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=11.6.0"
+  }
+}
