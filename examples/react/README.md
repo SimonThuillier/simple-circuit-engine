@@ -65,14 +65,9 @@ function CircuitViewer({ circuit, scenario }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div
-        ref={containerRef}
-        style={{ flex: 1, background: '#0a0a0a' }}
-      />
+      <div ref={containerRef} style={{ flex: 1, background: '#0a0a0a' }} />
       <div style={{ padding: '1rem', background: '#2a2a2a' }}>
-        <div style={{ marginBottom: '0.5rem' }}>
-          Tick: {currentTick}
-        </div>
+        <div style={{ marginBottom: '0.5rem' }}>Tick: {currentTick}</div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <button onClick={handlePlay} disabled={isPlaying}>
             Play

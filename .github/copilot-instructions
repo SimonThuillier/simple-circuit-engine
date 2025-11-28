@@ -1,0 +1,169 @@
+# GitHub Copilot Instructions for Simple Circuit Engine
+
+## Project Overview
+
+This is a **framework-agnostic boolean circuit simulation engine** with 3D visualization. Educational clarity over physical accuracy. Pure TypeScript library that mounts to any HTMLElement.
+
+## Critical Architecture Rules
+
+### Module Dependency Hierarchy (STRICTLY ENFORCED)
+```
+core/       → ZERO dependencies, no DOM, no Three.js, must work in Node.js
+rendering/  → may import: core/, three
+playback/   → may import: core/, rendering/
+```
+
+**NEVER**:
+- Import `three` or anything from `rendering/` or `playback/` inside `core/`
+- Import `playback/` from `rendering/`
+- Access DOM directly in `core/` or `playback/`
+
+When generating imports, always verify the file's location and respect these boundaries.
+
+### Hexagonal Architecture
+
+- `core/` is pure domain logic—no knowledge of visualization or UI
+- `rendering/` and `playback/` are adapters that depend on core, not vice versa
+- `CircuitEngine` is the public facade; internals stay hidden
+
+## Electrical Model Constraints
+
+This is **NOT** a SPICE simulator. When generating simulation logic:
+
+- **Boolean states only**: signals are `true`/`false`, not voltages
+- **No analog**: no resistance, capacitance, inductance calculations
+- **Discrete time**: propagation happens in integer ticks, not continuous time
+- **Deterministic**: same input always produces same output
+- **DC only**: no AC, no frequency analysis
+
+If asked to implement analog features, suggest they belong in a different project.
+
+## TypeScript Standards
+```typescript
+// ✅ DO
+export interface WireState {
+  readonly hasTension: boolean;
+  readonly hasCurrentFlow: boolean;
+}
+
+// ❌ DON'T
+export interface WireState {
+  voltage: number;      // No analog values
+  state: any;           // No 'any' types
+}
+```
+
+- **Strict mode**: all code must pass `strict: true`
+- **No `any`**: use `unknown` + type guards if type is truly unknown
+- **Readonly by default**: especially for circuit state after loading
+- **JSDoc on all public APIs**: include `@param`, `@returns`, `@example`
+
+## Code Generation Patterns
+
+### For `core/` module:
+```typescript
+// Pure functions, no side effects
+export function propagateSignal(circuit: Circuit, tick: number): CircuitState {
+  // Deterministic, testable, no Three.js
+}
+```
+
+### For `rendering/` module:
+```typescript
+// Three.js encapsulated, never exposed publicly
+import * as THREE from 'three';
+import type { Component } from '../core';
+
+export class ComponentRenderer {
+  private mesh: THREE.Mesh; // Three.js stays private
+
+  constructor(component: Component) { /* ... */ }
+
+  dispose(): void {
+    // MUST clean up WebGL resources
+    this.mesh.geometry.dispose();
+    // ...
+  }
+}
+```
+
+### For public API:
+```typescript
+// Chainable, event-driven, no callbacks in signatures
+engine.loadCircuit(circuit).play();
+engine.on('tick', (state) => { /* ... */ });
+```
+
+## Testing Requirements
+
+- **Core module**: 80% coverage minimum
+- **Test-first**: write interface → write test → implement
+- **Use Vitest**: `describe`, `it`, `expect` patterns
+- Framework: Vitest 4.0+
+```typescript
+// tests/core/propagation.test.ts
+describe('signal propagation', () => {
+  it('should propagate through wire in one tick', () => {
+    // Arrange, Act, Assert
+  });
+});
+```
+
+## File Naming & Structure
+```
+src/
+  core/
+    types.ts          # Domain types
+    Circuit.ts        # Circuit class
+    components/       # Component definitions
+    index.ts          # Public core exports
+  rendering/
+    SceneManager.ts   # Three.js scene management
+    renderers/        # Component-specific renderers
+  playback/
+    ScenarioPlayer.ts # Orchestrates simulation playback
+```
+
+- PascalCase for classes/interfaces: `CircuitEngine.ts`
+- camelCase for utilities: `propagateSignal.ts`
+- Barrel exports via `index.ts` at module boundaries
+
+## JSON Circuit Format
+
+Circuits are data, not code. When working with circuit definitions:
+```typescript
+// Validate at load boundary, then treat as immutable
+interface CircuitDefinition {
+  readonly components: ReadonlyArray<ComponentDefinition>;
+  readonly connections: ReadonlyArray<ConnectionDefinition>;
+}
+```
+
+## Resource Management
+
+Every class holding WebGL/Three.js resources MUST implement:
+```typescript
+interface Disposable {
+  dispose(): void;
+}
+```
+
+No global state. Everything scoped to engine instance.
+
+## What NOT to Generate
+
+- React/Vue/Angular specific code (this is framework-agnostic)
+- Analog circuit calculations
+- SPICE-like features
+- Global singletons or module-level state
+- Direct Three.js exposure in public API
+
+## Quick Reference
+
+| Question | Answer |
+|----------|--------|
+| Can I use `any`? | No, never |
+| Can core/ import Three.js? | No, absolutely not |
+| Analog voltages? | No, boolean only |
+| Framework bindings? | Put in `examples/`, not `src/` |
+| Continuous time? | No, discrete ticks only |

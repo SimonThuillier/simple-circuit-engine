@@ -43,13 +43,6 @@
       "@/playback/*": ["./src/playback/*"]
     }
   },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "demo",
-    "tests"
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "demo", "tests"]
 }

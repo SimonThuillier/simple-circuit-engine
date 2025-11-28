@@ -7,58 +7,68 @@
 **License**: MIT (open source, usable by everyone)
 
 ### Vision Statement
+
 Enable anyone to understand digital electronics by visualizing how electricity propagates through circuits step-by-step. The engine must be reusable across different projects and frameworks while providing beautiful, interactive 3D visualization.
 
 ## Core Principles
 
 ### I. Framework Agnosticism
+
 The engine MUST NOT depend on any UI framework (React, Vue, Angular, etc.). It is a pure TypeScript library that:
+
 - Accepts an HTMLElement for mounting
 - Manages its own rendering lifecycle
 - Communicates through an event-driven API
 - Can be wrapped by any framework's binding layer
 
 ### II. Modular Separation
+
 Three distinct layers with strict dependency rules:
+
 ```
-core/       → Pure TypeScript, zero dependencies, works in Node.js
+core/       → Pure TypeScript, minimal dependencies, works in Node.js
 rendering/  → Three.js visualization, depends only on core/
 playback/   → Scenario orchestration, depends on core/ and rendering/
 ```
 
 The `core/` module is publishable separately for headless/server use.
 
-**Hexagonal Architecture Philosophy**: 
-The `core/` module is the innermost hexagon—pure domain logic with no knowledge of how it will be rendered or consumed. 
-`rendering/` and `playback/` are adapters that plug into core without contaminating it. 
-Zooming out, the entire `simple-circuit-engine` library is itself a core that client applications should be able to adapt easily to their own UI frameworks and needs. 
+**Hexagonal Architecture Philosophy**:
+The `core/` module is the innermost hexagon—pure domain logic with no knowledge of how it will be rendered or consumed.
+`rendering/` and `playback/` are adapters that plug into core without contaminating it.
+Zooming out, the entire `simple-circuit-engine` library is itself a core that client applications should be able to adapt easily to their own UI frameworks and needs.
 Dependencies point inward, not outward.
 
 ### III. Discrete Boolean Model
+
 This is NOT a SPICE simulator. The electrical model is intentionally very simplified:
+
 - No analog voltages or currents. Electrical states are boolean (is there tension or not, is there current flow or not)
 - Wires have zero resistance and ideal conductivity
 - Only Direct Current (DC) No capacitance or inductance
 - Time is discrete (step-by-step ticks)
 - Components have transitional delays (e.g., a transistor take N (integer only) ticks to change output after input changes)
-- the *ground* is the 0V source of electrons and the *power* is a positive voltage source
-- In a circuit there can be several *grounds*, and they will always be at the same potential. The same goes for *powers*
+- the _ground_ is the 0V source of electrons and the _power_ is a positive voltage source
+- In a circuit there can be several _grounds_, and they will always be at the same potential. The same goes for _powers_
 - Propagation is deterministic
 
 Educational clarity over physical accuracy.
 
 ### IV. Data-Driven Circuits
+
 Circuits and scenarios are saved as JSON files, not code. They are loadable, savable, and validatable without recompilation.
 
 ### V. Specification-Driven Development
+
 Define interfaces → Write tests → Implement. Tests are non-negotiable.
 
 ### VI. Developer Experience First
-This library is open source and must be welcoming to external developers. 
-Every public interface, class, and function must have clear JSDoc documentation explaining purpose, parameters, and usage. 
-The README.md must enable a developer to install and see a working example within minutes. 
-The demo application must be runnable with a single command. Sample circuits must showcase real capabilities, not just toy examples. 
-Integration examples must be copy-paste ready. 
+
+This library is open source and must be welcoming to external developers.
+Every public interface, class, and function must have clear JSDoc documentation explaining purpose, parameters, and usage.
+The README.md must enable a developer to install and see a working example within minutes.
+The demo application must be runnable with a single command. Sample circuits must showcase real capabilities, not just toy examples.
+Integration examples must be copy-paste ready.
 If a developer needs to read source code to understand how to use the library, the documentation has failed.
 
 ---
@@ -67,19 +77,21 @@ If a developer needs to read source code to understand how to use the library, t
 
 ### Module Rules
 
-| Module | May Import | May NOT Import | DOM Access            |
-|--------|-----------|----------------|-----------------------|
-| `core/` | nothing | three, rendering, playback | ❌                     |
-| `rendering/` | core, three | playback | ✅ mainly via Three.js |
-| `playback/` | core, rendering | - | ❌                     |
+| Module       | May Import      | May NOT Import             | DOM Access             |
+| ------------ | --------------- | -------------------------- | ---------------------- |
+| `core/`      | nothing         | three, rendering, playback | ❌                     |
+| `rendering/` | core, three     | playback                   | ✅ mainly via Three.js |
+| `playback/`  | core, rendering | -                          | ❌                     |
 
 ### Public API Shape
+
 - Single `CircuitEngine` facade class as main entry point
 - Event-based communication (no callbacks in method signatures)
 - Chainable methods where it makes sense (`engine.loadCircuit(c).play()`)
 - All Three.js internals hidden from consumers
 
 ### Resource Management
+
 - `dispose()` must clean up all WebGL resources
 - No global state - everything scoped to engine instance
 - Circuits are immutable after loading
@@ -97,7 +109,6 @@ If a developer needs to read source code to understand how to use the library, t
 
 **Version Source of Truth**: All dependency versions are defined in `package.json`. Always read it to determine current versions before suggesting upgrades or checking compatibility.
 
-
 ---
 
 ## Quality Standards
@@ -106,14 +117,16 @@ If a developer needs to read source code to understand how to use the library, t
 - Public APIs have JSDoc
 - Core module: 80% test coverage minimum
 - All tests pass before merge
+- Linting with strict tsc, formatting with Prettier
 
 ---
 
 ## Repository Structure
+
 ```
 src/
   core/           # Simulation logic, types
-  rendering/      # Three.js visualization  
+  rendering/      # Three.js visualization
   playback/       # Scenario player
   CircuitEngine.ts
   index.ts
