@@ -4,7 +4,8 @@
  * Tests electrical node creation, types, position handling, and wire connections.
  */
 
-import { describe, it, expect} from 'vitest';
+import { describe, it, expect } from 'vitest';
+import { ComponentType, COMPONENT_TYPE_METADATA } from '@/core/types/ComponentType';
 import { ENode } from '@/core/ENode';
 import { ENodeType } from '@/core/types/ENodeType';
 import { Position } from '@/core/types/Position';
@@ -15,7 +16,11 @@ describe('ENode', () => {
   describe('Pin ENode creation', () => {
     it('should create pin ENode with component reference', () => {
       const circuit = new Circuit();
-      const component = circuit.addComponent(new Position(10, 20), new Rotation(0), 2);
+      const component = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 20),
+        new Rotation(0)
+      );
 
       // Get the pin ENode
       const pinId = component.pins[0];
@@ -24,30 +29,38 @@ describe('ENode', () => {
       expect(enode).toBeDefined();
       expect(enode?.type).toBe(ENodeType.Pin);
       expect(enode?.component).toBe(component.id);
-      expect(enode?.pinIndex).toBe(0);
+      expect(enode?.pinLabel).toBe('cathode');
     });
 
     it('should create multiple pin ENodes for component', () => {
       const circuit = new Circuit();
-      const component = circuit.addComponent(new Position(0, 0), new Rotation(0), 3);
+      const component = circuit.addComponent(
+        ComponentType.Relay,
+        new Position(0, 0),
+        new Rotation(0)
+      );
 
-      expect(component.pins.length).toBe(3);
+      expect(component.pins.length).toBe(4);
 
       // All pins should have corresponding ENodes
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 4; i++) {
         const pinId = component.pins[i];
         const enode = circuit.getENode(pinId!);
 
         expect(enode).toBeDefined();
         expect(enode?.type).toBe(ENodeType.Pin);
         expect(enode?.component).toBe(component.id);
-        expect(enode?.pinIndex).toBe(i);
+        expect(enode?.pinLabel).toBe(COMPONENT_TYPE_METADATA.relay.pins[i]);
       }
     });
 
     it('should not have position field for pin ENodes', () => {
       const circuit = new Circuit();
-      const component = circuit.addComponent(new Position(10, 20), new Rotation(0), 1);
+      const component = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 20),
+        new Rotation(0)
+      );
 
       const pinId = component.pins[0];
       const enode = circuit.getENode(pinId!);
@@ -69,7 +82,7 @@ describe('ENode', () => {
       expect(enode.position?.x).toBe(15);
       expect(enode.position?.y).toBe(25);
       expect(enode.component).toBeUndefined();
-      expect(enode.pinIndex).toBeUndefined();
+      expect(enode.pinLabel).toBeUndefined();
     });
 
     it('should have unique ID', () => {
@@ -103,7 +116,11 @@ describe('ENode', () => {
   describe('ENode types', () => {
     it('should distinguish between pin and branching point types', () => {
       const circuit = new Circuit();
-      const component = circuit.addComponent(new Position(0, 0), new Rotation(0), 1);
+      const component = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
 
       const pinNode = circuit.getENode(component.pins[0]!);
       const branchNode = new ENode(
@@ -121,7 +138,11 @@ describe('ENode', () => {
   describe('getPosition() method', () => {
     it('should derive position from component for pin ENodes', () => {
       const circuit = new Circuit();
-      const component = circuit.addComponent(new Position(10, 20), new Rotation(0), 1);
+      const component = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 20),
+        new Rotation(0)
+      );
 
       const pinId = component.pins[0];
       const enode = circuit.getENode(pinId!);
@@ -160,7 +181,11 @@ describe('ENode', () => {
 
     it('should maintain wires set (to be populated in Phase 5)', () => {
       const circuit = new Circuit();
-      const component = circuit.addComponent(new Position(0, 0), new Rotation(0), 1);
+      const component = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
 
       const pinId = component.pins[0];
       const enode = circuit.getENode(pinId!);
@@ -173,7 +198,11 @@ describe('ENode', () => {
   describe('JSON serialization', () => {
     it('should serialize pin ENode', () => {
       const circuit = new Circuit();
-      const component = circuit.addComponent(new Position(10, 20), new Rotation(0), 2);
+      const component = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 20),
+        new Rotation(0)
+      );
 
       const pinId = component.pins[0];
       const enode = circuit.getENode(pinId!);
@@ -183,7 +212,7 @@ describe('ENode', () => {
       expect(json?.id).toBe(pinId);
       expect(json?.type).toBe(ENodeType.Pin);
       expect(json?.component).toBe(component.id);
-      expect(json?.pinIndex).toBe(null);
+      expect(json?.pinLabel).toBe('cathode');
       expect(json?.position).toBeUndefined();
     });
 
@@ -197,7 +226,7 @@ describe('ENode', () => {
       expect(json.type).toBe(ENodeType.BranchingPoint);
       expect(json.position).toEqual({ x: 15, y: 25 });
       expect(json.component).toBeUndefined();
-      expect(json.pinIndex).toBeUndefined();
+      expect(json.pinLabel).toBeUndefined();
     });
 
     it('should deserialize pin ENode', () => {
@@ -205,7 +234,7 @@ describe('ENode', () => {
         id: 'test-pin-id',
         type: ENodeType.Pin,
         component: 'component-id',
-        pinIndex: 1,
+        pinLabel: '1',
       };
 
       const enode = ENode.fromJSON(json);
@@ -213,7 +242,7 @@ describe('ENode', () => {
       expect(enode.id).toBe('test-pin-id');
       expect(enode.type).toBe(ENodeType.Pin);
       expect(enode.component).toBe('component-id');
-      expect(enode.pinIndex).toBe(1);
+      expect(enode.pinLabel).toBe('1');
       expect(enode.position).toBeUndefined();
     });
 
@@ -231,7 +260,7 @@ describe('ENode', () => {
       expect(enode.position?.x).toBe(15);
       expect(enode.position?.y).toBe(25);
       expect(enode.component).toBeUndefined();
-      expect(enode.pinIndex).toBeUndefined();
+      expect(enode.pinLabel).toBeUndefined();
     });
   });
 
@@ -239,8 +268,8 @@ describe('ENode', () => {
     it('should enumerate all ENodes including pins', () => {
       const circuit = new Circuit();
 
-      circuit.addComponent(new Position(0, 0), new Rotation(0), 2);
-      circuit.addComponent(new Position(10, 10), new Rotation(0), 3);
+      circuit.addComponent(ComponentType.Battery, new Position(0, 0), new Rotation(0));
+      circuit.addComponent(ComponentType.Transistor, new Position(10, 10), new Rotation(0));
 
       const allENodes = circuit.getAllENodes();
 
@@ -255,14 +284,18 @@ describe('ENode', () => {
 
     it('should get specific ENode by ID', () => {
       const circuit = new Circuit();
-      const component = circuit.addComponent(new Position(0, 0), new Rotation(0), 3);
+      const component = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
 
       const pinId = component.pins[1];
       const enode = circuit.getENode(pinId!);
 
       expect(enode).toBeDefined();
       expect(enode?.id).toBe(pinId);
-      expect(enode?.pinIndex).toBe(1);
+      expect(enode?.pinLabel).toBe('anode');
     });
 
     it('should return undefined for non-existent ENode ID', () => {

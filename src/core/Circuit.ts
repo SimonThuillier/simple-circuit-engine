@@ -14,6 +14,8 @@ import { Component } from './Component.js';
 import { ENode } from './ENode.js';
 import { ENodeType } from './types/ENodeType.js';
 import { Wire } from './Wire.js';
+import type { ComponentType } from './types/ComponentType.js';
+import { getComponentTypeMetadata } from './types/ComponentType.js';
 
 /**
  * Circuit container managing components, ENodes, and wires.
@@ -86,46 +88,41 @@ export class Circuit {
    *
    * Automatically creates pin ENodes for the component and links them
    * bidirectionally. Pin ENode UUIDs are stored in the component's pins array.
+   * Pin labels are derived from the ComponentType metadata.
    *
+   * @param type - Component type (Battery, Switch, LED, etc.)
    * @param position - Grid position (x, y integers)
    * @param rotation - Orientation angle (integer degrees)
-   * @param pinCount - Number of pins (0+, typically <50)
    * @returns The created Component
    * @throws {TypeError} If position/rotation coordinates are not integers
-   * @throws {RangeError} If pinCount is negative
    *
    * @example
    * ```typescript
    * const lightbulb = circuit.addComponent(
    *   new Position(10, 20),
    *   new Rotation(90),
-   *   2
+   *   ComponentType.Lightbulb
    * );
    *
+   * console.log(lightbulb.type);        // ComponentType.Lightbulb
    * console.log(lightbulb.pins.length); // 2
    * console.log(lightbulb.position.x);  // 10
    * ```
    */
-  addComponent(position: Position, rotation: Rotation, pinCount: number): Component {
-    // Validate pin count
-    if (pinCount < 0) {
-      throw new RangeError(`Pin count must be non-negative (got ${pinCount})`);
-    }
-
-    if (!Number.isInteger(pinCount)) {
-      throw new TypeError(`Pin count must be an integer (got ${pinCount})`);
-    }
+  addComponent(type: ComponentType, position: Position, rotation: Rotation): Component {
+    // Get component type metadata
+    const metadata = getComponentTypeMetadata(type);
 
     // Create component first (to get its ID)
-    const component = new Component(position, rotation, []);
+    const component = new Component(type, position, rotation, []);
 
-    // Create pin ENodes for the component
+    // Create pin ENodes for the component using metadata pin labels
     const pins: UUID[] = [];
-    for (let i = 0; i < pinCount; i++) {
+    for (const pinLabel of metadata.pins) {
       const pinNode = new ENode(
         ENodeType.Pin,
         component.id,
-        i,
+        pinLabel,
         undefined // Pin position derived from component
       );
 
@@ -631,6 +628,7 @@ export class Circuit {
       const component = Component.fromJSON(
         compData as {
           id: UUID;
+          type: ComponentType;
           position: { x: number; y: number };
           rotation: number;
           pins: UUID[];
@@ -647,7 +645,7 @@ export class Circuit {
           id: UUID;
           type: ENodeType;
           component?: UUID;
-          pinIndex?: number;
+          pinLabel?: string;
           position?: { x: number; y: number };
         }
       );

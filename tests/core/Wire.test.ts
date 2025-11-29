@@ -5,6 +5,8 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+
+import { ComponentType } from '@/core/types/ComponentType';
 import { Circuit } from '@/core/Circuit';
 import { Position } from '@/core/types/Position';
 import { Rotation } from '@/core/types/Rotation';
@@ -19,8 +21,16 @@ describe('Wire', () => {
 
   describe('wire creation', () => {
     it('should create wire between two ENodes', () => {
-      const comp1 = circuit.addComponent(new Position(0, 0), new Rotation(0), 1);
-      const comp2 = circuit.addComponent(new Position(10, 10), new Rotation(0), 1);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 10),
+        new Rotation(0)
+      );
 
       const wire = circuit.addWire(comp1.pins[0]!, comp2.pins[0]!);
 
@@ -32,8 +42,16 @@ describe('Wire', () => {
     });
 
     it('should store both node IDs', () => {
-      const comp1 = circuit.addComponent(new Position(0, 0), new Rotation(0), 1);
-      const comp2 = circuit.addComponent(new Position(10, 10), new Rotation(0), 1);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 10),
+        new Rotation(0)
+      );
 
       const wire = circuit.addWire(comp1.pins[0]!, comp2.pins[0]!);
 
@@ -45,7 +63,7 @@ describe('Wire', () => {
     });
 
     it('should reject self-connection', () => {
-      const comp = circuit.addComponent(new Position(0, 0), new Rotation(0), 2);
+      const comp = circuit.addComponent(ComponentType.Battery, new Position(0, 0), new Rotation(0));
       const pinId = comp.pins[0]!;
 
       const result = circuit.addWire(pinId, pinId);
@@ -57,7 +75,7 @@ describe('Wire', () => {
     });
 
     it('should reject wire to non-existent node', () => {
-      const comp = circuit.addComponent(new Position(0, 0), new Rotation(0), 1);
+      const comp = circuit.addComponent(ComponentType.Battery, new Position(0, 0), new Rotation(0));
 
       const result = circuit.addWire(comp.pins[0]!, 'fake-uuid');
 
@@ -68,8 +86,16 @@ describe('Wire', () => {
     });
 
     it('should reject duplicate wire', () => {
-      const comp1 = circuit.addComponent(new Position(0, 0), new Rotation(0), 1);
-      const comp2 = circuit.addComponent(new Position(10, 10), new Rotation(0), 1);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 10),
+        new Rotation(0)
+      );
 
       circuit.addWire(comp1.pins[0]!, comp2.pins[0]!);
       const duplicate = circuit.addWire(comp1.pins[0]!, comp2.pins[0]!);
@@ -83,8 +109,16 @@ describe('Wire', () => {
 
   describe('intermediate positions', () => {
     it('should create straight wire with no intermediate positions', () => {
-      const comp1 = circuit.addComponent(new Position(0, 0), new Rotation(0), 1);
-      const comp2 = circuit.addComponent(new Position(10, 10), new Rotation(0), 1);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 10),
+        new Rotation(0)
+      );
 
       const wire = circuit.addWire(comp1.pins[0]!, comp2.pins[0]!);
 
@@ -94,8 +128,16 @@ describe('Wire', () => {
     });
 
     it('should create wire with intermediate positions', () => {
-      const comp1 = circuit.addComponent(new Position(0, 0), new Rotation(0), 1);
-      const comp2 = circuit.addComponent(new Position(20, 20), new Rotation(0), 1);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(20, 20),
+        new Rotation(0)
+      );
 
       const positions = [new Position(5, 10), new Position(15, 10)];
       const wire = circuit.addWire(comp1.pins[0]!, comp2.pins[0]!, positions);
@@ -107,8 +149,16 @@ describe('Wire', () => {
     });
 
     it('should validate intermediate position coordinates', () => {
-      const comp1 = circuit.addComponent(new Position(0, 0), new Rotation(0), 1);
-      const comp2 = circuit.addComponent(new Position(10, 10), new Rotation(0), 1);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 10),
+        new Rotation(0)
+      );
 
       // Should throw during Position construction
       expect(() => {
@@ -120,8 +170,16 @@ describe('Wire', () => {
 
   describe('bidirectional references', () => {
     it('should update ENode wires set when wire added', () => {
-      const comp1 = circuit.addComponent(new Position(0, 0), new Rotation(0), 1);
-      const comp2 = circuit.addComponent(new Position(10, 10), new Rotation(0), 1);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 10),
+        new Rotation(0)
+      );
 
       const wire = circuit.addWire(comp1.pins[0]!, comp2.pins[0]!);
 
@@ -135,8 +193,16 @@ describe('Wire', () => {
     });
 
     it('should query wires by node', () => {
-      const comp1 = circuit.addComponent(new Position(0, 0), new Rotation(0), 2);
-      const comp2 = circuit.addComponent(new Position(10, 10), new Rotation(0), 2);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 10),
+        new Rotation(0)
+      );
 
       circuit.addWire(comp1.pins[0]!, comp2.pins[0]!);
       circuit.addWire(comp1.pins[1]!, comp2.pins[1]!);
@@ -149,8 +215,16 @@ describe('Wire', () => {
 
   describe('wire enumeration', () => {
     it('should enumerate all wires', () => {
-      const comp1 = circuit.addComponent(new Position(0, 0), new Rotation(0), 2);
-      const comp2 = circuit.addComponent(new Position(10, 10), new Rotation(0), 2);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 10),
+        new Rotation(0)
+      );
 
       circuit.addWire(comp1.pins[0]!, comp2.pins[0]!);
       circuit.addWire(comp1.pins[1]!, comp2.pins[1]!);
@@ -160,8 +234,16 @@ describe('Wire', () => {
     });
 
     it('should get wire by ID', () => {
-      const comp1 = circuit.addComponent(new Position(0, 0), new Rotation(0), 1);
-      const comp2 = circuit.addComponent(new Position(10, 10), new Rotation(0), 1);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 10),
+        new Rotation(0)
+      );
 
       const wire = circuit.addWire(comp1.pins[0]!, comp2.pins[0]!);
 
@@ -172,8 +254,16 @@ describe('Wire', () => {
     });
 
     it('should check if wire exists between nodes', () => {
-      const comp1 = circuit.addComponent(new Position(0, 0), new Rotation(0), 1);
-      const comp2 = circuit.addComponent(new Position(10, 10), new Rotation(0), 1);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 10),
+        new Rotation(0)
+      );
 
       expect(circuit.hasWireBetween(comp1.pins[0]!, comp2.pins[0]!)).toBe(false);
 
@@ -186,8 +276,16 @@ describe('Wire', () => {
 
   describe('JSON serialization', () => {
     it('should serialize wire', () => {
-      const comp1 = circuit.addComponent(new Position(0, 0), new Rotation(0), 1);
-      const comp2 = circuit.addComponent(new Position(10, 10), new Rotation(0), 1);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 10),
+        new Rotation(0)
+      );
 
       const wire = circuit.addWire(comp1.pins[0]!, comp2.pins[0]!);
 
@@ -202,8 +300,16 @@ describe('Wire', () => {
     });
 
     it('should serialize wire with intermediate positions', () => {
-      const comp1 = circuit.addComponent(new Position(0, 0), new Rotation(0), 1);
-      const comp2 = circuit.addComponent(new Position(20, 20), new Rotation(0), 1);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(20, 20),
+        new Rotation(0)
+      );
 
       const positions = [new Position(5, 10), new Position(15, 10)];
       const wire = circuit.addWire(comp1.pins[0]!, comp2.pins[0]!, positions);
@@ -219,8 +325,16 @@ describe('Wire', () => {
 
   describe('splitWire', () => {
     it('should split a wire into two wires with a branching point at the given position', () => {
-      const comp1 = circuit.addComponent(new Position(0, 0), new Rotation(0), 1);
-      const comp2 = circuit.addComponent(new Position(10, 0), new Rotation(0), 1);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 0),
+        new Rotation(0)
+      );
 
       const pin1 = comp1.pins[0]!;
       const pin2 = comp2.pins[0]!;

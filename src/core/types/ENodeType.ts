@@ -23,7 +23,7 @@
  * ```typescript
  * // Pin node (belongs to component)
  * if (node.type === ENodeType.Pin) {
- *   console.log('Component pin at index', node.pinIndex);
+ *   console.log('Component pin with label', node.pinLabel);
  * }
  *
  * // Branching point (wire junction)
@@ -38,7 +38,7 @@ export enum ENodeType {
    *
    * Properties:
    * - Has parent component reference
-   * - Has pin index within component
+   * - Has pin label within component
    * - Position derived from component
    * - Lifecycle tied to component (cascade deletion)
    */
