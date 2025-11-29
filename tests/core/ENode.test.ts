@@ -43,6 +43,9 @@ describe('ENode', () => {
       expect(component.pins.length).toBe(4);
 
       // All pins should have corresponding ENodes
+      const pinLabels = Array.from(COMPONENT_TYPE_METADATA.relay.pins.keys());
+      const pinSources = Array.from(COMPONENT_TYPE_METADATA.relay.pins.values());
+
       for (let i = 0; i < 4; i++) {
         const pinId = component.pins[i];
         const enode = circuit.getENode(pinId!);
@@ -50,7 +53,8 @@ describe('ENode', () => {
         expect(enode).toBeDefined();
         expect(enode?.type).toBe(ENodeType.Pin);
         expect(enode?.component).toBe(component.id);
-        expect(enode?.pinLabel).toBe(COMPONENT_TYPE_METADATA.relay.pins[i]);
+        expect(enode?.pinLabel).toBe(pinLabels[i]);
+        expect(enode?.source).toBe(pinSources[i]);
       }
     });
 

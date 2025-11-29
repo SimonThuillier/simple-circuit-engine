@@ -252,6 +252,7 @@ describe('Circuit', () => {
     it('should serialize empty circuit', () => {
       const json = circuit.toJSON();
 
+      expect(json).toHaveProperty('metadata');
       expect(json).toHaveProperty('components');
       expect(json.components).toEqual([]);
     });
@@ -270,11 +271,13 @@ describe('Circuit', () => {
     });
 
     it('should deserialize circuit from JSON', () => {
-      const original = new Circuit();
+      const original = new Circuit('Test Circuit');
       original.addComponent(ComponentType.Battery, new Position(10, 20), new Rotation(90));
 
       const json = original.toJSON();
       const restored = Circuit.fromJSON(json);
+
+      expect(restored.name).toBe('Test Circuit');
 
       expect(restored.getAllComponents().length).toBe(1);
       const comp = restored.getAllComponents()[0];

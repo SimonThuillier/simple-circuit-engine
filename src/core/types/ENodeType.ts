@@ -9,7 +9,7 @@
 /**
  * Type of electrical node (ENode) in the circuit.
  *
- * ENodes represent atomic electrical connection points and come in two variants:
+ * ENodes represent atomic electrical connection points and come in two variants (immutable after node creation):
  *
  * - **Pin**: Connection point belonging to a Component. Position is derived
  *   from the parent component's position, rotation, and pin index. Automatically
