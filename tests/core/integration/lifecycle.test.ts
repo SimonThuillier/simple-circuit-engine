@@ -6,6 +6,8 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+
+import { ComponentType } from '@/core/types/ComponentType';
 import { Circuit } from '@/core/Circuit';
 import { Position } from '@/core/types/Position';
 import { Rotation } from '@/core/types/Rotation';
@@ -20,10 +22,14 @@ describe('Component Lifecycle Integration', () => {
 
   describe('component creation and pin ENodes', () => {
     it('should automatically create pin ENodes when component added', () => {
-      const component = circuit.addComponent(new Position(10, 20), new Rotation(0), 3);
+      const component = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 20),
+        new Rotation(0)
+      );
 
       // Component should have 3 pin IDs
-      expect(component.pins.length).toBe(3);
+      expect(component.pins.length).toBe(2);
 
       // Each pin should be a valid UUID string
       for (const pinId of component.pins) {
@@ -33,33 +39,49 @@ describe('Component Lifecycle Integration', () => {
 
       // All pin IDs should be unique
       const uniquePins = new Set(component.pins);
-      expect(uniquePins.size).toBe(3);
+      expect(uniquePins.size).toBe(2);
     });
 
     it('should handle component with no pins', () => {
-      const component = circuit.addComponent(new Position(0, 0), new Rotation(0), 0);
+      const component = circuit.addComponent(
+        ComponentType.Cube,
+        new Position(0, 0),
+        new Rotation(0)
+      );
 
       expect(component.pins.length).toBe(0);
     });
 
     it('should create independent pin sets for different components', () => {
-      const comp1 = circuit.addComponent(new Position(0, 0), new Rotation(0), 2);
-      const comp2 = circuit.addComponent(new Position(10, 10), new Rotation(0), 2);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Transistor,
+        new Position(10, 10),
+        new Rotation(0)
+      );
 
       // Each component has its own pins
       expect(comp1.pins.length).toBe(2);
-      expect(comp2.pins.length).toBe(2);
+      expect(comp2.pins.length).toBe(3);
 
       // Pin IDs should not overlap
       const allPins = [...comp1.pins, ...comp2.pins];
       const uniquePins = new Set(allPins);
-      expect(uniquePins.size).toBe(4);
+      expect(uniquePins.size).toBe(5);
     });
   });
 
   describe('component removal', () => {
     it('should remove component from circuit', () => {
-      const component = circuit.addComponent(new Position(10, 20), new Rotation(0), 2);
+      const component = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 20),
+        new Rotation(0)
+      );
 
       circuit.removeComponent(component.id);
 
@@ -67,9 +89,21 @@ describe('Component Lifecycle Integration', () => {
     });
 
     it('should not affect other components when removing one', () => {
-      const comp1 = circuit.addComponent(new Position(0, 0), new Rotation(0), 2);
-      const comp2 = circuit.addComponent(new Position(10, 10), new Rotation(90), 3);
-      const comp3 = circuit.addComponent(new Position(20, 20), new Rotation(180), 1);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 10),
+        new Rotation(90)
+      );
+      const comp3 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(20, 20),
+        new Rotation(180)
+      );
 
       circuit.removeComponent(comp2.id);
 
@@ -82,9 +116,21 @@ describe('Component Lifecycle Integration', () => {
 
   describe('position and rotation tracking', () => {
     it('should maintain position for multiple components', () => {
-      const comp1 = circuit.addComponent(new Position(0, 0), new Rotation(0), 1);
-      const comp2 = circuit.addComponent(new Position(100, 200), new Rotation(90), 1);
-      const comp3 = circuit.addComponent(new Position(-50, -75), new Rotation(180), 1);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(100, 200),
+        new Rotation(90)
+      );
+      const comp3 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(-50, -75),
+        new Rotation(180)
+      );
 
       expect(comp1.position.x).toBe(0);
       expect(comp1.position.y).toBe(0);
@@ -95,9 +141,21 @@ describe('Component Lifecycle Integration', () => {
     });
 
     it('should maintain rotation for multiple components', () => {
-      const comp1 = circuit.addComponent(new Position(0, 0), new Rotation(0), 1);
-      const comp2 = circuit.addComponent(new Position(10, 10), new Rotation(90), 1);
-      const comp3 = circuit.addComponent(new Position(20, 20), new Rotation(270), 1);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 10),
+        new Rotation(90)
+      );
+      const comp3 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(20, 20),
+        new Rotation(270)
+      );
 
       expect(comp1.rotation.angle).toBe(0);
       expect(comp2.rotation.angle).toBe(90);
@@ -108,9 +166,21 @@ describe('Component Lifecycle Integration', () => {
   describe('complex scenarios', () => {
     it('should handle adding and removing components in sequence', () => {
       // Add 3 components
-      const comp1 = circuit.addComponent(new Position(0, 0), new Rotation(0), 2);
-      const comp2 = circuit.addComponent(new Position(10, 10), new Rotation(90), 2);
-      const comp3 = circuit.addComponent(new Position(20, 20), new Rotation(180), 2);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 10),
+        new Rotation(90)
+      );
+      const comp3 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(20, 20),
+        new Rotation(180)
+      );
 
       expect(circuit.getAllComponents().length).toBe(3);
 
@@ -119,7 +189,11 @@ describe('Component Lifecycle Integration', () => {
       expect(circuit.getAllComponents().length).toBe(2);
 
       // Add new component
-      const comp4 = circuit.addComponent(new Position(30, 30), new Rotation(270), 3);
+      const comp4 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(30, 30),
+        new Rotation(270)
+      );
       expect(circuit.getAllComponents().length).toBe(3);
 
       // Remove all
@@ -135,7 +209,11 @@ describe('Component Lifecycle Integration', () => {
       // Add 20 components
       for (let i = 0; i < 20; i++) {
         components.push(
-          circuit.addComponent(new Position(i * 5, i * 5), new Rotation(i * 15), (i % 5) + 1)
+          circuit.addComponent(
+            ComponentType.Battery,
+            new Position(i * 5, i * 5),
+            new Rotation(i * 15)
+          )
         );
       }
 
@@ -161,8 +239,16 @@ describe('Component Lifecycle Integration', () => {
   describe('serialization and deserialization', () => {
     it('should preserve component lifecycle through serialization', () => {
       // Create circuit with components
-      const comp1 = circuit.addComponent(new Position(10, 20), new Rotation(90), 2);
-      const comp2 = circuit.addComponent(new Position(30, 40), new Rotation(180), 3);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 20),
+        new Rotation(90)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Transistor,
+        new Position(30, 40),
+        new Rotation(180)
+      );
 
       // Serialize
       const json = circuit.toJSON();
@@ -199,26 +285,28 @@ describe('Component Lifecycle Integration', () => {
   });
 
   describe('edge cases', () => {
-    it('should handle component with maximum typical pin count', () => {
-      const component = circuit.addComponent(new Position(0, 0), new Rotation(0), 50);
-
-      expect(component.pins.length).toBe(50);
-
-      // All pins should be unique
-      const uniquePins = new Set(component.pins);
-      expect(uniquePins.size).toBe(50);
-    });
-
     it('should handle components at extreme positions', () => {
-      const comp1 = circuit.addComponent(new Position(-10000, -10000), new Rotation(0), 1);
-      const comp2 = circuit.addComponent(new Position(10000, 10000), new Rotation(0), 1);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(-10000, -10000),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10000, 10000),
+        new Rotation(0)
+      );
 
       expect(comp1.position.x).toBe(-10000);
       expect(comp2.position.x).toBe(10000);
     });
 
     it('should handle components with large rotation angles', () => {
-      const component = circuit.addComponent(new Position(0, 0), new Rotation(720), 1);
+      const component = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(720)
+      );
 
       expect(component.rotation.angle).toBe(720);
     });
@@ -227,7 +315,11 @@ describe('Component Lifecycle Integration', () => {
   // T024: Integration test for automatic pin ENode creation
   describe('automatic pin ENode creation (US2)', () => {
     it('should automatically create ENodes for component pins', () => {
-      const component = circuit.addComponent(new Position(10, 20), new Rotation(0), 3);
+      const component = circuit.addComponent(
+        ComponentType.Transistor,
+        new Position(10, 20),
+        new Rotation(0)
+      );
 
       // Component should have 3 pin IDs
       expect(component.pins.length).toBe(3);
@@ -241,13 +333,20 @@ describe('Component Lifecycle Integration', () => {
         expect(enode?.id).toBe(pinId);
         expect(enode?.type).toBe(ENodeType.Pin);
         expect(enode?.component).toBe(component.id);
-        expect(enode?.pinIndex).toBe(i);
       }
     });
 
     it('should create independent ENode sets for different components', () => {
-      const comp1 = circuit.addComponent(new Position(0, 0), new Rotation(0), 2);
-      const comp2 = circuit.addComponent(new Position(10, 10), new Rotation(0), 3);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Transistor,
+        new Position(10, 10),
+        new Rotation(0)
+      );
 
       // Total ENodes should be 2 + 3 = 5
       const allENodes = circuit.getAllENodes();
@@ -257,19 +356,21 @@ describe('Component Lifecycle Integration', () => {
       for (let i = 0; i < 2; i++) {
         const enode = circuit.getENode(comp1.pins[i]!);
         expect(enode?.component).toBe(comp1.id);
-        expect(enode?.pinIndex).toBe(i);
       }
 
       // Verify comp2 pins
       for (let i = 0; i < 3; i++) {
         const enode = circuit.getENode(comp2.pins[i]!);
         expect(enode?.component).toBe(comp2.id);
-        expect(enode?.pinIndex).toBe(i);
       }
     });
 
     it('should remove pin ENodes when component is removed', () => {
-      const component = circuit.addComponent(new Position(10, 20), new Rotation(0), 3);
+      const component = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 20),
+        new Rotation(0)
+      );
 
       const pinIds = [...component.pins];
 
@@ -291,8 +392,16 @@ describe('Component Lifecycle Integration', () => {
     });
 
     it('should only remove ENodes for the deleted component', () => {
-      const comp1 = circuit.addComponent(new Position(0, 0), new Rotation(0), 2);
-      const comp2 = circuit.addComponent(new Position(10, 10), new Rotation(0), 3);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Relay,
+        new Position(10, 10),
+        new Rotation(0)
+      );
 
       // Remove comp1
       circuit.removeComponent(comp1.id);
@@ -307,14 +416,18 @@ describe('Component Lifecycle Integration', () => {
         expect(circuit.getENode(pinId)).toBeDefined();
       }
 
-      expect(circuit.getAllENodes().length).toBe(3);
+      expect(circuit.getAllENodes().length).toBe(4);
     });
   });
 
   // T025: Integration test for ENode position handling
   describe('ENode position handling (US2)', () => {
     it('should derive pin ENode position from component position', () => {
-      const component = circuit.addComponent(new Position(10, 20), new Rotation(0), 2);
+      const component = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 20),
+        new Rotation(0)
+      );
 
       const pinId = component.pins[0];
       const enode = circuit.getENode(pinId!);
@@ -326,8 +439,16 @@ describe('Component Lifecycle Integration', () => {
     });
 
     it('should update derived position when component exists', () => {
-      const comp1 = circuit.addComponent(new Position(5, 10), new Rotation(0), 1);
-      const comp2 = circuit.addComponent(new Position(50, 100), new Rotation(90), 1);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(5, 10),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(50, 100),
+        new Rotation(90)
+      );
 
       const enode1 = circuit.getENode(comp1.pins[0]!);
       const enode2 = circuit.getENode(comp2.pins[0]!);
@@ -350,7 +471,7 @@ describe('Component Lifecycle Integration', () => {
       ];
 
       for (const pos of positions) {
-        const component = circuit.addComponent(pos, new Rotation(0), 1);
+        const component = circuit.addComponent(ComponentType.Battery, pos, new Rotation(0));
         const enode = circuit.getENode(component.pins[0]!);
         const enodePos = enode?.getPosition(circuit);
 

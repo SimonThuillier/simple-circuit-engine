@@ -12,6 +12,7 @@ import { generateUUID } from './types/Identifier.js';
 import { ENodeType } from './types/ENodeType.js';
 import { Position } from './types/Position.js';
 import type { Circuit } from './Circuit.js';
+import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
 
 /**
  * Electrical connection point (component pin or wire branching point).
@@ -33,7 +34,7 @@ import type { Circuit } from './Circuit.js';
  *
  * console.log(pinNode.type);       // ENodeType.Pin
  * console.log(pinNode.component);  // component UUID
- * console.log(pinNode.pinIndex);   // 0
+ * console.log(pinNode.pinLabel);   // '0'
  *
  * // Branching node (created during wire split)
  * const branchNode = new ENode(
@@ -66,11 +67,11 @@ export class ENode {
   public readonly component: UUID | undefined;
 
   /**
-   * Pin index within component (only for pin nodes).
+   * Pin label within component (only for pin nodes).
    * Undefined for branching point nodes.
    * @readonly
    */
-  public readonly pinIndex: number | undefined;
+  public readonly pinLabel: string | undefined;
 
   /**
    * Grid position (only for branching point nodes).
@@ -86,6 +87,11 @@ export class ENode {
   public readonly wires: Set<UUID>;
 
   /**
+   * Is the ENode a source of voltage or current?
+   */
+  public source: ENodeSourceType | undefined;
+
+  /**
    * Create a new electrical node.
    *
    * **Note**: Typically ENodes are created automatically by Circuit.
@@ -93,8 +99,9 @@ export class ENode {
    *
    * @param type - Node type (Pin or BranchingPoint)
    * @param component - Parent component UUID (pin nodes only)
-   * @param pinIndex - Pin index (pin nodes only)
+   * @param pinLabel - Pin label (pin nodes only)
    * @param position - Grid position (branching points only)
+   * @param source - Source type (Voltage/Current) or undefined
    *
    * @example
    * ```typescript
@@ -102,7 +109,8 @@ export class ENode {
    * const pinNode = new ENode(
    *   ENodeType.Pin,
    *   componentId,
-   *   0,  // first pin
+   *   '0',  // first pin
+   *   undefined,
    *   undefined
    * );
    *
@@ -111,22 +119,25 @@ export class ENode {
    *   ENodeType.BranchingPoint,
    *   undefined,
    *   undefined,
-   *   new Position(15, 25)
+   *   new Position(15, 25),
+   *   undefined
    * );
    * ```
    */
   constructor(
     type: ENodeType,
     component: UUID | undefined,
-    pinIndex: number | undefined,
-    position: Position | undefined
+    pinLabel: string | undefined,
+    position: Position | undefined,
+    source: ENodeSourceType | undefined = undefined
   ) {
     this.id = generateUUID();
     this.type = type;
     this.component = component;
-    this.pinIndex = pinIndex;
+    this.pinLabel = pinLabel;
     this.position = position;
     this.wires = new Set();
+    this.source = source;
   }
 
   /**
@@ -165,7 +176,7 @@ export class ENode {
       }
 
       // For now, return component position directly
-      // Future enhancement: could calculate pin offset based on pinIndex
+      // Future enhancement: could calculate pin offset based on pinLabel
       return component.position;
     }
 
@@ -191,7 +202,7 @@ export class ENode {
    * //   id: "uuid",
    * //   type: "Pin",
    * //   component: "component-uuid",
-   * //   pinIndex: 0
+   * //   pinLabel: "0"
    * // }
    *
    * // Branching node:
@@ -206,23 +217,26 @@ export class ENode {
     id: UUID;
     type: ENodeType;
     component?: UUID | null;
-    pinIndex?: number | null;
+    pinLabel?: string | null;
     position?: { x: number; y: number } | null;
+    source?: ENodeSourceType | null;
   } {
     const json: {
       id: UUID;
       type: ENodeType;
       component?: UUID | null;
-      pinIndex?: number | null;
+      pinLabel?: string | null;
       position?: { x: number; y: number } | null;
+      source?: ENodeSourceType | null;
     } = {
       id: this.id,
       type: this.type,
+      source: this.source || null,
     };
 
     if (this.type === ENodeType.Pin) {
       json.component = this.component || null;
-      json.pinIndex = this.pinIndex || null;
+      json.pinLabel = this.pinLabel || null;
     } else {
       json.position = this.position?.toJSON() || null;
     }
@@ -242,7 +256,7 @@ export class ENode {
    *   id: "uuid",
    *   type: "Pin",
    *   component: "component-uuid",
-   *   pinIndex: 0
+   *   pinLabel: "0"
    * };
    *
    * const enode = ENode.fromJSON(json);
@@ -252,12 +266,13 @@ export class ENode {
     id: UUID;
     type: ENodeType;
     component?: UUID;
-    pinIndex?: number;
+    pinLabel?: string;
     position?: { x: number; y: number };
+    source?: ENodeSourceType;
   }): ENode {
     const position = json.position ? Position.fromJSON(json.position) : undefined;
 
-    const enode = new ENode(json.type, json.component, json.pinIndex, position);
+    const enode = new ENode(json.type, json.component, json.pinLabel, position, json.source);
 
     // Override generated ID with the one from JSON
     Object.defineProperty(enode, 'id', {

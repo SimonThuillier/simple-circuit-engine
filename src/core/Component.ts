@@ -11,6 +11,7 @@ import type { UUID } from './types/Identifier.js';
 import { generateUUID } from './types/Identifier.js';
 import { Position } from './types/Position.js';
 import { Rotation } from './types/Rotation.js';
+import type { ComponentType } from './types/ComponentType.js';
 
 /**
  * Electrical component placed on the circuit grid.
@@ -44,6 +45,12 @@ export class Component {
   public readonly id: UUID;
 
   /**
+   * Component type (Battery, Switch, LED, etc.).
+   * @readonly
+   */
+  public readonly type: ComponentType;
+
+  /**
    * Position on the 2D discrete grid.
    * @readonly
    */
@@ -69,6 +76,7 @@ export class Component {
    * which handles pin ENode creation automatically. This constructor is used
    * internally by Circuit.
    *
+   * @param type - Component type (Battery, Switch, LED, etc.)
    * @param position - Grid position (integer x, y)
    * @param rotation - Orientation angle (integer degrees)
    * @param pins - Array of pin ENode UUIDs
@@ -79,19 +87,26 @@ export class Component {
    * const component = circuit.addComponent(
    *   new Position(10, 20),
    *   new Rotation(90),
-   *   2  // number of pins
+   *   ComponentType.Battery
    * );
    *
    * // Direct construction (for deserialization):
    * const component = new Component(
+   *   ComponentType.Battery,
    *   new Position(10, 20),
    *   new Rotation(90),
    *   ['pin-id-1', 'pin-id-2']
    * );
    * ```
    */
-  constructor(position: Position, rotation: Rotation, pins: ReadonlyArray<UUID>) {
+  constructor(
+    type: ComponentType,
+    position: Position,
+    rotation: Rotation,
+    pins: ReadonlyArray<UUID>
+  ) {
     this.id = generateUUID();
+    this.type = type;
     this.position = position;
     this.rotation = rotation;
 
@@ -117,6 +132,7 @@ export class Component {
    * console.log(json);
    * // {
    * //   id: "550e8400-...",
+   * //   type: "battery",
    * //   position: { x: 10, y: 20 },
    * //   rotation: 90,
    * //   pins: ['pin-uuid-1', 'pin-uuid-2']
@@ -125,12 +141,14 @@ export class Component {
    */
   toJSON(): {
     id: UUID;
+    type: ComponentType;
     position: { x: number; y: number };
     rotation: number;
     pins: UUID[];
   } {
     return {
       id: this.id,
+      type: this.type,
       position: this.position.toJSON(),
       rotation: this.rotation.toJSON(),
       pins: [...this.pins],
@@ -147,6 +165,7 @@ export class Component {
    * ```typescript
    * const json = {
    *   id: "550e8400-...",
+   *   type: ComponentType.Battery,
    *   position: { x: 10, y: 20 },
    *   rotation: 90,
    *   pins: ['pin-uuid-1', 'pin-uuid-2']
@@ -158,12 +177,14 @@ export class Component {
    */
   static fromJSON(json: {
     id: UUID;
+    type: ComponentType;
     position: { x: number; y: number };
     rotation: number;
     pins: UUID[];
   }): Component {
     // Create temporary component to get position/rotation instances
     const component = new Component(
+      json.type,
       Position.fromJSON(json.position),
       Rotation.fromJSON(json.rotation),
       json.pins

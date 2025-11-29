@@ -14,6 +14,72 @@ import { Component } from './Component.js';
 import { ENode } from './ENode.js';
 import { ENodeType } from './types/ENodeType.js';
 import { Wire } from './Wire.js';
+import type { ComponentType } from './types/ComponentType.js';
+import { getComponentTypeMetadata } from './types/ComponentType.js';
+import { Position3D } from '@/core/types/Position3D';
+
+/**
+ * Circuit metadata placeholder
+ */
+export class CircuitMetadata {
+  /**
+   * Create a new CircuitMetadata holding general information about the Circuit.
+   *
+   * @param name - Name of the circuit
+   * @param size - Size of the circuit grid
+   * @param divisions - Divisions in the circuit grid
+   * @param cameraStartup - Position3D for Camera at circuit rendering startup
+   * @throws {TypeError} If size or divisions are not integers
+   */
+  constructor(
+    public name: string,
+    public size: number,
+    public divisions: number,
+    public cameraStartup: Position3D
+  ) {
+    if (!Number.isInteger(size) || !Number.isInteger(divisions)) {
+      throw new TypeError(
+        `Size and divisions must be integers (got size=${size}, divisions=${divisions})`
+      );
+    }
+  }
+
+  toJSON(): {
+    name: string;
+    size: number;
+    divisions: number;
+    cameraStartup: { x: number; y: number; z: number };
+  } {
+    return {
+      name: this.name,
+      size: this.size,
+      divisions: this.divisions,
+      cameraStartup: {
+        x: this.cameraStartup.x,
+        y: this.cameraStartup.y,
+        z: this.cameraStartup.z,
+      },
+    };
+  }
+
+  static fromJSON(json: {
+    name: string;
+    size: number;
+    divisions: number;
+    cameraStartup: { x: number; y: number; z: number };
+  }): CircuitMetadata {
+    return new CircuitMetadata(
+      json.name,
+      json.size,
+      json.divisions,
+      Position3D.fromJSON(json.cameraStartup)
+    );
+  }
+
+  toString(): string {
+    return `CircuitMetadata(${this.name}, ${this.size}, ${this.divisions}, ${this.cameraStartup.toString()})`;
+  }
+}
 
 /**
  * Circuit container managing components, ENodes, and wires.
@@ -54,6 +120,12 @@ import { Wire } from './Wire.js';
  */
 export class Circuit {
   /**
+   * Circuit metadata holding general information.
+   * @private
+   */
+  public metadata: CircuitMetadata;
+
+  /**
    * Map of all components in the circuit (UUID → Component).
    * @private
    */
@@ -75,10 +147,23 @@ export class Circuit {
   /**
    * Create a new empty circuit.
    */
-  constructor() {
+  constructor(name: string = 'Untitled Circuit') {
+    this.metadata = new CircuitMetadata(name, 30, 10, new Position3D(0, 0, 50));
+
     this.components = new Map();
     this.enodes = new Map();
     this.wires = new Map();
+  }
+
+  get name(): string {
+    return this.metadata.name;
+  }
+
+  set name(value: string) {
+    if (typeof value !== 'string' || value.trim() === '') {
+      throw new TypeError('Circuit name must be a non-empty string');
+    }
+    this.metadata.name = value;
   }
 
   /**
@@ -86,47 +171,43 @@ export class Circuit {
    *
    * Automatically creates pin ENodes for the component and links them
    * bidirectionally. Pin ENode UUIDs are stored in the component's pins array.
+   * Pin labels are derived from the ComponentType metadata.
    *
+   * @param type - Component type (Battery, Switch, LED, etc.)
    * @param position - Grid position (x, y integers)
    * @param rotation - Orientation angle (integer degrees)
-   * @param pinCount - Number of pins (0+, typically <50)
    * @returns The created Component
    * @throws {TypeError} If position/rotation coordinates are not integers
-   * @throws {RangeError} If pinCount is negative
    *
    * @example
    * ```typescript
    * const lightbulb = circuit.addComponent(
    *   new Position(10, 20),
    *   new Rotation(90),
-   *   2
+   *   ComponentType.Lightbulb
    * );
    *
+   * console.log(lightbulb.type);        // ComponentType.Lightbulb
    * console.log(lightbulb.pins.length); // 2
    * console.log(lightbulb.position.x);  // 10
    * ```
    */
-  addComponent(position: Position, rotation: Rotation, pinCount: number): Component {
-    // Validate pin count
-    if (pinCount < 0) {
-      throw new RangeError(`Pin count must be non-negative (got ${pinCount})`);
-    }
-
-    if (!Number.isInteger(pinCount)) {
-      throw new TypeError(`Pin count must be an integer (got ${pinCount})`);
-    }
+  addComponent(type: ComponentType, position: Position, rotation: Rotation): Component {
+    // Get component type metadata
+    const metadata = getComponentTypeMetadata(type);
 
     // Create component first (to get its ID)
-    const component = new Component(position, rotation, []);
+    const component = new Component(type, position, rotation, []);
 
-    // Create pin ENodes for the component
+    // Create pin ENodes for the component using metadata pin labels
     const pins: UUID[] = [];
-    for (let i = 0; i < pinCount; i++) {
+    for (const [pinLabel, source] of metadata.pins) {
       const pinNode = new ENode(
         ENodeType.Pin,
         component.id,
-        i,
-        undefined // Pin position derived from component
+        pinLabel,
+        undefined, // Pin position derived from component,
+        source
       );
 
       // Add ENode to circuit
@@ -598,11 +679,13 @@ export class Circuit {
    * ```
    */
   toJSON(): {
+    metadata: object;
     components: object[];
     enodes: object[];
     wires: object[];
   } {
     return {
+      metadata: this.metadata.toJSON(),
       components: this.getAllComponents().map((c) => c.toJSON()),
       enodes: this.getAllENodes().map((e) => e.toJSON()),
       wires: this.getAllWires().map((w) => w.toJSON()),
@@ -623,14 +706,28 @@ export class Circuit {
    * const circuit = Circuit.fromJSON(json);
    * ```
    */
-  static fromJSON(json: { components: object[]; enodes: object[]; wires?: object[] }): Circuit {
+  static fromJSON(json: {
+    metadata: object;
+    components: object[];
+    enodes: object[];
+    wires?: object[];
+  }): Circuit {
     const circuit = new Circuit();
+    circuit.metadata = CircuitMetadata.fromJSON(
+      json.metadata as {
+        name: string;
+        size: number;
+        divisions: number;
+        cameraStartup: { x: number; y: number; z: number };
+      }
+    );
 
     // Restore components
     for (const compData of json.components) {
       const component = Component.fromJSON(
         compData as {
           id: UUID;
+          type: ComponentType;
           position: { x: number; y: number };
           rotation: number;
           pins: UUID[];
@@ -647,7 +744,7 @@ export class Circuit {
           id: UUID;
           type: ENodeType;
           component?: UUID;
-          pinIndex?: number;
+          pinLabel?: string;
           position?: { x: number; y: number };
         }
       );

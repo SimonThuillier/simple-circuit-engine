@@ -5,7 +5,8 @@
  * querying, and basic lifecycle management.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { ComponentType } from '@/core/types/ComponentType';
 import { Circuit } from '@/core/Circuit';
 import { Position } from '@/core/types/Position';
 import { Rotation } from '@/core/types/Rotation';
@@ -28,7 +29,11 @@ describe('Circuit', () => {
 
   describe('addComponent()', () => {
     it('should add a component to the circuit', () => {
-      const component = circuit.addComponent(new Position(10, 20), new Rotation(90), 2);
+      const component = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 20),
+        new Rotation(90)
+      );
 
       expect(component).toBeDefined();
       expect(component.id).toBeDefined();
@@ -39,8 +44,16 @@ describe('Circuit', () => {
     });
 
     it('should add multiple components', () => {
-      const comp1 = circuit.addComponent(new Position(0, 0), new Rotation(0), 2);
-      const comp2 = circuit.addComponent(new Position(10, 10), new Rotation(90), 3);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Switch,
+        new Position(10, 10),
+        new Rotation(90)
+      );
 
       expect(circuit.getAllComponents().length).toBe(2);
       expect(circuit.getAllComponents()).toContain(comp1);
@@ -48,49 +61,61 @@ describe('Circuit', () => {
     });
 
     it('should assign unique IDs to components', () => {
-      const comp1 = circuit.addComponent(new Position(0, 0), new Rotation(0), 1);
-      const comp2 = circuit.addComponent(new Position(0, 0), new Rotation(0), 1);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
 
       expect(comp1.id).not.toBe(comp2.id);
     });
 
-    it('should create component with no pins', () => {
-      const component = circuit.addComponent(new Position(5, 5), new Rotation(0), 0);
+    it('should create component pins according to its type', () => {
+      const battery = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      expect(battery.pins.length).toBe(2); // Battery has 2 pins
+      // All pins should have unique IDs
+      expect(new Set(battery.pins).size).toBe(2);
 
-      expect(component.pins.length).toBe(0);
+      const relay = circuit.addComponent(ComponentType.Relay, new Position(0, 0), new Rotation(0));
+      expect(relay.pins.length).toBe(4); // Relay has 4 pins
+      // All pins should have unique IDs
+      expect(new Set(relay.pins).size).toBe(4);
     });
 
-    it('should create component with many pins', () => {
-      const component = circuit.addComponent(new Position(0, 0), new Rotation(0), 50);
-
-      expect(component.pins.length).toBe(50);
-      // All pins should have unique IDs
-      const pinIds = new Set(component.pins);
-      expect(pinIds.size).toBe(50);
+    it('should handle component with no pins', () => {
+      const cube = circuit.addComponent(ComponentType.Cube, new Position(5, 5), new Rotation(0));
+      expect(cube.pins.length).toBe(0);
     });
 
     it('should throw for non-integer position coordinates', () => {
       expect(() => {
-        circuit.addComponent(new Position(10.5, 20), new Rotation(0), 2);
+        circuit.addComponent(ComponentType.Battery, new Position(10.5, 20), new Rotation(0));
       }).toThrow(TypeError);
     });
 
     it('should throw for non-integer rotation angle', () => {
       expect(() => {
-        circuit.addComponent(new Position(10, 20), new Rotation(45.5), 2);
+        circuit.addComponent(ComponentType.Battery, new Position(10, 20), new Rotation(45.5));
       }).toThrow(TypeError);
-    });
-
-    it('should throw for negative pin count', () => {
-      expect(() => {
-        circuit.addComponent(new Position(0, 0), new Rotation(0), -1);
-      }).toThrow();
     });
   });
 
   describe('getComponent()', () => {
     it('should retrieve component by ID', () => {
-      const component = circuit.addComponent(new Position(10, 20), new Rotation(90), 2);
+      const component = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 20),
+        new Rotation(90)
+      );
 
       const retrieved = circuit.getComponent(component.id);
       expect(retrieved).toBe(component);
@@ -102,9 +127,21 @@ describe('Circuit', () => {
     });
 
     it('should retrieve correct component among multiple', () => {
-      const comp1 = circuit.addComponent(new Position(0, 0), new Rotation(0), 1);
-      const comp2 = circuit.addComponent(new Position(10, 10), new Rotation(90), 2);
-      const comp3 = circuit.addComponent(new Position(20, 20), new Rotation(180), 3);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Switch,
+        new Position(10, 10),
+        new Rotation(90)
+      );
+      const comp3 = circuit.addComponent(
+        ComponentType.Lightbulb,
+        new Position(20, 20),
+        new Rotation(180)
+      );
 
       expect(circuit.getComponent(comp1.id)).toBe(comp1);
       expect(circuit.getComponent(comp2.id)).toBe(comp2);
@@ -119,8 +156,16 @@ describe('Circuit', () => {
     });
 
     it('should return all components', () => {
-      const comp1 = circuit.addComponent(new Position(0, 0), new Rotation(0), 1);
-      const comp2 = circuit.addComponent(new Position(10, 10), new Rotation(90), 2);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 10),
+        new Rotation(90)
+      );
 
       const components = circuit.getAllComponents();
       expect(components.length).toBe(2);
@@ -129,7 +174,7 @@ describe('Circuit', () => {
     });
 
     it('should return new array each time (defensive copy)', () => {
-      circuit.addComponent(new Position(0, 0), new Rotation(0), 1);
+      circuit.addComponent(ComponentType.Battery, new Position(0, 0), new Rotation(0));
 
       const arr1 = circuit.getAllComponents();
       const arr2 = circuit.getAllComponents();
@@ -141,7 +186,11 @@ describe('Circuit', () => {
 
   describe('removeComponent()', () => {
     it('should remove component from circuit', () => {
-      const component = circuit.addComponent(new Position(10, 20), new Rotation(0), 2);
+      const component = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 20),
+        new Rotation(0)
+      );
 
       circuit.removeComponent(component.id);
 
@@ -150,9 +199,21 @@ describe('Circuit', () => {
     });
 
     it('should remove correct component among multiple', () => {
-      const comp1 = circuit.addComponent(new Position(0, 0), new Rotation(0), 1);
-      const comp2 = circuit.addComponent(new Position(10, 10), new Rotation(90), 2);
-      const comp3 = circuit.addComponent(new Position(20, 20), new Rotation(180), 3);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 10),
+        new Rotation(90)
+      );
+      const comp3 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(20, 20),
+        new Rotation(180)
+      );
 
       circuit.removeComponent(comp2.id);
 
@@ -169,8 +230,16 @@ describe('Circuit', () => {
     });
 
     it('should handle removing all components', () => {
-      const comp1 = circuit.addComponent(new Position(0, 0), new Rotation(0), 1);
-      const comp2 = circuit.addComponent(new Position(10, 10), new Rotation(90), 2);
+      const comp1 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const comp2 = circuit.addComponent(
+        ComponentType.Battery,
+        new Position(10, 10),
+        new Rotation(90)
+      );
 
       circuit.removeComponent(comp1.id);
       circuit.removeComponent(comp2.id);
@@ -183,13 +252,14 @@ describe('Circuit', () => {
     it('should serialize empty circuit', () => {
       const json = circuit.toJSON();
 
+      expect(json).toHaveProperty('metadata');
       expect(json).toHaveProperty('components');
       expect(json.components).toEqual([]);
     });
 
     it('should serialize circuit with components', () => {
-      circuit.addComponent(new Position(10, 20), new Rotation(90), 2);
-      circuit.addComponent(new Position(30, 40), new Rotation(180), 3);
+      circuit.addComponent(ComponentType.Battery, new Position(10, 20), new Rotation(90));
+      circuit.addComponent(ComponentType.Battery, new Position(30, 40), new Rotation(180));
 
       const json = circuit.toJSON();
 
@@ -201,11 +271,13 @@ describe('Circuit', () => {
     });
 
     it('should deserialize circuit from JSON', () => {
-      const original = new Circuit();
-      original.addComponent(new Position(10, 20), new Rotation(90), 2);
+      const original = new Circuit('Test Circuit');
+      original.addComponent(ComponentType.Battery, new Position(10, 20), new Rotation(90));
 
       const json = original.toJSON();
       const restored = Circuit.fromJSON(json);
+
+      expect(restored.name).toBe('Test Circuit');
 
       expect(restored.getAllComponents().length).toBe(1);
       const comp = restored.getAllComponents()[0];
@@ -222,7 +294,7 @@ describe('Circuit', () => {
 
       // Add 100 components
       for (let i = 0; i < 100; i++) {
-        circuit.addComponent(new Position(i * 10, i * 10), new Rotation(0), 2);
+        circuit.addComponent(ComponentType.Battery, new Position(i * 10, i * 10), new Rotation(0));
       }
 
       const addTime = Date.now() - startTime;
@@ -234,7 +306,9 @@ describe('Circuit', () => {
       // Add 100 components
       const components = [];
       for (let i = 0; i < 100; i++) {
-        components.push(circuit.addComponent(new Position(i * 10, i * 10), new Rotation(0), 2));
+        components.push(
+          circuit.addComponent(ComponentType.Battery, new Position(i * 10, i * 10), new Rotation(0))
+        );
       }
 
       // Query each component

@@ -27,6 +27,13 @@ export { generateUUID } from './types/Identifier.js';
 export { Position } from './types/Position.js';
 export { Rotation } from './types/Rotation.js';
 export { ENodeType } from './types/ENodeType.js';
+export {
+  ComponentType,
+  COMPONENT_TYPE_METADATA,
+  getAllComponentTypes,
+  getComponentTypeMetadata,
+} from './types/ComponentType.js';
+export type { ComponentTypeMetadata } from './types/ComponentType.js';
 
 // Core entities
 export { Circuit } from './Circuit.js';
