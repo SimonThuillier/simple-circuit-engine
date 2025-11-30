@@ -72,6 +72,40 @@ npm run dev:demo
 
 The demo will open in your browser at `http://localhost:3000`.
 
+## Circuit Topology Visualizer
+
+A standalone HTML tool for visualizing circuit topology as interactive graphs. Perfect for debugging complex circuits without reading raw JSON.
+
+### Quick Start
+
+```bash
+# Build the visualizer
+npm run build:visualizer
+
+# Open the HTML file
+open output/circuit-topology-visualizer.html
+```
+
+### Usage
+
+1. Generate sample circuits (if not already done):
+
+   ```bash
+   npm run generate:samples
+   ```
+
+2. Copy circuit JSON from `output/sample-circuits/`
+
+3. Paste into the visualizer and click "Visualize Circuit"
+
+4. View the interactive topology graph showing:
+   - Components grouped with their pins
+   - Wire connections with UUIDs
+   - Branching points
+   - All entities labeled with shortened IDs
+
+For detailed usage instructions, see [Visualizer Quickstart](specs/002-topology-visualizer/quickstart.md).
+
 ## Development
 
 ### Prerequisites

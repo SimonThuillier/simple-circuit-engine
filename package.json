@@ -26,13 +26,15 @@
     "dev:demo": "vite demo",
     "build": "tsc && vite build",
     "build:demo": "vite build --config vite.demo.config.ts",
+    "build:visualizer": "vite build --config vite.visualizer.config.ts && cp scripts/visualizer/circuit-topology-visualizer.html output/",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "generate:samples": "tsx scripts/samples/generate-sample-circuits.ts"
   },
   "keywords": [
     "circuit",
@@ -47,16 +49,21 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "@types/d3": "^7.4.3",
+    "@types/d3-graphviz": "^2.6.10",
     "@types/node": "^22.10.2",
     "@types/three": "^0.181.0",
     "@vitest/ui": "^3.2.4",
+    "prettier": "3.7.1",
+    "tsx": "^4.20.6",
     "typescript": "^5.9.2",
     "vite": "^7.2.0",
     "vite-plugin-dts": "^4.3.0",
-    "vitest": "^3.2.4",
-    "prettier": "3.7.1"
+    "vitest": "^3.2.4"
   },
   "dependencies": {
+    "d3": "^7.9.0",
+    "d3-graphviz": "^5.6.0",
     "three": "^0.181.0"
   },
   "engines": {

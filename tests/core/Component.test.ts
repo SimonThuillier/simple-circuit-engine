@@ -189,7 +189,7 @@ describe('Component', () => {
   describe('JSON serialization', () => {
     it('should serialize to JSON', () => {
       const component = new Component(
-        ComponentType.Battery,
+        ComponentType.Switch,
         new Position(10, 20),
         new Rotation(90),
         ['pin-1', 'pin-2']
@@ -202,10 +202,11 @@ describe('Component', () => {
       expect(json).toHaveProperty('position');
       expect(json).toHaveProperty('rotation');
       expect(json).toHaveProperty('pins');
-      expect(json.type).toBe(ComponentType.Battery);
+      expect(json.type).toBe(ComponentType.Switch);
       expect(json.position).toEqual({ x: 10, y: 20 });
       expect(json.rotation).toBe(90);
       expect(json.pins).toEqual(['pin-1', 'pin-2']);
+      expect(json.config).toEqual({ initialState: 'open' });
     });
 
     it('should deserialize from JSON', () => {
@@ -215,6 +216,7 @@ describe('Component', () => {
         position: { x: 10, y: 20 },
         rotation: 90,
         pins: ['pin-1', 'pin-2'],
+        config: { key: 'value' },
       };
 
       const component = Component.fromJSON(json);
@@ -225,6 +227,7 @@ describe('Component', () => {
       expect(component.position.y).toBe(20);
       expect(component.rotation.angle).toBe(90);
       expect(component.pins).toEqual(['pin-1', 'pin-2']);
+      expect(component.config).toEqual(new Map([['key', 'value']]));
     });
 
     it('should roundtrip correctly', () => {

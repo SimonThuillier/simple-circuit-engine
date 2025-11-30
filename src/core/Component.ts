@@ -11,7 +11,7 @@ import type { UUID } from './types/Identifier.js';
 import { generateUUID } from './types/Identifier.js';
 import { Position } from './types/Position.js';
 import { Rotation } from './types/Rotation.js';
-import type { ComponentType } from './types/ComponentType.js';
+import { COMPONENT_TYPE_METADATA, type ComponentType } from './types/ComponentType.js';
 
 /**
  * Electrical component placed on the circuit grid.
@@ -70,6 +70,15 @@ export class Component {
   public readonly pins: ReadonlyArray<UUID>;
 
   /**
+   * Configuration parameters for this component instance.
+   *
+   * This map holds key-value pairs representing configurable settings
+   * The available configuration keys depend on the component type see ComponentTypeMetadata for details.
+   *
+   */
+  public config: Map<string, string>;
+
+  /**
    * Create a new component.
    *
    * **Note**: Typically components are created via `Circuit.addComponent()`
@@ -119,6 +128,8 @@ export class Component {
     }
 
     this.pins = pins;
+    // instanciate component config from metadata's default config
+    this.config = new Map<string, string>(COMPONENT_TYPE_METADATA[type].config);
   }
 
   /**
@@ -145,6 +156,7 @@ export class Component {
     position: { x: number; y: number };
     rotation: number;
     pins: UUID[];
+    config: { [key: string]: string };
   } {
     return {
       id: this.id,
@@ -152,6 +164,7 @@ export class Component {
       position: this.position.toJSON(),
       rotation: this.rotation.toJSON(),
       pins: [...this.pins],
+      config: Object.fromEntries(this.config),
     };
   }
 
@@ -165,10 +178,11 @@ export class Component {
    * ```typescript
    * const json = {
    *   id: "550e8400-...",
-   *   type: ComponentType.Battery,
+   *   type: "battery",
    *   position: { x: 10, y: 20 },
    *   rotation: 90,
-   *   pins: ['pin-uuid-1', 'pin-uuid-2']
+   *   pins: ['1b4f6f3c-ce ....', '2c5e7g4d-df ...'],
+   *   config: { "voltage": "5V" }
    * };
    *
    * const component = Component.fromJSON(json);
@@ -181,6 +195,7 @@ export class Component {
     position: { x: number; y: number };
     rotation: number;
     pins: UUID[];
+    config: { [key: string]: string };
   }): Component {
     // Create temporary component to get position/rotation instances
     const component = new Component(
@@ -189,6 +204,7 @@ export class Component {
       Rotation.fromJSON(json.rotation),
       json.pins
     );
+    component.config = new Map<string, string>(Object.entries(json.config));
 
     // Override the generated ID with the one from JSON
     // Using Object.defineProperty to bypass readonly
