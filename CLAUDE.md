@@ -3,6 +3,8 @@
 Auto-generated from all feature plans. Last updated: 2025-11-28
 
 ## Active Technologies
+- TypeScript (strict mode), targeting ES2022 + None for core simulation module (dependency-free per constitution) (001-simulation-engine)
+- N/A (simulation engine is stateless; history stored in-memory when enabled) (001-simulation-engine)
 
 - File system - JSON files written to `output/sample-circuits/` directory (001-sample-circuit-scripts)
 - TypeScript (strict mode), targeting ES2022 + d3-graphviz (Graphviz DOT rendering using D3), d3 (peer dependency) (002-topology-visualizer)
@@ -26,11 +28,11 @@ npm test && npm run lint
 TypeScript (strict mode), targeting ES2022: Follow standard conventions
 
 ## Recent Changes
+- 001-simulation-engine: Added TypeScript (strict mode), targeting ES2022 + None for core simulation module (dependency-free per constitution)
 
 - 002-topology-visualizer: Added TypeScript (strict mode), targeting ES2022 + d3-graphviz (Graphviz DOT rendering using D3), d3 (peer dependency)
 - 001-sample-circuit-scripts: Added TypeScript (strict mode), targeting ES2022 + None (core module is dependency-free per constitution)
 
-- 001-core-object-model: Added TypeScript (strict mode), targeting ES2022 + None (core module is dependency-free per constitution)
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
