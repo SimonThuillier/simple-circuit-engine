@@ -40,13 +40,13 @@ export enum ComponentType {
  * @property id - Unique string identifier matching the enum value
  * @property name - Human-readable display name
  * @property pins - Array of pin labels (order-significant)
- * @property extraArgs - Default configuration parameters (e.g., initialState, activationLogic, color...)
+ * @property config - Default configuration parameters (depends on the component, e.g., initialState, activationLogic, color...)
  */
 export interface ComponentTypeMetadata {
   readonly id: string;
   readonly name: string;
   readonly pins: Map<string, ENodeSourceType | undefined>;
-  readonly extraArgs: Map<string, string>;
+  readonly config: Map<string, string>;
 }
 
 /**
@@ -63,11 +63,11 @@ export interface ComponentTypeMetadata {
  * //   id: 'battery',
  * //   name: 'Battery',
  * //   pins: ['cathode', 'anode'],
- * //   extraArgs: Map { 'voltage' => '9', 'unit' => 'V' }
+ * //   config: Map { 'voltage' => '9', 'unit' => 'V' }
  * // }
  *
- * // Access default configuration
- * const voltage = metadata.extraArgs.get('voltage'); // '9'
+ * // Access component type default configuration
+ * const voltage = metadata.config.get('voltage'); // '9'
  * ```
  */
 export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTypeMetadata>> = {
@@ -78,7 +78,7 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTy
       ['input', undefined],
       ['output', undefined],
     ]),
-    extraArgs: new Map([['initialState', 'open']]),
+    config: new Map([['initialState', 'open']]),
   },
   [ComponentType.Battery]: {
     id: ComponentType.Battery,
@@ -87,7 +87,7 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTy
       ['cathode', ENodeSourceType.Voltage],
       ['anode', ENodeSourceType.Current],
     ]),
-    extraArgs: new Map([]),
+    config: new Map([]),
   },
   [ComponentType.Lightbulb]: {
     id: ComponentType.Lightbulb,
@@ -96,7 +96,7 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTy
       ['pin1', undefined],
       ['pin2', undefined],
     ]),
-    extraArgs: new Map([]),
+    config: new Map([]),
   },
   [ComponentType.Relay]: {
     id: ComponentType.Relay,
@@ -107,7 +107,7 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTy
       ['power_in', undefined],
       ['power_out', undefined],
     ]),
-    extraArgs: new Map([['activationLogic', 'positive']]),
+    config: new Map([['activationLogic', 'positive']]),
   },
   [ComponentType.Transistor]: {
     id: ComponentType.Transistor,
@@ -117,16 +117,16 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTy
       ['base', undefined],
       ['emitter', undefined],
     ]),
-    extraArgs: new Map([['activationLogic', 'positive']]),
+    config: new Map([['activationLogic', 'positive']]),
   },
   [ComponentType.SmallLED]: {
     id: ComponentType.SmallLED,
     name: 'SmallLED',
     pins: new Map([
-      ['anode', undefined],
       ['cathode', undefined],
+      ['anode', undefined],
     ]),
-    extraArgs: new Map([
+    config: new Map([
       ['mode', 'symmetric'],
       ['activeColor', 'red'],
       ['idleColor', 'black'],
@@ -136,10 +136,10 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTy
     id: ComponentType.RectangleLED,
     name: 'RectangleLED',
     pins: new Map([
-      ['anode', undefined],
       ['cathode', undefined],
+      ['anode', undefined],
     ]),
-    extraArgs: new Map([
+    config: new Map([
       ['mode', 'symmetric'],
       ['activeColor', 'red'],
       ['idleColor', 'black'],
@@ -149,7 +149,7 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTy
     id: ComponentType.Cube,
     name: 'Cube',
     pins: new Map([]),
-    extraArgs: new Map([['color', 'red']]),
+    config: new Map([['color', 'red']]),
   },
 };
 
