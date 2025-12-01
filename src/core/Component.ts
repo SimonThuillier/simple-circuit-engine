@@ -11,7 +11,11 @@ import type { UUID } from './types/Identifier.js';
 import { generateUUID } from './types/Identifier.js';
 import { Position } from './types/Position.js';
 import { Rotation } from './types/Rotation.js';
-import { COMPONENT_TYPE_METADATA, type ComponentType } from './types/ComponentType.js';
+import {
+  COMPONENT_TYPE_METADATA,
+  type ComponentType,
+  getComponentTypeMetadata,
+} from './types/ComponentType.js';
 
 /**
  * Electrical component placed on the circuit grid.
@@ -130,6 +134,20 @@ export class Component {
     this.pins = pins;
     // instanciate component config from metadata's default config
     this.config = new Map<string, string>(COMPONENT_TYPE_METADATA[type].config);
+  }
+
+  getPinLabel(pinId: UUID): string | undefined {
+    const pinIndex = this.pins.indexOf(pinId);
+    if (pinIndex === -1) {
+      return undefined;
+    }
+    const pinLabels = getComponentTypeMetadata(this.type).pins.keys();
+    // convert to array to access by index
+    return Array.from(pinLabels)[pinIndex] || undefined;
+  }
+
+  setParameter(key: string, value: string): void {
+    this.config.set(key, value);
   }
 
   /**

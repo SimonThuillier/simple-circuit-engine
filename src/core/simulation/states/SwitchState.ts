@@ -1,0 +1,25 @@
+/**
+ * Switch component simulation state
+ * @module core/simulation/states
+ */
+
+import { ComponentState } from './ComponentState.js';
+import type { UUID } from '@/core/types/Identifier.js';
+
+/**
+ * Simulation state for LED components.
+ * Switches can be "open", "closing", "closed", or "opening".
+ *
+ * @public
+ */
+export class SwitchState extends ComponentState {
+  /**
+   * Create a new Switch state.
+   *
+   * @param componentId - UUID of the LED component
+   * @param initialState - Initial operational state (default: "open")
+   */
+  constructor(componentId: UUID, initialState: string = 'open') {
+    super(componentId, initialState);
+  }
+}
