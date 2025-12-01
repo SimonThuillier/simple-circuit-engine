@@ -11,30 +11,35 @@ This document captures key architectural decisions, algorithms, and patterns sel
 
 ## 1. State Propagation Algorithm
 
-### Decision: Single-Pass Topological Ordering
+### Decision: BFS-Based Conductivity Propagation with Reachability Analysis
 
 **Rationale**:
-- Binary electrical states (powered/unpowered) propagate deterministically from voltage sources
-- Topological sort from voltage sources ensures each node is evaluated exactly once per step
+- Binary electrical states (voltage/current) propagate deterministically from source pins (batteries, power supplies)
+- BFS traversal from sources ensures all reachable nodes are marked exactly once per step
 - O(V + E) complexity scales linearly with circuit size (ideal for 300+ component target)
 - No convergence iterations needed (unlike analog circuit solvers)
+- Separates voltage and current propagation for accurate modeling
 
 **Implementation Approach**:
-1. At initialization, identify all voltage source pins (batteries, power supplies)
-2. Build adjacency graph: ENode → connected ENod es via Wires
+1. At initialization, identify all voltage and current source pins (battery cathodes/anodes, power supplies)
+2. Build adjacency graph: ENode → connected ENodes via Wires and Components
 3. Each step:
-   - Clear all electrical states (assume unpowered)
-   - BFS/DFS from voltage sources, marking connected nodes as powered
-   - Topological ordering ensures upstream components evaluated before downstream
+   - Clear all electrical states (reset to unpowered/unlocked nodes)
+   - Run `computeReachability()` - BFS from voltage sources to find all voltage-reachable nodes
+   - Run `computeReachability()` - BFS from current sources to find all current-reachable nodes
+   - `propagateConductivity()` marks nodes/wires based on reachability results
+   - Component behaviors use `allowConductivity()` to control if current can flow through them
 
 **Alternatives Considered**:
+- **Topological sort approach**: Would require strict DAG structure. Rejected because circuits can have cycles (e.g., battery → resistor → back to battery).
 - **Iterative propagation until stable**: Would require multiple passes per step, degrading performance. Rejected because binary states don't need convergence.
 - **Event-driven delta propagation**: Would add complexity tracking state changes. Rejected in favor of clean-slate approach combined with dirty tracking for rendering.
 
 **Best Practices**:
-- Cache topological order across steps (only rebuild when circuit topology changes)
-- Use bit vectors for electrical state (compact, cache-friendly)
+- Use BFS with visited set to avoid revisiting nodes
+- Components control conductivity via `allowConductivity()` behavior method
 - Leverage existing Circuit graph structure (no duplicate data structures)
+- Locked source nodes never have their states overwritten
 
 ---
 
@@ -122,33 +127,62 @@ class DirtyTracker {
 
 ## 4. Component Behavior Extensibility
 
-### Decision: Registry-Based Behavior Pattern
+### Decision: Registry-Based Behavior Pattern with Lifecycle Hooks
 
 **Rationale**:
 - New component types should be addable without modifying core engine code
-- Each component type needs custom logic (e.g., battery always outputs voltage, switch toggles on command)
+- Each component type needs custom logic at different simulation phases
 - Registry pattern decouples behavior definitions from simulation loop
 - Scales to dozens of component types without code bloat
+- Multiple lifecycle hooks provide fine-grained control over component behavior
 
 **Implementation Approach**:
 ```typescript
-interface ComponentBehavior {
-  // Evaluate component state based on input pin states
-  evaluate(component: Component, inputStates: NodeElectricalState[]): ComponentState;
+interface BehaviorResult {
+  componentState: ComponentState;
+  hasChanged: boolean;
+  scheduledEvents: ReadonlyArray<ScheduledEvent>;
+}
 
-  // Handle delayed transitions (optional)
-  scheduleTransition?(component: Component, event: ScheduledEvent): ScheduledEvent | null;
+interface ComponentBehavior {
+  readonly componentType: string;
+
+  // Create initial state
+  createInitialState(component: Component): ComponentState;
+
+  // Control conductivity during propagation
+  allowConductivity(
+    component: Component,
+    state: ComponentState,
+    conductivityType: ENodeSourceType,
+    pinId: string,
+    otherPinId: string
+  ): boolean;
+
+  // Respond to pin state changes after propagation
+  onPinsChange(
+    component: Component,
+    state: ComponentState,
+    nodeStates: ReadonlyMap<UUID, NodeElectricalState>,
+    targetTick: number
+  ): BehaviorResult;
+
+  // Handle user commands (e.g., toggle switch)
+  onUserCommand(component: Component, state: ComponentState, command: UserCommand): BehaviorResult;
+
+  // Process scheduled events
+  onEventFiring(component: Component, state: ComponentState, event: ScheduledEvent): BehaviorResult;
 }
 
 class BehaviorRegistry {
-  private behaviors = new Map<ComponentType, ComponentBehavior>();
+  private behaviors = new Map<string, ComponentBehavior>();
 
-  register(type: ComponentType, behavior: ComponentBehavior): void {
-    this.behaviors.set(type, behavior);
+  register(behavior: ComponentBehavior): void {
+    this.behaviors.set(behavior.componentType, behavior);
   }
 
-  getBehavior(type: ComponentType): ComponentBehavior | undefined {
-    return this.behaviors.get(type);
+  get(componentType: string): ComponentBehavior | undefined {
+    return this.behaviors.get(componentType);
   }
 }
 ```
@@ -157,12 +191,14 @@ class BehaviorRegistry {
 - **Inheritance-based**: `class BatteryComponent extends Component`. Rejected—tight coupling, hard to extend externally.
 - **Strategy pattern with factory**: Over-engineered for this use case. Rejected—registry is simpler.
 - **Configuration-driven (JSON DSL)**: Poor performance for 300+ component loops. Rejected—favor code over config.
+- **Single evaluate() method**: Would require complex conditionals inside. Rejected—lifecycle hooks provide cleaner separation.
 
 **Best Practices**:
-- Register all standard behaviors at CircuitRunner initialization
-- Allow user-defined behaviors via `runner.registerBehavior(type, customBehavior)`
-- Provide base behaviors (e.g., `PassthroughBehavior` for simple wires)
-- Validate all behaviors implement required interface
+- Register behaviors via `registry.register(new MyBehavior())`
+- Each behavior specifies its `componentType` string
+- Methods mutate state in-place for performance
+- Return `BehaviorResult` with `hasChanged` flag for dirty tracking
+- Schedule future events by returning them in `scheduledEvents` array
 
 ---
 

@@ -15,25 +15,34 @@
 ### Constructor
 
 ```typescript
-constructor(circuit: Circuit, options?: RunnerOptions)
+constructor(circuit: Circuit, behaviorRegistry: BehaviorRegistry, options?: RunnerOptions)
 ```
 
 **Description**: Creates a new simulation runner for the given circuit.
 
 **Parameters**:
 - `circuit: Circuit` - Immutable circuit topology to simulate. CircuitRunner references this object without modifying it.
+- `behaviorRegistry: BehaviorRegistry` - Registry containing component behaviors for simulation
 - `options?: RunnerOptions` - Optional configuration
   - `enableHistory?: boolean` - Enable state history tracking (default: false)
   - `historyLimit?: number` - Max history entries when enabled (default: 1000)
 
 **Throws**:
-- `TypeError` - If historyLimit is non-positive
-- `Error` - If circuit contains components with unregistered behaviors
+- `RangeError` - If historyLimit is non-positive
+- `Error` - If circuit contains components with unregistered behaviors (warning logged to console)
 
 **Example**:
 ```typescript
 const circuit = Circuit.fromJSON(circuitData);
-const runner = new CircuitRunner(circuit, {
+
+// Create and populate behavior registry
+const registry = new BehaviorRegistry();
+registry.register(new BatteryBehavior());
+registry.register(new SwitchBehavior());
+registry.register(new SmallLEDBehavior()); // etc...
+
+// Create runner
+const runner = new CircuitRunner(circuit, registry, {
   enableHistory: true,
   historyLimit: 500
 });
@@ -46,30 +55,74 @@ const runner = new CircuitRunner(circuit, {
 ### tick()
 
 ```typescript
-step(): void
+tick(): RunnerResult
 ```
 
 **Description**: Advance simulation by one discrete time step.
 
 **Behavior**:
-1. Increment tick counter
-2. Process user commands queued for this tick
-3. Process scheduled events ready at this tick (FIFO order)
-4. Propagate electrical state via topological ordering
-5. Evaluate component behaviors (for components with changed inputs)
-6. Update dirty tracker with changed elements
+1. Process scheduled events ready at current tick + 1 (FIFO order)
+2. Propagate electrical state via BFS conductivity propagation
+3. Evaluate component behaviors (for components with changed pin states)
+4. Process user commands queued for this tick
+5. Update dirty tracker with changed elements
+6. Advance to next tick
 7. Store current state in history (if enabled)
 
+**Returns**: `RunnerResult` object with metrics about the tick execution:
+```typescript
+{
+  startTick: number,           // Tick at start
+  endTick: number,             // Tick after execution
+  componentUpdateCount: number, // Components that changed
+  nodeUpdateCount: number,      // ENodes that changed
+  wireUpdateCount: number,      // Wires that changed
+  processedCommandCount: number, // Commands processed
+  scheduledEventCount: number,  // New events scheduled
+  firedEventCount: number       // Events that fired
+}
+```
+
 **Throws**:
-- `Error` - If simulation encounters invalid state
+- Generally doesn't throw - invalid states logged as warnings
 
 **Example**:
 ```typescript
-runner.tick();  // Tick 0 → 1
+const result = runner.tick();  // Tick 0 → 1
+console.log(`Tick ${result.startTick} → ${result.endTick}`);
+console.log(`Components updated: ${result.componentUpdateCount}`);
+
 runner.tick();  // Tick 1 → 2
 ```
 
 **Time Complexity**: O(V + E) where V = components + enodes, E = wires
+
+---
+
+### tickN()
+
+```typescript
+tickN(count: number): RunnerResult[]
+```
+
+**Description**: Execute multiple simulation ticks in sequence.
+
+**Parameters**:
+- `count: number` - Number of ticks to execute (must be ≥ 1)
+
+**Returns**: Array of `RunnerResult` objects, one for each tick executed
+
+**Throws**:
+- `RangeError` - If count < 1
+
+**Example**:
+```typescript
+const results = runner.tickN(10);  // Execute 10 ticks
+console.log(`Executed ${results.length} ticks`);
+console.log(`Final tick: ${results[results.length - 1].endTick}`);
+```
+
+**Time Complexity**: O(N * (V + E)) where N = count
 
 ---
 
@@ -185,10 +238,10 @@ if (state?.hasVoltage) {
 
 ---
 
-### getStateAt()
+### getStateAtTick()
 
 ```typescript
-getStateAt(tick: number): SimulationState | undefined
+getStateAtTick(tick: number): SimulationState | undefined
 ```
 
 **Description**: Get complete simulation state at a specific historical tick.
@@ -203,11 +256,13 @@ getStateAt(tick: number): SimulationState | undefined
 
 **Example**:
 ```typescript
-const runner = new CircuitRunner(circuit, { enableHistory: true });
-runner.tick();  // Tick 1
-runner.tick();  // Tick 2
+const registry = new BehaviorRegistry();
+// ... register behaviors
+const runner = new CircuitRunner(circuit, registry, { enableHistory: true });
+runner.tick();  // Tick 0 → 1
+runner.tick();  // Tick 1 → 2
 
-const pastState = runner.getStateAt(1);
+const pastState = runner.getStateAtTick(1);
 console.log(pastState?.tick);  // 1
 ```
 
@@ -215,54 +270,50 @@ console.log(pastState?.tick);  // 1
 
 ## Command Methods
 
-### queueCommand()
+### submitCommand()
 
 ```typescript
-queueCommand(command: UserCommand): void
+submitCommand(command: UserCommand): boolean
 ```
 
-**Description**: Schedule a user command to execute at a future tick.
+**Description**: Submit a user command to execute at the next tick. Only one command per component per tick is allowed.
 
 **Parameters**:
-- `command: UserCommand` - Command to queue
-  - `commandType: string` - Type of command (e.g., "toggle_switch")
-  - `targetComponentId: UUID` - Target component
-  - `params?: Record<string, unknown>` - Optional parameters
-  - `tick: number | null` - Tick when command should execute : if left null, executes at next tick
+- `command: UserCommand` - Command to submit
+  - `type: 'toggle_switch'` - Type of command (currently only toggle_switch supported)
+  - `targetId: UUID` - Target component UUID
+  - `scheduledAtTick: number` - Will be set automatically to current tick
+  - `parameters?: Map<string, string> | null` - Optional parameters
+
+**Returns**:
+- `true` - Command accepted
+- `false` - Command rejected (another command already queued for this component this tick)
 
 **Throws**:
-- `RangeError` - If command tick is in the past
+- `Error` - If target component ID is not found in circuit
 
 **Example**:
 ```typescript
-runner.queueCommand({
-  tick: 10,
-  commandType: 'toggle_switch',
-  targetComponentId: switchId,
-  params: undefined
+// Submit command to toggle switch at next tick
+const accepted = runner.submitCommand({
+  type: 'toggle_switch',
+  targetId: switchId,
+  scheduledAtTick: 0,  // Will be set by runner
+  parameters: null
 });
+
+if (accepted) {
+  runner.tick();  // Command processes during this tick
+} else {
+  console.log('Command rejected - duplicate for this component this tick');
+}
 ```
 
----
-
-### executeCommand()
-
-```typescript
-executeCommand(commandType: string, targetComponentId: UUID, params?: Record<string, unknown>): void
-```
-
-**Description**: Execute a command immediately (at current tick).
-
-**Parameters**:
-- `commandType: string` - Type of command
-- `targetComponentId: UUID` - Target component
-- `params?: Record<string, unknown>` - Optional parameters
-
-**Example**:
-```typescript
-// Toggle switch immediately
-runner.executeCommand('toggle_switch', switchId);
-```
+**Notes**:
+- Commands are processed during `tick()` after event firing but before state propagation
+- Only one command per component per tick allowed (subsequent commands discarded)
+- `scheduledAtTick` is set automatically by the runner to the current tick
+- Commands are cleared after each tick
 
 ---
 
@@ -313,110 +364,35 @@ if (runner.hasDirtyElements()) {
 
 ---
 
-## Event Handling
-
-### Events Emitted
-
-CircuitRunner extends EventEmitter and emits the following events:
-
-#### `tick`
-
-```typescript
-runner.on('tick', (tick: number) => void)
-```
-
-**Description**: Fired after each step completes.
-
-**Parameters**:
-- `tick: number` - New current tick number
-
-**Example**:
-```typescript
-runner.on('tick', (tick) => {
-  console.log(`Simulation at tick ${tick}`);
-});
-```
-
----
-
-#### `state-changed`
-
-```typescript
-runner.on('state-changed', (changes: {
-  components: UUID[];
-  wires: UUID[];
-  enodes: UUID[];
-}) => void)
-```
-
-**Description**: Fired when any element states change.
-
-**Parameters**:
-- `changes` - Object with arrays of changed element UUIDs
-
-**Example**:
-```typescript
-runner.on('state-changed', (changes) => {
-  console.log(`${changes.components.length} components changed`);
-});
-```
-
----
-
-#### `command-executed`
-
-```typescript
-runner.on('command-executed', (command: UserCommand) => void)
-```
-
-**Description**: Fired when a user command is processed.
-
-**Parameters**:
-- `command: UserCommand` - The executed command
-
-**Example**:
-```typescript
-runner.on('command-executed', (cmd) => {
-  console.log(`Command ${cmd.commandType} executed at tick ${cmd.tick}`);
-});
-```
-
----
-
 ## Behavior Registry Methods
 
-### registerBehavior()
+### hasBehavior()
 
 ```typescript
-static registerBehavior(type: ComponentType, behavior: ComponentBehavior): void
+hasBehavior(componentType: string): boolean
 ```
 
-**Description**: Register a custom component behavior globally.
+**Description**: Check if a component behavior is registered in the behavior registry.
 
 **Parameters**:
-- `type: ComponentType` - Component type enum value
-- `behavior: ComponentBehavior` - Behavior implementation
+- `componentType: string` - Component type to check (e.g., "battery", "switch", "led")
 
-**Throws**:
-- `TypeError` - If behavior already registered for this type
-
-**Usage**: Called before creating CircuitRunner instances to add custom components.
+**Returns**: `true` if behavior is registered, `false` otherwise
 
 **Example**:
 ```typescript
-class CustomGateBehavior implements ComponentBehavior {
-  createInitialState(component: Component): ComponentState {
-    return new CustomGateState(component.id);
-  }
-
-  evaluate(component, state, inputs, tick) {
-    // Custom logic
-    return [];
-  }
+if (runner.hasBehavior('switch')) {
+  console.log('Switch behavior is registered');
 }
 
-CircuitRunner.registerBehavior(ComponentType.CustomGate, new CustomGateBehavior());
+if (!runner.hasBehavior('custom_gate')) {
+  console.warn('Custom gate behavior not found');
+}
 ```
+
+**Notes**:
+- This delegates to the BehaviorRegistry passed to the constructor
+- Useful for validation before creating circuits with specific component types
 
 ---
 
@@ -483,7 +459,8 @@ const led = circuit.addComponent(
   new Position(10, 0),
   new Rotation(0)
 );
-const wire = circuit.addWire(battery.pins[0], led.pins[0]);
+const wire1 = circuit.addWire(battery.pins[0], led.pins[0]);
+const wire2 = circuit.addWire(battery.pins[1], led.pins[1]);
 
 // 2. Create runner
 const runner = new CircuitRunner(circuit, {

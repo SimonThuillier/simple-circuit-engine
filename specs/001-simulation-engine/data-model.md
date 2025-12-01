@@ -1,11 +1,11 @@
 # Data Model: Simulation Engine
 
 **Feature**: Discrete-Time Circuit Simulation Engine
-**Date**: 2025-11-30
+**Date**: 2025-12-01 (Updated to match implementation)
 
 ## Overview
 
-This document defines the data structures and types for the circuit simulation engine. All types maintain the constitution's requirement for strict TypeScript with no `any` types and comprehensive JSDoc documentation.
+This document defines the data structures and types for the circuit simulation engine as actually implemented. All types maintain the constitution's requirement for strict TypeScript with no `any` types and comprehensive JSDoc documentation.
 
 ---
 
@@ -120,17 +120,27 @@ interface NodeElectricalState {
    * False if no current flow (open circuit or equilibrium).
    */
   hasCurrent: boolean;
+
+  /**
+   * True only if the node is locked from state changes at circuit build time
+   * (ex: battery pins or other fixed-voltage/current sources).
+   * Important: Those nodes should never have their electrical state modified by the simulation engine!
+   * Always false for wires.
+   */
+  locked: boolean;
 }
 ```
 
 **Usage**:
 - Applied to both `ENode` (connection points) and `Wire` (connections)
-- Updated during state propagation phase each tick
+- Updated during state propagation phase each tick via `propagateConductivity()`
 - Read by component behaviors to determine input conditions
+- `locked` prevents simulation from overwriting source node states
 
 **Validation Rules**:
-- Both fields are required (never undefined)
+- All three fields are required (never undefined)
 - `hasCurrent: true` typically implies `hasVoltage: true` (but not enforced—allows modeling edge cases)
+- `locked: true` only for source ENod es (battery pins, power supplies), never for wires
 
 ---
 
@@ -148,28 +158,24 @@ abstract class ComponentState {
 
   /**
    * Current operational state (varies by component type).
-   * Examples: "on", "off", "open", "closed", "activating", "active"
+   * Examples: "on", "off", "open", "closed", "closing", "opening", "goingOn", "goingOff"
    */
   state: string;
 
   /**
-   * For transitional states Tick when this transitional state started.
-   * Null if no transition is in progress.
-   * @readonly
+   * Tick when the current state started.
+   * Updated when state changes.
    */
-  readonly transitionStartTick: number | null;
-
-  /**
-   * Remaining delay steps before next state transition (0 = no delay).
-   * Decremented each tick when > 0.
-   * @default 0
-   */
-  delayCounter: number;
+  startTick: number;
 
   constructor(componentId: UUID, initialState: string) {
     this.componentId = componentId;
     this.state = initialState;
-    this.delayCounter = 0;
+    this.startTick = 0;
+  }
+
+  hasSameComponent(other: ComponentState): boolean {
+    return this.componentId === other.componentId;
   }
 }
 ```
@@ -177,100 +183,192 @@ abstract class ComponentState {
 **Example Subclasses**:
 
 ```typescript
-// Battery: Always outputs voltage, no delay
+// Battery: Always outputs voltage on cathode pin, current on anode pin
 class BatteryState extends ComponentState {
   constructor(componentId: UUID) {
-    super(componentId, 'active');  // Always active
+    super(componentId, 'on');  // Always on
   }
 }
 
-// Switch: Can be open or closed, opening or closing
+// Switch: Can be open, closing, closed, or opening (with delayed transitions)
 class SwitchState extends ComponentState {
-  constructor(componentId: UUID, initialOpen: boolean) {
-    super(componentId, initialOpen ? 'open' : 'closed');
+  constructor(componentId: UUID, initialState: string = 'open') {
+    super(componentId, initialState);  // Typically starts open
   }
 }
 
-// LED: Lights up when powered, immediate response
-class LEDState extends ComponentState {
+// LED: Has off, goingOn, on, goingOff states (with delayed transitions)
+class SmallLEDState extends ComponentState {
   constructor(componentId: UUID) {
     super(componentId, 'off');  // Starts off
-  }
-}
-
-// Transistor: inactive, activating, active: deactivating configurable Delayed activation/deactivation (e.g., 3 steps to activate)
-class TransistorState extends ComponentState {
-  constructor(componentId: UUID, activationDelay: number) {
-    super(componentId, 'inactive');
-    this.delayCounter = 0;  // Set during transition
   }
 }
 ```
 
 **Lifecycle**:
-1. Created during CircuitRunner initialization for each component
-2. Updated by ComponentBehavior.evaluate() each tick
+1. Created during CircuitRunner initialization via `behavior.createInitialState(component)`
+2. Updated in-place by behavior methods (`onPinsChange`, `onUserCommand`, `onEventFiring`)
 3. Persisted in SimulationState.componentStates map
-4. Cloned when history is enabled
+4. Cloned (shallow) when history is enabled
+5. `startTick` updated when state transitions occur
 
 ---
 
 ### 5. ComponentBehavior
 
-Interface for defining component-specific simulation logic.
+Interface for defining component-specific simulation logic. Each component type implements this interface to define how it responds to electrical state changes, user commands, and scheduled events.
 
 ```typescript
+/**
+ * Result returned by component behavior evaluation.
+ */
+interface BehaviorResult {
+  /** Updated component state (mutated in-place) */
+  readonly componentState: ComponentState;
+
+  /** True if component state changed */
+  hasChanged: boolean;
+
+  /** Events to schedule for future ticks */
+  readonly scheduledEvents: ReadonlyArray<ScheduledEvent>;
+}
+
+/**
+ * Component behavior interface for registry-based extensibility.
+ */
 interface ComponentBehavior {
-  /**
-   * Evaluate component state based on current input pin states.
-   * Called once per tick for components with changed inputs.
-   *
-   * @param component - Component from topology
-   * @param currentState - Current component state (mutable)
-   * @param inputStates - Electrical states of component's input pins
-   * @param tick - Current simulation tick
-   * @returns Array of scheduled events (empty if no delays)
-   *
-   * @example
-   * // LED behavior: Turn on if any input pin has voltage
-   * evaluate(component, state, inputs, tick) {
-   *   const powered = inputs.some(input => input.hasVoltage);
-   *   state.state = powered ? 'on' : 'off';
-   *   return [];  // No delayed transitions
-   * }
-   */
-  evaluate(
-    component: Component,
-    currentState: ComponentState,
-    inputStates: NodeElectricalState[],
-    tick: number
-  ): ScheduledEvent[];
+  /** Component type this behavior handles (e.g., "battery", "switch", "led") */
+  readonly componentType: ComponentType;
 
   /**
-   * Create initial state for a component of this type.
-   * Called during CircuitRunner initialization.
+   * Create initial state for a component instance.
+   * Called when simulation is initialized.
    *
-   * @param component - Component from topology
-   * @returns New ComponentState subclass instance
+   * @param component - The component to initialize
+   * @returns Initial ComponentState for this component
    */
   createInitialState(component: Component): ComponentState;
+
+  /**
+   * Determine if conductivity (voltage/current) is allowed between two pins.
+   * Called during reachability analysis in propagateConductivity().
+   *
+   * @param component - Component being evaluated
+   * @param state - Current component state
+   * @param conductivityType - Voltage or Current source type
+   * @param pinId - Starting pin
+   * @param otherPinId - Destination pin
+   * @returns True if conductivity allowed from pinId to otherPinId
+   *
+   * @example
+   * // Switch allows conductivity only when closed
+   * allowConductivity(component, state, conductivityType, pinId, otherPinId) {
+   *   return state.state === 'closed' || state.state === 'opening';
+   * }
+   */
+  allowConductivity(
+    component: Component,
+    state: ComponentState,
+    conductivityType: ENodeSourceType,
+    pinId: string,
+    otherPinId: string
+  ): boolean;
+
+  /**
+   * Define component state change in response to pin state changes.
+   * Called after propagateConductivity() for components with updated pin states.
+   *
+   * @param component - Component being evaluated
+   * @param state - Current component state (mutated in-place)
+   * @param nodeStates - Electrical states of all ENodes
+   * @param targetTick - Target tick for this evaluation
+   * @returns BehaviorResult with hasChanged flag and scheduled events
+   *
+   * @example
+   * // LED turns on when both pins have different electrical states
+   * onPinsChange(component, state, nodeStates, targetTick) {
+   *   const pin0 = nodeStates.get(component.pins[0]);
+   *   const pin1 = nodeStates.get(component.pins[1]);
+   *   const shouldBeOn = pin0.hasVoltage && pin1.hasCurrent;
+   *
+   *   if (shouldBeOn && state.state === 'off') {
+   *     state.state = 'goingOn';
+   *     state.startTick = targetTick;
+   *     return {
+   *       componentState: state,
+   *       hasChanged: true,
+   *       scheduledEvents: [{
+   *         targetId: component.id,
+   *         type: 'GoingOnEnd',
+   *         scheduledAtTick: targetTick,
+   *         readyAtTick: targetTick + 1
+   *       }]
+   *     };
+   *   }
+   *   return { componentState: state, hasChanged: false, scheduledEvents: [] };
+   * }
+   */
+  onPinsChange(
+    component: Component,
+    state: ComponentState,
+    nodeStates: ReadonlyMap<UUID, NodeElectricalState>,
+    targetTick: number
+  ): BehaviorResult;
+
+  /**
+   * Define component state change in response to a user command.
+   * Called when user interacts with component (e.g., toggle switch).
+   *
+   * @param component - Component being commanded
+   * @param state - Current component state (mutated in-place)
+   * @param command - UserCommand to process
+   * @returns BehaviorResult with hasChanged flag and scheduled events
+   */
+  onUserCommand(
+    component: Component,
+    state: ComponentState,
+    command: UserCommand
+  ): BehaviorResult;
+
+  /**
+   * Define component state change when a scheduled event fires.
+   * Called when event's readyAtTick is reached.
+   *
+   * @param component - Component receiving the event
+   * @param state - Current component state (mutated in-place)
+   * @param event - ScheduledEvent that is firing
+   * @returns BehaviorResult with hasChanged flag and scheduled events
+   */
+  onEventFiring(
+    component: Component,
+    state: ComponentState,
+    event: ScheduledEvent
+  ): BehaviorResult;
 }
 ```
 
 **Implementation Notes**:
-- Registered per ComponentType in BehaviorRegistry
-- Mutates `currentState` in-place (for performance)
-- Returns ScheduledEvents for delayed transitions
-- Must be side-effect free (no external state modification)
+- Registered per component type string in BehaviorRegistry (e.g., "battery", "switch")
+- Behaviors are stateless - all state stored in ComponentState
+- Methods mutate `state` parameter in-place for performance
+- Return `BehaviorResult` with `hasChanged` flag for dirty tracking and metrics
+- Schedule future events by returning them in `scheduledEvents` array
 
 ---
 
 ### 6. ScheduledEvent
 
-Represents a future state transition scheduled to occur at a specific tick.
+Represents a future event targeting a component to occur at a specific tick. 
+Events are processed by the component's behavior `onEventFiring()` method which define how their state is affected by the event depending on component's current state.
 
 ```typescript
 interface ScheduledEvent {
+  /**
+   * UUID of target component.
+   * @readonly
+   */
+  readonly targetId: UUID;
+
   /**
    * Tick when this event was scheduled (for FIFO ordering).
    * @readonly
@@ -284,158 +382,301 @@ interface ScheduledEvent {
   readonly readyAtTick: number;
 
   /**
-   * Type of target element.
+   * Indicates the type of this event, e.g. 'ClosingEnd', 'OpeningEnd', 'GoingOnEnd', 'GoingOffEnd'
+   * Interpreted by component behavior's onEventFiring() method.
+   * @readonly
    */
-  readonly targetType: 'component' | 'enode' | 'wire';
+  readonly type: string;
 
   /**
-   * UUID of target element.
+   * Optional extra parameters associated with this event.
+   * @readonly
    */
-  readonly targetId: UUID;
-
-  /**
-   * New state to apply when event fires.
-   * Structure depends on targetType (ComponentState for components, etc.)
-   */
-  readonly newState: Partial<ComponentState> | Partial<NodeElectricalState>;
+  readonly parameters?: Map<string, string> | undefined;
 }
 ```
 
 **Example Usage**:
 
 ```typescript
-// Transistor activates after 3-step delay
+// Switch closing - schedule end of closing transition
 const event: ScheduledEvent = {
+  targetId: switchComponent.id,
   scheduledAtTick: 10,          // Created at tick 10
-  readyAtTick: 13,              // Fire at tick 13 (10 + 3)
-  targetType: 'component',
-  targetId: transistor.id,
-  newState: { state: 'active', delayCounter: 0 }
+  readyAtTick: 11,              // Fire at tick 11 (1 tick delay)
+  type: 'ClosingEnd',           // Behavior interprets this type
+  parameters: undefined
+};
+
+// LED going on - schedule end of transition with delay
+const ledEvent: ScheduledEvent = {
+  targetId: ledComponent.id,
+  scheduledAtTick: 5,
+  readyAtTick: 6,               // 1 tick transition
+  type: 'GoingOnEnd',
+  parameters: undefined
 };
 ```
 
 **Ordering Rules**:
-- Events sorted by `readyAtTick` (min-heap)
-- Events with same `readyAtTick` processed in FIFO order (by `scheduledAtTick`)
+- Events sorted by `readyAtTick` (min-heap priority queue)
+- Events with same `readyAtTick` processed in FIFO order (sorted by `scheduledAtTick`)
+- Events fire only for components (not wires/enodes directly)
 
 ---
 
 ### 7. UserCommand
 
-Represents user interaction that modifies circuit behavior during simulation.
+Represents user interaction that modifies circuit behavior during simulation. Commands are submitted via `CircuitRunner.submitCommand()` and processed during the tick execution.
 
 ```typescript
 interface UserCommand {
   /**
-   * Type of command.
+   * Type of command. Currently only 'toggle_switch' is implemented.
+   * @readonly
    */
-  readonly commandType: 'toggle_switch' | 'set_component_state' | 'modify_config';
+  readonly type: 'toggle_switch';
 
   /**
    * UUID of target component.
+   * @readonly
    */
-  readonly targetComponentId: UUID;
+  readonly targetId: UUID;
 
   /**
-   * Command-specific parameters.
-   * For toggle_switch: undefined (no params)
-   * For set_component_state: { state: string }
-   * For modify_config: { key: string, value: string }
+   * Tick when this command was scheduled.
+   * Set automatically when command is submitted.
    */
-  readonly params?: Record<string, unknown>;
+  scheduledAtTick: number;
 
-    /**
-     * Optional Tick when command should be applied. If left null, applies at next tick (most common case).
-     */
-    readonly tick: number | null;
+  /**
+   * Optional extra parameters associated with this command.
+   * @readonly
+   */
+  readonly parameters?: Map<string, string> | null;
 }
 ```
 
 **Example Usage**:
 
 ```typescript
-// Toggle a switch at tick 50
+// Toggle a switch
 const toggleCmd: UserCommand = {
-  tick: 50,
-  commandType: 'toggle_switch',
-  targetComponentId: switchComponent.id,
-  params: undefined
+  type: 'toggle_switch',
+  targetId: switchComponent.id,
+  scheduledAtTick: 0,  // Will be set by CircuitRunner
+  parameters: null
 };
+
+runner.submitCommand(toggleCmd);
+runner.tick();  // Command executes during this tick
 ```
 
 **Processing**:
-- Commands queued in CircuitRunner
-- Processed at start of matching tick (before state propagation)
-- May trigger immediate state changes or scheduled events
+- Commands submitted via `CircuitRunner.submitCommand()`
+- Only one command per component per tick allowed (subsequent commands for same component discarded)
+- Processed during `tick()` after event firing, before state propagation
+- Component's `onUserCommand()` method handles the command
+- May trigger immediate state changes and/or schedule future events
+- Commands cleared after processing each tick
+
+---
+
+### 8. RunnerResult
+
+Result object returned by `CircuitRunner.tick()` and `CircuitRunner.tickN()` containing metrics about the tick execution.
+
+```typescript
+interface RunnerResult {
+  /** Tick number at start of execution */
+  startTick: number;
+
+  /** Tick number after execution completes */
+  endTick: number;
+
+  /** Number of components that changed state */
+  componentUpdateCount: number;
+
+  /** Number of enodes that changed electrical state */
+  nodeUpdateCount: number;
+
+  /** Number of wires that changed electrical state */
+  wireUpdateCount: number;
+
+  /** Number of user commands processed this tick */
+  processedCommandCount: number;
+
+  /** Number of new events scheduled this tick */
+  scheduledEventCount: number;
+
+  /** Number of events that fired this tick */
+  firedEventCount: number;
+}
+```
+
+**Usage**:
+- Returned by `tick()` to provide visibility into simulation activity
+- `tickN(count)` returns array of RunnerResult for each tick
+- Useful for debugging, performance monitoring, and UI updates
+
+**Example**:
+```typescript
+const result = runner.tick();
+console.log(`Tick ${result.startTick} → ${result.endTick}`);
+console.log(`Components updated: ${result.componentUpdateCount}`);
+console.log(`Events fired: ${result.firedEventCount}`);
+console.log(`Events scheduled: ${result.scheduledEventCount}`);
+```
+
+---
+
+### 9. ReachabilityResult
+
+Internal type used by `computeReachability()` to track which nodes and wires are reachable from voltage/current sources during conductivity propagation.
+
+```typescript
+type ReachabilityResult = {
+  /** Set of ENode UUIDs reachable from sources */
+  nodes: Set<UUID>;
+
+  /** Set of Wire UUIDs reachable from sources */
+  wires: Set<UUID>;
+};
+```
+
+**Usage**:
+- Internal to `CircuitRunner.propagateConductivity()`
+- Not exposed in public API
+- Used during BFS traversal from voltage/current sources
 
 ---
 
 ## Supporting Classes
 
-### 8. StateManager
+### 10. StateManager
 
-Manages current simulation state and optional historical states.
+Manages current simulation state and optional historical states using a circular buffer.
 
 ```typescript
 class StateManager {
   private currentState: SimulationState;
-  private history: SimulationState[] | null;
+  private history: SimulationState[];
+  private readonly historyEnabled: boolean;
   private readonly historyLimit: number;
+  private historyWriteIndex: number;
 
-  constructor(options: RunnerOptions) {
+  constructor(enableHistory: boolean = false, historyLimit: number = 1000) {
+    if (historyLimit < 1) {
+      throw new RangeError(`historyLimit must be at least 1 (got ${historyLimit})`);
+    }
+
+    this.historyEnabled = enableHistory;
+    this.historyLimit = historyLimit;
     this.currentState = new SimulationState(0);
-    this.historyLimit = options.historyLimit ?? 1000;
-    this.history = options.enableHistory
-      ? new Array(this.historyLimit).fill(null)
-      : null;
+    this.history = [];
+    this.historyWriteIndex = 0;
   }
 
   /**
-   * Get current simulation state.
-   * @returns Current SimulationState
+   * Get the current simulation state (mutable for simulation engine use).
+   * @returns Current state
    */
   getCurrentState(): SimulationState {
     return this.currentState;
   }
 
   /**
-   * Advance to next tick with new state.
-   * If history enabled, stores previous state in circular buffer.
-   * @param newState - State for next tick
+   * Get current tick number.
+   * @returns Current simulation tick
    */
-  advance(newState: SimulationState): void {
-    if (this.history) {
-      const index = this.currentState.tick % this.historyLimit;
-      this.history[index] = this.currentState.clone();
-    }
-    this.currentState = newState;
+  getCurrentTick(): number {
+    return this.currentState.tick;
   }
 
   /**
-   * Retrieve historical state at specific tick.
-   * @param tick - Tick number to retrieve
-   * @returns State at that tick, or undefined if not in history
+   * Advance to next tick, optionally saving current state to history.
+   * Mutates current state's tick in-place (doesn't create new state).
+   * @returns Current state (now at next tick)
    */
-  getState(tick: number): SimulationState | undefined {
-    if (tick === this.currentState.tick) {
-      return this.currentState;
+  advanceToNextTick(): SimulationState {
+    const nextTick = this.currentState.tick + 1;
+
+    // Save current state to history if enabled
+    if (this.historyEnabled) {
+      this.saveToHistory(this.currentState.clone());
     }
-    if (!this.history) {
+
+    // Update current state to new tick (in-place)
+    this.currentState.tick = nextTick;
+
+    return this.currentState;
+  }
+
+  /**
+   * Get a historical state by tick number.
+   * Only works if history is enabled.
+   * @param tick - Tick number to retrieve
+   * @returns State at that tick, or undefined if not available
+   */
+  getStateAtTick(tick: number): SimulationState | undefined {
+    if (!this.historyEnabled) {
       return undefined;
     }
-    const index = tick % this.historyLimit;
-    const state = this.history[index];
-    // Validate not overwritten by later tick
-    return state?.tick === tick ? state : undefined;
+
+    return this.history.find((state) => state.tick === tick);
   }
 
   /**
-   * Clear all historical states (keeps current state).
-   * Useful to free memory during long simulations.
+   * Get all available historical states.
+   * Returns empty array if history is disabled.
+   * @returns Array of historical states, sorted by tick (oldest first)
+   */
+  getHistory(): ReadonlyArray<SimulationState> {
+    if (!this.historyEnabled) {
+      return [];
+    }
+
+    // Return sorted copy
+    return [...this.history].sort((a, b) => a.tick - b.tick);
+  }
+
+  /**
+   * Clear all history.
    */
   clearHistory(): void {
-    if (this.history) {
-      this.history.fill(null);
+    this.history = [];
+    this.historyWriteIndex = 0;
+  }
+
+  /**
+   * Reset to tick 0, clearing current state and all history.
+   */
+  reset(): void {
+    this.currentState = new SimulationState(0);
+    this.clearHistory();
+  }
+
+  /**
+   * Check if history tracking is enabled.
+   * @returns True if history is enabled
+   */
+  isHistoryEnabled(): boolean {
+    return this.historyEnabled;
+  }
+
+  /**
+   * Save a state to history using circular buffer.
+   * Private helper for advanceToNextTick.
+   * @param state - State to save
+   */
+  private saveToHistory(state: SimulationState): void {
+    if (this.history.length < this.historyLimit) {
+      // History not yet full, just append
+      this.history.push(state);
+    } else {
+      // Circular buffer: overwrite oldest entry
+      this.history[this.historyWriteIndex] = state;
+      this.historyWriteIndex = (this.historyWriteIndex + 1) % this.historyLimit;
     }
   }
 }
@@ -443,7 +684,7 @@ class StateManager {
 
 ---
 
-### 9. EventQueue
+### 11. EventQueue
 
 Min-heap priority queue for scheduled events.
 
@@ -511,9 +752,9 @@ class EventQueue {
 
 ---
 
-### 10. DirtyTracker
+### 12. DirtyTracker
 
-Tracks which elements changed state during current tick.
+Tracks which circuit elements have changed state during the current tick to optimize uages (rendering process, animations ...) of clients
 
 ```typescript
 class DirtyTracker {
@@ -595,56 +836,93 @@ class DirtyTracker {
 
 ---
 
-### 11. BehaviorRegistry
+### 13. BehaviorRegistry
 
-Registry for component type → behavior mappings.
+Registry for component type → behavior mappings. Maps component type strings to their behavior implementations.
 
 ```typescript
 class BehaviorRegistry {
-  private behaviors: Map<ComponentType, ComponentBehavior>;
+  private behaviors: Map<string, ComponentBehavior>;
 
   constructor() {
     this.behaviors = new Map();
-    this.registerDefaultBehaviors();
   }
 
   /**
    * Register a behavior for a component type.
-   * @param type - Component type enum value
-   * @param behavior - Behavior implementation
-   * @throws TypeError if behavior already registered for this type
+   * Overwrites any existing behavior for the same type.
+   * @param behavior - The component behavior to register
+   * @throws TypeError if behavior is null/undefined or componentType is empty
    */
-  register(type: ComponentType, behavior: ComponentBehavior): void {
-    if (this.behaviors.has(type)) {
-      throw new TypeError(`Behavior already registered for type: ${type}`);
+  register(behavior: ComponentBehavior): void {
+    if (!behavior) {
+      throw new TypeError('Behavior cannot be null or undefined');
     }
-    this.behaviors.set(type, behavior);
+
+    if (!behavior.componentType || behavior.componentType.trim() === '') {
+      throw new TypeError('Behavior componentType cannot be empty');
+    }
+
+    this.behaviors.set(behavior.componentType, behavior);
   }
 
   /**
-   * Get behavior for a component type.
-   * @param type - Component type enum value
-   * @returns Behavior implementation, or undefined if not registered
+   * Register multiple behaviors at once.
+   * Convenience method for bulk registration.
+   * @param behaviors - Array of behaviors to register
    */
-  getBehavior(type: ComponentType): ComponentBehavior | undefined {
-    return this.behaviors.get(type);
+  registerAll(behaviors: ComponentBehavior[]): void {
+    behaviors.forEach((behavior) => this.register(behavior));
   }
 
   /**
-   * Check if a behavior is registered for a type.
-   * @param type - Component type enum value
-   * @returns True if behavior exists
+   * Get the behavior for a component type.
+   * @param componentType - Type identifier (e.g., "battery", "led", "switch")
+   * @returns The registered behavior, or undefined if not found
    */
-  hasBehavior(type: ComponentType): boolean {
-    return this.behaviors.has(type);
+  get(componentType: string): ComponentBehavior | undefined {
+    return this.behaviors.get(componentType);
   }
 
   /**
-   * Register default behaviors for standard component types.
-   * Called during constructor.
+   * Check if a behavior is registered for a component type.
+   * @param componentType - Type identifier to check
+   * @returns True if behavior is registered
    */
-  private registerDefaultBehaviors(): void {
-    // Register Battery, Switch, LED, etc.
+  has(componentType: string): boolean {
+    return this.behaviors.has(componentType);
+  }
+
+  /**
+   * Unregister a behavior for a component type.
+   * @param componentType - Type identifier to unregister
+   * @returns True if behavior was found and removed
+   */
+  unregister(componentType: string): boolean {
+    return this.behaviors.delete(componentType);
+  }
+
+  /**
+   * Clear all registered behaviors.
+   */
+  clear(): void {
+    this.behaviors.clear();
+  }
+
+  /**
+   * Get all registered component types.
+   * @returns Array of component type identifiers
+   */
+  getRegisteredTypes(): string[] {
+    return Array.from(this.behaviors.keys());
+  }
+
+  /**
+   * Get count of registered behaviors.
+   * @returns Number of registered behaviors
+   */
+  size(): number {
+    return this.behaviors.size;
   }
 }
 ```
@@ -684,7 +962,6 @@ CircuitRunner (orchestrator)
 | RunnerOptions       | historyLimit > 0 if specified                | TypeError   |
 | RunnerOptions       | Cannot enable history with limit 0          | TypeError   |
 | SimulationState     | tick >= 0                                    | RangeError  |
-| ComponentState      | delayCounter >= 0                            | RangeError  |
 | ScheduledEvent      | readyAtTick >= scheduledAtTick               | RangeError  |
 | UserCommand         | tick >= 0                                    | RangeError  |
 | BehaviorRegistry    | No duplicate registrations                   | TypeError   |

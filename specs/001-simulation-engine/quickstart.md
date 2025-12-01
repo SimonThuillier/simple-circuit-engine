@@ -21,7 +21,7 @@ The Circuit Simulation Engine provides step-by-step discrete-time simulation of 
 ## Quick Example: Simulating a Battery → LED Circuit
 
 ```typescript
-import { Circuit, CircuitRunner, ComponentType, Position, Rotation } from 'simple-circuit-engine';
+import { Circuit, CircuitRunner, BehaviorRegistry, BatteryBehavior, SmallLEDBehavior, ComponentType, Position, Rotation } from 'simple-circuit-engine';
 
 // 1. Create circuit topology
 const circuit = new Circuit('Simple LED Circuit');
@@ -33,32 +33,48 @@ const battery = circuit.addComponent(
 );
 
 const led = circuit.addComponent(
-  ComponentType.LED,
+  ComponentType.SmallLED,
   new Position(10, 0),
   new Rotation(0)
 );
 
-const wire = circuit.addWire(
-  battery.pins[0],  // Battery positive terminal
+const wire1 = circuit.addWire(
+  battery.pins[0],  // Battery cathode (voltage source)
   led.pins[0]       // LED anode
 );
+const wire2 = circuit.addWire(
+  battery.pins[1],  // Battery anode (current source)
+  led.pins[1]       // LED cathode
+);
 
-// 2. Create simulation runner
-const runner = new CircuitRunner(circuit);
+// 2. Create behavior registry and register behaviors
+const registry = new BehaviorRegistry();
+registry.register(new BatteryBehavior());
+registry.register(new SmallLEDBehavior());
 
-// 3. Run one simulation step
-runner.step();
+// 3. Create simulation runner
+const runner = new CircuitRunner(circuit, registry);
 
-// 4. Query LED state
+// 4. Run one simulation step
+const result = runner.tick();
+console.log(`Tick ${result.startTick} → ${result.endTick}`);
+console.log(`Components updated: ${result.componentUpdateCount}`);
+
+// 5. Query LED state
 const ledState = runner.getComponentState(led.id);
-console.log(`LED state: ${ledState?.state}`);  // "on"
+console.log(`LED state: ${ledState?.state}`);  // "goingOn" (transitioning)
 
-const wireState = runner.getWireState(wire.id);
+// Run another tick for LED to fully turn on
+runner.tick();
+const ledStateAfter = runner.getComponentState(led.id);
+console.log(`LED state: ${ledStateAfter?.state}`);  // "on"
+
+const wireState = runner.getWireState(wire1.id);
 console.log(`Wire has voltage: ${wireState?.hasVoltage}`);  // true
-console.log(`Wire has current: ${wireState?.hasCurrent}`);  // true
+console.log(`Wire has current: ${wireState?.hasCurrent}`);  // false
 ```
 
-**Result**: The battery powers the LED in a single step.
+**Result**: The battery powers the LED, which transitions to "on" state after delay.
 
 ---
 
@@ -67,28 +83,38 @@ console.log(`Wire has current: ${wireState?.hasCurrent}`);  // true
 ### 1. Interactive Components (Switch)
 
 ```typescript
-import { Circuit, CircuitRunner, ComponentType } from 'simple-circuit-engine';
+import { Circuit, CircuitRunner, BehaviorRegistry, BatteryBehavior, SwitchBehavior, SmallLEDBehavior, ComponentType } from 'simple-circuit-engine';
 
 // Create circuit: Battery → Switch → LED
 const circuit = new Circuit();
 const battery = circuit.addComponent(ComponentType.Battery, ...);
 const switchComp = circuit.addComponent(ComponentType.Switch, ...);
-const led = circuit.addComponent(ComponentType.LED, ...);
+const led = circuit.addComponent(ComponentType.SmallLED, ...);
 
 circuit.addWire(battery.pins[0], switchComp.pins[0]);
 circuit.addWire(switchComp.pins[1], led.pins[0]);
+circuit.addWire(battery.pins[1], led.pins[1]);
 
-// Create runner
-const runner = new CircuitRunner(circuit);
+// Create registry and runner
+const registry = new BehaviorRegistry();
+registry.registerAll([new BatteryBehavior(), new SwitchBehavior(), new SmallLEDBehavior()]);
+const runner = new CircuitRunner(circuit, registry);
 
 // Initial state: switch open, LED off
-runner.step();
+runner.tick();
 const ledState1 = runner.getComponentState(led.id);
 console.log(ledState1?.state);  // "off"
 
 // Toggle switch to closed
-runner.executeCommand('toggle_switch', switchComp.id);
-runner.step();
+runner.submitCommand({
+  type: 'toggle_switch',
+  targetId: switchComp.id,
+  scheduledAtTick: runner.getCurrentTick(),
+  parameters: null
+});
+runner.tick();  // Switch goes to "closing" state
+runner.tick();  // Switch reaches "closed", LED starts "goingOn"
+runner.tick();  // LED reaches "on"
 
 // LED is now on
 const ledState2 = runner.getComponentState(led.id);
@@ -97,72 +123,28 @@ console.log(ledState2?.state);  // "on"
 
 ---
 
-### 2. Delayed Transitions (Transistor)
+### 2. History Tracking for Debugging
 
 ```typescript
-import { Circuit, CircuitRunner, ComponentType } from 'simple-circuit-engine';
-
-// Circuit with transistor (3-step activation delay)
-const circuit = new Circuit();
-const battery = circuit.addComponent(ComponentType.Battery, ...);
-const transistor = circuit.addComponent(ComponentType.Transistor, ...);
-const led = circuit.addComponent(ComponentType.LED, ...);
-
-// Configure transistor with 3-step delay
-transistor.config.set('activationDelay', '3');
-
-circuit.addWire(battery.pins[0], transistor.pins[0]);  // Gate
-circuit.addWire(transistor.pins[1], led.pins[0]);      // Collector → LED
-
-const runner = new CircuitRunner(circuit);
-
-// Step 0: Apply voltage to gate
-runner.step();
-let transistorState = runner.getComponentState(transistor.id);
-console.log(transistorState?.state);  // "activating"
-console.log(transistorState?.delayCounter);  // 3
-
-// Step 1: Delay counter decrements
-runner.step();
-transistorState = runner.getComponentState(transistor.id);
-console.log(transistorState?.delayCounter);  // 2
-
-// Step 2: Delay counter continues
-runner.step();
-transistorState = runner.getComponentState(transistor.id);
-console.log(transistorState?.delayCounter);  // 1
-
-// Step 3: Transistor activates, LED turns on
-runner.step();
-transistorState = runner.getComponentState(transistor.id);
-console.log(transistorState?.state);  // "active"
-
-const ledState = runner.getComponentState(led.id);
-console.log(ledState?.state);  // "on"
-```
-
----
-
-### 3. History Tracking for Debugging
-
-```typescript
-import { Circuit, CircuitRunner } from 'simple-circuit-engine';
+import { Circuit, CircuitRunner, BehaviorRegistry } from 'simple-circuit-engine';
 
 const circuit = /* ... create circuit ... */;
+const registry = new BehaviorRegistry();
+// ... register behaviors
 
 // Enable history with 100-step limit
-const runner = new CircuitRunner(circuit, {
+const runner = new CircuitRunner(circuit, registry, {
   enableHistory: true,
   historyLimit: 100
 });
 
 // Run simulation for 10 steps
 for (let i = 0; i < 10; i++) {
-  runner.step();
+  runner.tick();
 }
 
 // Query historical state at tick 5
-const pastState = runner.getStateAt(5);
+const pastState = runner.getStateAtTick(5);
 if (pastState) {
   console.log(`At tick ${pastState.tick}:`);
   pastState.componentStates.forEach((state, id) => {
@@ -176,21 +158,23 @@ console.log(`Current tick: ${runner.getCurrentTick()}`);  // 10
 
 ---
 
-### 4. Optimized Rendering with Dirty Tracking
+### 3. Optimized Rendering with Dirty Tracking
 
 ```typescript
-import { Circuit, CircuitRunner } from 'simple-circuit-engine';
+import { Circuit, CircuitRunner, BehaviorRegistry } from 'simple-circuit-engine';
 
 const circuit = /* ... */;
-const runner = new CircuitRunner(circuit);
+const registry = new BehaviorRegistry();
+// ... register behaviors
+const runner = new CircuitRunner(circuit, registry);
 
 function renderLoop() {
   // Advance simulation
-  runner.step();
+  const result = runner.tick();
 
-  // Check if anything changed
-  if (runner.hasDirtyElements()) {
-    const dirty = runner.getDirtyElements();
+  // Check if anything changed (via result metrics or dirty tracker)
+  if (result.componentUpdateCount > 0 || result.nodeUpdateCount > 0 || result.wireUpdateCount > 0) {
+    const dirty = runner.dirtyTracker.getDirtyElements();
 
     // Update only changed visuals
     dirty.components.forEach(id => {
@@ -214,134 +198,105 @@ renderLoop();
 
 ---
 
-### 5. Event-Driven Updates
+### 4. Custom Component Behaviors
 
 ```typescript
-import { Circuit, CircuitRunner } from 'simple-circuit-engine';
+import { BehaviorRegistry, ComponentBehavior, BehaviorResult, ComponentState, Component, ENodeSourceType } from 'simple-circuit-engine';
 
-const circuit = /* ... */;
-const runner = new CircuitRunner(circuit);
-
-// Listen for state changes
-runner.on('state-changed', (changes) => {
-  console.log(`${changes.components.length} components changed`);
-  console.log(`${changes.wires.length} wires changed`);
-  console.log(`${changes.enodes.length} enodes changed`);
-});
-
-// Listen for each tick
-runner.on('tick', (tick) => {
-  console.log(`Simulation advanced to tick ${tick}`);
-});
-
-// Listen for commands
-runner.on('command-executed', (cmd) => {
-  console.log(`Command ${cmd.commandType} executed on ${cmd.targetComponentId}`);
-});
-
-// Run simulation
-runner.step();  // Triggers events
-```
-
----
-
-### 6. Scheduled Commands (Future Interactions)
-
-```typescript
-import { Circuit, CircuitRunner } from 'simple-circuit-engine';
-
-const circuit = /* ... */;
-const runner = new CircuitRunner(circuit);
-
-// Schedule switch toggle at tick 10
-runner.queueCommand({
-  tick: 10,
-  commandType: 'toggle_switch',
-  targetComponentId: switchId,
-  params: undefined
-});
-
-// Schedule another toggle at tick 20
-runner.queueCommand({
-  tick: 20,
-  commandType: 'toggle_switch',
-  targetComponentId: switchId,
-  params: undefined
-});
-
-// Run simulation - commands execute automatically at scheduled ticks
-for (let i = 0; i < 25; i++) {
-  runner.step();
-}
-```
-
----
-
-### 7. Custom Component Behaviors
-
-```typescript
-import { CircuitRunner, ComponentBehavior, ComponentState, Component } from 'simple-circuit-engine';
-
-// Define custom AND gate behavior
-class ANDGateState extends ComponentState {
+// Define custom resistor behavior (simple passthrough in boolean model)
+class ResistorState extends ComponentState {
   constructor(componentId: UUID) {
-    super(componentId, 'off');
+    super(componentId, 'conducting');
   }
 }
 
-class ANDGateBehavior implements ComponentBehavior {
+class ResistorBehavior implements ComponentBehavior {
+  readonly componentType = 'resistor';
+
   createInitialState(component: Component): ComponentState {
-    return new ANDGateState(component.id);
+    return new ResistorState(component.id);
   }
 
-  evaluate(
-    component: Component,
-    currentState: ComponentState,
-    inputStates: NodeElectricalState[],
-    tick: number
-  ): ScheduledEvent[] {
-    // AND gate: output on if ALL inputs have voltage
-    const allInputsHigh = inputStates.every(input => input.hasVoltage);
-    currentState.state = allInputsHigh ? 'on' : 'off';
-    return [];  // No delayed transitions
+  // Allow conductivity through resistor in both directions
+  allowConductivity(
+    _component: Component,
+    _state: ComponentState,
+    _conductivityType: ENodeSourceType,
+    _pinId: string,
+    _otherPinId: string
+  ): boolean {
+    return true;  // Always conduct (simplified boolean model)
+  }
+
+  // Resistors don't change state based on pins in boolean model
+  onPinsChange(
+    _component: Component,
+    state: ComponentState,
+    _nodeStates: ReadonlyMap<UUID, NodeElectricalState>,
+    _targetTick: number
+  ): BehaviorResult {
+    return {
+      componentState: state,
+      hasChanged: false,
+      scheduledEvents: []
+    };
+  }
+
+  // Resistors don't respond to commands
+  onUserCommand(_component: Component, state: ComponentState, _command: UserCommand): BehaviorResult {
+    return {
+      componentState: state,
+      hasChanged: false,
+      scheduledEvents: []
+    };
+  }
+
+  // Resistors don't have events
+  onEventFiring(_component: Component, state: ComponentState, _event: ScheduledEvent): BehaviorResult {
+    return {
+      componentState: state,
+      hasChanged: false,
+      scheduledEvents: []
+    };
   }
 }
 
-// Register behavior globally before creating runners
-CircuitRunner.registerBehavior(
-  ComponentType.ANDGate,
-  new ANDGateBehavior()
-);
+// Register behavior in registry
+const registry = new BehaviorRegistry();
+registry.register(new ResistorBehavior());
+// ... register other behaviors
 
-// Now circuits with AND gates can be simulated
-const circuit = /* ... circuit with AND gate ... */;
-const runner = new CircuitRunner(circuit);
-runner.step();
+// Now circuits with resistors can be simulated
+const circuit = /* ... circuit with resistor ... */;
+const runner = new CircuitRunner(circuit, registry);
+runner.tick();
 ```
 
 ---
 
 ## Integration with CircuitEngine Facade
 
+**Note**: CircuitEngine facade integration is planned but not yet implemented. Currently, use CircuitRunner directly:
+
 ```typescript
-import { CircuitEngine } from 'simple-circuit-engine';
+import { Circuit, CircuitRunner, BehaviorRegistry } from 'simple-circuit-engine';
 
-const engine = new CircuitEngine(document.getElementById('canvas'));
+// Create circuit and registry
+const circuit = /* ... */;
+const registry = new BehaviorRegistry();
+// ... register behaviors
 
-// Load circuit (internally creates CircuitRunner)
-engine.loadCircuit(circuitData);
+// Create runner
+const runner = new CircuitRunner(circuit, registry);
 
-// Step simulation (delegates to CircuitRunner)
-engine.step();
+// Step simulation
+const result = runner.tick();
 
 // Get dirty elements for rendering
-const dirty = engine.getDirtyElements();
-// ... update Three.js scene based on dirty elements
+const dirty = runner.dirtyTracker.getDirtyElements();
+// ... update visualization based on dirty elements
 
-// Events propagate from CircuitRunner
-engine.on('tick', (tick) => {
-  console.log(`Tick ${tick}`);
-});
+console.log(`Tick ${result.endTick}`);
 ```
 
 ---
@@ -351,42 +306,43 @@ engine.on('tick', (tick) => {
 ### 1. Disable History for Production
 
 ```typescript
+const registry = new BehaviorRegistry();
+// ... register behaviors
+
 // Development (with debugging)
-const devRunner = new CircuitRunner(circuit, {
+const devRunner = new CircuitRunner(circuit, registry, {
   enableHistory: true,
   historyLimit: 1000
 });
 
-// Production (performance mode)
-const prodRunner = new CircuitRunner(circuit, {
-  enableHistory: false  // Default, saves memory
-});
+// Production (performance mode) - default
+const prodRunner = new CircuitRunner(circuit, registry);  // History disabled by default
 ```
 
 ### 2. Batch Steps for Fast-Forward
 
 ```typescript
 // Run 100 steps without rendering
-for (let i = 0; i < 100; i++) {
-  runner.step();
-}
+const results = runner.tickN(100);
 
-// Then update visuals once
-const dirty = runner.getDirtyElements();
+// Then update visuals once based on final state
+const dirty = runner.dirtyTracker.getDirtyElements();
 updateVisuals(dirty);
+
+console.log(`Executed ${results.length} ticks`);
 ```
 
 ### 3. Use Dirty Tracking to Avoid Full Re-renders
 
 ```typescript
 // ❌ BAD: Always re-render everything
-runner.step();
+runner.tick();
 rerenderEntireCircuit();
 
-// ✅ GOOD: Only update what changed
-runner.step();
-if (runner.hasDirtyElements()) {
-  const dirty = runner.getDirtyElements();
+// ✅ GOOD: Only update what changed (via result metrics)
+const result = runner.tick();
+if (result.componentUpdateCount > 0 || result.nodeUpdateCount > 0) {
+  const dirty = runner.dirtyTracker.getDirtyElements();
   updateOnlyDirtyElements(dirty);
 }
 ```
@@ -394,14 +350,17 @@ if (runner.hasDirtyElements()) {
 ### 4. Limit History Size for Long Simulations
 
 ```typescript
+const registry = new BehaviorRegistry();
+// ... register behaviors
+
 // For 10,000+ step simulations, limit history
-const runner = new CircuitRunner(circuit, {
+const runner = new CircuitRunner(circuit, registry, {
   enableHistory: true,
   historyLimit: 100  // Only keep last 100 steps
 });
 
-// Or disable history entirely
-const runner = new CircuitRunner(circuit);
+// Or disable history entirely (default)
+const runner = new CircuitRunner(circuit, registry);
 ```
 
 ---
@@ -426,31 +385,47 @@ const newRunner = new CircuitRunner(circuit);
 ### ❌ Forgetting to Step
 
 ```typescript
+const registry = new BehaviorRegistry();
+// ... register behaviors
+
 // ❌ State doesn't change without stepping
-const runner = new CircuitRunner(circuit);
-runner.executeCommand('toggle_switch', switchId);
+const runner = new CircuitRunner(circuit, registry);
+runner.submitCommand({
+  type: 'toggle_switch',
+  targetId: switchId,
+  scheduledAtTick: 0,
+  parameters: null
+});
 const ledState = runner.getComponentState(ledId);
-console.log(ledState?.state);  // Still "off" - command hasn't propagated!
+console.log(ledState?.state);  // Still "off" - command hasn't been processed!
 
 // ✅ Step to propagate changes
-runner.executeCommand('toggle_switch', switchId);
-runner.step();  // Now command takes effect
+runner.submitCommand({
+  type: 'toggle_switch',
+  targetId: switchId,
+  scheduledAtTick: 0,
+  parameters: null
+});
+runner.tick();  // Now command takes effect
 const ledState = runner.getComponentState(ledId);
-console.log(ledState?.state);  // "on"
+console.log(ledState?.state);  // Changed based on command
 ```
 
 ### ❌ Accessing History When Disabled
 
 ```typescript
-const runner = new CircuitRunner(circuit);  // History disabled by default
-runner.step();
-runner.step();
+const registry = new BehaviorRegistry();
+// ... register behaviors
 
-const pastState = runner.getStateAt(0);
+const runner = new CircuitRunner(circuit, registry);  // History disabled by default
+runner.tick();
+runner.tick();
+
+const pastState = runner.getStateAtTick(0);
 console.log(pastState);  // undefined - history not enabled!
 
 // ✅ Enable history if needed
-const runner = new CircuitRunner(circuit, { enableHistory: true });
+const runner = new CircuitRunner(circuit, registry, { enableHistory: true });
 ```
 
 ---
@@ -461,28 +436,31 @@ const runner = new CircuitRunner(circuit, { enableHistory: true });
 
 ```typescript
 import { describe, it, expect } from 'vitest';
-import { Circuit, CircuitRunner, ComponentType } from 'simple-circuit-engine';
+import { Circuit, CircuitRunner, BehaviorRegistry, BatteryBehavior, SmallLEDBehavior, ComponentType } from 'simple-circuit-engine';
 
 describe('CircuitRunner - Basic Simulation', () => {
   it('should power LED from battery', () => {
     // Arrange
     const circuit = new Circuit();
     const battery = circuit.addComponent(ComponentType.Battery, ...);
-    const led = circuit.addComponent(ComponentType.LED, ...);
-    circuit.addWire(battery.pins[0], led.pins[0]);
+    const led = circuit.addComponent(ComponentType.SmallLED, ...);
+    const wire1 = circuit.addWire(battery.pins[0], led.pins[0]);
+    const wire2 = circuit.addWire(battery.pins[1], led.pins[1]);
 
-    const runner = new CircuitRunner(circuit);
+    const registry = new BehaviorRegistry();
+    registry.registerAll([new BatteryBehavior(), new SmallLEDBehavior()]);
+    const runner = new CircuitRunner(circuit, registry);
 
     // Act
-    runner.step();
+    runner.tick();  // LED goes to "goingOn"
+    runner.tick();  // LED reaches "on"
 
     // Assert
     const ledState = runner.getComponentState(led.id);
     expect(ledState?.state).toBe('on');
 
-    const wireState = runner.getWireState(wire.id);
+    const wireState = runner.getWireState(wire1.id);
     expect(wireState?.hasVoltage).toBe(true);
-    expect(wireState?.hasCurrent).toBe(true);
   });
 });
 ```
@@ -496,19 +474,29 @@ describe('CircuitRunner - Switch Circuit', () => {
     const circuit = new Circuit();
     const battery = circuit.addComponent(ComponentType.Battery, ...);
     const switchComp = circuit.addComponent(ComponentType.Switch, ...);
-    const led = circuit.addComponent(ComponentType.LED, ...);
+    const led = circuit.addComponent(ComponentType.SmallLED, ...);
     circuit.addWire(battery.pins[0], switchComp.pins[0]);
     circuit.addWire(switchComp.pins[1], led.pins[0]);
+    circuit.addWire(battery.pins[1], led.pins[1]);
 
-    const runner = new CircuitRunner(circuit);
+    const registry = new BehaviorRegistry();
+    registry.registerAll([new BatteryBehavior(), new SwitchBehavior(), new SmallLEDBehavior()]);
+    const runner = new CircuitRunner(circuit, registry);
 
     // Act: Step with switch open
-    runner.step();
+    runner.tick();
     const ledStateOff = runner.getComponentState(led.id);
 
     // Act: Close switch
-    runner.executeCommand('toggle_switch', switchComp.id);
-    runner.step();
+    runner.submitCommand({
+      type: 'toggle_switch',
+      targetId: switchComp.id,
+      scheduledAtTick: runner.getCurrentTick(),
+      parameters: null
+    });
+    runner.tick();  // Switch closing
+    runner.tick();  // Switch closed, LED going on
+    runner.tick();  // LED on
     const ledStateOn = runner.getComponentState(led.id);
 
     // Assert
