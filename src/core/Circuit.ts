@@ -17,6 +17,7 @@ import { Wire } from './Wire.js';
 import type { ComponentType } from './types/ComponentType.js';
 import { getComponentTypeMetadata } from './types/ComponentType.js';
 import { Position3D } from '@/core/types/Position3D';
+import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
 
 /**
  * Circuit metadata placeholder
@@ -275,6 +276,10 @@ export class Circuit {
     this.components.delete(id);
   }
 
+  hasComponent(id: UUID): boolean {
+    return this.components.has(id);
+  }
+
   /**
    * Get a component by ID.
    *
@@ -312,6 +317,25 @@ export class Circuit {
    */
   getAllComponents(): Component[] {
     return Array.from(this.components.values());
+  }
+
+  getAllComponentsByType(type: ComponentType): Component[] {
+    const result: Component[] = [];
+    for (const component of this.components.values()) {
+      if (component.type === type) {
+        result.push(component);
+      }
+    }
+    return result;
+  }
+
+  getFirstComponentOfType(type: ComponentType): Component | undefined {
+    for (const component of this.components.values()) {
+      if (component.type === type) {
+        return component;
+      }
+    }
+    return undefined;
   }
 
   /**
@@ -617,54 +641,21 @@ export class Circuit {
   }
 
   /**
-   * Find all components connected to a specific component via wires.
+   * Find all components with pins among the provided enode IDs set.
    *
-   * Traverses: Component → pins → wires → other pins → other components
-   *
-   * @param componentId - Component UUID
-   * @returns Array of connected Components
+   * @param pinIds - Set of pins UUIDs
+   * @returns Set of components UUIDs
    */
-  getConnectedComponents(componentId: UUID): Component[] {
-    const component = this.components.get(componentId);
-    if (!component) {
-      return [];
-    }
+  getComponentsOfPins(pinIds: Set<UUID>): Set<UUID> {
+    const componentIds = new Set<UUID>();
 
-    const connectedIds = new Set<UUID>();
-
-    // For each pin of this component
-    for (const pinId of component.pins) {
-      const pinNode = this.enodes.get(pinId);
-      if (!pinNode) continue;
-
-      // For each wire connected to this pin
-      for (const wireId of pinNode.wires) {
-        const wire = this.wires.get(wireId);
-        if (!wire) continue;
-
-        // Get the other node on this wire
-        const otherNodeId = wire.node1 === pinId ? wire.node2 : wire.node1;
-        const otherNode = this.enodes.get(otherNodeId);
-
-        // If it's a pin node, add its component
-        if (otherNode && otherNode.type === ENodeType.Pin && otherNode.component) {
-          if (otherNode.component !== componentId) {
-            connectedIds.add(otherNode.component);
-          }
-        }
+    for (const enodeId of pinIds) {
+      const enode = this.enodes.get(enodeId);
+      if (!!enode?.component) {
+        componentIds.add(enode.component);
       }
     }
-
-    // Convert component IDs to Component objects
-    const connectedComponents: Component[] = [];
-    for (const id of connectedIds) {
-      const comp = this.components.get(id);
-      if (comp) {
-        connectedComponents.push(comp);
-      }
-    }
-
-    return connectedComponents;
+    return componentIds;
   }
 
   /**
@@ -731,6 +722,7 @@ export class Circuit {
           position: { x: number; y: number };
           rotation: number;
           pins: UUID[];
+          config: { [key: string]: string };
         }
       );
 
@@ -746,6 +738,7 @@ export class Circuit {
           component?: UUID;
           pinLabel?: string;
           position?: { x: number; y: number };
+          source?: ENodeSourceType;
         }
       );
 

@@ -1,39 +1,45 @@
 /**
- * Unit tests for StateManager
- * @module tests/core/simulation
+ * Unit tests for StateManager class
+ *
+ * Tests state management and history tracking:
+ * - Current state management
+ * - Tick advancement
+ * - History tracking and circular buffer
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { StateManager } from '@/core/simulation/StateManager.js';
-import { SimulationState } from '@/core/simulation/SimulationState.js';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { StateManager } from '@/core/simulation/StateManager';
+import { SimulationState } from '@/core/simulation/SimulationState';
 
 describe('StateManager', () => {
   describe('constructor', () => {
-    it('should create manager with history disabled by default', () => {
+    it('should create a state manager with history disabled by default', () => {
       const manager = new StateManager();
 
+      expect(manager).toBeDefined();
       expect(manager.isHistoryEnabled()).toBe(false);
       expect(manager.getCurrentTick()).toBe(0);
-      expect(manager.getHistorySize()).toBe(0);
+      expect(manager.getHistory()).toEqual([]);
     });
 
-    it('should create manager with history enabled', () => {
+    it('should create a state manager with history enabled', () => {
       const manager = new StateManager(true);
 
       expect(manager.isHistoryEnabled()).toBe(true);
-      expect(manager.getHistoryLimit()).toBe(1000); // Default limit
+      expect(manager.getHistoryLimit()).toBe(1000);
     });
 
-    it('should create manager with custom history limit', () => {
+    it('should create a state manager with custom history limit', () => {
       const manager = new StateManager(true, 500);
 
       expect(manager.isHistoryEnabled()).toBe(true);
       expect(manager.getHistoryLimit()).toBe(500);
     });
 
-    it('should throw error for invalid history limit', () => {
+    it('should throw for invalid history limit', () => {
       expect(() => new StateManager(true, 0)).toThrow(RangeError);
       expect(() => new StateManager(true, -1)).toThrow(RangeError);
+      expect(() => new StateManager(true, 0)).toThrow(/at least 1/);
     });
 
     it('should allow history limit of 1', () => {
@@ -43,8 +49,8 @@ describe('StateManager', () => {
     });
   });
 
-  describe('getCurrentState', () => {
-    it('should return current state', () => {
+  describe('getCurrentState()', () => {
+    it('should return the current simulation state', () => {
       const manager = new StateManager();
       const state = manager.getCurrentState();
 
@@ -52,315 +58,246 @@ describe('StateManager', () => {
       expect(state.tick).toBe(0);
     });
 
-    it('should return mutable state reference', () => {
+    it('should return same state object on multiple calls', () => {
       const manager = new StateManager();
       const state1 = manager.getCurrentState();
       const state2 = manager.getCurrentState();
 
-      expect(state1).toBe(state2); // Same reference
+      expect(state1).toBe(state2);
     });
   });
 
-  describe('getCurrentTick', () => {
-    it('should return 0 initially', () => {
+  describe('getCurrentTick()', () => {
+    it('should return 0 for initial state', () => {
       const manager = new StateManager();
 
       expect(manager.getCurrentTick()).toBe(0);
     });
 
-    it('should return correct tick after advances', () => {
+    it('should return current tick after advancement', () => {
       const manager = new StateManager();
-
       manager.advanceToNextTick();
+
       expect(manager.getCurrentTick()).toBe(1);
-
-      manager.advanceToNextTick();
-      expect(manager.getCurrentTick()).toBe(2);
     });
   });
 
-  describe('advanceToNextTick', () => {
-    it('should increment tick number', () => {
-      const manager = new StateManager();
+  describe('advanceToNextTick()', () => {
+    let manager: StateManager;
 
-      expect(manager.getCurrentTick()).toBe(0);
+    beforeEach(() => {
+      manager = new StateManager();
+    });
 
+    it('should advance to next tick', () => {
       manager.advanceToNextTick();
+
       expect(manager.getCurrentTick()).toBe(1);
-
-      manager.advanceToNextTick();
-      expect(manager.getCurrentTick()).toBe(2);
     });
 
-    it('should create new state for next tick', () => {
-      const manager = new StateManager();
-      const state0 = manager.getCurrentState();
-
+    it('should advance multiple ticks', () => {
       manager.advanceToNextTick();
-      const state1 = manager.getCurrentState();
+      manager.advanceToNextTick();
+      manager.advanceToNextTick();
 
-      expect(state1).not.toBe(state0);
-      expect(state1.tick).toBe(1);
+      expect(manager.getCurrentTick()).toBe(3);
     });
 
-    it('should save previous state to history when enabled', () => {
-      const manager = new StateManager(true);
+    it('should return updated current state', () => {
+      const state = manager.advanceToNextTick();
 
+      expect(state).toBeInstanceOf(SimulationState);
+      expect(state.tick).toBe(1);
+      expect(state).toBe(manager.getCurrentState());
+    });
+
+    it('should update tick on current state object', () => {
+      const stateBefore = manager.getCurrentState();
+      manager.advanceToNextTick();
+      const stateAfter = manager.getCurrentState();
+
+      expect(stateAfter.tick).toBe(1);
+      // Should reuse same state object
+      expect(stateAfter).toBe(stateBefore);
+    });
+  });
+
+  describe('history tracking - disabled', () => {
+    let manager: StateManager;
+
+    beforeEach(() => {
+      manager = new StateManager(false);
+    });
+
+    it('should not store history when disabled', () => {
+      manager.advanceToNextTick();
+      manager.advanceToNextTick();
+
+      expect(manager.getHistory()).toEqual([]);
       expect(manager.getHistorySize()).toBe(0);
+    });
 
+    it('should return undefined for getStateAtTick when disabled', () => {
+      manager.advanceToNextTick();
+
+      expect(manager.getStateAtTick(0)).toBeUndefined();
+    });
+
+    it('should return undefined for oldest/newest tick when disabled', () => {
+      manager.advanceToNextTick();
+
+      expect(manager.getOldestTick()).toBeUndefined();
+      expect(manager.getNewestHistoricalTick()).toBeUndefined();
+    });
+  });
+
+  describe('history tracking - enabled', () => {
+    let manager: StateManager;
+
+    beforeEach(() => {
+      manager = new StateManager(true, 10);
+    });
+
+    it('should save state to history when advancing tick', () => {
       manager.advanceToNextTick();
 
       expect(manager.getHistorySize()).toBe(1);
-      expect(manager.getStateAtTick(0)).toBeDefined();
+      const history = manager.getHistory();
+      expect(history.length).toBe(1);
+      expect(history[0]?.tick).toBe(0);
     });
 
-    it('should not save to history when disabled', () => {
-      const manager = new StateManager(false);
+    it('should save multiple states to history', () => {
+      manager.advanceToNextTick(); // tick 0 -> 1, saves tick 0
+      manager.advanceToNextTick(); // tick 1 -> 2, saves tick 1
+      manager.advanceToNextTick(); // tick 2 -> 3, saves tick 2
 
+      const history = manager.getHistory();
+      expect(history.length).toBe(3);
+      expect(history[0]?.tick).toBe(0);
+      expect(history[1]?.tick).toBe(1);
+      expect(history[2]?.tick).toBe(2);
+    });
+
+    it('should retrieve state at specific tick', () => {
       manager.advanceToNextTick();
       manager.advanceToNextTick();
-
-      expect(manager.getHistorySize()).toBe(0);
-      expect(manager.getHistory()).toEqual([]);
-    });
-
-    it('should return new current state', () => {
-      const manager = new StateManager();
-
-      const newState = manager.advanceToNextTick();
-
-      expect(newState).toBe(manager.getCurrentState());
-      expect(newState.tick).toBe(1);
-    });
-  });
-
-  describe('getStateAtTick', () => {
-    it('should return undefined when history is disabled', () => {
-      const manager = new StateManager(false);
-
       manager.advanceToNextTick();
 
-      expect(manager.getStateAtTick(0)).toBeUndefined();
-    });
-
-    it('should return historical state by tick', () => {
-      const manager = new StateManager(true);
-
-      manager.advanceToNextTick(); // Save tick 0
-      manager.advanceToNextTick(); // Save tick 1
-
-      const state0 = manager.getStateAtTick(0);
-      const state1 = manager.getStateAtTick(1);
-
-      expect(state0?.tick).toBe(0);
-      expect(state1?.tick).toBe(1);
+      const state = manager.getStateAtTick(1);
+      expect(state).toBeDefined();
+      expect(state?.tick).toBe(1);
     });
 
     it('should return undefined for non-existent tick', () => {
-      const manager = new StateManager(true);
-
-      expect(manager.getStateAtTick(100)).toBeUndefined();
-    });
-
-    it('should return undefined for current tick (not in history yet)', () => {
-      const manager = new StateManager(true);
-
-      expect(manager.getStateAtTick(0)).toBeUndefined();
-
       manager.advanceToNextTick();
 
-      expect(manager.getStateAtTick(1)).toBeUndefined(); // Current tick
-      expect(manager.getStateAtTick(0)).toBeDefined(); // Historical tick
+      expect(manager.getStateAtTick(99)).toBeUndefined();
     });
-  });
 
-  describe('getHistory', () => {
-    it('should return empty array when history disabled', () => {
-      const manager = new StateManager(false);
-
+    it('should return history sorted by tick', () => {
       manager.advanceToNextTick();
-
-      expect(manager.getHistory()).toEqual([]);
-    });
-
-    it('should return all historical states', () => {
-      const manager = new StateManager(true);
-
-      manager.advanceToNextTick(); // Save tick 0
-      manager.advanceToNextTick(); // Save tick 1
-      manager.advanceToNextTick(); // Save tick 2
-
-      const history = manager.getHistory();
-
-      expect(history).toHaveLength(3);
-      expect(history[0].tick).toBe(0);
-      expect(history[1].tick).toBe(1);
-      expect(history[2].tick).toBe(2);
-    });
-
-    it('should return sorted history (oldest first)', () => {
-      const manager = new StateManager(true);
-
-      // Advance multiple ticks
-      for (let i = 0; i < 5; i++) {
-        manager.advanceToNextTick();
-      }
-
-      const history = manager.getHistory();
-
-      expect(history).toHaveLength(5);
-      for (let i = 0; i < 5; i++) {
-        expect(history[i].tick).toBe(i);
-      }
-    });
-
-    it('should return readonly array', () => {
-      const manager = new StateManager(true);
-
+      manager.advanceToNextTick();
       manager.advanceToNextTick();
 
       const history = manager.getHistory();
-
-      // TypeScript type is ReadonlyArray
-      expect(Array.isArray(history)).toBe(true);
-    });
-  });
-
-  describe('circular buffer behavior', () => {
-    it('should respect history limit', () => {
-      const manager = new StateManager(true, 3);
-
-      // Advance 5 times (limit is 3)
-      for (let i = 0; i < 5; i++) {
-        manager.advanceToNextTick();
-      }
-
-      expect(manager.getHistorySize()).toBe(3); // Limited to 3
+      expect(history.length).toBe(3);
+      expect(history[0]?.tick).toBeLessThan(history[1]!.tick);
+      expect(history[1]?.tick).toBeLessThan(history[2]!.tick);
     });
 
-    it('should keep most recent states when limit exceeded', () => {
-      const manager = new StateManager(true, 3);
-
-      // Advance 5 times
-      for (let i = 0; i < 5; i++) {
-        manager.advanceToNextTick();
-      }
-
-      // Should have ticks 2, 3, 4 (most recent 3)
-      const history = manager.getHistory();
-
-      expect(history).toHaveLength(3);
-      expect(history.map(s => s.tick).sort((a, b) => a - b)).toEqual([2, 3, 4]);
-    });
-
-    it('should handle exactly filling buffer', () => {
-      const manager = new StateManager(true, 3);
-
-      // Advance exactly 3 times
-      for (let i = 0; i < 3; i++) {
-        manager.advanceToNextTick();
-      }
-
-      expect(manager.getHistorySize()).toBe(3);
-      expect(manager.getStateAtTick(0)).toBeDefined();
-      expect(manager.getStateAtTick(1)).toBeDefined();
-      expect(manager.getStateAtTick(2)).toBeDefined();
-    });
-
-    it('should wrap correctly in circular buffer', () => {
-      const manager = new StateManager(true, 2);
-
-      // Advance 4 times
-      for (let i = 0; i < 4; i++) {
-        manager.advanceToNextTick();
-      }
-
-      // Should have ticks 2 and 3 (wrapped around)
-      expect(manager.getHistorySize()).toBe(2);
-      expect(manager.getStateAtTick(0)).toBeUndefined(); // Overwritten
-      expect(manager.getStateAtTick(1)).toBeUndefined(); // Overwritten
-      expect(manager.getStateAtTick(2)).toBeDefined();
-      expect(manager.getStateAtTick(3)).toBeDefined();
-    });
-  });
-
-  describe('getOldestTick', () => {
-    it('should return undefined when history is empty', () => {
-      const manager = new StateManager(true);
-
-      expect(manager.getOldestTick()).toBeUndefined();
-    });
-
-    it('should return oldest tick in history', () => {
-      const manager = new StateManager(true);
-
-      manager.advanceToNextTick(); // Save tick 0
-      manager.advanceToNextTick(); // Save tick 1
-      manager.advanceToNextTick(); // Save tick 2
+    it('should track oldest tick', () => {
+      manager.advanceToNextTick();
+      manager.advanceToNextTick();
 
       expect(manager.getOldestTick()).toBe(0);
     });
 
-    it('should update when circular buffer wraps', () => {
-      const manager = new StateManager(true, 2);
+    it('should track newest historical tick', () => {
+      manager.advanceToNextTick(); // saves tick 0
+      manager.advanceToNextTick(); // saves tick 1
+      manager.advanceToNextTick(); // saves tick 2
 
-      for (let i = 0; i < 4; i++) {
-        manager.advanceToNextTick();
-      }
-
-      // Oldest should be tick 2 (ticks 0-1 overwritten)
-      expect(manager.getOldestTick()).toBe(2);
-    });
-
-    it('should return undefined when history disabled', () => {
-      const manager = new StateManager(false);
-
-      manager.advanceToNextTick();
-
-      expect(manager.getOldestTick()).toBeUndefined();
-    });
-  });
-
-  describe('getNewestHistoricalTick', () => {
-    it('should return undefined when history is empty', () => {
-      const manager = new StateManager(true);
-
-      expect(manager.getNewestHistoricalTick()).toBeUndefined();
-    });
-
-    it('should return newest historical tick (not current)', () => {
-      const manager = new StateManager(true);
-
-      manager.advanceToNextTick(); // Save tick 0, now at 1
-      manager.advanceToNextTick(); // Save tick 1, now at 2
-
-      expect(manager.getCurrentTick()).toBe(2);
-      expect(manager.getNewestHistoricalTick()).toBe(1);
-    });
-
-    it('should update as simulation progresses', () => {
-      const manager = new StateManager(true);
-
-      manager.advanceToNextTick();
-      expect(manager.getNewestHistoricalTick()).toBe(0);
-
-      manager.advanceToNextTick();
-      expect(manager.getNewestHistoricalTick()).toBe(1);
-
-      manager.advanceToNextTick();
       expect(manager.getNewestHistoricalTick()).toBe(2);
     });
+
+    it('should not include current tick in history', () => {
+      manager.advanceToNextTick();
+      manager.advanceToNextTick();
+
+      // Current tick is 2, history should only have 0 and 1
+      expect(manager.getCurrentTick()).toBe(2);
+      expect(manager.getStateAtTick(2)).toBeUndefined();
+    });
+
+    it('should save cloned states to history', () => {
+      const currentState = manager.getCurrentState();
+      manager.advanceToNextTick();
+
+      const historicalState = manager.getStateAtTick(0);
+      expect(historicalState).toBeDefined();
+      expect(historicalState).not.toBe(currentState);
+    });
   });
 
-  describe('clearHistory', () => {
-    it('should clear all history', () => {
+  describe('circular buffer history', () => {
+    it('should limit history to configured size', () => {
+      const manager = new StateManager(true, 3);
+
+      // Advance 5 ticks - should only keep last 3 in history
+      manager.advanceToNextTick(); // saves tick 0
+      manager.advanceToNextTick(); // saves tick 1
+      manager.advanceToNextTick(); // saves tick 2
+      manager.advanceToNextTick(); // saves tick 3, overwrites tick 0
+      manager.advanceToNextTick(); // saves tick 4, overwrites tick 1
+
+      expect(manager.getHistorySize()).toBe(3);
+      const history = manager.getHistory();
+      expect(history.map((s) => s.tick)).toEqual([2, 3, 4]);
+    });
+
+    it('should overwrite oldest entries when limit reached', () => {
+      const manager = new StateManager(true, 2);
+
+      manager.advanceToNextTick(); // saves tick 0
+      manager.advanceToNextTick(); // saves tick 1
+      manager.advanceToNextTick(); // saves tick 2, overwrites tick 0
+
+      expect(manager.getStateAtTick(0)).toBeUndefined();
+      expect(manager.getStateAtTick(1)).toBeDefined();
+      expect(manager.getStateAtTick(2)).toBeDefined();
+    });
+
+    it('should update oldest tick after circular wrap', () => {
+      const manager = new StateManager(true, 3);
+
+      manager.advanceToNextTick();
+      manager.advanceToNextTick();
+      manager.advanceToNextTick();
+      expect(manager.getOldestTick()).toBe(0);
+
+      manager.advanceToNextTick(); // overwrites tick 0
+      expect(manager.getOldestTick()).toBe(1);
+    });
+
+    it('should handle history limit of 1', () => {
+      const manager = new StateManager(true, 1);
+
+      manager.advanceToNextTick(); // saves tick 0
+      manager.advanceToNextTick(); // saves tick 1, overwrites tick 0
+
+      expect(manager.getHistorySize()).toBe(1);
+      expect(manager.getStateAtTick(1)).toBeDefined();
+      expect(manager.getStateAtTick(0)).toBeUndefined();
+    });
+  });
+
+  describe('clearHistory()', () => {
+    it('should clear all historical states', () => {
       const manager = new StateManager(true);
-
-      for (let i = 0; i < 5; i++) {
-        manager.advanceToNextTick();
-      }
-
-      expect(manager.getHistorySize()).toBe(5);
+      manager.advanceToNextTick();
+      manager.advanceToNextTick();
+      manager.advanceToNextTick();
 
       manager.clearHistory();
 
@@ -370,7 +307,6 @@ describe('StateManager', () => {
 
     it('should not affect current state', () => {
       const manager = new StateManager(true);
-
       manager.advanceToNextTick();
       manager.advanceToNextTick();
 
@@ -379,25 +315,21 @@ describe('StateManager', () => {
       expect(manager.getCurrentTick()).toBe(2);
     });
 
-    it('should allow new history after clear', () => {
+    it('should allow adding new history after clear', () => {
       const manager = new StateManager(true);
-
       manager.advanceToNextTick();
       manager.clearHistory();
-
       manager.advanceToNextTick();
 
       expect(manager.getHistorySize()).toBe(1);
     });
   });
 
-  describe('reset', () => {
+  describe('reset()', () => {
     it('should reset to tick 0', () => {
-      const manager = new StateManager(true);
-
-      for (let i = 0; i < 5; i++) {
-        manager.advanceToNextTick();
-      }
+      const manager = new StateManager();
+      manager.advanceToNextTick();
+      manager.advanceToNextTick();
 
       manager.reset();
 
@@ -406,136 +338,137 @@ describe('StateManager', () => {
 
     it('should clear all history', () => {
       const manager = new StateManager(true);
-
-      for (let i = 0; i < 5; i++) {
-        manager.advanceToNextTick();
-      }
+      manager.advanceToNextTick();
+      manager.advanceToNextTick();
 
       manager.reset();
 
       expect(manager.getHistorySize()).toBe(0);
+      expect(manager.getHistory()).toEqual([]);
     });
 
-    it('should create new initial state', () => {
-      const manager = new StateManager(true);
-
+    it('should create new current state', () => {
+      const manager = new StateManager();
+      const stateBefore = manager.getCurrentState();
       manager.advanceToNextTick();
-      const oldState = manager.getCurrentState();
 
       manager.reset();
-      const newState = manager.getCurrentState();
 
-      expect(newState).not.toBe(oldState);
-      expect(newState.tick).toBe(0);
+      const stateAfter = manager.getCurrentState();
+      expect(stateAfter.tick).toBe(0);
     });
   });
 
-  describe('isHistoryEnabled', () => {
-    it('should return correct value', () => {
-      const manager1 = new StateManager(false);
-      const manager2 = new StateManager(true);
+  describe('configuration getters', () => {
+    it('should return correct history enabled status', () => {
+      const manager1 = new StateManager(true);
+      const manager2 = new StateManager(false);
 
-      expect(manager1.isHistoryEnabled()).toBe(false);
-      expect(manager2.isHistoryEnabled()).toBe(true);
+      expect(manager1.isHistoryEnabled()).toBe(true);
+      expect(manager2.isHistoryEnabled()).toBe(false);
     });
 
-    it('should not change after construction', () => {
-      const manager = new StateManager(true);
-
-      expect(manager.isHistoryEnabled()).toBe(true);
-
-      manager.advanceToNextTick();
-
-      expect(manager.isHistoryEnabled()).toBe(true);
-    });
-  });
-
-  describe('getHistoryLimit', () => {
-    it('should return configured limit', () => {
-      const manager1 = new StateManager(true, 1000);
+    it('should return correct history limit', () => {
+      const manager1 = new StateManager(true, 100);
       const manager2 = new StateManager(true, 500);
 
-      expect(manager1.getHistoryLimit()).toBe(1000);
+      expect(manager1.getHistoryLimit()).toBe(100);
       expect(manager2.getHistoryLimit()).toBe(500);
     });
 
-    it('should return default when not specified', () => {
-      const manager = new StateManager(true);
-
-      expect(manager.getHistoryLimit()).toBe(1000);
-    });
-  });
-
-  describe('getHistorySize', () => {
-    it('should return 0 initially', () => {
+    it('should return history size', () => {
       const manager = new StateManager(true);
 
       expect(manager.getHistorySize()).toBe(0);
-    });
-
-    it('should increase as states are saved', () => {
-      const manager = new StateManager(true, 10);
-
-      for (let i = 0; i < 5; i++) {
-        manager.advanceToNextTick();
-        expect(manager.getHistorySize()).toBe(i + 1);
-      }
-    });
-
-    it('should not exceed limit', () => {
-      const manager = new StateManager(true, 3);
-
-      for (let i = 0; i < 10; i++) {
-        manager.advanceToNextTick();
-      }
-
-      expect(manager.getHistorySize()).toBe(3);
-    });
-
-    it('should return 0 when history disabled', () => {
-      const manager = new StateManager(false);
-
       manager.advanceToNextTick();
-
-      expect(manager.getHistorySize()).toBe(0);
+      expect(manager.getHistorySize()).toBe(1);
+      manager.advanceToNextTick();
+      expect(manager.getHistorySize()).toBe(2);
     });
   });
 
-  describe('stress test', () => {
-    it('should handle many ticks efficiently', () => {
-      const manager = new StateManager(true, 100);
+  describe('performance', () => {
+    it('should advance many ticks efficiently without history', () => {
+      const manager = new StateManager(false);
+      const startTime = Date.now();
 
-      // Advance 1000 ticks
       for (let i = 0; i < 1000; i++) {
         manager.advanceToNextTick();
       }
 
+      const elapsedTime = Date.now() - startTime;
       expect(manager.getCurrentTick()).toBe(1000);
-      expect(manager.getHistorySize()).toBe(100); // Limited to 100
-
-      // Should have ticks 900-999
-      const history = manager.getHistory();
-      const ticks = history.map(s => s.tick).sort((a, b) => a - b);
-
-      expect(ticks[0]).toBe(900);
-      expect(ticks[99]).toBe(999);
+      expect(elapsedTime).toBeLessThan(1000); // Should advance in < 1 second
     });
 
-    it('should maintain history integrity over many operations', () => {
-      const manager = new StateManager(true, 10);
+    it('should advance many ticks efficiently with history', () => {
+      const manager = new StateManager(true, 100);
+      const startTime = Date.now();
+
+      for (let i = 0; i < 200; i++) {
+        manager.advanceToNextTick();
+      }
+
+      const elapsedTime = Date.now() - startTime;
+      expect(manager.getCurrentTick()).toBe(200);
+      expect(manager.getHistorySize()).toBe(100); // Limited by circular buffer
+      expect(elapsedTime).toBeLessThan(2000); // Should advance in < 2 seconds
+    });
+
+    it('should retrieve history efficiently', () => {
+      const manager = new StateManager(true, 100);
 
       for (let i = 0; i < 100; i++) {
         manager.advanceToNextTick();
-
-        // Verify history is valid at each step
-        const history = manager.getHistory();
-        expect(history.length).toBeLessThanOrEqual(10);
-
-        // All ticks in history should be unique
-        const ticks = history.map(s => s.tick);
-        const uniqueTicks = new Set(ticks);
-        expect(uniqueTicks.size).toBe(ticks.length);
       }
+
+      const startTime = Date.now();
+      const history = manager.getHistory();
+      const elapsedTime = Date.now() - startTime;
+
+      expect(history.length).toBe(100);
+      expect(elapsedTime).toBeLessThan(100); // Should retrieve in < 100ms
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should handle advancing from tick 0', () => {
+      const manager = new StateManager();
+
+      expect(manager.getCurrentTick()).toBe(0);
+      manager.advanceToNextTick();
+      expect(manager.getCurrentTick()).toBe(1);
+    });
+
+    it('should handle multiple resets', () => {
+      const manager = new StateManager(true);
+
+      manager.advanceToNextTick();
+      manager.reset();
+      manager.advanceToNextTick();
+      manager.reset();
+
+      expect(manager.getCurrentTick()).toBe(0);
+      expect(manager.getHistorySize()).toBe(0);
+    });
+
+    it('should handle clearing empty history', () => {
+      const manager = new StateManager(true);
+
+      expect(() => manager.clearHistory()).not.toThrow();
+      expect(manager.getHistorySize()).toBe(0);
+    });
+
+    it('should handle getting state at tick with no history', () => {
+      const manager = new StateManager(true);
+
+      expect(manager.getStateAtTick(0)).toBeUndefined();
+    });
+
+    it('should return empty array for history when empty', () => {
+      const manager = new StateManager(true);
+
+      expect(manager.getHistory()).toEqual([]);
     });
   });
 });

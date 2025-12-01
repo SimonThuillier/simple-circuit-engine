@@ -3,63 +3,88 @@
  * @module core/simulation/behaviors
  */
 
-import type { ComponentBehavior, BehaviorContext, BehaviorResult } from './ComponentBehavior.js';
+import type { UUID } from '@/core/types/Identifier.js';
+import type { ComponentBehavior, BehaviorResult } from './ComponentBehavior.js';
 import type { Component } from '@/core/Component.js';
 import { BatteryState } from '../states/BatteryState.js';
 import type { ComponentState } from '../states/ComponentState.js';
+import { ComponentType } from '@/core/types/ComponentType';
+import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
+import type { NodeElectricalState, ScheduledEvent, UserCommand } from '@/core/simulation';
 
-/**
- * Behavior implementation for Battery components.
- * Batteries are always-on voltage sources that provide voltage to their positive pin.
- *
- * Pin configuration:
- * - Pin 0 (index 0): Positive terminal (outputs voltage)
- * - Pin 1 (index 1): Negative terminal (ground reference)
- *
- * @public
- */
 export class BatteryBehavior implements ComponentBehavior {
-  readonly componentType = 'battery';
-
-  /**
-   * Evaluate battery behavior.
-   * Batteries always output voltage on the positive pin.
-   *
-   * @param component - The battery component
-   * @param _context - Simulation context (unused for batteries)
-   * @returns Result with positive pin set to hasVoltage=true
-   */
-  evaluate(component: Component, _context: BehaviorContext): BehaviorResult {
-    // Battery is always on, providing voltage to positive pin
-    const outputPinStates = new Map();
-
-    if (component.pins.length >= 2) {
-      const positivePin = component.pins[0]; // First pin is positive
-      outputPinStates.set(positivePin.id, {
-        hasVoltage: true,
-        hasCurrent: false // Current determined by circuit topology
-      });
-    }
-
-    return {
-      componentState: null, // Battery state never changes
-      outputPinStates,
-      scheduledEvents: []
-    };
-  }
+  readonly componentType = ComponentType.Battery;
 
   /**
    * Create initial state for a battery.
    *
-   * @param component - The battery component
-   * @returns Initial battery state (always "on")
+   * @param component - The Battery component
+   * @returns Battery Initial state (always active and delivering voltage)
    */
   createInitialState(component: Component): ComponentState {
-    // Extract voltage from component config if available
-    const voltage = component.config.voltage
-      ? Number(component.config.voltage)
-      : 9;
+    if (component.type !== ComponentType.Battery) {
+      throw new Error(`Invalid component type for BatteryBehavior: ${component.type}`);
+    }
+    return new BatteryState(component.id);
+  }
 
-    return new BatteryState(component.id, voltage);
+  allowConductivity(
+    _component: Component,
+    _state: ComponentState,
+    _conductivityType: ENodeSourceType,
+    _pinId: string,
+    _otherPinId: string
+  ): boolean {
+    return false;
+  }
+
+  /**
+   * Batteries are always on, and their pins are locked so this is more of a decorative function
+   * @param component
+   * @param componentState
+   * @param nodeStates
+   * @param _targetTick
+   */
+  onPinsChange(
+    component: Component,
+    componentState: ComponentState,
+    nodeStates: ReadonlyMap<UUID, NodeElectricalState>,
+    _targetTick: number
+  ): BehaviorResult {
+    const pinStates: Map<string, NodeElectricalState> = new Map();
+
+    for (const pinId in component.pins) {
+      pinStates.set(component.getPinLabel(pinId)!, nodeStates.get(pinId as UUID)!);
+    }
+
+    return {
+      componentState: componentState,
+      hasChanged: false,
+      scheduledEvents: [],
+    };
+  }
+
+  onUserCommand(
+    _component: Component,
+    state: ComponentState,
+    _command: UserCommand
+  ): BehaviorResult {
+    return {
+      componentState: state,
+      hasChanged: false,
+      scheduledEvents: [],
+    };
+  }
+
+  onEventFiring(
+    _component: Component,
+    state: ComponentState,
+    _event: ScheduledEvent
+  ): BehaviorResult {
+    return {
+      componentState: state,
+      hasChanged: false,
+      scheduledEvents: [],
+    };
   }
 }

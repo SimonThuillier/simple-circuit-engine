@@ -4,10 +4,8 @@
  */
 
 import type { Circuit } from '@/core/Circuit.js';
-import type { Component } from '@/core/Component.js';
 import type { RunnerOptions } from './types/RunnerOptions.js';
 import type { UserCommand } from './types/UserCommand.js';
-import type { ScheduledEvent } from './types/ScheduledEvent.js';
 import type { NodeElectricalState } from './states/NodeElectricalState.js';
 import type { ComponentState } from './states/ComponentState.js';
 import { SimulationState } from './SimulationState.js';
@@ -16,6 +14,13 @@ import { EventQueue } from './EventQueue.js';
 import { DirtyTracker } from './DirtyTracker.js';
 import { BehaviorRegistry } from './behaviors/BehaviorRegistry.js';
 import type { UUID } from '@/core/types/Identifier.js';
+import { ENodeSourceType } from '@/core/types/ENodeSourceType';
+import type { ReachabilityResult } from '@/core/simulation/types/ReachabilityResult';
+import type { ENode } from '@/core/ENode';
+import { ENodeType } from '@/core/types/ENodeType';
+import type { Component } from '@/core/Component';
+import type { BehaviorResult } from '@/core/simulation/behaviors/ComponentBehavior';
+import type { RunnerResult } from '@/core/simulation/types/RunnerResult';
 
 /**
  * Main circuit simulation engine.
@@ -31,11 +36,12 @@ import type { UUID } from '@/core/types/Identifier.js';
  * @public
  */
 export class CircuitRunner {
-  private readonly circuit: Circuit;
-  private readonly stateManager: StateManager;
-  private readonly eventQueue: EventQueue;
-  private readonly dirtyTracker: DirtyTracker;
-  private readonly behaviorRegistry: BehaviorRegistry;
+  public readonly circuit: Circuit;
+  public readonly stateManager: StateManager;
+  public readonly eventQueue: EventQueue;
+  public readonly commands: Map<UUID, UserCommand>;
+  public readonly dirtyTracker: DirtyTracker;
+  public readonly behaviorRegistry: BehaviorRegistry;
 
   /**
    * Create a new circuit simulation runner.
@@ -44,11 +50,7 @@ export class CircuitRunner {
    * @param behaviorRegistry - Registry of component behaviors
    * @param options - Simulation options (history settings)
    */
-  constructor(
-    circuit: Circuit,
-    behaviorRegistry: BehaviorRegistry,
-    options: RunnerOptions = {}
-  ) {
+  constructor(circuit: Circuit, behaviorRegistry: BehaviorRegistry, options: RunnerOptions = {}) {
     this.circuit = circuit;
     this.behaviorRegistry = behaviorRegistry;
 
@@ -57,6 +59,7 @@ export class CircuitRunner {
 
     this.stateManager = new StateManager(enableHistory, historyLimit);
     this.eventQueue = new EventQueue();
+    this.commands = new Map<UUID, UserCommand>();
     this.dirtyTracker = new DirtyTracker();
 
     // Initialize simulation state
@@ -65,43 +68,59 @@ export class CircuitRunner {
 
   /**
    * Execute one simulation tick.
-   * Processes scheduled events, evaluates dirty components, and propagates state.
+   * Process scheduled events, update state (electrical propagation), process user commands and advance tick.
    *
-   * @returns Current tick number after execution
+   * @returns the result of the tick execution
    */
-  tick(): number {
+  tick(): RunnerResult {
+    const eventQueueStartSize = this.eventQueue.size();
     const currentTick = this.stateManager.getCurrentTick();
-    const currentState = this.stateManager.getCurrentState();
 
-    // 1. Process scheduled events ready at this tick
-    const readyEvents = this.eventQueue.getReadyEvents(currentTick);
-    this.applyScheduledEvents(readyEvents, currentState);
+    // 1. Process scheduled events ready at this tick end
+    const eventResults = this.applyReadyEvents(currentTick + 1);
 
-    // 2. Evaluate all dirty components (or all components on first tick)
-    this.evaluateComponents(currentState, currentTick);
+    // 2. Update state
+    const result = this.updateState(currentTick + 1);
+    result.firedEventCount = eventResults.length;
 
-    // 3. Advance to next tick
+    // 3. Process user commands scheduled for this tick
+    const userCommandResults = this.processCommands();
+    result.processedCommandCount = userCommandResults.length;
+
+    result.scheduledEventCount =
+      this.eventQueue.size() + result.firedEventCount - eventQueueStartSize;
+
+    // 3H. due to orchestration difficulties this hotfix handles component dirty tracking
+    for (const eventResult of eventResults) {
+      if (eventResult.hasChanged) {
+        this.dirtyTracker.markComponentDirty(eventResult.componentState.componentId);
+      }
+    }
+    result.componentUpdateCount = this.dirtyTracker.getDirtyComponentCount();
+
+    // 4. Advance to next tick
     this.stateManager.advanceToNextTick();
-
-    return this.stateManager.getCurrentTick();
+    result.endTick = this.stateManager.getCurrentTick();
+    return result;
   }
 
   /**
    * Execute multiple simulation ticks.
    *
    * @param count - Number of ticks to execute
-   * @returns Final tick number
+   * @returns an array of RunnerResult for each tick executed
    */
-  tickN(count: number): number {
+  tickN(count: number): RunnerResult[] {
     if (count < 1) {
       throw new RangeError(`Tick count must be at least 1 (got ${count})`);
     }
 
+    const results = [];
     for (let i = 0; i < count; i++) {
-      this.tick();
+      results.push(this.tick());
     }
 
-    return this.stateManager.getCurrentTick();
+    return results;
   }
 
   /**
@@ -185,25 +204,67 @@ export class CircuitRunner {
   }
 
   /**
-   * Schedule a user command to execute at a future tick.
+   * Submit a user command to execute at the next tick.
+   * only one command per component per tick is allowed.
+   * Subsequent commands for the same component at this tick will be discarded.
    *
-   * @param command - User command to schedule
+   * @param command - User command to submit
    */
-  scheduleCommand(_command: UserCommand): void {
-    // TODO: Implement user command handling
-    // For MVP, we'll skip this and implement in later phase
-    throw new Error('User commands not yet implemented');
+  submitCommand(command: UserCommand): boolean {
+    if (!this.circuit.hasComponent(command.targetId)) {
+      throw Error(`Cannot submit command for unknown component ID '${command.targetId}'`);
+    }
+    if (this.commands.has(command.targetId)) {
+      return false; // currently we only allow one command per component and tick
+    }
+    command.scheduledAtTick = this.getCurrentTick();
+    this.commands.set(command.targetId, command);
+    return true;
+  }
+
+  /**
+   * Process all scheduled user commands.
+   * Mark changed components as Dirty and enqueue consequent scheduled events
+   * Finally clears command queue after processing.
+   *
+   * @returns Array of BehaviorResult for each processed command
+   */
+  private processCommands(): BehaviorResult[] {
+    const currentState = this.stateManager.getCurrentState();
+
+    const results: BehaviorResult[] = [];
+
+    for (const command of this.commands.values()) {
+      const component = this.circuit.getComponent(command.targetId) as Component;
+      const behavior = this.behaviorRegistry.get(component.type)!;
+
+      const result = behavior.onUserCommand(
+        component,
+        currentState.componentStates.get(component.id)!,
+        command
+      );
+      for (const event of result.scheduledEvents) {
+        this.eventQueue.schedule(event);
+      }
+      results.push(result);
+      if (result.hasChanged) {
+        this.dirtyTracker.markComponentDirty(component.id);
+      }
+    }
+    this.commands.clear();
+
+    return results;
   }
 
   /**
    * Initialize simulation state for all components.
    * Called on construction and reset.
    */
-  private initializeState(): void {
+  private initializeState(): RunnerResult {
     const currentState = this.stateManager.getCurrentState();
 
     // Initialize component states using behaviors
-    for (const component of this.circuit.components) {
+    for (const component of this.circuit.getAllComponents()) {
       const behavior = this.behaviorRegistry.get(component.type);
 
       if (!behavior) {
@@ -214,104 +275,301 @@ export class CircuitRunner {
       }
 
       const initialState = behavior.createInitialState(component);
-      (currentState.componentStates as Map<UUID, ComponentState>).set(
-        component.id,
-        initialState
-      );
+      (currentState.componentStates as Map<UUID, ComponentState>).set(component.id, initialState);
 
       // Mark component as dirty for initial evaluation
       this.dirtyTracker.markComponentDirty(component.id);
     }
 
-    // Initialize all ENode and Wire states to off
-    for (const enode of this.circuit.enodes) {
+    // Initialize all ENode initial states based on their topology source type
+    for (const enode of this.circuit.getAllENodes()) {
       (currentState.nodeStates as Map<UUID, NodeElectricalState>).set(enode.id, {
+        hasVoltage: enode.source === ENodeSourceType.Voltage,
+        hasCurrent: enode.source === ENodeSourceType.Current,
+        locked: !!enode.source,
+      });
+    }
+    // Initialize all Wire states unlocked without voltage/current
+    for (const wire of this.circuit.getAllWires()) {
+      (currentState.wireStates as Map<UUID, NodeElectricalState>).set(wire.id, {
         hasVoltage: false,
-        hasCurrent: false
+        hasCurrent: false,
+        locked: false,
       });
     }
 
-    for (const wire of this.circuit.wires) {
-      (currentState.wireStates as Map<UUID, NodeElectricalState>).set(wire.id, {
-        hasVoltage: false,
-        hasCurrent: false
-      });
-    }
+    const result = this.updateState(0);
+
+    // at initialization everything is dirty
+    this.dirtyTracker.setDirtyComponents(
+      new Set([...this.circuit.getAllComponents().map((c) => c.id)])
+    );
+    this.dirtyTracker.setDirtyEnodes(new Set([...this.circuit.getAllENodes().map((n) => n.id)]));
+    this.dirtyTracker.setDirtyWires(new Set([...this.circuit.getAllWires().map((w) => w.id)]));
+
+    return result;
   }
 
   /**
-   * Apply scheduled events to current state.
-   *
-   * @param events - Events to apply
-   * @param state - Current simulation state
+   * Core method that orchestrates nodes, wires and components state updates
+   * enqueue resulting events and update dirty tracker accordingly
+   * @param targetTick - Tick at which to perform the update
    */
-  private applyScheduledEvents(events: ScheduledEvent[], state: SimulationState): void {
-    for (const event of events) {
-      if (event.targetType === 'component') {
-        const currentCompState = state.componentStates.get(event.targetId);
-        if (currentCompState) {
-          // Merge newState into current state
-          Object.assign(currentCompState, event.newState);
-          this.dirtyTracker.markComponentDirty(event.targetId);
+  private updateState(targetTick: number): RunnerResult {
+    const currentState = this.stateManager.getCurrentState();
+
+    const { updatedNodes, updatedWires } = this.propagateConductivity();
+    const componentsToAssess = this.circuit.getComponentsOfPins(updatedNodes);
+    const results: BehaviorResult[] = [];
+
+    const updatedComponents = new Set<UUID>();
+    let eventCount = 0;
+
+    for (const componentId of componentsToAssess) {
+      const component = this.circuit.getComponent(componentId) as Component;
+      const behavior = this.behaviorRegistry.get(component.type);
+      if (!behavior) {
+        console.warn(
+          `No behavior registered for component type '${component.type}' (${component.id})`
+        );
+        continue;
+      }
+      const res = behavior.onPinsChange(
+        component,
+        currentState.componentStates.get(componentId)!,
+        currentState.nodeStates,
+        targetTick
+      );
+      if (res.hasChanged) {
+        updatedComponents.add(componentId);
+        results.push(res);
+      }
+      for (const event of res.scheduledEvents) {
+        this.eventQueue.schedule(event);
+        eventCount++;
+      }
+    }
+
+    this.dirtyTracker.setDirtyComponents(updatedComponents);
+    this.dirtyTracker.setDirtyEnodes(updatedNodes);
+    this.dirtyTracker.setDirtyWires(updatedWires);
+
+    return {
+      startTick: this.getCurrentTick(),
+      endTick: this.getCurrentTick(),
+      componentUpdateCount: updatedComponents.size,
+      nodeUpdateCount: updatedNodes.size,
+      wireUpdateCount: updatedWires.size,
+      processedCommandCount: 0,
+      scheduledEventCount: eventCount,
+      firedEventCount: 0,
+    };
+  }
+
+  /**
+   * runs BFS (Breadth First Search) on voltage and current conductivity
+   * to propagate voltage/current conductivity
+   * and update enodes/wires electrical states throughout the circuit
+   * update is performed in place and updated nodes and wires returned
+   */
+  private propagateConductivity(): { updatedNodes: Set<UUID>; updatedWires: Set<UUID> } {
+    const currentState = this.stateManager.getCurrentState();
+
+    const updateConductivity = (
+      type: ENodeSourceType
+    ): {
+      updatedNodes: Set<UUID>;
+      updatedWires: Set<UUID>;
+    } => {
+      const updatedNodes = new Set<UUID>();
+      const updatedWires = new Set<UUID>();
+
+      const sources = this.circuit
+        .getAllENodes()
+        .filter((node) => node.source == type)
+        .map((node) => node.id);
+      const uncheckedNodes = new Set([
+        ...this.circuit
+          .getAllENodes()
+          .filter((node) => !node.source)
+          .map((node) => node.id),
+      ]); // pool of all other nodes whose state is to assess
+      const uncheckedWires = new Set([...this.circuit.getAllWires().map((wire) => wire.id)]); // pool of all other wires whose state is to assess
+
+      const { nodes, wires } = this.computeReachability(
+        type,
+        sources,
+        currentState.componentStates
+      );
+
+      const attribute = type == ENodeSourceType.Voltage ? 'hasVoltage' : 'hasCurrent';
+
+      for (const nodeId of nodes) {
+        const nodeState = currentState.nodeStates.get(nodeId);
+        if (nodeState && !nodeState.locked) {
+          if (!nodeState[attribute]) {
+            nodeState[attribute] = true;
+            updatedNodes.add(nodeId);
+          }
+          uncheckedNodes.delete(nodeId);
         }
-      } else if (event.targetType === 'enode') {
-        const currentNodeState = state.nodeStates.get(event.targetId);
-        if (currentNodeState) {
-          Object.assign(currentNodeState, event.newState);
-          this.dirtyTracker.markEnodeDirty(event.targetId);
+      }
+      // at this point all uncheckedNodes can be considered without conductivity : hence they are updated if necessary
+      for (const nodeId of uncheckedNodes) {
+        const nodeState = currentState.nodeStates.get(nodeId);
+        if (nodeState && !nodeState.locked) {
+          if (nodeState[attribute]) {
+            nodeState[attribute] = false;
+            updatedNodes.add(nodeId);
+          }
         }
-      } else if (event.targetType === 'wire') {
-        const currentWireState = state.wireStates.get(event.targetId);
-        if (currentWireState) {
-          Object.assign(currentWireState, event.newState);
-          this.dirtyTracker.markWireDirty(event.targetId);
+      }
+
+      for (const wireId of wires) {
+        const wireState = currentState.wireStates.get(wireId);
+        if (!!wireState) {
+          if (!wireState[attribute]) {
+            wireState[attribute] = true;
+            updatedWires.add(wireId);
+          }
+          uncheckedWires.delete(wireId);
+        }
+      }
+      // at this point all uncheckedWires can be considered without conductivity : hence they are updated if necessary
+      for (const wireId of uncheckedWires) {
+        const wireState = currentState.wireStates.get(wireId);
+        if (!!wireState) {
+          if (wireState[attribute]) {
+            wireState[attribute] = false;
+            updatedWires.add(wireId);
+          }
+        }
+      }
+
+      return { updatedNodes, updatedWires };
+    };
+
+    const { updatedNodes: voltageUpdateNodes, updatedWires: voltageUpdatedWires } =
+      updateConductivity(ENodeSourceType.Voltage);
+    const { updatedNodes: currentUpdateNodes, updatedWires: currentUpdatedWires } =
+      updateConductivity(ENodeSourceType.Current);
+
+    return {
+      updatedNodes: new Set([...voltageUpdateNodes, ...currentUpdateNodes]) as Set<UUID>,
+      updatedWires: new Set([...voltageUpdatedWires, ...currentUpdatedWires]) as Set<UUID>,
+    };
+  }
+
+  /**
+   * given a conductivity conductivityType and a set of seed nodes, compute all reachable nodes and wires
+   * depends on componentStates to determine if conductivity is allowed through components
+   * this method doesn't mutate any state, it's a pure function
+   * @param conductivityType
+   * @param seeds
+   * @param componentStates
+   */
+  private computeReachability(
+    conductivityType: ENodeSourceType,
+    seeds: UUID[],
+    componentStates: ReadonlyMap<UUID, ComponentState>
+  ): ReachabilityResult {
+    const reachableNodes = new Set<UUID>();
+    const reachableWires = new Set<UUID>();
+    const frontier: UUID[] = [];
+
+    // Seed the frontier
+    for (const seed of seeds) {
+      frontier.push(seed);
+      reachableNodes.add(seed);
+    }
+
+    while (frontier.length > 0) {
+      const currentId = frontier.shift() as UUID;
+
+      // Traverse via wires
+      for (const wire of this.circuit.getWiresByNode(currentId)) {
+        const otherNodeId = wire.node1 === currentId ? wire.node2 : wire.node1;
+
+        if (!reachableNodes.has(otherNodeId)) {
+          reachableNodes.add(otherNodeId);
+          frontier.push(otherNodeId);
+        }
+        if (!reachableWires.has(wire.id)) {
+          reachableWires.add(wire.id);
+        }
+      }
+
+      // Traverse through components in case of pin
+      const node = this.circuit.getENode(currentId) as ENode;
+      if (node.type === ENodeType.Pin) {
+        const component = this.circuit.getComponent(node.component!) as Component;
+        const behavior = this.behaviorRegistry.get(component.type);
+        if (!behavior) {
+          console.warn(
+            `No behavior registered for component type '${component.type}' (${component.id})`
+          );
+          continue;
+        }
+
+        const state = componentStates.get(component.id)!;
+
+        for (const otherPinId of component.pins) {
+          if (otherPinId === currentId) continue;
+          if (reachableNodes.has(otherPinId)) continue;
+
+          // Check if component allows traversal
+          const res = behavior.allowConductivity(
+            component,
+            state,
+            conductivityType,
+            currentId,
+            otherPinId
+          );
+
+          if (res) {
+            reachableNodes.add(otherPinId);
+            frontier.push(otherPinId);
+          }
         }
       }
     }
+
+    return { nodes: reachableNodes, wires: reachableWires };
   }
 
   /**
-   * Evaluate component behaviors and update state.
+   * Fire ready events and update current state accordingly
+   * eventual subsequent events are enqueued
    *
+   * @param targetTick - Tick at which to process events
+   * @param events - Events to apply
    * @param state - Current simulation state
-   * @param currentTick - Current tick number
+   * @param targetTick - Target tick for event processing
    */
-  private evaluateComponents(state: SimulationState, currentTick: number): void {
-    // For MVP: Evaluate all components every tick
-    // TODO: Optimize with dirty tracking and topological ordering
-    for (const component of this.circuit.components) {
-      const behavior = this.behaviorRegistry.get(component.type);
+  private applyReadyEvents(targetTick: number): BehaviorResult[] {
+    const currentState = this.stateManager.getCurrentState();
+    const readyEvents = this.eventQueue.getReadyEvents(targetTick);
 
+    const results: BehaviorResult[] = [];
+
+    for (const event of readyEvents) {
+      const component = this.circuit.getComponent(event.targetId) as Component;
+      const behavior = this.behaviorRegistry.get(component.type);
       if (!behavior) {
+        console.warn(
+          `No behavior registered for component type '${component.type}' (${component.id})`
+        );
         continue;
       }
 
-      const result = behavior.evaluate(component, {
-        circuit: this.circuit,
-        state,
-        currentTick
-      });
-
-      // Apply component state changes
-      if (result.componentState) {
-        (state.componentStates as Map<UUID, ComponentState>).set(
-          component.id,
-          result.componentState
-        );
-      }
-
-      // Apply output pin state changes
-      for (const [pinId, pinState] of result.outputPinStates) {
-        (state.nodeStates as Map<UUID, NodeElectricalState>).set(pinId, pinState);
-      }
-
-      // Schedule future events
+      const componentState = currentState.componentStates.get(component.id)!;
+      const result = behavior.onEventFiring(component, componentState, event);
       for (const event of result.scheduledEvents) {
         this.eventQueue.schedule(event);
       }
+      results.push(result);
     }
 
-    // Clear dirty tracker for next tick
-    this.dirtyTracker.clear();
+    return results;
   }
 }

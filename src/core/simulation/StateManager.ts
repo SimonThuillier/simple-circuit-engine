@@ -68,8 +68,8 @@ export class StateManager {
       this.saveToHistory(this.currentState.clone());
     }
 
-    // Create new state for next tick
-    this.currentState = new SimulationState(nextTick);
+    // update current state to new tick
+    this.currentState.tick = nextTick;
 
     return this.currentState;
   }
@@ -86,7 +86,7 @@ export class StateManager {
       return undefined;
     }
 
-    return this.history.find(state => state.tick === tick);
+    return this.history.find((state) => state.tick === tick);
   }
 
   /**
@@ -114,7 +114,7 @@ export class StateManager {
       return undefined;
     }
 
-    return Math.min(...this.history.map(state => state.tick));
+    return Math.min(...this.history.map((state) => state.tick));
   }
 
   /**
@@ -127,7 +127,7 @@ export class StateManager {
       return undefined;
     }
 
-    return Math.max(...this.history.map(state => state.tick));
+    return Math.max(...this.history.map((state) => state.tick));
   }
 
   /**

@@ -20,13 +20,17 @@ export { StateManager } from './StateManager.js';
 export type { NodeElectricalState } from './states/NodeElectricalState.js';
 export { ComponentState } from './states/ComponentState.js';
 export { BatteryState } from './states/BatteryState.js';
-export { LEDState } from './states/LEDState.js';
+export { SmallLEDState } from './states/SmallLEDState';
 
 // Component behaviors
-export type { ComponentBehavior, BehaviorContext, BehaviorResult } from './behaviors/ComponentBehavior.js';
+export type {
+  ComponentBehavior,
+  BehaviorContext,
+  BehaviorResult,
+} from './behaviors/ComponentBehavior.js';
 export { BehaviorRegistry } from './behaviors/BehaviorRegistry.js';
 export { BatteryBehavior } from './behaviors/BatteryBehavior.js';
-export { LEDBehavior } from './behaviors/LEDBehavior.js';
+export { SmallLEDBehavior } from './behaviors/SmallLEDBehavior';
 
 // Event and command types
 export type { ScheduledEvent } from './types/ScheduledEvent.js';

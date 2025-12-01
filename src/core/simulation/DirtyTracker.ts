@@ -77,6 +77,30 @@ export class DirtyTracker {
   }
 
   /**
+   * Set the entire set of dirty components. Should be only used at CircuitRunner initialization.
+   * @param componentIds
+   */
+  setDirtyComponents(componentIds: Set<UUID>): void {
+    this.dirtyComponents = new Set(componentIds);
+  }
+
+  /**
+   * Set the entire set of dirty components. Should be only used at CircuitRunner initialization.
+   * @param enodeIds
+   */
+  setDirtyEnodes(enodeIds: Set<UUID>): void {
+    this.dirtyEnodes = new Set(enodeIds);
+  }
+
+  /**
+   * Set the entire set of dirty components. Should be only used at CircuitRunner initialization.
+   * @param wireIds
+   */
+  setDirtyWires(wireIds: Set<UUID>): void {
+    this.dirtyWires = new Set(wireIds);
+  }
+
+  /**
    * Get all dirty elements and clear the tracker.
    * This is typically called at the end of a tick to collect changes.
    *
@@ -86,7 +110,7 @@ export class DirtyTracker {
     const result: DirtyElements = {
       components: new Set(this.dirtyComponents),
       wires: new Set(this.dirtyWires),
-      enodes: new Set(this.dirtyEnodes)
+      enodes: new Set(this.dirtyEnodes),
     };
 
     this.clear();
@@ -100,9 +124,7 @@ export class DirtyTracker {
    * @returns True if at least one element is dirty
    */
   hasDirtyElements(): boolean {
-    return (
-      this.dirtyComponents.size > 0 || this.dirtyWires.size > 0 || this.dirtyEnodes.size > 0
-    );
+    return this.dirtyComponents.size > 0 || this.dirtyWires.size > 0 || this.dirtyEnodes.size > 0;
   }
 
   /**

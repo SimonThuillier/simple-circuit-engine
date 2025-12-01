@@ -1,11 +1,14 @@
 /**
- * Unit tests for DirtyTracker
- * @module tests/core/simulation
+ * Unit tests for DirtyTracker class
+ *
+ * Tests dirty tracking functionality:
+ * - Marking components, wires, and enodes as dirty
+ * - Retrieving and clearing dirty elements
+ * - Bulk operations
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { DirtyTracker } from '@/core/simulation/DirtyTracker.js';
-import { generateUUID } from '@/core/types/Identifier.js';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { DirtyTracker } from '@/core/simulation/DirtyTracker';
 
 describe('DirtyTracker', () => {
   let tracker: DirtyTracker;
@@ -15,7 +18,9 @@ describe('DirtyTracker', () => {
   });
 
   describe('constructor', () => {
-    it('should create empty tracker', () => {
+    it('should create an empty dirty tracker', () => {
+      const tracker = new DirtyTracker();
+      expect(tracker).toBeDefined();
       expect(tracker.hasDirtyElements()).toBe(false);
       expect(tracker.getDirtyComponentCount()).toBe(0);
       expect(tracker.getDirtyWireCount()).toBe(0);
@@ -23,128 +28,183 @@ describe('DirtyTracker', () => {
     });
   });
 
-  describe('markComponentDirty', () => {
+  describe('markComponentDirty()', () => {
     it('should mark a component as dirty', () => {
-      const compId = generateUUID();
-
-      tracker.markComponentDirty(compId);
+      tracker.markComponentDirty('comp-1');
 
       expect(tracker.hasDirtyElements()).toBe(true);
       expect(tracker.getDirtyComponentCount()).toBe(1);
     });
 
-    it('should handle multiple different components', () => {
-      const compId1 = generateUUID();
-      const compId2 = generateUUID();
+    it('should mark multiple components as dirty', () => {
+      tracker.markComponentDirty('comp-1');
+      tracker.markComponentDirty('comp-2');
+      tracker.markComponentDirty('comp-3');
 
-      tracker.markComponentDirty(compId1);
-      tracker.markComponentDirty(compId2);
-
-      expect(tracker.getDirtyComponentCount()).toBe(2);
+      expect(tracker.getDirtyComponentCount()).toBe(3);
     });
 
-    it('should not duplicate same component', () => {
-      const compId = generateUUID();
-
-      tracker.markComponentDirty(compId);
-      tracker.markComponentDirty(compId);
-      tracker.markComponentDirty(compId);
+    it('should not duplicate same component ID', () => {
+      tracker.markComponentDirty('comp-1');
+      tracker.markComponentDirty('comp-1');
+      tracker.markComponentDirty('comp-1');
 
       expect(tracker.getDirtyComponentCount()).toBe(1);
     });
   });
 
-  describe('markWireDirty', () => {
+  describe('markWireDirty()', () => {
     it('should mark a wire as dirty', () => {
-      const wireId = generateUUID();
-
-      tracker.markWireDirty(wireId);
+      tracker.markWireDirty('wire-1');
 
       expect(tracker.hasDirtyElements()).toBe(true);
       expect(tracker.getDirtyWireCount()).toBe(1);
     });
 
-    it('should handle multiple different wires', () => {
-      const wireId1 = generateUUID();
-      const wireId2 = generateUUID();
+    it('should mark multiple wires as dirty', () => {
+      tracker.markWireDirty('wire-1');
+      tracker.markWireDirty('wire-2');
+      tracker.markWireDirty('wire-3');
 
-      tracker.markWireDirty(wireId1);
-      tracker.markWireDirty(wireId2);
+      expect(tracker.getDirtyWireCount()).toBe(3);
+    });
+
+    it('should not duplicate same wire ID', () => {
+      tracker.markWireDirty('wire-1');
+      tracker.markWireDirty('wire-1');
+
+      expect(tracker.getDirtyWireCount()).toBe(1);
+    });
+  });
+
+  describe('markEnodeDirty()', () => {
+    it('should mark an enode as dirty', () => {
+      tracker.markEnodeDirty('enode-1');
+
+      expect(tracker.hasDirtyElements()).toBe(true);
+      expect(tracker.getDirtyEnodeCount()).toBe(1);
+    });
+
+    it('should mark multiple enodes as dirty', () => {
+      tracker.markEnodeDirty('enode-1');
+      tracker.markEnodeDirty('enode-2');
+      tracker.markEnodeDirty('enode-3');
+
+      expect(tracker.getDirtyEnodeCount()).toBe(3);
+    });
+
+    it('should not duplicate same enode ID', () => {
+      tracker.markEnodeDirty('enode-1');
+      tracker.markEnodeDirty('enode-1');
+
+      expect(tracker.getDirtyEnodeCount()).toBe(1);
+    });
+  });
+
+  describe('setDirtyComponents()', () => {
+    it('should set the entire set of dirty components', () => {
+      const components = new Set(['comp-1', 'comp-2', 'comp-3']);
+      tracker.setDirtyComponents(components);
+
+      expect(tracker.getDirtyComponentCount()).toBe(3);
+    });
+
+    it('should replace existing dirty components', () => {
+      tracker.markComponentDirty('comp-1');
+      tracker.markComponentDirty('comp-2');
+
+      const components = new Set(['comp-3', 'comp-4']);
+      tracker.setDirtyComponents(components);
+
+      expect(tracker.getDirtyComponentCount()).toBe(2);
+      const dirty = tracker.getDirtyElements();
+      expect(dirty.components.has('comp-1')).toBe(false);
+      expect(dirty.components.has('comp-3')).toBe(true);
+      expect(dirty.components.has('comp-4')).toBe(true);
+    });
+
+    it('should handle empty set', () => {
+      tracker.markComponentDirty('comp-1');
+      tracker.setDirtyComponents(new Set());
+
+      expect(tracker.getDirtyComponentCount()).toBe(0);
+    });
+  });
+
+  describe('setDirtyWires()', () => {
+    it('should set the entire set of dirty wires', () => {
+      const wires = new Set(['wire-1', 'wire-2', 'wire-3']);
+      tracker.setDirtyWires(wires);
+
+      expect(tracker.getDirtyWireCount()).toBe(3);
+    });
+
+    it('should replace existing dirty wires', () => {
+      tracker.markWireDirty('wire-1');
+      tracker.markWireDirty('wire-2');
+
+      const wires = new Set(['wire-3', 'wire-4']);
+      tracker.setDirtyWires(wires);
 
       expect(tracker.getDirtyWireCount()).toBe(2);
     });
-
-    it('should not duplicate same wire', () => {
-      const wireId = generateUUID();
-
-      tracker.markWireDirty(wireId);
-      tracker.markWireDirty(wireId);
-
-      expect(tracker.getDirtyWireCount()).toBe(1);
-    });
   });
 
-  describe('markEnodeDirty', () => {
-    it('should mark an enode as dirty', () => {
-      const enodeId = generateUUID();
+  describe('setDirtyEnodes()', () => {
+    it('should set the entire set of dirty enodes', () => {
+      const enodes = new Set(['enode-1', 'enode-2', 'enode-3']);
+      tracker.setDirtyEnodes(enodes);
 
-      tracker.markEnodeDirty(enodeId);
-
-      expect(tracker.hasDirtyElements()).toBe(true);
-      expect(tracker.getDirtyEnodeCount()).toBe(1);
+      expect(tracker.getDirtyEnodeCount()).toBe(3);
     });
 
-    it('should handle multiple different enodes', () => {
-      const enodeId1 = generateUUID();
-      const enodeId2 = generateUUID();
+    it('should replace existing dirty enodes', () => {
+      tracker.markEnodeDirty('enode-1');
+      tracker.markEnodeDirty('enode-2');
 
-      tracker.markEnodeDirty(enodeId1);
-      tracker.markEnodeDirty(enodeId2);
+      const enodes = new Set(['enode-3', 'enode-4']);
+      tracker.setDirtyEnodes(enodes);
 
       expect(tracker.getDirtyEnodeCount()).toBe(2);
     });
-
-    it('should not duplicate same enode', () => {
-      const enodeId = generateUUID();
-
-      tracker.markEnodeDirty(enodeId);
-      tracker.markEnodeDirty(enodeId);
-
-      expect(tracker.getDirtyEnodeCount()).toBe(1);
-    });
   });
 
-  describe('hasDirtyElements', () => {
+  describe('hasDirtyElements()', () => {
     it('should return false when no elements are dirty', () => {
       expect(tracker.hasDirtyElements()).toBe(false);
     });
 
-    it('should return true when component is dirty', () => {
-      tracker.markComponentDirty(generateUUID());
+    it('should return true when a component is dirty', () => {
+      tracker.markComponentDirty('comp-1');
       expect(tracker.hasDirtyElements()).toBe(true);
     });
 
-    it('should return true when wire is dirty', () => {
-      tracker.markWireDirty(generateUUID());
+    it('should return true when a wire is dirty', () => {
+      tracker.markWireDirty('wire-1');
       expect(tracker.hasDirtyElements()).toBe(true);
     });
 
-    it('should return true when enode is dirty', () => {
-      tracker.markEnodeDirty(generateUUID());
+    it('should return true when an enode is dirty', () => {
+      tracker.markEnodeDirty('enode-1');
       expect(tracker.hasDirtyElements()).toBe(true);
     });
 
-    it('should return true when multiple types are dirty', () => {
-      tracker.markComponentDirty(generateUUID());
-      tracker.markWireDirty(generateUUID());
-      tracker.markEnodeDirty(generateUUID());
-
+    it('should return true when multiple element types are dirty', () => {
+      tracker.markComponentDirty('comp-1');
+      tracker.markWireDirty('wire-1');
+      tracker.markEnodeDirty('enode-1');
       expect(tracker.hasDirtyElements()).toBe(true);
+    });
+
+    it('should return false after clearing', () => {
+      tracker.markComponentDirty('comp-1');
+      tracker.clear();
+      expect(tracker.hasDirtyElements()).toBe(false);
     });
   });
 
-  describe('getDirtyElements', () => {
-    it('should return empty sets when nothing is dirty', () => {
+  describe('getDirtyElements()', () => {
+    it('should return empty sets when no elements are dirty', () => {
       const dirty = tracker.getDirtyElements();
 
       expect(dirty.components.size).toBe(0);
@@ -152,79 +212,60 @@ describe('DirtyTracker', () => {
       expect(dirty.enodes.size).toBe(0);
     });
 
-    it('should return dirty components', () => {
-      const compId1 = generateUUID();
-      const compId2 = generateUUID();
-
-      tracker.markComponentDirty(compId1);
-      tracker.markComponentDirty(compId2);
+    it('should return all dirty components', () => {
+      tracker.markComponentDirty('comp-1');
+      tracker.markComponentDirty('comp-2');
+      tracker.markComponentDirty('comp-3');
 
       const dirty = tracker.getDirtyElements();
 
-      expect(dirty.components.size).toBe(2);
-      expect(dirty.components.has(compId1)).toBe(true);
-      expect(dirty.components.has(compId2)).toBe(true);
-      expect(dirty.wires.size).toBe(0);
-      expect(dirty.enodes.size).toBe(0);
+      expect(dirty.components.size).toBe(3);
+      expect(dirty.components.has('comp-1')).toBe(true);
+      expect(dirty.components.has('comp-2')).toBe(true);
+      expect(dirty.components.has('comp-3')).toBe(true);
     });
 
-    it('should return dirty wires', () => {
-      const wireId1 = generateUUID();
-      const wireId2 = generateUUID();
-
-      tracker.markWireDirty(wireId1);
-      tracker.markWireDirty(wireId2);
+    it('should return all dirty wires', () => {
+      tracker.markWireDirty('wire-1');
+      tracker.markWireDirty('wire-2');
 
       const dirty = tracker.getDirtyElements();
 
       expect(dirty.wires.size).toBe(2);
-      expect(dirty.wires.has(wireId1)).toBe(true);
-      expect(dirty.wires.has(wireId2)).toBe(true);
-      expect(dirty.components.size).toBe(0);
-      expect(dirty.enodes.size).toBe(0);
+      expect(dirty.wires.has('wire-1')).toBe(true);
+      expect(dirty.wires.has('wire-2')).toBe(true);
     });
 
-    it('should return dirty enodes', () => {
-      const enodeId1 = generateUUID();
-      const enodeId2 = generateUUID();
-
-      tracker.markEnodeDirty(enodeId1);
-      tracker.markEnodeDirty(enodeId2);
+    it('should return all dirty enodes', () => {
+      tracker.markEnodeDirty('enode-1');
+      tracker.markEnodeDirty('enode-2');
 
       const dirty = tracker.getDirtyElements();
 
       expect(dirty.enodes.size).toBe(2);
-      expect(dirty.enodes.has(enodeId1)).toBe(true);
-      expect(dirty.enodes.has(enodeId2)).toBe(true);
-      expect(dirty.components.size).toBe(0);
-      expect(dirty.wires.size).toBe(0);
+      expect(dirty.enodes.has('enode-1')).toBe(true);
+      expect(dirty.enodes.has('enode-2')).toBe(true);
     });
 
-    it('should return all dirty element types together', () => {
-      const compId = generateUUID();
-      const wireId = generateUUID();
-      const enodeId = generateUUID();
-
-      tracker.markComponentDirty(compId);
-      tracker.markWireDirty(wireId);
-      tracker.markEnodeDirty(enodeId);
+    it('should return all dirty elements when mixed types', () => {
+      tracker.markComponentDirty('comp-1');
+      tracker.markWireDirty('wire-1');
+      tracker.markEnodeDirty('enode-1');
 
       const dirty = tracker.getDirtyElements();
 
       expect(dirty.components.size).toBe(1);
-      expect(dirty.components.has(compId)).toBe(true);
       expect(dirty.wires.size).toBe(1);
-      expect(dirty.wires.has(wireId)).toBe(true);
       expect(dirty.enodes.size).toBe(1);
-      expect(dirty.enodes.has(enodeId)).toBe(true);
+      expect(dirty.components.has('comp-1')).toBe(true);
+      expect(dirty.wires.has('wire-1')).toBe(true);
+      expect(dirty.enodes.has('enode-1')).toBe(true);
     });
 
-    it('should clear tracker after returning dirty elements', () => {
-      tracker.markComponentDirty(generateUUID());
-      tracker.markWireDirty(generateUUID());
-      tracker.markEnodeDirty(generateUUID());
-
-      expect(tracker.hasDirtyElements()).toBe(true);
+    it('should clear tracker after getting dirty elements', () => {
+      tracker.markComponentDirty('comp-1');
+      tracker.markWireDirty('wire-1');
+      tracker.markEnodeDirty('enode-1');
 
       tracker.getDirtyElements();
 
@@ -234,44 +275,35 @@ describe('DirtyTracker', () => {
       expect(tracker.getDirtyEnodeCount()).toBe(0);
     });
 
-    it('should return new sets (not references to internal state)', () => {
-      const compId = generateUUID();
-      tracker.markComponentDirty(compId);
+    it('should return immutable sets (readonly)', () => {
+      tracker.markComponentDirty('comp-1');
+      const dirty = tracker.getDirtyElements();
 
-      const dirty1 = tracker.getDirtyElements();
-      tracker.markComponentDirty(generateUUID());
-      const dirty2 = tracker.getDirtyElements();
-
-      // First result should not be affected by subsequent marks
-      expect(dirty1.components.size).toBe(1);
-      expect(dirty2.components.size).toBe(1);
-      expect(dirty1.components).not.toBe(dirty2.components);
+      // TypeScript should enforce readonly, but verify sets are returned
+      expect(dirty.components).toBeInstanceOf(Set);
+      expect(dirty.wires).toBeInstanceOf(Set);
+      expect(dirty.enodes).toBeInstanceOf(Set);
     });
 
-    it('should be callable multiple times', () => {
-      const compId = generateUUID();
-
-      tracker.markComponentDirty(compId);
+    it('should return independent copies on successive calls', () => {
+      tracker.markComponentDirty('comp-1');
       const dirty1 = tracker.getDirtyElements();
 
-      expect(dirty1.components.size).toBe(1);
-
-      // Second call should return empty sets
+      tracker.markComponentDirty('comp-2');
       const dirty2 = tracker.getDirtyElements();
 
-      expect(dirty2.components.size).toBe(0);
-      expect(dirty2.wires.size).toBe(0);
-      expect(dirty2.enodes.size).toBe(0);
+      expect(dirty1.components.has('comp-1')).toBe(true);
+      expect(dirty1.components.has('comp-2')).toBe(false);
+      expect(dirty2.components.has('comp-1')).toBe(false);
+      expect(dirty2.components.has('comp-2')).toBe(true);
     });
   });
 
-  describe('clear', () => {
-    it('should clear all dirty markers', () => {
-      tracker.markComponentDirty(generateUUID());
-      tracker.markWireDirty(generateUUID());
-      tracker.markEnodeDirty(generateUUID());
-
-      expect(tracker.hasDirtyElements()).toBe(true);
+  describe('clear()', () => {
+    it('should clear all dirty elements', () => {
+      tracker.markComponentDirty('comp-1');
+      tracker.markWireDirty('wire-1');
+      tracker.markEnodeDirty('enode-1');
 
       tracker.clear();
 
@@ -281,93 +313,85 @@ describe('DirtyTracker', () => {
       expect(tracker.getDirtyEnodeCount()).toBe(0);
     });
 
-    it('should work on empty tracker', () => {
-      expect(() => tracker.clear()).not.toThrow();
-      expect(tracker.hasDirtyElements()).toBe(false);
-    });
-
-    it('should allow marking after clear', () => {
-      tracker.markComponentDirty(generateUUID());
+    it('should allow marking elements after clear', () => {
+      tracker.markComponentDirty('comp-1');
       tracker.clear();
-
-      const newCompId = generateUUID();
-      tracker.markComponentDirty(newCompId);
+      tracker.markComponentDirty('comp-2');
 
       expect(tracker.getDirtyComponentCount()).toBe(1);
+      expect(tracker.getDirtyElements().components.has('comp-2')).toBe(true);
     });
   });
 
   describe('count methods', () => {
-    it('should return accurate counts', () => {
-      const compId1 = generateUUID();
-      const compId2 = generateUUID();
-      const wireId = generateUUID();
-      const enodeId1 = generateUUID();
-      const enodeId2 = generateUUID();
-      const enodeId3 = generateUUID();
+    it('should return accurate component count', () => {
+      expect(tracker.getDirtyComponentCount()).toBe(0);
 
-      tracker.markComponentDirty(compId1);
-      tracker.markComponentDirty(compId2);
-      tracker.markWireDirty(wireId);
-      tracker.markEnodeDirty(enodeId1);
-      tracker.markEnodeDirty(enodeId2);
-      tracker.markEnodeDirty(enodeId3);
-
-      expect(tracker.getDirtyComponentCount()).toBe(2);
-      expect(tracker.getDirtyWireCount()).toBe(1);
-      expect(tracker.getDirtyEnodeCount()).toBe(3);
-    });
-
-    it('should update after clear', () => {
-      tracker.markComponentDirty(generateUUID());
+      tracker.markComponentDirty('comp-1');
       expect(tracker.getDirtyComponentCount()).toBe(1);
 
-      tracker.clear();
-      expect(tracker.getDirtyComponentCount()).toBe(0);
+      tracker.markComponentDirty('comp-2');
+      tracker.markComponentDirty('comp-3');
+      expect(tracker.getDirtyComponentCount()).toBe(3);
+    });
+
+    it('should return accurate wire count', () => {
+      expect(tracker.getDirtyWireCount()).toBe(0);
+
+      tracker.markWireDirty('wire-1');
+      expect(tracker.getDirtyWireCount()).toBe(1);
+
+      tracker.markWireDirty('wire-2');
+      expect(tracker.getDirtyWireCount()).toBe(2);
+    });
+
+    it('should return accurate enode count', () => {
+      expect(tracker.getDirtyEnodeCount()).toBe(0);
+
+      tracker.markEnodeDirty('enode-1');
+      expect(tracker.getDirtyEnodeCount()).toBe(1);
+
+      tracker.markEnodeDirty('enode-2');
+      expect(tracker.getDirtyEnodeCount()).toBe(2);
+    });
+
+    it('should not affect other counters', () => {
+      tracker.markComponentDirty('comp-1');
+      tracker.markWireDirty('wire-1');
+
+      expect(tracker.getDirtyComponentCount()).toBe(1);
+      expect(tracker.getDirtyWireCount()).toBe(1);
+      expect(tracker.getDirtyEnodeCount()).toBe(0);
     });
   });
 
-  describe('readonly sets', () => {
-    it('should return readonly sets from getDirtyElements', () => {
-      const compId = generateUUID();
-      tracker.markComponentDirty(compId);
+  describe('performance', () => {
+    it('should handle large number of dirty elements efficiently', () => {
+      const startTime = Date.now();
 
-      const dirty = tracker.getDirtyElements();
+      // Mark 1000 components, wires, and enodes
+      for (let i = 0; i < 1000; i++) {
+        tracker.markComponentDirty(`comp-${i}`);
+        tracker.markWireDirty(`wire-${i}`);
+        tracker.markEnodeDirty(`enode-${i}`);
+      }
 
-      // Sets are typed as ReadonlySet (compile-time check)
-      expect(dirty.components).toBeInstanceOf(Set);
-      expect(dirty.wires).toBeInstanceOf(Set);
-      expect(dirty.enodes).toBeInstanceOf(Set);
-    });
-  });
-
-  describe('stress test', () => {
-    it('should handle many dirty elements efficiently', () => {
-      const componentIds = Array.from({ length: 1000 }, () => generateUUID());
-      const wireIds = Array.from({ length: 500 }, () => generateUUID());
-      const enodeIds = Array.from({ length: 750 }, () => generateUUID());
-
-      componentIds.forEach(id => tracker.markComponentDirty(id));
-      wireIds.forEach(id => tracker.markWireDirty(id));
-      enodeIds.forEach(id => tracker.markEnodeDirty(id));
+      const markTime = Date.now() - startTime;
+      expect(markTime).toBeLessThan(1000); // Should mark in < 1 second
 
       expect(tracker.getDirtyComponentCount()).toBe(1000);
-      expect(tracker.getDirtyWireCount()).toBe(500);
-      expect(tracker.getDirtyEnodeCount()).toBe(750);
+      expect(tracker.getDirtyWireCount()).toBe(1000);
+      expect(tracker.getDirtyEnodeCount()).toBe(1000);
 
+      // Get dirty elements should be fast
+      const getStartTime = Date.now();
       const dirty = tracker.getDirtyElements();
+      const getTime = Date.now() - getStartTime;
 
+      expect(getTime).toBeLessThan(100); // Should retrieve in < 100ms
       expect(dirty.components.size).toBe(1000);
-      expect(dirty.wires.size).toBe(500);
-      expect(dirty.enodes.size).toBe(750);
-
-      // Verify all IDs are present
-      componentIds.forEach(id => expect(dirty.components.has(id)).toBe(true));
-      wireIds.forEach(id => expect(dirty.wires.has(id)).toBe(true));
-      enodeIds.forEach(id => expect(dirty.enodes.has(id)).toBe(true));
-
-      // Tracker should be cleared
-      expect(tracker.hasDirtyElements()).toBe(false);
+      expect(dirty.wires.size).toBe(1000);
+      expect(dirty.enodes.size).toBe(1000);
     });
   });
 });

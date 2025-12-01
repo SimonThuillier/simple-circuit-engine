@@ -8,6 +8,7 @@ import type { UUID } from '@/core/types/Identifier.js';
 /**
  * Base class for component simulation state.
  * Extended by specific component types (BatteryState, LEDState, etc.)
+ * One instance per component throughout simulation that will be mutated in place.
  *
  * @abstract
  * @public
@@ -26,18 +27,9 @@ export abstract class ComponentState {
   state: string;
 
   /**
-   * For transitional states: Tick when this transitional state started.
-   * Null if no transition is in progress.
-   * @readonly
+   * Tick when this state started.
    */
-  readonly transitionStartTick: number | null;
-
-  /**
-   * Remaining delay steps before next state transition (0 = no delay).
-   * Decremented each tick when > 0.
-   * @default 0
-   */
-  delayCounter: number;
+  startTick: number;
 
   /**
    * Create a new component state.
@@ -48,7 +40,10 @@ export abstract class ComponentState {
   constructor(componentId: UUID, initialState: string) {
     this.componentId = componentId;
     this.state = initialState;
-    this.transitionStartTick = null;
-    this.delayCounter = 0;
+    this.startTick = 0;
+  }
+
+  hasSameComponent(other: ComponentState): boolean {
+    return this.componentId === other.componentId;
   }
 }

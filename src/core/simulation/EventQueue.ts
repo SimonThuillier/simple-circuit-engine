@@ -50,7 +50,7 @@ export class EventQueue {
   getReadyEvents(currentTick: number): ScheduledEvent[] {
     const ready: ScheduledEvent[] = [];
 
-    while (this.heap.length > 0 && this.heap[0].readyAtTick <= currentTick) {
+    while (this.heap.length > 0 && this.heap[0]!.readyAtTick <= currentTick) {
       const event = this.extractMin();
       if (event) {
         ready.push(event);
@@ -96,8 +96,8 @@ export class EventQueue {
   private bubbleUp(index: number): void {
     while (index > 0) {
       const parentIndex = Math.floor((index - 1) / 2);
-      if (this.heap[index].readyAtTick < this.heap[parentIndex].readyAtTick) {
-        [this.heap[index], this.heap[parentIndex]] = [this.heap[parentIndex], this.heap[index]];
+      if (this.heap[index]!.readyAtTick < this.heap[parentIndex]!.readyAtTick) {
+        [this.heap[index], this.heap[parentIndex]] = [this.heap[parentIndex]!, this.heap[index]!];
         index = parentIndex;
       } else {
         break;
@@ -115,20 +115,20 @@ export class EventQueue {
 
       if (
         leftChild < length &&
-        this.heap[leftChild].readyAtTick < this.heap[smallest].readyAtTick
+        this.heap[leftChild]!.readyAtTick < this.heap[smallest]!.readyAtTick
       ) {
         smallest = leftChild;
       }
 
       if (
         rightChild < length &&
-        this.heap[rightChild].readyAtTick < this.heap[smallest].readyAtTick
+        this.heap[rightChild]!.readyAtTick < this.heap[smallest]!.readyAtTick
       ) {
         smallest = rightChild;
       }
 
       if (smallest !== index) {
-        [this.heap[index], this.heap[smallest]] = [this.heap[smallest], this.heap[index]];
+        [this.heap[index], this.heap[smallest]] = [this.heap[smallest]!, this.heap[index]!];
         index = smallest;
       } else {
         break;

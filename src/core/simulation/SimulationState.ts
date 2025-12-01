@@ -18,7 +18,7 @@ export class SimulationState {
    * Current simulation step number (starts at 0).
    * @readonly
    */
-  readonly tick: number;
+  tick: number;
 
   /**
    * Electrical state for each ENode (component pins and branching points).
@@ -57,26 +57,53 @@ export class SimulationState {
     this.componentStates = new Map();
   }
 
+  setTick(tick: number) {
+    this.tick = tick;
+  }
+
   /**
-   * Create a shallow clone of this state for history storage.
-   * Maps are cloned but their contents are shared (structural sharing).
+   * Create a deep copy of this state for historical storage.
    *
-   * @returns New SimulationState with same tick and cloned maps
+   * @returns Cloned SimulationState
    */
   clone(): SimulationState {
-    const cloned = new SimulationState(this.tick);
+    const clonedState = new SimulationState(this.tick);
 
-    // Shallow clone maps (content objects are shared for memory efficiency)
-    (cloned as { nodeStates: Map<UUID, NodeElectricalState> }).nodeStates = new Map(
-      this.nodeStates
-    );
-    (cloned as { wireStates: Map<UUID, NodeElectricalState> }).wireStates = new Map(
-      this.wireStates
-    );
-    (cloned as { componentStates: Map<UUID, ComponentState> }).componentStates = new Map(
-      this.componentStates
-    );
+    const clonedNodeStates: Map<UUID, NodeElectricalState> = new Map();
+    for (const [id, state] of this.nodeStates.entries()) {
+      clonedNodeStates.set(id, { ...state });
+    }
+    const clonedWireStates: Map<UUID, NodeElectricalState> = new Map();
+    for (const [id, state] of this.wireStates.entries()) {
+      clonedWireStates.set(id, { ...state });
+    }
+    const clonedComponentStates: Map<UUID, ComponentState> = new Map();
+    for (const [id, state] of this.componentStates.entries()) {
+      clonedComponentStates.set(
+        id,
+        Object.assign(Object.create(Object.getPrototypeOf(state)), state)
+      );
+    }
 
-    return cloned;
+    Object.defineProperty(clonedState, 'nodeStates', {
+      value: clonedNodeStates,
+      writable: false,
+      configurable: false,
+      enumerable: true,
+    });
+    Object.defineProperty(clonedState, 'wireStates', {
+      value: clonedWireStates,
+      writable: false,
+      configurable: false,
+      enumerable: true,
+    });
+    Object.defineProperty(clonedState, 'componentStates', {
+      value: clonedComponentStates,
+      writable: false,
+      configurable: false,
+      enumerable: true,
+    });
+
+    return clonedState;
   }
 }

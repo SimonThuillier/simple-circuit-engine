@@ -71,14 +71,14 @@ export function createSwitchControlledLedCircuit(): Circuit {
     new Rotation(0)
   );
 
-  // Wire the circuit: Battery anode → Switch input
-  circuit.addWire(battery.pins[1], switch1.pins[0]);
+  // Wire the circuit: Battery cathode → Switch input
+  circuit.addWire(battery.pins[0], switch1.pins[0]);
 
   // Switch output → LED anode
   circuit.addWire(switch1.pins[1], led.pins[0]);
 
-  // Complete the loop: LED cathode → Battery cathode
-  circuit.addWire(led.pins[1], battery.pins[0]);
+  // Complete the loop: LED cathode → Battery anode
+  circuit.addWire(led.pins[1], battery.pins[1]);
 
   return circuit;
 }

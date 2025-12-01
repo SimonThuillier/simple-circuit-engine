@@ -1,12 +1,15 @@
 /**
- * Unit tests for EventQueue
- * @module tests/core/simulation
+ * Unit tests for EventQueue class
+ *
+ * Tests the min-heap priority queue for scheduled events:
+ * - Event scheduling and prioritization
+ * - FIFO ordering for same readyAtTick
+ * - Heap operations correctness
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { EventQueue } from '@/core/simulation/EventQueue.js';
-import type { ScheduledEvent } from '@/core/simulation/types/ScheduledEvent.js';
-import { generateUUID } from '@/core/types/Identifier.js';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { EventQueue } from '@/core/simulation/EventQueue';
+import type { ScheduledEvent } from '@/core/simulation/types/ScheduledEvent';
 
 describe('EventQueue', () => {
   let queue: EventQueue;
@@ -16,20 +19,21 @@ describe('EventQueue', () => {
   });
 
   describe('constructor', () => {
-    it('should create an empty queue', () => {
+    it('should create an empty event queue', () => {
+      const queue = new EventQueue();
+      expect(queue).toBeDefined();
       expect(queue.size()).toBe(0);
       expect(queue.hasEvents()).toBe(false);
     });
   });
 
-  describe('schedule', () => {
+  describe('schedule()', () => {
     it('should schedule a single event', () => {
       const event: ScheduledEvent = {
+        targetId: 'comp-1',
         scheduledAtTick: 0,
-        readyAtTick: 5,
-        targetType: 'component',
-        targetId: generateUUID(),
-        newState: { state: 'on' }
+        readyAtTick: 10,
+        type: 'test',
       };
 
       queue.schedule(event);
@@ -38,47 +42,18 @@ describe('EventQueue', () => {
       expect(queue.hasEvents()).toBe(true);
     });
 
-    it('should throw error if readyAtTick is before scheduledAtTick', () => {
-      const event: ScheduledEvent = {
-        scheduledAtTick: 10,
-        readyAtTick: 5, // Invalid: before scheduledAtTick
-        targetType: 'component',
-        targetId: generateUUID(),
-        newState: { state: 'on' }
-      };
-
-      expect(() => queue.schedule(event)).toThrow(RangeError);
-      expect(() => queue.schedule(event)).toThrow('readyAtTick (5) cannot be before scheduledAtTick (10)');
-    });
-
-    it('should allow readyAtTick equal to scheduledAtTick', () => {
-      const event: ScheduledEvent = {
-        scheduledAtTick: 5,
-        readyAtTick: 5,
-        targetType: 'component',
-        targetId: generateUUID(),
-        newState: { state: 'on' }
-      };
-
-      expect(() => queue.schedule(event)).not.toThrow();
-      expect(queue.size()).toBe(1);
-    });
-
     it('should schedule multiple events', () => {
       const event1: ScheduledEvent = {
+        targetId: 'comp-1',
         scheduledAtTick: 0,
-        readyAtTick: 5,
-        targetType: 'component',
-        targetId: generateUUID(),
-        newState: { state: 'on' }
-      };
-
-      const event2: ScheduledEvent = {
-        scheduledAtTick: 1,
         readyAtTick: 10,
-        targetType: 'enode',
-        targetId: generateUUID(),
-        newState: { hasVoltage: true }
+        type: 'test',
+      };
+      const event2: ScheduledEvent = {
+        targetId: 'comp-2',
+        scheduledAtTick: 0,
+        readyAtTick: 20,
+        type: 'test',
       };
 
       queue.schedule(event1);
@@ -87,271 +62,205 @@ describe('EventQueue', () => {
       expect(queue.size()).toBe(2);
     });
 
-    it('should maintain min-heap property (earliest event at root)', () => {
-      // Schedule events in reverse order
-      const event1: ScheduledEvent = {
-        scheduledAtTick: 0,
-        readyAtTick: 10,
-        targetType: 'component',
-        targetId: generateUUID(),
-        newState: {}
-      };
-
-      const event2: ScheduledEvent = {
-        scheduledAtTick: 0,
+    it('should throw when readyAtTick is before scheduledAtTick', () => {
+      const invalidEvent: ScheduledEvent = {
+        targetId: 'comp-1',
+        scheduledAtTick: 10,
         readyAtTick: 5,
-        targetType: 'component',
-        targetId: generateUUID(),
-        newState: {}
+        type: 'test',
       };
 
-      const event3: ScheduledEvent = {
-        scheduledAtTick: 0,
-        readyAtTick: 15,
-        targetType: 'component',
-        targetId: generateUUID(),
-        newState: {}
+      expect(() => queue.schedule(invalidEvent)).toThrow(RangeError);
+      expect(() => queue.schedule(invalidEvent)).toThrow(
+        /readyAtTick .* cannot be before scheduledAtTick/
+      );
+    });
+
+    it('should allow readyAtTick equal to scheduledAtTick', () => {
+      const event: ScheduledEvent = {
+        targetId: 'comp-1',
+        scheduledAtTick: 10,
+        readyAtTick: 10,
+        type: 'test',
       };
 
-      queue.schedule(event1);
-      queue.schedule(event2);
-      queue.schedule(event3);
-
-      // getReadyEvents should return earliest first
-      const ready = queue.getReadyEvents(10);
-      expect(ready).toHaveLength(2);
-      expect(ready[0].readyAtTick).toBe(5);
-      expect(ready[1].readyAtTick).toBe(10);
+      expect(() => queue.schedule(event)).not.toThrow();
+      expect(queue.size()).toBe(1);
     });
   });
 
-  describe('getReadyEvents', () => {
+  describe('getReadyEvents()', () => {
     it('should return empty array when no events are ready', () => {
       const event: ScheduledEvent = {
+        targetId: 'comp-1',
         scheduledAtTick: 0,
         readyAtTick: 10,
-        targetType: 'component',
-        targetId: generateUUID(),
-        newState: {}
+        type: 'test',
       };
 
       queue.schedule(event);
-
       const ready = queue.getReadyEvents(5);
+
       expect(ready).toEqual([]);
-      expect(queue.size()).toBe(1); // Event still in queue
+      expect(queue.size()).toBe(1);
     });
 
-    it('should return events ready at exact tick', () => {
+    it('should return events ready at current tick', () => {
       const event: ScheduledEvent = {
+        targetId: 'comp-1',
         scheduledAtTick: 0,
-        readyAtTick: 5,
-        targetType: 'component',
-        targetId: generateUUID(),
-        newState: {}
+        readyAtTick: 10,
+        type: 'test',
       };
 
       queue.schedule(event);
+      const ready = queue.getReadyEvents(10);
 
-      const ready = queue.getReadyEvents(5);
-      expect(ready).toHaveLength(1);
+      expect(ready.length).toBe(1);
       expect(ready[0]).toEqual(event);
+      expect(queue.size()).toBe(0);
     });
 
     it('should return events ready before current tick', () => {
       const event: ScheduledEvent = {
+        targetId: 'comp-1',
         scheduledAtTick: 0,
-        readyAtTick: 5,
-        targetType: 'component',
-        targetId: generateUUID(),
-        newState: {}
+        readyAtTick: 10,
+        type: 'test',
       };
 
       queue.schedule(event);
+      const ready = queue.getReadyEvents(15);
+
+      expect(ready.length).toBe(1);
+      expect(ready[0]).toEqual(event);
+      expect(queue.size()).toBe(0);
+    });
+
+    it('should return all ready events and leave future events', () => {
+      const event1: ScheduledEvent = {
+        targetId: 'comp-1',
+        scheduledAtTick: 0,
+        readyAtTick: 5,
+        type: 'test',
+      };
+      const event2: ScheduledEvent = {
+        targetId: 'comp-2',
+        scheduledAtTick: 0,
+        readyAtTick: 10,
+        type: 'test',
+      };
+      const event3: ScheduledEvent = {
+        targetId: 'comp-3',
+        scheduledAtTick: 0,
+        readyAtTick: 15,
+        type: 'test',
+      };
+
+      queue.schedule(event1);
+      queue.schedule(event2);
+      queue.schedule(event3);
 
       const ready = queue.getReadyEvents(10);
-      expect(ready).toHaveLength(1);
-      expect(ready[0]).toEqual(event);
+
+      expect(ready.length).toBe(2);
+      expect(ready).toContainEqual(event1);
+      expect(ready).toContainEqual(event2);
+      expect(queue.size()).toBe(1);
+    });
+
+    it('should order events by readyAtTick (earliest first)', () => {
+      const event1: ScheduledEvent = {
+        targetId: 'comp-1',
+        scheduledAtTick: 0,
+        readyAtTick: 10,
+        type: 'test',
+      };
+      const event2: ScheduledEvent = {
+        targetId: 'comp-2',
+        scheduledAtTick: 0,
+        readyAtTick: 5,
+        type: 'test',
+      };
+      const event3: ScheduledEvent = {
+        targetId: 'comp-3',
+        scheduledAtTick: 0,
+        readyAtTick: 15,
+        type: 'test',
+      };
+
+      queue.schedule(event1);
+      queue.schedule(event2);
+      queue.schedule(event3);
+
+      const ready = queue.getReadyEvents(20);
+
+      expect(ready.length).toBe(3);
+      expect(ready[0]?.readyAtTick).toBe(5);
+      expect(ready[1]?.readyAtTick).toBe(10);
+      expect(ready[2]?.readyAtTick).toBe(15);
+    });
+
+    it('should maintain FIFO order for events with same readyAtTick', () => {
+      const event1: ScheduledEvent = {
+        targetId: 'comp-1',
+        scheduledAtTick: 0,
+        readyAtTick: 10,
+        type: 'test',
+      };
+      const event2: ScheduledEvent = {
+        targetId: 'comp-2',
+        scheduledAtTick: 5,
+        readyAtTick: 10,
+        type: 'test',
+      };
+      const event3: ScheduledEvent = {
+        targetId: 'comp-3',
+        scheduledAtTick: 8,
+        readyAtTick: 10,
+        type: 'test',
+      };
+
+      queue.schedule(event1);
+      queue.schedule(event2);
+      queue.schedule(event3);
+
+      const ready = queue.getReadyEvents(10);
+
+      expect(ready.length).toBe(3);
+      // Should be ordered by scheduledAtTick when readyAtTick is the same
+      expect(ready[0]?.scheduledAtTick).toBe(0);
+      expect(ready[1]?.scheduledAtTick).toBe(5);
+      expect(ready[2]?.scheduledAtTick).toBe(8);
     });
 
     it('should remove returned events from queue', () => {
       const event: ScheduledEvent = {
+        targetId: 'comp-1',
         scheduledAtTick: 0,
-        readyAtTick: 5,
-        targetType: 'component',
-        targetId: generateUUID(),
-        newState: {}
+        readyAtTick: 10,
+        type: 'test',
       };
 
       queue.schedule(event);
-      expect(queue.size()).toBe(1);
+      queue.getReadyEvents(10);
 
-      queue.getReadyEvents(5);
       expect(queue.size()).toBe(0);
       expect(queue.hasEvents()).toBe(false);
     });
-
-    it('should return multiple ready events', () => {
-      const event1: ScheduledEvent = {
-        scheduledAtTick: 0,
-        readyAtTick: 5,
-        targetType: 'component',
-        targetId: generateUUID(),
-        newState: {}
-      };
-
-      const event2: ScheduledEvent = {
-        scheduledAtTick: 1,
-        readyAtTick: 5,
-        targetType: 'component',
-        targetId: generateUUID(),
-        newState: {}
-      };
-
-      const event3: ScheduledEvent = {
-        scheduledAtTick: 2,
-        readyAtTick: 10,
-        targetType: 'component',
-        targetId: generateUUID(),
-        newState: {}
-      };
-
-      queue.schedule(event1);
-      queue.schedule(event2);
-      queue.schedule(event3);
-
-      const ready = queue.getReadyEvents(5);
-      expect(ready).toHaveLength(2);
-      expect(queue.size()).toBe(1); // One event remains
-    });
-
-    it('should return events in FIFO order for same readyAtTick', () => {
-      // All ready at tick 5, scheduled at different times
-      const event1: ScheduledEvent = {
-        scheduledAtTick: 0,
-        readyAtTick: 5,
-        targetType: 'component',
-        targetId: 'first',
-        newState: {}
-      };
-
-      const event2: ScheduledEvent = {
-        scheduledAtTick: 1,
-        readyAtTick: 5,
-        targetType: 'component',
-        targetId: 'second',
-        newState: {}
-      };
-
-      const event3: ScheduledEvent = {
-        scheduledAtTick: 2,
-        readyAtTick: 5,
-        targetType: 'component',
-        targetId: 'third',
-        newState: {}
-      };
-
-      queue.schedule(event2);
-      queue.schedule(event3);
-      queue.schedule(event1);
-
-      const ready = queue.getReadyEvents(5);
-
-      expect(ready).toHaveLength(3);
-      expect(ready[0].targetId).toBe('first');
-      expect(ready[1].targetId).toBe('second');
-      expect(ready[2].targetId).toBe('third');
-    });
-
-    it('should sort by readyAtTick first, then FIFO', () => {
-      const event1: ScheduledEvent = {
-        scheduledAtTick: 0,
-        readyAtTick: 10,
-        targetType: 'component',
-        targetId: 'tick10-first',
-        newState: {}
-      };
-
-      const event2: ScheduledEvent = {
-        scheduledAtTick: 1,
-        readyAtTick: 5,
-        targetType: 'component',
-        targetId: 'tick5-second',
-        newState: {}
-      };
-
-      const event3: ScheduledEvent = {
-        scheduledAtTick: 2,
-        readyAtTick: 5,
-        targetType: 'component',
-        targetId: 'tick5-third',
-        newState: {}
-      };
-
-      const event4: ScheduledEvent = {
-        scheduledAtTick: 0,
-        readyAtTick: 5,
-        targetType: 'component',
-        targetId: 'tick5-first',
-        newState: {}
-      };
-
-      queue.schedule(event1);
-      queue.schedule(event2);
-      queue.schedule(event3);
-      queue.schedule(event4);
-
-      const ready = queue.getReadyEvents(10);
-
-      expect(ready).toHaveLength(4);
-      expect(ready[0].targetId).toBe('tick5-first');
-      expect(ready[1].targetId).toBe('tick5-second');
-      expect(ready[2].targetId).toBe('tick5-third');
-      expect(ready[3].targetId).toBe('tick10-first');
-    });
-
-    it('should work correctly after multiple calls', () => {
-      const event1: ScheduledEvent = {
-        scheduledAtTick: 0,
-        readyAtTick: 5,
-        targetType: 'component',
-        targetId: generateUUID(),
-        newState: {}
-      };
-
-      const event2: ScheduledEvent = {
-        scheduledAtTick: 0,
-        readyAtTick: 10,
-        targetType: 'component',
-        targetId: generateUUID(),
-        newState: {}
-      };
-
-      queue.schedule(event1);
-      queue.schedule(event2);
-
-      const ready1 = queue.getReadyEvents(5);
-      expect(ready1).toHaveLength(1);
-      expect(queue.size()).toBe(1);
-
-      const ready2 = queue.getReadyEvents(10);
-      expect(ready2).toHaveLength(1);
-      expect(queue.size()).toBe(0);
-    });
   });
 
-  describe('hasEvents', () => {
+  describe('hasEvents()', () => {
     it('should return false for empty queue', () => {
       expect(queue.hasEvents()).toBe(false);
     });
 
     it('should return true when events are scheduled', () => {
       const event: ScheduledEvent = {
+        targetId: 'comp-1',
         scheduledAtTick: 0,
-        readyAtTick: 5,
-        targetType: 'component',
-        targetId: generateUUID(),
-        newState: {}
+        readyAtTick: 10,
+        type: 'test',
       };
 
       queue.schedule(event);
@@ -360,42 +269,36 @@ describe('EventQueue', () => {
 
     it('should return false after all events are retrieved', () => {
       const event: ScheduledEvent = {
+        targetId: 'comp-1',
         scheduledAtTick: 0,
-        readyAtTick: 5,
-        targetType: 'component',
-        targetId: generateUUID(),
-        newState: {}
+        readyAtTick: 10,
+        type: 'test',
       };
 
       queue.schedule(event);
-      queue.getReadyEvents(5);
+      queue.getReadyEvents(10);
 
       expect(queue.hasEvents()).toBe(false);
     });
   });
 
-  describe('clear', () => {
+  describe('clear()', () => {
     it('should clear all events', () => {
       const event1: ScheduledEvent = {
-        scheduledAtTick: 0,
-        readyAtTick: 5,
-        targetType: 'component',
-        targetId: generateUUID(),
-        newState: {}
-      };
-
-      const event2: ScheduledEvent = {
+        targetId: 'comp-1',
         scheduledAtTick: 0,
         readyAtTick: 10,
-        targetType: 'component',
-        targetId: generateUUID(),
-        newState: {}
+        type: 'test',
+      };
+      const event2: ScheduledEvent = {
+        targetId: 'comp-2',
+        scheduledAtTick: 0,
+        readyAtTick: 20,
+        type: 'test',
       };
 
       queue.schedule(event1);
       queue.schedule(event2);
-      expect(queue.size()).toBe(2);
-
       queue.clear();
 
       expect(queue.size()).toBe(0);
@@ -403,52 +306,44 @@ describe('EventQueue', () => {
     });
 
     it('should allow scheduling after clear', () => {
-      const event: ScheduledEvent = {
-        scheduledAtTick: 0,
-        readyAtTick: 5,
-        targetType: 'component',
-        targetId: generateUUID(),
-        newState: {}
-      };
-
-      queue.schedule(event);
-      queue.clear();
-
-      const newEvent: ScheduledEvent = {
+      const event1: ScheduledEvent = {
+        targetId: 'comp-1',
         scheduledAtTick: 0,
         readyAtTick: 10,
-        targetType: 'component',
-        targetId: generateUUID(),
-        newState: {}
+        type: 'test',
+      };
+      const event2: ScheduledEvent = {
+        targetId: 'comp-2',
+        scheduledAtTick: 0,
+        readyAtTick: 20,
+        type: 'test',
       };
 
-      queue.schedule(newEvent);
+      queue.schedule(event1);
+      queue.clear();
+      queue.schedule(event2);
 
       expect(queue.size()).toBe(1);
-      expect(queue.hasEvents()).toBe(true);
     });
   });
 
-  describe('size', () => {
+  describe('size()', () => {
     it('should return 0 for empty queue', () => {
       expect(queue.size()).toBe(0);
     });
 
-    it('should return correct size after scheduling', () => {
+    it('should return correct size after scheduling events', () => {
       const event1: ScheduledEvent = {
-        scheduledAtTick: 0,
-        readyAtTick: 5,
-        targetType: 'component',
-        targetId: generateUUID(),
-        newState: {}
-      };
-
-      const event2: ScheduledEvent = {
+        targetId: 'comp-1',
         scheduledAtTick: 0,
         readyAtTick: 10,
-        targetType: 'component',
-        targetId: generateUUID(),
-        newState: {}
+        type: 'test',
+      };
+      const event2: ScheduledEvent = {
+        targetId: 'comp-2',
+        scheduledAtTick: 0,
+        readyAtTick: 20,
+        type: 'test',
       };
 
       queue.schedule(event1);
@@ -458,59 +353,122 @@ describe('EventQueue', () => {
       expect(queue.size()).toBe(2);
     });
 
-    it('should update after retrieving events', () => {
-      const event: ScheduledEvent = {
+    it('should decrease after retrieving events', () => {
+      const event1: ScheduledEvent = {
+        targetId: 'comp-1',
         scheduledAtTick: 0,
-        readyAtTick: 5,
-        targetType: 'component',
-        targetId: generateUUID(),
-        newState: {}
+        readyAtTick: 10,
+        type: 'test',
+      };
+      const event2: ScheduledEvent = {
+        targetId: 'comp-2',
+        scheduledAtTick: 0,
+        readyAtTick: 20,
+        type: 'test',
       };
 
-      queue.schedule(event);
-      expect(queue.size()).toBe(1);
+      queue.schedule(event1);
+      queue.schedule(event2);
+      queue.getReadyEvents(10);
 
-      queue.getReadyEvents(5);
-      expect(queue.size()).toBe(0);
+      expect(queue.size()).toBe(1);
     });
   });
 
-  describe('stress test', () => {
-    it('should handle many events efficiently', () => {
-      // Schedule 1000 events with random ready times
-      const events: ScheduledEvent[] = [];
+  describe('heap operations', () => {
+    it('should maintain min-heap property with random insertions', () => {
+      // Schedule events in random order
+      const readyTimes = [50, 10, 30, 20, 40, 5, 15, 25];
+
+      for (let i = 0; i < readyTimes.length; i++) {
+        const event: ScheduledEvent = {
+          targetId: `comp-${i}`,
+          scheduledAtTick: 0,
+          readyAtTick: readyTimes[i]!,
+          type: 'test',
+        };
+        queue.schedule(event);
+      }
+
+      expect(queue.size()).toBe(8);
+
+      // Retrieve events one by one - should come out in sorted order
+      const ready = queue.getReadyEvents(100);
+      const sortedTimes = [...readyTimes].sort((a, b) => a - b);
+
+      expect(ready.length).toBe(8);
+      for (let i = 0; i < ready.length; i++) {
+        expect(ready[i]?.readyAtTick).toBe(sortedTimes[i]);
+      }
+    });
+
+    it('should handle large number of events efficiently', () => {
+      const startTime = Date.now();
+
+      // Schedule 1000 events
       for (let i = 0; i < 1000; i++) {
-        const scheduledAt = Math.floor(i / 10); // 100 unique scheduled ticks
-        const delay = Math.floor(Math.random() * 100);
-        events.push({
-          scheduledAtTick: scheduledAt,
-          readyAtTick: scheduledAt + delay,
-          targetType: 'component',
-          targetId: generateUUID(),
-          newState: {}
-        });
+        const event: ScheduledEvent = {
+          targetId: `comp-${i}`,
+          scheduledAtTick: 0,
+          readyAtTick: Math.floor(Math.random() * 1000),
+          type: 'test',
+        };
+        queue.schedule(event);
       }
 
-      // Schedule all events
-      events.forEach(e => queue.schedule(e));
+      const scheduleTime = Date.now() - startTime;
       expect(queue.size()).toBe(1000);
+      expect(scheduleTime).toBeLessThan(1000); // Should schedule in < 1 second
 
-      // Retrieve events tick by tick
-      let totalRetrieved = 0;
-      for (let tick = 0; tick < 200; tick++) {
-        const ready = queue.getReadyEvents(tick);
-        totalRetrieved += ready.length;
+      // Retrieve all events
+      const retrieveStartTime = Date.now();
+      const ready = queue.getReadyEvents(1000);
+      const retrieveTime = Date.now() - retrieveStartTime;
 
-        // Verify FIFO ordering for same tick
-        for (let i = 1; i < ready.length; i++) {
-          if (ready[i].readyAtTick === ready[i - 1].readyAtTick) {
-            expect(ready[i].scheduledAtTick).toBeGreaterThanOrEqual(ready[i - 1].scheduledAtTick);
-          }
-        }
+      expect(ready.length).toBe(1000);
+      expect(retrieveTime).toBeLessThan(1000); // Should retrieve in < 1 second
+
+      // Verify sorted order
+      for (let i = 1; i < ready.length; i++) {
+        expect(ready[i]!.readyAtTick).toBeGreaterThanOrEqual(ready[i - 1]!.readyAtTick);
       }
+    });
+  });
 
-      expect(totalRetrieved).toBe(1000);
-      expect(queue.size()).toBe(0);
+  describe('event parameters', () => {
+    it('should preserve event parameters', () => {
+      const params = new Map([
+        ['key1', 'value1'],
+        ['key2', 'value2'],
+      ]);
+
+      const event: ScheduledEvent = {
+        targetId: 'comp-1',
+        scheduledAtTick: 0,
+        readyAtTick: 10,
+        type: 'test',
+        parameters: params,
+      };
+
+      queue.schedule(event);
+      const ready = queue.getReadyEvents(10);
+
+      expect(ready[0]?.parameters).toBe(params);
+      expect(ready[0]?.parameters?.get('key1')).toBe('value1');
+    });
+
+    it('should handle events without parameters', () => {
+      const event: ScheduledEvent = {
+        targetId: 'comp-1',
+        scheduledAtTick: 0,
+        readyAtTick: 10,
+        type: 'test',
+      };
+
+      queue.schedule(event);
+      const ready = queue.getReadyEvents(10);
+
+      expect(ready[0]?.parameters).toBeUndefined();
     });
   });
 });

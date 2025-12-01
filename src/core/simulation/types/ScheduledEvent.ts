@@ -4,8 +4,6 @@
  */
 
 import type { UUID } from '@/core/types/Identifier.js';
-import type { ComponentState } from '../states/ComponentState.js';
-import type { NodeElectricalState } from '../states/NodeElectricalState.js';
 
 /**
  * Scheduled event for delayed component transitions.
@@ -15,6 +13,11 @@ import type { NodeElectricalState } from '../states/NodeElectricalState.js';
  * @public
  */
 export interface ScheduledEvent {
+  /**
+   * UUID of target component.
+   */
+  readonly targetId: UUID;
+
   /**
    * Tick when this event was scheduled (for FIFO ordering).
    * @readonly
@@ -28,18 +31,12 @@ export interface ScheduledEvent {
   readonly readyAtTick: number;
 
   /**
-   * Type of target element.
+   * Indicates the type of this event, eg 'ClosingEnd', 'OpeningEnd', etc.
    */
-  readonly targetType: 'component' | 'enode' | 'wire';
+  readonly type: string;
 
   /**
-   * UUID of target element.
+   * extra parameters associated with this event.
    */
-  readonly targetId: UUID;
-
-  /**
-   * New state to apply when event fires.
-   * Structure depends on targetType.
-   */
-  readonly newState: Partial<ComponentState> | Partial<NodeElectricalState>;
+  readonly parameters?: Map<string, string> | undefined;
 }

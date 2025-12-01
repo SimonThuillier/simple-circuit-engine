@@ -15,24 +15,20 @@ export interface UserCommand {
   /**
    * Type of command.
    */
-  readonly commandType: 'toggle_switch' | 'set_component_state' | 'modify_config';
+  readonly type: 'toggle_switch';
 
   /**
    * UUID of target component.
    */
-  readonly targetComponentId: UUID;
+  readonly targetId: UUID;
 
   /**
-   * Command-specific parameters.
-   * - For toggle_switch: undefined (no params)
-   * - For set_component_state: { state: string }
-   * - For modify_config: { key: string, value: string }
+   * tick when this command was scheduled.
    */
-  readonly params?: Record<string, unknown>;
+  scheduledAtTick: number;
 
   /**
-   * Optional tick when command should be applied.
-   * If null, applies at next tick (most common case).
+   * extra parameters associated with this event.
    */
-  readonly tick: number | null;
+  readonly parameters?: Map<string, string> | null;
 }

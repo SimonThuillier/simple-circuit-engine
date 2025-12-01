@@ -50,7 +50,7 @@ export class BehaviorRegistry {
    * @param behaviors - Array of behaviors to register
    */
   registerAll(behaviors: ComponentBehavior[]): void {
-    behaviors.forEach(behavior => this.register(behavior));
+    behaviors.forEach((behavior) => this.register(behavior));
   }
 
   /**

@@ -6,4 +6,4 @@
 export type { NodeElectricalState } from './NodeElectricalState.js';
 export { ComponentState } from './ComponentState.js';
 export { BatteryState } from './BatteryState.js';
-export { LEDState } from './LEDState.js';
+export { SmallLEDState } from './SmallLEDState';

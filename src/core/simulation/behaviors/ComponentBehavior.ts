@@ -3,34 +3,13 @@
  * @module core/simulation/behaviors
  */
 
-import type { Circuit } from '@/core/Circuit.js';
+import type { UUID } from '@/core/types/Identifier.js';
 import type { Component } from '@/core/Component.js';
 import type { ComponentState } from '../states/ComponentState.js';
-import type { SimulationState } from '../SimulationState.js';
 import type { ScheduledEvent } from '../types/ScheduledEvent.js';
-
-/**
- * Context object passed to component behaviors during simulation.
- * Provides access to circuit topology and current simulation state.
- *
- * @public
- */
-export interface BehaviorContext {
-  /**
-   * The complete circuit topology (immutable during simulation).
-   */
-  readonly circuit: Circuit;
-
-  /**
-   * Current simulation state (tick, electrical states, component states).
-   */
-  readonly state: SimulationState;
-
-  /**
-   * Current simulation tick number.
-   */
-  readonly currentTick: number;
-}
+import type { ComponentType } from '@/core/types/ComponentType';
+import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
+import type { NodeElectricalState, UserCommand } from '@/core/simulation';
 
 /**
  * Result returned by component behavior evaluation.
@@ -40,15 +19,15 @@ export interface BehaviorContext {
  */
 export interface BehaviorResult {
   /**
-   * Updated component state (null if no change).
+   * Updated component state
    */
-  readonly componentState: ComponentState | null;
+  readonly componentState: ComponentState;
 
   /**
-   * Electrical states for output pins (key: pin UUID).
-   * Only include pins that changed state.
+   * boolean indicating
+   * if the component state has changed (or events scheduled ?)
    */
-  readonly outputPinStates: ReadonlyMap<string, { hasVoltage: boolean; hasCurrent: boolean }>;
+  hasChanged: boolean;
 
   /**
    * Events to schedule for future ticks (e.g., delayed transitions).
@@ -70,27 +49,68 @@ export interface ComponentBehavior {
    * Component type this behavior handles (e.g., "battery", "led", "switch").
    * Used as the key in BehaviorRegistry.
    */
-  readonly componentType: string;
+  readonly componentType: ComponentType;
 
   /**
-   * Evaluate component behavior for current tick.
-   * Called when:
-   * - Component's input pins changed state (dirty tracking)
-   * - Scheduled event for this component fired
-   * - User command targeted this component
-   *
-   * @param component - The component being evaluated
-   * @param context - Simulation context (circuit, state, tick)
-   * @returns Result containing new states and scheduled events
-   */
-  evaluate(component: Component, context: BehaviorContext): BehaviorResult;
-
-  /**
-   * Create initial state for a new component instance.
+   * Create initial state for a component instance.
    * Called when simulation is initialized.
+   * Initial state may use component satic configuration (e.g., initial switch position).
    *
    * @param component - The component to initialize
    * @returns Initial ComponentState for this component
    */
   createInitialState(component: Component): ComponentState;
+
+  /**
+   * Determine if conductivity is allowed between two pins of the component.
+   * Called during simulation when evaluating electrical connectivity.
+   * @param component
+   * @param state current component state
+   * @param conductivityType
+   * @param pinId
+   * @param otherPinId
+   */
+  allowConductivity(
+    component: Component,
+    state: ComponentState,
+    conductivityType: ENodeSourceType,
+    pinId: string,
+    otherPinId: string
+  ): boolean;
+
+  /**
+   * Define component state change in response to its pins state change (after propagateConductivity)
+   *
+   * @param component - The component being evaluated
+   * @param state - component state prior to this evaluation
+   * @param nodeStates - Current electrical states of all ENodes in the simulation
+   * @param targetTick - target tick
+   * @returns Result containing updated state and scheduled events
+   */
+  onPinsChange(
+    component: Component,
+    state: ComponentState,
+    nodeStates: ReadonlyMap<UUID, NodeElectricalState>,
+    targetTick: number
+  ): BehaviorResult;
+
+  /**
+   * Define component state change in response to a User command being received
+   *
+   * @param component - The component being evaluated
+   * @param state - component state prior to this evaluation
+   * @param command - UserCommand to process
+   * @returns Result containing updated state and scheduled events
+   */
+  onUserCommand(component: Component, state: ComponentState, command: UserCommand): BehaviorResult;
+
+  /**
+   * Define component state change in response to a ScheduledEvent firing at ready
+   *
+   * @param component - The component being evaluated
+   * @param state - component state prior to this evaluation
+   * @param event - firing ScheduledEvent to process
+   * @returns Result containing updated state and scheduled events
+   */
+  onEventFiring(component: Component, state: ComponentState, event: ScheduledEvent): BehaviorResult;
 }
