@@ -1,23 +1,45 @@
 /**
+ * 3D Circuit Renderers Module
  * @module rendering
  *
- * Three.js-based 3D visualization layer.
- * Depends only on core/ module and Three.js.
+ * Provides Three.js-based renderers for circuit visualization:
+ * - StaticCircuitRenderer: Static circuit visualization with editing capabilities
+ * - SimulationCircuitRenderer: Live simulation visualization with animation
  *
- * This module contains:
- * - 3D scene setup and management
- * - Component visual representations
- * - Wire rendering with current flow animation
- * - Camera controls and interaction
- * - Visual state synchronization with core simulation
+ * @example
+ * ```typescript
+ * import { StaticCircuitRenderer, FactoryRegistry } from 'simple-circuit-engine/rendering';
  *
- * @packageDocumentation
+ * const registry = new FactoryRegistry(defaultFactory);
+ * const renderer = new StaticCircuitRenderer(circuit, registry);
+ * renderer.initialize(container);
+ * ```
  */
 
-// TODO: Export rendering classes
-// - SceneManager
-// - ComponentRenderer
-// - WireRenderer
-// - CameraController
+// Renderer classes
+export { StaticCircuitRenderer } from './static/StaticCircuitRenderer';
+export { SimulationCircuitRenderer } from './simulation/SimulationCircuitRenderer';
 
-export {};
+// Shared utilities
+export { FactoryRegistry } from './shared/FactoryRegistry';
+export { createDefaultFactory } from './shared/ComponentVisualFactory';
+export { EventEmitter } from './shared/EventEmitter';
+export { InterpolationController } from './shared/InterpolationController';
+
+// Types
+export type {
+  RenderEvent,
+  RenderEventMap,
+  RenderCallback,
+  RenderObjectType,
+  ChangedData,
+  RendererOptions,
+  ToolType,
+  CursorType,
+  IEditingTool,
+} from './shared/types';
+
+export type {
+  ComponentVisualFactory,
+  IFactoryRegistry,
+} from './shared/ComponentVisualFactory';
