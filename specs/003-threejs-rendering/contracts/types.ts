@@ -1,5 +1,5 @@
 /**
- * Shared types for 3D Circuit Renderers
+ * Shared types for 3D Circuit SceneManagers
  * @module rendering/contracts/types
  */
 
@@ -76,14 +76,14 @@ export interface ChangedData {
   addedENodes?: UUID[];
   /** ENode IDs that were removed from the circuit */
   removedENodes?: UUID[];
-  /** Flag indicating simulation state has changed (for SimulationCircuitRenderer) */
+  /** Flag indicating simulation state has changed (for SimulationCircuitSceneManager) */
   stateChanged?: boolean;
 }
 
 /**
  * Optional configuration for renderer initialization
  */
-export interface RendererOptions {
+export interface SceneManagerOptions {
   /** Background color for the scene (default: 0x000000) */
   backgroundColor?: number;
   /** Enable anti-aliasing (default: true) */
@@ -125,7 +125,7 @@ export type CursorType =
  * Interface defining contract for editing tool implementations
  *
  * All editing tools must implement this interface to integrate with
- * StaticCircuitRenderer's tool system.
+ * CircuitSceneManager's tool system.
  *
  * @example
  * ```typescript

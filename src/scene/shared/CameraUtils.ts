@@ -26,7 +26,7 @@ export function createPerspectiveCamera(
   const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 
   // Default camera position for circuit viewing
-  camera.position.set(0, 10, 20);
+  camera.position.set(0, 0, 20);
   camera.lookAt(0, 0, 0);
 
   return camera;
@@ -52,7 +52,7 @@ export function setupCameraFromMetadata(
   // Position camera above and away from circuit
   camera.position.set(
     circuitCenter.x,
-    circuitCenter.y + distance * 0.5,
+    circuitCenter.y,
     circuitCenter.z + distance * 1.2
   );
   camera.lookAt(circuitCenter);

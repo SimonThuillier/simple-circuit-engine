@@ -1,6 +1,6 @@
 /**
- * Static Circuit Renderer Contract
- * @module rendering/contracts/StaticCircuitRenderer
+ * Static Circuit SceneManager Contract
+ * @module scene/contracts/CircuitSceneManager
  */
 
 import type { Circuit } from '@/core/Circuit';
@@ -9,30 +9,30 @@ import type {
   RenderEvent,
   RenderCallback,
   ChangedData,
-  RendererOptions,
+  SceneManagerOptions,
   ToolType,
 } from './types';
 import type * as THREE from 'three';
 
 /**
- * Renderer for static circuit visualization and editing
+ * SceneManager for circuit topology visualization and editing
  *
- * Visualizes circuit topology in a non-simulated state, supporting view manipulation
+ * Manage a THREE.js Scene to visualize a circuit topology in a non-simulated state, supporting view manipulation
  * and editing interactions via integrated tool system. Operates on Circuit instances.
  *
  * **Lifecycle**:
- * 1. Construct with Circuit and FactoryRegistry
+ * 1. Construct with FactoryRegistry
  * 2. Call initialize(container) to setup Three.js scene
- * 3. Call update() when circuit topology changes
- * 4. Call render() each frame from external animation loop
+ * 3. Set the manager's Circuit with updateCircuit(circuit)
+ * 4. Call update() when circuit topology changes
  * 5. Call dispose() to cleanup WebGL resources
  *
  * **Event System**:
  * Register callbacks via on() for interaction events:
  * - 'hover'/'unhover': User hovers over circuit elements
  * - 'select'/'deselect': User selects circuit elements
- * - 'error': Rendering errors occurred
- * - 'ready': Renderer initialization complete
+ * - 'error': scene management errors occurred
+ * - 'ready': SceneManager initialization complete
  * - Tool system events: 'toolActivated', 'toolDeactivated', 'toolOperationCompleted', etc.
  *
  * **Tool System** (FR-025 to FR-037):
@@ -47,9 +47,9 @@ import type * as THREE from 'three';
  * @example
  * ```typescript
  * const registry = new FactoryRegistry(defaultFactory);
- * const renderer = new StaticCircuitRenderer(circuit, registry);
+ * const renderer = new CircuitSceneManager(circuit, registry);
  *
- * renderer.on('ready', () => console.log('Renderer ready'));
+ * renderer.on('ready', () => console.log('SceneManager ready'));
  * renderer.on('select', ({ objectId, objectType }) => {
  *   console.log(`Selected ${objectType}: ${objectId}`);
  * });
@@ -69,16 +69,16 @@ import type * as THREE from 'three';
  * // In animation loop
  * function animate() {
  *   renderer.render();
- *   webGLRenderer.render(renderer.getScene(), camera);
+ *   webGLSceneManager.render(renderer.getScene(), camera);
  *   requestAnimationFrame(animate);
  * }
  * ```
  */
-export interface IStaticCircuitRenderer {
+export interface ICircuitSceneManager {
   /**
    * The circuit topology being visualized (readonly)
    */
-  readonly circuit: Circuit;
+  circuit?: Circuit | null;
 
   /**
    * The component visual factory registry (readonly)
@@ -98,10 +98,10 @@ export interface IStaticCircuitRenderer {
    * @throws {Error} If initialization fails (emits 'error' event with details)
    *
    * @remarks
-   * The container is stored for reference but rendering is performed by external WebGLRenderer.
+   * The container is stored for reference but rendering is performed by external WebGLSceneManager.
    * Use getScene() to access the scene for rendering.
    */
-  initialize(container: HTMLElement, options?: RendererOptions): void;
+  initialize(container: HTMLElement, options?: SceneManagerOptions): void;
 
   /**
    * Update the visualization based on circuit changes
@@ -139,14 +139,14 @@ export interface IStaticCircuitRenderer {
    * Render one frame (called by external animation loop)
    *
    * Updates visual state, camera, and prepares scene for rendering.
-   * Does NOT perform actual WebGL rendering (consumer calls webGLRenderer.render()).
+   * Does NOT perform actual WebGL rendering (consumer calls webGLSceneManager.render()).
    *
    * @throws {Error} If not initialized
    * @throws {Error} If render fails (emits 'error' event with details)
    *
    * @remarks
    * This method should be called every frame from the consumer's animation loop.
-   * The actual rendering to canvas is performed by consumer's WebGLRenderer.
+   * The actual rendering to canvas is performed by consumer's WebGLSceneManager.
    */
   render(): void;
 
@@ -205,7 +205,7 @@ export interface IStaticCircuitRenderer {
    * @remarks
    * Use this to access the scene for rendering:
    * ```typescript
-   * webGLRenderer.render(renderer.getScene(), camera);
+   * webGLSceneManager.render(renderer.getScene(), camera);
    * ```
    *
    * Also provides access to scene.camera for direct camera manipulation:

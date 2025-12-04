@@ -27,7 +27,7 @@ Three distinct layers with strict dependency rules:
 
 ```
 core/       → Pure TypeScript, minimal dependencies, works in Node.js
-rendering/  → Three.js visualization, depends only on core/
+scene/      → Manage Three.js scenes for visualization and interaction, depends only on core/
 playback/   → Scenario orchestration, depends on core/ and rendering/
 ```
 
@@ -35,7 +35,7 @@ The `core/` module is publishable separately for headless/server use.
 
 **Hexagonal Architecture Philosophy**:
 The `core/` module is the innermost hexagon—pure domain logic with no knowledge of how it will be rendered or consumed.
-`rendering/` and `playback/` are adapters that plug into core without contaminating it.
+`scene/` and `playback/` are adapters that plug into core without contaminating it.
 Zooming out, the entire `simple-circuit-engine` library is itself a core that client applications should be able to adapt easily to their own UI frameworks and needs.
 Dependencies point inward, not outward.
 
@@ -77,18 +77,18 @@ If a developer needs to read source code to understand how to use the library, t
 
 ### Module Rules
 
-| Module       | May Import      | May NOT Import             | DOM Access             |
-| ------------ | --------------- | -------------------------- | ---------------------- |
-| `core/`      | nothing         | three, rendering, playback | ❌                     |
-| `rendering/` | core, three     | playback                   | ✅ mainly via Three.js |
-| `playback/`  | core, rendering | -                          | ❌                     |
+| Module      | May Import  | May NOT Import         | DOM Access             |
+|-------------|-------------|------------------------| ---------------------- |
+| `core/`     | nothing     | three, scene, playback | ❌                     |
+| `scene/`    | core, three | playback               | ✅ mainly via Three.js |
+| `playback/` | core, scene | -                      | ❌                     |
 
 ### Public API Shape
 
 - Single `CircuitEngine` facade class as main entry point
 - Event-based communication (no callbacks in method signatures)
 - Chainable methods where it makes sense (`engine.loadCircuit(c).play()`)
-- All Three.js internals hidden from consumers
+- Public rendering and playback APIs can use Three.js public types (e.g., `THREE.Object3D`). 
 
 ### Resource Management
 
@@ -116,6 +116,7 @@ If a developer needs to read source code to understand how to use the library, t
 - No `any` types
 - Public APIs have JSDoc
 - Core module: 80% test coverage minimum
+- Scene & playback module: 60% test coverage minimum 
 - All tests pass before merge
 - Linting with strict tsc, formatting with Prettier
 
@@ -126,7 +127,7 @@ If a developer needs to read source code to understand how to use the library, t
 ```
 src/
   core/           # Simulation logic, types
-  rendering/      # Three.js visualization
+  scene/          # Three.js scene management and interactivity
   playback/       # Scenario player
   CircuitEngine.ts
   index.ts
@@ -136,7 +137,7 @@ samples/          # Sample circuits and scenarios (JSON)
 examples/         # Framework integration examples
 tests/
     core/           # Core module tests
-    rendering/      # Rendering module tests
+    scene/          # Scene module tests
     playback/       # Playback module tests
 docs/
 ```

@@ -11,7 +11,7 @@ import { CircuitRunner } from '../../src/core/simulation/CircuitRunner';
 import { BehaviorRegistry } from '../../src/core/simulation/behaviors/BehaviorRegistry';
 import { ComponentType } from '../../src/core/types/ComponentType';
 import type { Component } from '../../../src/core/components/Component';
-import type { ComponentVisualFactory } from '../../src/rendering/shared/ComponentVisualFactory';
+import type { ComponentVisualFactory } from '../../src/scene/shared/ComponentVisualFactory';
 
 /**
  * Create a simple mock circuit for testing

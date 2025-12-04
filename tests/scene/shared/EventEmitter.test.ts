@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { EventEmitter } from '../../../src/rendering/shared/EventEmitter';
+import { EventEmitter } from '../../../src/scene/shared/EventEmitter';
 
 // Test event map type
 interface TestEventMap {

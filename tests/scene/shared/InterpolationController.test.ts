@@ -9,7 +9,7 @@ import {
   easeInOutCubic,
   easeOutQuad,
   lerp,
-} from '../../../src/rendering/shared/InterpolationController';
+} from '../../../src/scene/shared/InterpolationController';
 
 describe('InterpolationController', () => {
   let controller: InterpolationController;

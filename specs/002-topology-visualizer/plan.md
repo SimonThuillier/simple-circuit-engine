@@ -32,7 +32,7 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 ### ✅ Modular Separation
 **Status**: PASS
-**Analysis**: This is a separate utility tool, not part of the core/rendering/playback modules. Lives in `output/` directory as a standalone debugging tool. Does not violate module boundaries.
+**Analysis**: This is a separate utility tool, not part of the core/scene/playback modules. Lives in `output/` directory as a standalone debugging tool. Does not violate module boundaries.
 
 ### ✅ Discrete Boolean Model
 **Status**: N/A
@@ -101,7 +101,7 @@ tests/
     └── integration.test.ts
 ```
 
-**Structure Decision**: Single project structure with visualizer code in `scripts/visualizer/` and bundled output in `output/`. Tests follow existing `tests/` structure. Visualizer is a development tool separate from the main library modules (core/rendering/playback).
+**Structure Decision**: Single project structure with visualizer code in `scripts/visualizer/` and bundled output in `output/`. Tests follow existing `tests/` structure. Visualizer is a development tool separate from the main library modules (core/scene/playback).
 
 ## Complexity Tracking
 
@@ -135,14 +135,14 @@ No constitution violations requiring justification. All gates passed or pending 
 - ParsedCircuit structure with component/enode/wire maps
 - DOT graph generation pipeline (JSON → Parsed → DOT → SVG)
 - CircuitVisualizer class API with error types
-- State management (idle/loading/rendering/success/error)
+- State management (idle/loading/scene/success/error)
 - Performance targets validated (<3s for 50 components)
 
 ### Constitution Re-Check (Post-Design) ✅ PASS
 
 All constitution gates verified after design phase:
 - ✅ Framework Agnosticism: Standalone tool, no framework dependencies
-- ✅ Modular Separation: Separate from core/rendering/playback modules
+- ✅ Modular Separation: Separate from core/scene/playback modules
 - ✅ Specification-Driven Development: Test strategy defined
 - ✅ Developer Experience: Enhances debugging workflow
 - ✅ Technology Stack: TypeScript + Vite + Vitest + d3-graphviz

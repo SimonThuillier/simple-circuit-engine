@@ -3,21 +3,21 @@
  * @module rendering
  *
  * Provides Three.js-based renderers for circuit visualization:
- * - StaticCircuitRenderer: Static circuit visualization with editing capabilities
+ * - CircuitSceneManager: Static circuit visualization with editing capabilities
  * - SimulationCircuitRenderer: Live simulation visualization with animation
  *
  * @example
  * ```typescript
- * import { StaticCircuitRenderer, FactoryRegistry } from 'simple-circuit-engine/rendering';
+ * import { CircuitSceneManager, FactoryRegistry } from 'simple-circuit-engine/rendering';
  *
  * const registry = new FactoryRegistry(defaultFactory);
- * const renderer = new StaticCircuitRenderer(circuit, registry);
+ * const renderer = new CircuitSceneManager(circuit, registry);
  * renderer.initialize(container);
  * ```
  */
 
 // Renderer classes
-export { StaticCircuitRenderer } from './static/StaticCircuitRenderer';
+export { CircuitSceneManager } from './static/CircuitSceneManager';
 export { SimulationCircuitRenderer } from './simulation/SimulationCircuitRenderer';
 
 // Shared utilities

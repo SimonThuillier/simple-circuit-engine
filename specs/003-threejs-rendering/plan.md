@@ -1,12 +1,12 @@
-# Implementation Plan: 3D Circuit Renderers
+# Implementation Plan: 3D Circuit SceneManagers
 
 **Branch**: `003-threejs-rendering` | **Date**: 2025-12-02 | **Spec**: [spec.md](./spec.md)
 
 ## Summary
 
-Implement two independent Three.js-based renderer classes (StaticCircuitRenderer for static/editing visualization, SimulationCircuitRenderer for live simulation visualization) plus a shared utilities module. Renderers expose programmatic APIs with hookable callbacks but do not implement DOM event handling. External consumers own the animation loop and call render() each frame. Component visuals are provided via injected factory registries.
+Implement two independent Three.js-based renderer classes (CircuitSceneManager for static/editing visualization, SimulationCircuitSceneManager for live simulation visualization) plus a shared utilities module. SceneManagers expose programmatic APIs with hookable callbacks but do not implement DOM event handling. External consumers own the animation loop and call render() each frame. Component visuals are provided via injected factory registries.
 
-**Update 2025-12-02**: StaticCircuitRenderer includes integrated tool system for circuit editing operations. Five core editing tools (Select, PlaceComponent, Wire, BranchingPoint, Delete) are built-in, each with distinct interaction patterns, preview rendering, and validation logic. Tools delegate circuit modifications to core Circuit API while providing visual feedback and event emission for consumer integration.
+**Update 2025-12-02**: CircuitSceneManager includes integrated tool system for circuit editing operations. Five core editing tools (Select, PlaceComponent, Wire, BranchingPoint, Delete) are built-in, each with distinct interaction patterns, preview rendering, and validation logic. Tools delegate circuit modifications to core Circuit API while providing visual feedback and event emission for consumer integration.
 
 ## Technical Context
 
@@ -26,10 +26,10 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 ### Gate 1: Framework Agnosticism ✅ PASS
 
-**Requirement**: Renderers must not depend on any UI framework (React, Vue, Angular). Must accept HTMLElement for mounting and manage own lifecycle.
+**Requirement**: SceneManagers must not depend on any UI framework (React, Vue, Angular). Must accept HTMLElement for mounting and manage own lifecycle.
 
 **Status**: ✅ **PASS**
-- Renderers accept container via `initialize(container: HTMLElement)`
+- SceneManagers accept container via `initialize(container: HTMLElement)`
 - No framework dependencies introduced
 - Event-driven API via `on(event, callback)`
 - Can be wrapped by any framework's binding layer
@@ -39,7 +39,7 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 **Requirement**: Strict dependency rules - `core/` (pure TS, no deps), `rendering/` (depends only on core + Three.js), `playback/` (depends on core + rendering)
 
 **Status**: ✅ **PASS**
-- Feature adds code to `src/rendering/` only
+- Feature adds code to `src/scene/` only
 - Depends on `src/core/` (Circuit, CircuitRunner, types) and Three.js
 - No dependencies on playback layer
 - Core module remains untouched and dependency-free
@@ -49,7 +49,7 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 **Requirement**: Event-based communication, no callbacks in method signatures, all Three.js internals hidden from consumers
 
 **Status**: ✅ **PASS**
-- Renderers use `on(event, callback)` for all events
+- SceneManagers use `on(event, callback)` for all events
 - Methods return void or simple types (no callback parameters)
 - Three.js internals accessed only via `getScene()` (intentional for camera access per clarifications)
 
@@ -85,8 +85,8 @@ specs/003-threejs-rendering/
 ├── data-model.md        # Phase 1 output (entity model)
 ├── quickstart.md        # Phase 1 output (usage guide)
 └── contracts/           # Phase 1 output (API contracts)
-    ├── StaticCircuitRenderer.ts
-    ├── SimulationCircuitRenderer.ts
+    ├── CircuitSceneManager.ts
+    ├── SimulationCircuitSceneManager.ts
     ├── ComponentVisualFactory.ts
     └── types.ts
 ```
@@ -100,9 +100,9 @@ src/
 │   ├── simulation/CircuitRunner.ts
 │   └── types/
 ├── rendering/                      # (NEW - primary work location)
-│   ├── index.ts                    # Exports StaticCircuitRenderer, SimulationCircuitRenderer, shared utils
+│   ├── index.ts                    # Exports CircuitSceneManager, SimulationCircuitSceneManager, shared utils
 │   ├── static/                     # Static circuit renderer module
-│   │   ├── StaticCircuitRenderer.ts
+│   │   ├── CircuitSceneManager.ts
 │   │   ├── StaticScene.ts
 │   │   ├── EditController.ts
 │   │   └── tools/                  # Editing tool implementations
@@ -113,7 +113,7 @@ src/
 │   │       ├── BranchingPointTool.ts  # Branching point insertion tool
 │   │       └── DeleteTool.ts       # Deletion tool
 │   ├── simulation/                 # Simulation circuit renderer module
-│   │   ├── SimulationCircuitRenderer.ts
+│   │   ├── SimulationCircuitSceneManager.ts
 │   │   ├── SimulationScene.ts
 │   │   └── AnimationController.ts
 │   └── shared/                     # Shared utilities module
@@ -129,8 +129,8 @@ src/
 tests/
 ├── unit/
 │   └── rendering/                  # (NEW - unit tests for renderers)
-│       ├── StaticCircuitRenderer.test.ts
-│       ├── SimulationCircuitRenderer.test.ts
+│       ├── CircuitSceneManager.test.ts
+│       ├── SimulationCircuitSceneManager.test.ts
 │       ├── ComponentVisualFactory.test.ts
 │       ├── FactoryRegistry.test.ts
 │       ├── tools/                  # Tool system unit tests
@@ -145,7 +145,7 @@ tests/
 └── integration/                    # (not in scope for this feature)
 ```
 
-**Structure Decision**: Single project structure maintained. New code added to `src/rendering/` with three submodules: `static/`, `simulation/`, and `shared/`. This aligns with constitution's modular separation and existing repository structure. Tests added to `tests/unit/rendering/` with Three.js mocks.
+**Structure Decision**: Single project structure maintained. New code added to `src/scene/` with three submodules: `static/`, `simulation/`, and `shared/`. This aligns with constitution's modular separation and existing repository structure. Tests added to `tests/unit/scene/` with Three.js mocks.
 
 ## Complexity Tracking
 
@@ -155,9 +155,9 @@ tests/
 
 ### Research Tasks
 
-1. **Three.js Renderer Pattern for Library Context**
+1. **Three.js SceneManager Pattern for Library Context**
    - Research best practices for Three.js renderers in library (non-application) context
-   - How to manage WebGLRenderer lifecycle when consumer owns animation loop
+   - How to manage WebGLSceneManager lifecycle when consumer owns animation loop
    - Pattern for exposing Scene while maintaining encapsulation
 
 2. **Component Visual Factory Pattern**
@@ -176,7 +176,7 @@ tests/
    - Error handling in event callbacks
 
 5. **Testing Strategy for Three.js Code**
-   - Mocking strategies for Three.js classes (Scene, Camera, WebGLRenderer, etc.)
+   - Mocking strategies for Three.js classes (Scene, Camera, WebGLSceneManager, etc.)
    - Unit testing 3D scene construction without actual rendering
    - Verifying object creation, materials, geometries without visual output
 
@@ -187,8 +187,8 @@ tests/
 ### Data Model
 
 **Entities**:
-1. **StaticCircuitRenderer**: Main class for static/editing visualization with integrated tool system
-2. **SimulationCircuitRenderer**: Main class for live simulation visualization
+1. **CircuitSceneManager**: Main class for static/editing visualization with integrated tool system
+2. **SimulationCircuitSceneManager**: Main class for live simulation visualization
 3. **ComponentVisualFactory**: Factory function type for creating component visuals
 4. **FactoryRegistry**: Registry mapping ComponentType → ComponentVisualFactory
 5. **RenderEvent**: Union type of supported event types (includes tool events)
@@ -202,18 +202,18 @@ tests/
 **Relationships**:
 - Both renderers depend on FactoryRegistry (constructor injection)
 - Both renderers maintain their own Three.js Scene
-- StaticCircuitRenderer operates on Circuit instances
-- SimulationCircuitRenderer operates on CircuitRunner instances
-- Renderers emit RenderEvents to registered RenderCallbacks
-- **StaticCircuitRenderer manages collection of IEditingTool instances**
+- CircuitSceneManager operates on Circuit instances
+- SimulationCircuitSceneManager operates on CircuitRunner instances
+- SceneManagers emit RenderEvents to registered RenderCallbacks
+- **CircuitSceneManager manages collection of IEditingTool instances**
 - **Each IEditingTool maintains ToolState and delegates Circuit modifications to core Circuit API**
-- **Tools emit tool-specific events through StaticCircuitRenderer's event system**
+- **Tools emit tool-specific events through CircuitSceneManager's event system**
 
 ### API Contracts
 
 **Public Interfaces** (to be generated in `/contracts/`):
 
-1. **StaticCircuitRenderer.ts**: Class signature with public methods
+1. **CircuitSceneManager.ts**: Class signature with public methods
    - `constructor(circuit: Circuit, factoryRegistry: FactoryRegistry)`
    - `initialize(container: HTMLElement): void`
    - `update(changedData?: ChangedData): void`
@@ -230,7 +230,7 @@ tests/
    - `handleToolHover(worldPosition: THREE.Vector3): void`
    - `handleToolScroll(delta: number): void`
 
-2. **SimulationCircuitRenderer.ts**: Class signature with public methods
+2. **SimulationCircuitSceneManager.ts**: Class signature with public methods
    - `constructor(circuitRunner: CircuitRunner, factoryRegistry: FactoryRegistry)`
    - `initialize(container: HTMLElement): void`
    - `update(changedData?: ChangedData): void`
@@ -249,7 +249,7 @@ tests/
    - `RenderEventMap`: Type-safe event payload mapping
    - `RenderCallback`: Function signature
    - `ChangedData`: Object type for incremental updates
-   - `RendererOptions`: Optional configuration
+   - `SceneManagerOptions`: Optional configuration
    - **Tool System Types**:
    - `ToolType`: 'select' | 'placeComponent' | 'wire' | 'branchingPoint' | 'delete'
    - `CursorType`: 'default' | 'pointer' | 'crosshair' | 'move' | 'not-allowed' | 'grab' | 'grabbing'

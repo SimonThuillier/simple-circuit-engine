@@ -12,7 +12,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@/core': resolve(__dirname, './src/core'),
-      '@/rendering': resolve(__dirname, './src/rendering'),
+      '@/scene': resolve(__dirname, './src/scene'),
       '@/playback': resolve(__dirname, './src/playback'),
       'simple-circuit-engine': resolve(__dirname, './src/index.ts'),
     },

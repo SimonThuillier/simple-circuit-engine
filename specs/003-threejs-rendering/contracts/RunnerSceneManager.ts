@@ -1,15 +1,15 @@
 /**
- * Simulation Circuit Renderer Contract
- * @module rendering/contracts/SimulationCircuitRenderer
+ * CircuitRunner SceneManager Contract
+ * @module scene/contracts/SimulationCircuitSceneManager
  */
 
 import type { CircuitRunner } from '@/core/simulation/CircuitRunner';
 import type { IFactoryRegistry } from './ComponentVisualFactory';
-import type { RenderEvent, RenderCallback, ChangedData, RendererOptions } from './types';
+import type { RenderEvent, RenderCallback, ChangedData, SceneManagerOptions } from './types';
 import type * as THREE from 'three';
 
 /**
- * Renderer for live circuit simulation visualization
+ * SceneManager for live circuit simulation visualization
  *
  * Visualizes circuit state during active simulation, displaying real-time updates,
  * animations, and state changes. Operates on CircuitRunner instances.
@@ -21,21 +21,21 @@ import type * as THREE from 'three';
  * - Synchronizes with simulation timing
  *
  * **Lifecycle**:
- * 1. Construct with CircuitRunner and FactoryRegistry
+ * 1. Construct with FactoryRegistry
  * 2. Call initialize(container) to setup Three.js scene
  * 3. Call render() each frame from external animation loop (handles interpolation automatically)
  * 4. Optionally call update() when simulation topology changes (rare)
  * 5. Call dispose() to cleanup WebGL resources
  *
  * **Time Synchronization**:
- * Renderer automatically interpolates visual state between simulation ticks based on
+ * SceneManager automatically interpolates visual state between simulation ticks based on
  * elapsed real-time, providing smooth 30-60 FPS animation even when simulation
  * runs at different tick rates.
  *
  * @example
  * ```typescript
  * const registry = new FactoryRegistry(defaultFactory);
- * const renderer = new SimulationCircuitRenderer(circuitRunner, registry);
+ * const renderer = new SimulationCircuitSceneManager(circuitRunner, registry);
  *
  * renderer.on('ready', () => console.log('Ready to simulate'));
  * renderer.on('error', ({ message }) => console.error(message));
@@ -46,16 +46,16 @@ import type * as THREE from 'three';
  * function animate() {
  *   circuitRunner.tick(); // Advance simulation
  *   renderer.render();     // Interpolate and update visuals
- *   webGLRenderer.render(renderer.getScene(), camera);
+ *   webGLSceneManager.render(renderer.getScene(), camera);
  *   requestAnimationFrame(animate);
  * }
  * ```
  */
-export interface ISimulationCircuitRenderer {
+export interface ICircuitRunnerSceneManager {
   /**
    * The circuit simulation runner being visualized (readonly)
    */
-  readonly circuitRunner: CircuitRunner;
+  circuitRunner?: CircuitRunner | null;
 
   /**
    * The component visual factory registry (readonly)
@@ -75,15 +75,17 @@ export interface ISimulationCircuitRenderer {
    * @throws {Error} If initialization fails (emits 'error' event with details)
    *
    * @remarks
-   * Unlike StaticCircuitRenderer, this renderer sets up additional systems for:
+   * Unlike CircuitSceneManager, this renderer sets up additional systems for:
    * - State interpolation tracking
    * - Animation controllers for wires
    * - Material state management for components
    */
-  initialize(container: HTMLElement, options?: RendererOptions): void;
+  initialize(container: HTMLElement, options?: SceneManagerOptions): void;
 
   /**
    * Update the visualization based on simulation state changes
+   *
+   * Manage a THREE.js Scene to visualize a live circuit in a simulated state
    *
    * Typically NOT needed during normal simulation (state changes handled automatically).
    * Only call when simulation topology changes (e.g., circuit modified mid-simulation).
@@ -116,7 +118,7 @@ export interface ISimulationCircuitRenderer {
    * @remarks
    * This method MUST be called every frame for smooth animation.
    * Interpolation is frame-rate independent (works at 30-120 FPS).
-   * Does NOT perform actual WebGL rendering (consumer calls webGLRenderer.render()).
+   * Does NOT perform actual WebGL rendering (consumer calls webGLSceneManager.render()).
    *
    * **Performance**: Uses dirty tracking to only update changed elements.
    *
@@ -130,7 +132,7 @@ export interface ISimulationCircuitRenderer {
    *     lastTickTime = Date.now();
    *   }
    *   renderer.render(); // Interpolates smoothly between ticks
-   *   webGLRenderer.render(renderer.getScene(), camera);
+   *   webGLSceneManager.render(renderer.getScene(), camera);
    *   requestAnimationFrame(animate);
    * }
    * ```
@@ -192,7 +194,7 @@ export interface ISimulationCircuitRenderer {
    * @remarks
    * Use this to access the scene for rendering:
    * ```typescript
-   * webGLRenderer.render(renderer.getScene(), camera);
+   * webGLSceneManager.render(renderer.getScene(), camera);
    * ```
    *
    * Also provides access to scene.camera for direct camera manipulation:

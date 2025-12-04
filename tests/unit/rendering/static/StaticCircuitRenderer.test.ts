@@ -1,28 +1,28 @@
 /**
- * Unit tests for StaticCircuitRenderer
- * @module tests/unit/rendering/static/StaticCircuitRenderer.test
+ * Unit tests for CircuitSceneManager
+ * @module tests/unit/rendering/static/CircuitSceneManager.test
  * @vitest-environment jsdom
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as THREE from 'three';
-import { StaticCircuitRenderer } from '../../../../src/rendering/static/StaticCircuitRenderer';
-import { FactoryRegistry } from '../../../../src/rendering/shared/FactoryRegistry';
-import { createDefaultFactory } from '../../../../src/rendering/shared/ComponentVisualFactory';
+import { CircuitSceneManager } from '../../../../src/scene/static/CircuitSceneManager';
+import { FactoryRegistry } from '../../../../src/scene/shared/FactoryRegistry';
+import { createDefaultFactory } from '../../../../src/scene/shared/ComponentVisualFactory';
 import { ComponentType } from '../../../../src/core/types/ComponentType';
 import { ENodeType } from '../../../../src/core/types/ENodeType';
-import { createMockCircuit } from '../../../rendering/helpers';
+import { createMockCircuit } from '../../../scene/helpers';
 
-describe('StaticCircuitRenderer', () => {
+describe('CircuitSceneManager', () => {
   let circuit: ReturnType<typeof createMockCircuit>;
   let registry: FactoryRegistry;
-  let renderer: StaticCircuitRenderer;
+  let renderer: CircuitSceneManager;
   let container: HTMLElement;
 
   beforeEach(() => {
     circuit = createMockCircuit({ componentCount: 2, wireCount: 1 });
     registry = new FactoryRegistry(createDefaultFactory());
-    renderer = new StaticCircuitRenderer(circuit, registry);
+    renderer = new CircuitSceneManager(circuit, registry);
 
     // Mock DOM container
     container = document.createElement('div');
@@ -45,13 +45,13 @@ describe('StaticCircuitRenderer', () => {
 
     it('should throw TypeError for null circuit', () => {
       expect(() => {
-        new StaticCircuitRenderer(null as any, registry);
+        new CircuitSceneManager(null as any, registry);
       }).toThrow(TypeError);
     });
 
     it('should throw TypeError for null factoryRegistry', () => {
       expect(() => {
-        new StaticCircuitRenderer(circuit, null as any);
+        new CircuitSceneManager(circuit, null as any);
       }).toThrow(TypeError);
     });
   });
@@ -210,7 +210,7 @@ describe('StaticCircuitRenderer', () => {
     });
 
     it('should throw error if not initialized', () => {
-      const uninitializedRenderer = new StaticCircuitRenderer(circuit, registry);
+      const uninitializedRenderer = new CircuitSceneManager(circuit, registry);
 
       expect(() => {
         uninitializedRenderer.update();
@@ -402,7 +402,7 @@ describe('StaticCircuitRenderer', () => {
     });
 
     it('should throw if not initialized', () => {
-      const uninitializedRenderer = new StaticCircuitRenderer(circuit, registry);
+      const uninitializedRenderer = new CircuitSceneManager(circuit, registry);
 
       expect(() => {
         uninitializedRenderer.render();
@@ -412,7 +412,7 @@ describe('StaticCircuitRenderer', () => {
 
   describe('Error handling', () => {
     it('should emit error event for initialization failures', (done) => {
-      const badRenderer = new StaticCircuitRenderer(circuit, registry);
+      const badRenderer = new CircuitSceneManager(circuit, registry);
 
       badRenderer.on('error', ({ message }) => {
         expect(message).toBeDefined();

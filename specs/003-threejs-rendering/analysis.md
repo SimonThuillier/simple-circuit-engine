@@ -1,5 +1,5 @@
 # Cross-Artifact Analysis Report
-**Feature**: 3D Circuit Renderers
+**Feature**: 3D Circuit SceneManagers
 **Date**: 2025-12-02
 **Trigger**: User updated US2 with tool-based editing scenarios
 
@@ -32,7 +32,7 @@ This analysis examines the updated User Story 2 (Circuit Editing Interface) whic
 **Files Analyzed**:
 - `spec.md` (updated 2025-12-02)
 - `tasks.md` (85 tasks generated before US2 updates)
-- Contracts: `StaticCircuitRenderer.ts`, `types.ts`, `ComponentVisualFactory.ts`
+- Contracts: `CircuitSceneManager.ts`, `types.ts`, `ComponentVisualFactory.ts`
 
 ---
 
@@ -54,7 +54,7 @@ This analysis examines the updated User Story 2 (Circuit Editing Interface) whic
 
 **Impact**:
 - Tasks T055-T063 (Phase 5: US2 Editing) will be unimplementable without tool architecture specification
-- Renderer contract incomplete (no tool-related methods)
+- SceneManager contract incomplete (no tool-related methods)
 
 **Recommendation**: Add FR-025 to FR-029 (see Section 3)
 
@@ -73,7 +73,7 @@ This analysis examines the updated User Story 2 (Circuit Editing Interface) whic
 | **Delete** (AS2.6) | Click component/wire/branching point to delete | Target reference, cascade deletion rules (e.g., pins with component) |
 
 **Evidence**:
-- FR-021: Renderers "MUST NOT implement mouse/keyboard event listeners"
+- FR-021: SceneManagers "MUST NOT implement mouse/keyboard event listeners"
 - AS2.3: "scroll to rotate before placement" - requires preview rendering
 - AS2.4: "Escape to cancel mid-wire" - requires in-progress state tracking
 
@@ -92,7 +92,7 @@ This analysis examines the updated User Story 2 (Circuit Editing Interface) whic
 
 **Evidence**:
 - AS2.1: "cursor and event handlers are enabled"
-- FR-021: Renderers expose callbacks but "MUST NOT implement mouse/keyboard event listeners"
+- FR-021: SceneManagers expose callbacks but "MUST NOT implement mouse/keyboard event listeners"
 
 **Gap**: No requirements specify:
 - How cursor changes are communicated (event emission? property getter?)
@@ -157,7 +157,7 @@ This analysis examines the updated User Story 2 (Circuit Editing Interface) whic
 
 **Evidence**:
 - AS2.1: "MUST be able to choose an active edit tool from the tool set"
-- FR-021: Renderers "MUST NOT implement mouse/keyboard event listeners"
+- FR-021: SceneManagers "MUST NOT implement mouse/keyboard event listeners"
 
 **Analysis**: This is correctly out of scope. Consumer provides tool selection UI and calls renderer method (e.g., `setActiveTool(toolType)`) to activate tools.
 
@@ -175,7 +175,7 @@ This analysis examines the updated User Story 2 (Circuit Editing Interface) whic
 - [ ] T057 [P2] [US2] Write tests for component deletion interactions (cascade events)
 - [ ] T058 [P2] [US2] Write tests for wire manipulation (add, remove)
 - [ ] T059 [P2] [US2] Write tests for overlap detection validation
-- [ ] T060 [P2] [US2] Implement edit mode toggle in StaticCircuitRenderer
+- [ ] T060 [P2] [US2] Implement edit mode toggle in CircuitSceneManager
 - [ ] T061 [P2] [US2] Implement component add/remove interaction handlers
 - [ ] T062 [P2] [US2] Implement wire manipulation interaction handlers
 - [ ] T063 [P2] [US2] Implement overlap detection validation
@@ -223,7 +223,7 @@ Static renderer MUST maintain tool state (active tool reference, tool-specific o
 ---
 
 #### **FR-028: Tool Activation API**
-Static renderer MUST expose `setActiveTool(toolType)` method for consumers to activate tools programmatically. Renderer MUST emit 'toolActivated' event with tool type when activation succeeds.
+Static renderer MUST expose `setActiveTool(toolType)` method for consumers to activate tools programmatically. SceneManager MUST emit 'toolActivated' event with tool type when activation succeeds.
 
 **Rationale**: Addresses Finding 7 - defines how consumer (UI layer) communicates tool selection to renderer
 
@@ -244,7 +244,7 @@ Static renderer MUST render visual previews for tools that require them (PlaceCo
 ---
 
 #### **FR-031: Tool Operation Cancellation**
-Tools that support multi-step operations (Wire: click source, click target) MUST support cancellation. Renderer MUST expose tool cancellation through a consumer-triggered method (e.g., `cancelCurrentToolOperation()`). Wire tool MUST cancel mid-wire operations when cancellation is triggered.
+Tools that support multi-step operations (Wire: click source, click target) MUST support cancellation. SceneManager MUST expose tool cancellation through a consumer-triggered method (e.g., `cancelCurrentToolOperation()`). Wire tool MUST cancel mid-wire operations when cancellation is triggered.
 
 **Rationale**: Directly addresses AS2.4: "Escape to cancel mid-wire"
 
@@ -264,14 +264,14 @@ Tool validation failures MUST emit 'toolValidationError' event with error detail
 ---
 
 #### **FR-033: Tool-Circuit Integration**
-Tools MUST delegate all circuit topology modifications to core Circuit API methods. Renderer MUST NOT implement circuit logic directly. After successful tool operation, renderer MUST call `update(changedData)` with appropriate delta to refresh visualization.
+Tools MUST delegate all circuit topology modifications to core Circuit API methods. SceneManager MUST NOT implement circuit logic directly. After successful tool operation, renderer MUST call `update(changedData)` with appropriate delta to refresh visualization.
 
 **Rationale**: Addresses Finding 5 and clarifies FR-007 - separates tool interaction logic (renderer) from circuit validation logic (core)
 
 ---
 
 #### **FR-034: Tool Event Emission**
-Renderer MUST emit the following tool-related events via `on(event, callback)`:
+SceneManager MUST emit the following tool-related events via `on(event, callback)`:
 - 'toolActivated': `{ toolType: string }`
 - 'toolDeactivated': `{ toolType: string }`
 - 'toolOperationStarted': `{ toolType: string, operationData: object }`
@@ -284,7 +284,7 @@ Renderer MUST emit the following tool-related events via `on(event, callback)`:
 ---
 
 #### **FR-035: Tool Cursor Communication**
-When a tool is activated, renderer MUST emit 'cursorChangeRequested' event with cursor type (e.g., 'pointer', 'crosshair', 'move', 'not-allowed'). Renderer MUST emit cursor changes during tool operations (e.g., 'not-allowed' when hovering over invalid placement location).
+When a tool is activated, renderer MUST emit 'cursorChangeRequested' event with cursor type (e.g., 'pointer', 'crosshair', 'move', 'not-allowed'). SceneManager MUST emit cursor changes during tool operations (e.g., 'not-allowed' when hovering over invalid placement location).
 
 **Rationale**: Addresses Finding 3 - AS2.1 requires "cursor and event handlers are enabled"
 
@@ -327,32 +327,32 @@ This update MUST complete within 100ms to meet SC-005 performance target.
 #### **FR-007 (Updated)**
 **Current**: "Static renderer MUST validate and prevent invalid editing operations : however it MUST NOT implement circuit specifc logic since that SHOULD BE handled in core. For this it will rely on core Circuit API."
 
-**Proposed**: "Static renderer tools (FR-029) MUST perform tool-specific validation (FR-032) before operations. For circuit-specific validation (e.g., pin connection rules, electrical constraints), renderer MUST delegate to core Circuit API methods. Renderer MUST NOT implement circuit domain logic."
+**Proposed**: "Static renderer tools (FR-029) MUST perform tool-specific validation (FR-032) before operations. For circuit-specific validation (e.g., pin connection rules, electrical constraints), renderer MUST delegate to core Circuit API methods. SceneManager MUST NOT implement circuit domain logic."
 
 **Rationale**: Clarifies separation: tools validate UI constraints (overlap), core validates circuit constraints (electrical rules)
 
 ---
 
 #### **FR-021 (Clarification - No Change Needed)**
-**Current**: "Renderers MUST expose hookable callbacks for the following events via on(event, callback): 'hover', 'unhover', 'select', 'deselect', 'error', 'ready'; renderers MUST NOT implement mouse/keyboard event listeners"
+**Current**: "SceneManagers MUST expose hookable callbacks for the following events via on(event, callback): 'hover', 'unhover', 'select', 'deselect', 'error', 'ready'; renderers MUST NOT implement mouse/keyboard event listeners"
 
-**Analysis**: This requirement is CORRECT and COMPATIBLE with tool system. Consumer implements event listeners, translates to tool method calls on renderer. Renderer exposes tool APIs and emits tool events.
+**Analysis**: This requirement is CORRECT and COMPATIBLE with tool system. Consumer implements event listeners, translates to tool method calls on renderer. SceneManager exposes tool APIs and emits tool events.
 
 **Example**:
 ```typescript
 // Consumer (CircuitWorkspace) implements listeners
 canvas.addEventListener('click', (e) => {
   const worldPos = screenToWorld(e.clientX, e.clientY);
-  renderer.handleToolClick(worldPos); // Renderer exposes tool interaction API
+  renderer.handleToolClick(worldPos); // SceneManager exposes tool interaction API
 });
 
 canvas.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
-    renderer.cancelCurrentToolOperation(); // Renderer exposes cancellation API
+    renderer.cancelCurrentToolOperation(); // SceneManager exposes cancellation API
   }
 });
 
-// Renderer emits events for consumer to react
+// SceneManager emits events for consumer to react
 renderer.on('toolValidationError', ({ errorMessage }) => {
   showToast(errorMessage); // Consumer implements UI feedback
 });
@@ -403,8 +403,8 @@ export interface IEditingTool {
 
 ---
 
-#### **StaticCircuitRenderer.ts**
-Add to `IStaticCircuitRenderer` interface:
+#### **CircuitSceneManager.ts**
+Add to `ICircuitSceneManager` interface:
 ```typescript
 /**
  * Enable or disable edit mode
@@ -494,7 +494,7 @@ handleToolScroll(delta: number): void;
 - [ ] T063 [P2] [US2] Write tests for tool validation (overlap, endpoint validation, error emission)
 - [ ] T064 [P2] [US2] Write tests for tool-cursor communication (cursor change events)
 - [ ] T065 [P2] [US2] Write tests for tool-circuit integration (Circuit API delegation, update timing)
-- [ ] T066 [P2] [US2] Implement tool system architecture in StaticCircuitRenderer
+- [ ] T066 [P2] [US2] Implement tool system architecture in CircuitSceneManager
 - [ ] T067 [P2] [US2] Implement Select tool
 - [ ] T068 [P2] [US2] Implement PlaceComponent tool with preview rendering
 - [ ] T069 [P2] [US2] Implement Wire tool with path preview and cancellation
@@ -519,7 +519,7 @@ handleToolScroll(delta: number): void;
 | Tool Palette | LOW | Out of scope | No action (correct) |
 | Tool Activation Mechanism | LOW | Ambiguous | Specify in FR-028 |
 | **Spec-Task Consistency** | HIGH | Phase 5 tasks outdated | Regenerate 18 tasks |
-| **Contract Completeness** | HIGH | Missing tool APIs | Update types.ts, StaticCircuitRenderer.ts |
+| **Contract Completeness** | HIGH | Missing tool APIs | Update types.ts, CircuitSceneManager.ts |
 
 ---
 
@@ -527,7 +527,7 @@ handleToolScroll(delta: number): void;
 
 1. **User Review**: Review recommended FR additions (FR-025 to FR-037) and FR updates (FR-006, FR-007)
 2. **Spec Update**: Incorporate approved functional requirements into spec.md
-3. **Contract Update**: Update contracts/types.ts and contracts/StaticCircuitRenderer.ts with tool-related APIs
+3. **Contract Update**: Update contracts/types.ts and contracts/CircuitSceneManager.ts with tool-related APIs
 4. **Task Regeneration**: Regenerate Phase 5 tasks (T055-T072) to reflect tool system architecture
 5. **Constitution Check**: Re-verify that tool system maintains framework agnosticism and separation of concerns
 6. **Plan Update**: Update plan.md to include tool system in implementation approach
@@ -540,7 +540,7 @@ handleToolScroll(delta: number): void;
 ✅ **PASS** - Tool system maintains separation: consumer implements event listeners, renderer exposes tool APIs. Three.js remains only rendering dependency.
 
 **Gate 2: Modular Separation**
-✅ **PASS** - Tools are part of StaticCircuitRenderer module, not core. Clear boundary: tools handle UI interaction, core handles circuit validation.
+✅ **PASS** - Tools are part of CircuitSceneManager module, not core. Clear boundary: tools handle UI interaction, core handles circuit validation.
 
 **Gate 3: Public API Shape**
 ⚠️ **NEEDS UPDATE** - Current FR-019 API incomplete. Must add: `setEditMode()`, `setActiveTool()`, `getActiveTool()`, `cancelCurrentToolOperation()`, `handleToolClick()`, `handleToolHover()`, `handleToolScroll()`

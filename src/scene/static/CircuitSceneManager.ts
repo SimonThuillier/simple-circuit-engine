@@ -33,15 +33,16 @@ import { createEnodeGeometry } from '../shared/GeometryUtils';
 import { createStandardMaterial } from '../shared/MaterialUtils';
 
 /**
- * Static Circuit Renderer Implementation
+ * Static Circuit Scene Manager Implementation
  *
- * Visualizes circuit topology in 3D using Three.js. Supports view manipulation
- * and editing via integrated tool system.
+ * Manager providing a bidirectional interface between a Circuit and a Three.js scene/camera ready to be rendered.
+ * Supports view manipulation and editing via integrated tool system.
+ * Provides event hooks for error handling and state changes.
  */
-export class StaticCircuitRenderer extends EventEmitter<RenderEventMap> {
-  public readonly circuit: Circuit;
-  public readonly factoryRegistry: IFactoryRegistry;
+export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
+    public readonly factoryRegistry: IFactoryRegistry;
 
+    private circuit?: Circuit | null = null;
   private scene: THREE.Scene | null = null;
   private camera: THREE.PerspectiveCamera | null = null;
   private container: HTMLElement | null = null;
@@ -49,6 +50,7 @@ export class StaticCircuitRenderer extends EventEmitter<RenderEventMap> {
   private disposed: boolean = false;
 
   // Visual object tracking
+  private grid: THREE.GridHelper | null = null;
   private componentMeshes: Map<string, THREE.Object3D> = new Map();
   private wireMeshes: Map<string, THREE.Line> = new Map();
   private enodeMeshes: Map<string, THREE.Mesh> = new Map();
@@ -63,21 +65,16 @@ export class StaticCircuitRenderer extends EventEmitter<RenderEventMap> {
   /**
    * Create a new Static Circuit Renderer
    *
-   * @param circuit - Circuit topology to visualize
    * @param factoryRegistry - Component visual factory registry
    * @throws {TypeError} If circuit or factoryRegistry is null/undefined
    */
-  constructor(circuit: Circuit, factoryRegistry: IFactoryRegistry) {
+  constructor(factoryRegistry: IFactoryRegistry) {
     super();
 
-    if (!circuit) {
-      throw new TypeError('Circuit is required');
-    }
     if (!factoryRegistry) {
       throw new TypeError('FactoryRegistry is required');
     }
 
-    this.circuit = circuit;
     this.factoryRegistry = factoryRegistry;
   }
 
@@ -103,21 +100,15 @@ export class StaticCircuitRenderer extends EventEmitter<RenderEventMap> {
 
       // Create scene
       this.scene = new THREE.Scene();
-      this.scene.background = new THREE.Color(0x1a1a1a);
+      this.scene.background = new THREE.Color(0x222230);
 
+      console.log(container.clientWidth, container.clientHeight);
       // Create camera
       const aspect = container.clientWidth / container.clientHeight || 1;
       this.camera = createPerspectiveCamera(options, aspect);
 
-      // Attach camera to scene for consumer access
-      (this.scene as any).camera = this.camera;
-
       // Add lights
       setupSceneLights(this.scene);
-
-      // Add grid
-      const grid = createGridHelper();
-      this.scene.add(grid);
 
       this.initialized = true;
 
@@ -127,6 +118,27 @@ export class StaticCircuitRenderer extends EventEmitter<RenderEventMap> {
       const err = error as Error;
       this.emit('error', { message: err.message, error: err });
       throw error;
+    }
+  }
+
+    /**
+     * Update the circuit to visualize or indicate no circuit loaded
+     * @param circuit
+     */
+  setCircuit(circuit: Circuit | null): void {
+    if (circuit === this.circuit) return; // No change
+    // TODO reset changedData ?
+    if(!!this.circuit && this.initialized) {
+        // Clear existing visuals
+        this._removeAllVisuals();
+        return;
+    }
+
+    this.circuit = circuit;
+    if(circuit !== null && this.initialized) {
+        // Perform full update with new circuit
+        this.scene!.name = this.circuit!.metadata.name || 'Circuit Scene';
+        this._fullUpdate();
     }
   }
 
@@ -154,13 +166,23 @@ export class StaticCircuitRenderer extends EventEmitter<RenderEventMap> {
   }
 
   /**
+  * Clear visuals but don't dispose completely renderer - may be used for next circuit
+  */
+  clearVisuals(){
+      if (!this.initialized) {
+          throw new Error('Cannot clear unitialized renderer');
+      }
+      this._removeAllVisuals();
+  }
+
+  /**
    * Render one frame (called by external animation loop)
    */
   render(): void {
     this._checkInitialized();
 
     try {
-      // In StaticCircuitRenderer, render() is mostly a no-op
+      // In CircuitSceneManager, render() is mostly a no-op
       // Scene updates are done in update()
       // Consumer handles actual WebGL rendering via getScene()
     } catch (error) {
@@ -173,12 +195,22 @@ export class StaticCircuitRenderer extends EventEmitter<RenderEventMap> {
   /**
    * Get the Three.js scene for rendering
    *
-   * @returns Scene with camera accessible via scene.camera
+   * @returns Scene
    */
   getScene(): THREE.Scene {
     this._checkInitialized();
     return this.scene!;
   }
+
+    /**
+     * Get the Three.js camera for rendering
+     *
+     * @returns camera
+     */
+    getCamera(): THREE.PerspectiveCamera {
+        this._checkInitialized();
+        return this.camera!;
+    }
 
   /**
    * Clean up all WebGL resources
@@ -297,9 +329,23 @@ export class StaticCircuitRenderer extends EventEmitter<RenderEventMap> {
     }
   }
 
+    /**
+     * Perform a full update of all circuit visuals : if no circuit, clear scene
+     * @private
+     */
   private _fullUpdate(): void {
     // Remove all existing visual objects
     this._removeAllVisuals();
+
+    if(!this.circuit){
+        return;
+    }
+
+    // 1. Add circuit sized grid
+    this.grid = createGridHelper(
+        this.circuit.metadata.size,
+        this.circuit.metadata.divisions);
+    this.scene!.add(this.grid);
 
     // Create visuals for all circuit elements
     const components = this.circuit.getAllComponents();
@@ -518,6 +564,12 @@ export class StaticCircuitRenderer extends EventEmitter<RenderEventMap> {
     // Remove all enode meshes
     for (const id of Array.from(this.enodeMeshes.keys())) {
       this._removeEnodeMesh(id);
+    }
+
+    // remove grid
+    if(this.grid) {
+        this.scene!.remove(this.grid);
+        this.grid.geometry.dispose();
     }
   }
 }

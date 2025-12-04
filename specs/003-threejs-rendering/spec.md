@@ -1,21 +1,21 @@
-# Feature Specification: 3D Circuit Renderers
+# Feature Specification: 3D Circuit SceneManagers
 
 **Feature Branch**: `003-threejs-rendering`
 **Created**: 2025-12-02
 **Status**: Draft
-**Input**: User description: "I need two three.js renderers : one for Circuit specialized for visualizing static circuit and editing, one for CircuitRunner specialized in rendering live simulated circuits. These should be two well separated submodules in src/rendering with a third shared utilities module."
+**Input**: User description: "I need two three.js renderers : one for Circuit specialized for visualizing static circuit and editing, one for CircuitRunner specialized in rendering live simulated circuits. These should be two well separated submodules in src/scene with a third shared utilities module."
 
 ## Clarifications
 
 ### Session 2025-12-02
 
-- Q: What is the exact scope boundary for these renderer classes? → A: Renderers handle 3D scene rendering and expose hookable callbacks for interactions, but don't implement actual mouse/keyboard event listeners.
+- Q: What is the exact scope boundary for these renderer classes? → A: SceneManagers handle 3D scene rendering and expose hookable callbacks for interactions, but don't implement actual mouse/keyboard event listeners.
 - Q: What exactly should unit tests validate for these renderer classes? → A: Test that renderers correctly create/update 3D scene objects, materials, and geometries based on circuit data (mock Three.js).
 - Q: What are the essential public methods each renderer must provide? → A: constructor(), initialize(container), update(), render(), dispose(), on(event, callback), getScene().
 - Q: Who owns the animation frame loop that calls render()? → A: External consumer (e.g., CircuitWorkspace) owns the animation loop and calls renderer.render() each frame.
 - Q: Where does the component visual factory registry live and how is it structured? → A: Registry is injected into renderer constructors; consumers build and pass their own registry instance.
 - Q: How should renderer classes handle and communicate errors? → A: Throw for initialization/constructor errors; emit error events via callbacks for runtime errors; log warnings for non-critical issues.
-- Q: How does the simulation renderer synchronize discrete simulation ticks with smooth real-time animation? → A: Renderer interpolates visual state between simulation ticks based on elapsed real-time for smooth animations.
+- Q: How does the simulation renderer synchronize discrete simulation ticks with smooth real-time animation? → A: SceneManager interpolates visual state between simulation ticks based on elapsed real-time for smooth animations.
 - Q: How do consumers control the camera? → A: Consumers directly access Three.js camera via getScene().camera and manipulate it.
 - Q: What specific event types must renderers support through the callback interface? → A: Core event set: 'hover', 'unhover', 'select', 'deselect', 'error', 'ready'.
 - Q: What parameters does the update() method accept and when should it be called? → A: update(changedData?: object) with optional parameter for incremental updates; called when circuit topology or state changes.
@@ -24,7 +24,7 @@
 
 **IMPORTANT**: This specification defines the requirements for **renderer class modules only**, not complete interactive web pages or applications. The deliverables are:
 
-- Two TypeScript/JavaScript renderer classes (StaticCircuitRenderer, SimulationCircuitRenderer)
+- Two TypeScript/JavaScript renderer classes (CircuitSceneManager, SimulationCircuitSceneManager)
 - One shared utilities module (rendering helpers, factory registry, common geometry/materials)
 - Unit tests for all renderer logic (mocking Three.js, no integration tests)
 
@@ -127,39 +127,39 @@ Users working with large circuits (hundreds of components) need responsive visua
 - **FR-001**: System MUST provide two independent renderer modules: one for static circuits and one for simulation circuits
 - **FR-002**: System MUST maintain a shared utilities module containing common rendering functionality used by both renderers
 - **FR-003**: Static renderer MUST display all circuit components in 3D space based on their topology definitions
-- **FR-004**: Renderers MUST expose the scene's Three.js camera via getScene().camera for direct consumer manipulation (rotation, zoom, pan)
+- **FR-004**: SceneManagers MUST expose the scene's Three.js camera via getScene().camera for direct consumer manipulation (rotation, zoom, pan)
 - **FR-005**: Static renderer MUST provide interactive component selection and highlighting
 - **FR-006**: Static renderer MUST support read-only view AND edit mode through a editMode flag. When edit mode is enabled, the renderer activates the tool system (FR-025) allowing topology manipulation. When edit mode is disabled, all tools are deactivated and tool state is reset.
-- **FR-007**: Static renderer tools (FR-029) MUST perform tool-specific validation (FR-032) before operations. For circuit-specific validation (e.g., pin connection rules, electrical constraints), renderer MUST delegate to core Circuit API methods. Renderer MUST NOT implement circuit domain logic.
+- **FR-007**: Static renderer tools (FR-029) MUST perform tool-specific validation (FR-032) before operations. For circuit-specific validation (e.g., pin connection rules, electrical constraints), renderer MUST delegate to core Circuit API methods. SceneManager MUST NOT implement circuit domain logic.
 - **FR-008**: Simulation renderer MUST display real-time state changes for all circuit elements during simulation
 - **FR-009**: Simulation renderer MUST visually distinguish between different component states (e.g., active/inactive, high/low voltage)
 - **FR-010**: Simulation renderer MUST animate current flow through wires and connections
 - **FR-011**: Simulation renderer MUST synchronize visualization updates with simulation step timing by interpolating visual state between discrete simulation ticks based on elapsed real-time for smooth animations
 - **FR-012**: Both renderers MUST handle circuit topology changes without requiring full re-initialization
 - **FR-013**: Both renderers MUST maintain consistent visual styling for the same component types
-- **FR-014**: System MUST organize renderers as separate submodules under `src/rendering` directory structure
+- **FR-014**: System MUST organize renderers as separate submodules under `src/scene` directory structure
 - **FR-015**: Shared utilities module MUST provide common geometry, material, and camera utilities
 - **FR-016**: A CircuitWorkspace allowing to bridge between both renderers should be created
-- **FR-017**: Renderers MUST support seamless switching between static and simulation views of the same circuit
-- **FR-018**: Renderers MUST throw exceptions for initialization and constructor errors (fail-fast); emit error events via on('error', callback) for runtime rendering errors; log console warnings for non-critical degraded rendering
-- **FR-019**: Both renderer classes MUST expose the following public API methods: constructor(), initialize(container), update(changedData?: object), render(), dispose(), on(event, callback), getScene(). Additionally, StaticCircuitRenderer MUST expose tool-related methods: setEditMode(enabled), setActiveTool(toolType), getActiveTool(), cancelCurrentToolOperation(), handleToolClick(worldPosition), handleToolHover(worldPosition), handleToolScroll(delta).
+- **FR-017**: SceneManagers MUST support seamless switching between static and simulation views of the same circuit
+- **FR-018**: SceneManagers MUST throw exceptions for initialization and constructor errors (fail-fast); emit error events via on('error', callback) for runtime rendering errors; log console warnings for non-critical degraded rendering
+- **FR-019**: Both renderer classes MUST expose the following public API methods: constructor(), initialize(container), update(changedData?: object), render(), dispose(), on(event, callback), getScene(). Additionally, CircuitSceneManager MUST expose tool-related methods: setEditMode(enabled), setActiveTool(toolType), getActiveTool(), cancelCurrentToolOperation(), handleToolClick(worldPosition), handleToolHover(worldPosition), handleToolScroll(delta).
 - **FR-019a**: The update() method MUST accept an optional changedData parameter for incremental updates; if no parameter provided, renderer MUST perform full update from source circuit data
-- **FR-020**: Renderer constructors MUST accept a component visual factory registry instance as a parameter for dependency injection
-- **FR-021**: Renderers MUST expose hookable callbacks for the following events via on(event, callback): 'hover', 'unhover', 'select', 'deselect', 'error', 'ready'; renderers MUST NOT implement mouse/keyboard event listeners. Note: Consumer implements event listeners and translates them to renderer tool API calls (FR-028). Renderer exposes tool interaction methods and emits tool-related events (FR-034).
-- **FR-022**: Renderers MUST be callable from external animation loops (render() method called by consumer); renderers MUST NOT manage their own requestAnimationFrame loops
+- **FR-020**: SceneManager constructors MUST accept a component visual factory registry instance as a parameter for dependency injection
+- **FR-021**: SceneManagers MUST expose hookable callbacks for the following events via on(event, callback): 'hover', 'unhover', 'select', 'deselect', 'error', 'ready'; renderers MUST NOT implement mouse/keyboard event listeners. Note: Consumer implements event listeners and translates them to renderer tool API calls (FR-028). SceneManager exposes tool interaction methods and emits tool-related events (FR-034).
+- **FR-022**: SceneManagers MUST be callable from external animation loops (render() method called by consumer); renderers MUST NOT manage their own requestAnimationFrame loops
 - **FR-023**: Shared utilities module MUST provide a component visual factory registry interface and default placeholder factory
 - **FR-024**: Component visual factory registry MUST return a default placeholder geometry/material (e.g., 1-unit cube) for unregistered component types
 - **FR-025**: System MUST provide a tool registry interface that allows consumers to register editing tool implementations. Each tool MUST implement a common interface defining: onActivate() (called when tool becomes active), onDeactivate() (called when tool is deactivated), getCursorType() (returns cursor style for this tool), getPreviewState() (returns current preview objects if any).
 - **FR-026**: Static renderer MUST enforce that only one editing tool can be active at a time. When a new tool is activated, the previously active tool MUST be deactivated first.
 - **FR-027**: Static renderer MUST maintain tool state (active tool reference, tool-specific operation state) and provide methods to query current tool state. Tool state MUST be reset when edit mode is disabled.
-- **FR-028**: Static renderer MUST expose setActiveTool(toolType) method for consumers to activate tools programmatically. Renderer MUST emit 'toolActivated' event with tool type when activation succeeds. Only tools can be activated when edit mode is enabled (FR-006). Switching tools is allowed when the active tool is idle (no operation in progress).
+- **FR-028**: Static renderer MUST expose setActiveTool(toolType) method for consumers to activate tools programmatically. SceneManager MUST emit 'toolActivated' event with tool type when activation succeeds. Only tools can be activated when edit mode is enabled (FR-006). Switching tools is allowed when the active tool is idle (no operation in progress).
 - **FR-029**: Static renderer MUST provide built-in implementations for 5 core editing tools: Select (click to select, drag to move, double-click to rotate), PlaceComponent (palette choose type, click to place, scroll to rotate before placement), Wire (click source pin/branching point, click target, Escape to cancel), BranchingPoint (click on wire to split and insert branching point), Delete (click component/wire/branching point to delete). Each tool MUST implement the interface defined in FR-025.
 - **FR-030**: Static renderer MUST render visual previews for tools that require them: PlaceComponent (ghost preview with rotation), Wire (path preview from source to cursor). Preview objects MUST be visually distinct from actual circuit elements (e.g., semi-transparent, different color).
-- **FR-031**: Tools that support multi-step operations (Wire: click source, click target) MUST support cancellation. Renderer MUST expose tool cancellation through a consumer-triggered method (e.g., cancelCurrentToolOperation()). Wire tool MUST cancel mid-wire operations when cancellation is triggered.
+- **FR-031**: Tools that support multi-step operations (Wire: click source, click target) MUST support cancellation. SceneManager MUST expose tool cancellation through a consumer-triggered method (e.g., cancelCurrentToolOperation()). Wire tool MUST cancel mid-wire operations when cancellation is triggered.
 - **FR-032**: Each tool MUST validate its operations before applying changes: PlaceComponent (bounding box overlap check on X/Y axis per Edge Case definition), Wire (endpoint must be valid pin or branching point), BranchingPoint (target must be valid wire), Delete (component deletion must cascade to pins). Tool validation failures MUST emit 'toolValidationError' event with error details but MUST NOT throw exceptions.
-- **FR-033**: Tools MUST delegate all circuit topology modifications to core Circuit API methods. Renderer MUST NOT implement circuit logic directly. After successful tool operation, renderer MUST call update(changedData) with appropriate delta to refresh visualization.
-- **FR-034**: Renderer MUST emit the following tool-related events via on(event, callback): 'toolActivated' ({ toolType: string }), 'toolDeactivated' ({ toolType: string }), 'toolOperationStarted' ({ toolType: string, operationData: object }), 'toolOperationCompleted' ({ toolType: string, operationData: object, changedData: ChangedData }), 'toolOperationCancelled' ({ toolType: string }), 'toolValidationError' ({ toolType: string, errorMessage: string }).
-- **FR-035**: When a tool is activated, renderer MUST emit 'cursorChangeRequested' event with cursor type (e.g., 'pointer', 'crosshair', 'move', 'not-allowed'). Renderer MUST emit cursor changes during tool operations (e.g., 'not-allowed' when hovering over invalid placement location).
+- **FR-033**: Tools MUST delegate all circuit topology modifications to core Circuit API methods. SceneManager MUST NOT implement circuit logic directly. After successful tool operation, renderer MUST call update(changedData) with appropriate delta to refresh visualization.
+- **FR-034**: SceneManager MUST emit the following tool-related events via on(event, callback): 'toolActivated' ({ toolType: string }), 'toolDeactivated' ({ toolType: string }), 'toolOperationStarted' ({ toolType: string, operationData: object }), 'toolOperationCompleted' ({ toolType: string, operationData: object, changedData: ChangedData }), 'toolOperationCancelled' ({ toolType: string }), 'toolValidationError' ({ toolType: string, errorMessage: string }).
+- **FR-035**: When a tool is activated, renderer MUST emit 'cursorChangeRequested' event with cursor type (e.g., 'pointer', 'crosshair', 'move', 'not-allowed'). SceneManager MUST emit cursor changes during tool operations (e.g., 'not-allowed' when hovering over invalid placement location).
 - **FR-036**: When tool validation prevents an operation (per FR-032), renderer MUST provide visual feedback by: briefly highlighting the conflicting elements (e.g., overlapping component), showing preview in error state (e.g., red tint), emitting 'toolValidationError' event for consumer to show UI message.
 - **FR-037**: After a tool successfully completes an operation that modifies circuit topology, renderer MUST: (1) Apply the change via core Circuit API, (2) Construct appropriate ChangedData delta object, (3) Call internal update(changedData) to refresh visualization, (4) Emit 'toolOperationCompleted' event. This update MUST complete within 100ms to meet SC-005 performance target.
 
@@ -168,7 +168,7 @@ Users working with large circuits (hundreds of components) need responsive visua
 - **TS-001**: Unit tests MUST validate that renderers correctly create and update 3D scene objects, materials, and geometries based on circuit data
 - **TS-002**: Unit tests MUST mock Three.js dependencies to test renderer logic in isolation
 - **TS-003**: Unit tests MUST NOT perform integration testing with actual rendering output or browser DOM
-- **TS-004**: Unit tests MUST verify all public API methods (constructor, initialize, update, render, dispose, on, getScene, and StaticCircuitRenderer tool-related methods per FR-019)
+- **TS-004**: Unit tests MUST verify all public API methods (constructor, initialize, update, render, dispose, on, getScene, and CircuitSceneManager tool-related methods per FR-019)
 - **TS-005**: Unit tests MUST verify callback registration and invocation through the on(event, callback) interface
 - **TS-006**: Unit tests MUST verify component factory registry injection and fallback to placeholder geometry
 - **TS-007**: Unit tests MUST verify tool system functionality: tool activation/deactivation (FR-026), single-active-tool constraint (FR-026), tool state management (FR-027), tool preview rendering (FR-030), tool operation cancellation (FR-031), tool-specific validation (FR-032), and tool event emission (FR-034)
@@ -176,8 +176,8 @@ Users working with large circuits (hundreds of components) need responsive visua
 
 ### Key Entities
 
-- **Circuit Renderer (Static)**: Responsible for visualizing circuit topology in a non-simulated state, supporting view manipulation and editing interactions. Operates on Circuit instances. Accepts component factory registry via constructor. Exposes hookable callbacks but does not implement event listeners. Manages tool system for editing operations (FR-025 to FR-037).
-- **Circuit Renderer (Simulation)**: Responsible for visualizing circuit state during active simulation, displaying real-time updates, animations, and state changes. Operates on CircuitRunner instances. Accepts component factory registry via constructor. Exposes hookable callbacks but does not implement event listeners.
+- **Circuit SceneManager (Static)**: Responsible for visualizing circuit topology in a non-simulated state, supporting view manipulation and editing interactions. Operates on Circuit instances. Accepts component factory registry via constructor. Exposes hookable callbacks but does not implement event listeners. Manages tool system for editing operations (FR-025 to FR-037).
+- **Circuit SceneManager (Simulation)**: Responsible for visualizing circuit state during active simulation, displaying real-time updates, animations, and state changes. Operates on CircuitRunner instances. Accepts component factory registry via constructor. Exposes hookable callbacks but does not implement event listeners.
 - **Component Visual Factory Registry**: Registry of factory functions that create 3D representations for each component type. Injected into renderer constructors. Provides fallback to default placeholder geometry (1-unit cube) for unregistered component types.
 - **Editing Tool**: Abstraction for circuit editing operations (Select, PlaceComponent, Wire, BranchingPoint, Delete). Each tool implements common interface (onActivate, onDeactivate, getCursorType, getPreviewState) and manages tool-specific operation state. Tools delegate circuit modifications to core Circuit API.
 - **Tool State**: Runtime state for active tool including operation-in-progress tracking, preview objects, and tool-specific data (e.g., wire source endpoint, component placement rotation). Reset when edit mode is disabled.

@@ -1,6 +1,6 @@
 /**
  * Component Visual Factory Contract
- * @module rendering/contracts/ComponentVisualFactory
+ * @module scene/contracts/ComponentVisualFactory
  */
 
 import type { Component } from '@/core/Component';

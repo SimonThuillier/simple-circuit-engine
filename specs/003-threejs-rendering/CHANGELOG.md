@@ -25,7 +25,7 @@ Updated `spec.md` to incorporate comprehensive tool system requirements based on
 
 **FR-019** (Expanded)
 - **Before**: Listed 7 core public API methods
-- **After**: Added 7 tool-related methods for StaticCircuitRenderer: setEditMode(), setActiveTool(), getActiveTool(), cancelCurrentToolOperation(), handleToolClick(), handleToolHover(), handleToolScroll()
+- **After**: Added 7 tool-related methods for CircuitSceneManager: setEditMode(), setActiveTool(), getActiveTool(), cancelCurrentToolOperation(), handleToolClick(), handleToolHover(), handleToolScroll()
 
 **FR-021** (Clarified)
 - **Before**: Stated renderers MUST NOT implement event listeners
@@ -82,7 +82,7 @@ Updated `spec.md` to incorporate comprehensive tool system requirements based on
 
 **FR-033**: Tool-Circuit Integration
 - Tools delegate all circuit topology modifications to core Circuit API
-- Renderer MUST NOT implement circuit logic
+- SceneManager MUST NOT implement circuit logic
 - After successful operation, calls update(changedData) with delta
 
 #### Tool Events and Feedback (FR-034 to FR-037)
@@ -128,7 +128,7 @@ Updated `spec.md` to incorporate comprehensive tool system requirements based on
 - Delete tool: component cascade, wire, branching point deletion
 
 **TS-004** (Updated)
-- Added verification of StaticCircuitRenderer tool-related methods (per FR-019)
+- Added verification of CircuitSceneManager tool-related methods (per FR-019)
 
 ---
 
@@ -159,7 +159,7 @@ Updated `spec.md` to incorporate comprehensive tool system requirements based on
 
 ### Updated Entities
 
-**Circuit Renderer (Static)**
+**Circuit SceneManager (Static)**
 - Added note: "Manages tool system for editing operations (FR-025 to FR-037)"
 
 ---
@@ -173,7 +173,7 @@ The following contract files will need updates (per analysis.md):
 - Add to `RenderEventMap` with proper payloads
 - Add new types: `ToolType`, `CursorType`, `IEditingTool` interface
 
-### StaticCircuitRenderer.ts
+### CircuitSceneManager.ts
 - Add 7 new method signatures:
   - `setEditMode(enabled: boolean): void`
   - `setActiveTool(toolType: ToolType): void`
@@ -231,7 +231,7 @@ All 5 gates PASS with tool system additions:
 
 ✅ **Gate 1: Framework Agnosticism** - Tool system maintains separation: consumer implements event listeners, renderer exposes tool APIs. Three.js remains only rendering dependency.
 
-✅ **Gate 2: Modular Separation** - Tools are part of StaticCircuitRenderer module, not core. Clear boundary: tools handle UI interaction, core handles circuit validation.
+✅ **Gate 2: Modular Separation** - Tools are part of CircuitSceneManager module, not core. Clear boundary: tools handle UI interaction, core handles circuit validation.
 
 ✅ **Gate 3: Public API Shape** - FR-019 updated with complete tool API surface
 
@@ -244,7 +244,7 @@ All 5 gates PASS with tool system additions:
 ## Next Steps
 
 1. ✅ **Spec Updated** - spec.md now includes FR-025 to FR-037
-2. ⏭️ **Update Contracts** - Update types.ts and StaticCircuitRenderer.ts with tool APIs
+2. ⏭️ **Update Contracts** - Update types.ts and CircuitSceneManager.ts with tool APIs
 3. ⏭️ **Regenerate Tasks** - Replace Phase 5 tasks (T055-T063) with ~18 new tool-focused tasks
 4. ⏭️ **Update Plan** - Update plan.md to include tool system in implementation approach
 5. ⏭️ **Update Quickstart** - Add tool system usage examples to quickstart.md
@@ -260,7 +260,7 @@ All 5 gates PASS with tool system additions:
 ## Files Pending Updates
 
 - ⏭️ `specs/003-threejs-rendering/contracts/types.ts` - Add tool-related types and events
-- ⏭️ `specs/003-threejs-rendering/contracts/StaticCircuitRenderer.ts` - Add tool-related method signatures
+- ⏭️ `specs/003-threejs-rendering/contracts/CircuitSceneManager.ts` - Add tool-related method signatures
 - ⏭️ `specs/003-threejs-rendering/tasks.md` - Regenerate Phase 5 tasks
 - ⏭️ `specs/003-threejs-rendering/plan.md` - Add tool system to implementation approach
 - ⏭️ `specs/003-threejs-rendering/quickstart.md` - Add tool system usage examples

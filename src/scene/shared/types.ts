@@ -125,7 +125,7 @@ export type CursorType =
  * Interface defining contract for editing tool implementations
  *
  * All editing tools must implement this interface to integrate with
- * StaticCircuitRenderer's tool system.
+ * CircuitSceneManager's tool system.
  *
  * @example
  * ```typescript

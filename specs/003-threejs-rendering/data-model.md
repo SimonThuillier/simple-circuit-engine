@@ -1,8 +1,8 @@
-# Data Model: 3D Circuit Renderers
+# Data Model: 3D Circuit SceneManagers
 
 ## Entity Definitions
 
-### 1. StaticCircuitRenderer
+### 1. CircuitSceneManager
 
 **Purpose**: Render static circuit topology with support for editing interactions via integrated tool system
 
@@ -65,7 +65,7 @@
 
 ---
 
-### 2. SimulationCircuitRenderer
+### 2. SimulationCircuitSceneManager
 
 **Purpose**: Render live circuit simulation with animated state changes
 
@@ -386,14 +386,14 @@ type CursorType = 'default' | 'pointer' | 'crosshair' | 'move' | 'not-allowed' |
 ### Dependency Graph
 
 ```
-StaticCircuitRenderer
+CircuitSceneManager
   ├─ depends on → Circuit (core module)
   ├─ depends on → FactoryRegistry (shared)
   ├─ depends on → EventEmitter (shared)
   ├─ depends on → IEditingTool (5 implementations)
   └─ uses → THREE.Scene, THREE.Camera (Three.js)
 
-SimulationCircuitRenderer
+SimulationCircuitSceneManager
   ├─ depends on → CircuitRunner (core module)
   ├─ depends on → FactoryRegistry (shared)
   ├─ depends on → EventEmitter (shared)
@@ -419,21 +419,21 @@ EventEmitter<T>
 
 ### Composition Relationships
 
-- **StaticCircuitRenderer** *contains* EventEmitter<RenderEventMap>
-- **StaticCircuitRenderer** *contains* Map<ToolType, IEditingTool> (tool registry)
-- **StaticCircuitRenderer** *contains* ToolState | null (active tool state)
-- **SimulationCircuitRenderer** *contains* EventEmitter<RenderEventMap>
-- **SimulationCircuitRenderer** *contains* InterpolationController
+- **CircuitSceneManager** *contains* EventEmitter<RenderEventMap>
+- **CircuitSceneManager** *contains* Map<ToolType, IEditingTool> (tool registry)
+- **CircuitSceneManager** *contains* ToolState | null (active tool state)
+- **SimulationCircuitSceneManager** *contains* EventEmitter<RenderEventMap>
+- **SimulationCircuitSceneManager** *contains* InterpolationController
 - **Both renderers** *contain* THREE.Scene, THREE.Camera
 - **Both renderers** *reference* FactoryRegistry (injected dependency)
 - **Each IEditingTool** *contains* tool-specific ToolState instance
 
 ### Association Relationships
 
-- **StaticCircuitRenderer** → **Circuit** (1:1, immutable after construction)
-- **SimulationCircuitRenderer** → **CircuitRunner** (1:1, immutable after construction)
+- **CircuitSceneManager** → **Circuit** (1:1, immutable after construction)
+- **SimulationCircuitSceneManager** → **CircuitRunner** (1:1, immutable after construction)
 - **FactoryRegistry** → **ComponentVisualFactory** (1:many, registered dynamically)
-- **Renderers** → **THREE.Object3D** (1:many, created from circuit data)
+- **SceneManagers** → **THREE.Object3D** (1:many, created from circuit data)
 
 ---
 
@@ -449,7 +449,7 @@ EventEmitter<T>
 
 2. **Consumer creates renderer**
    ```typescript
-   const renderer = new StaticCircuitRenderer(circuit, registry);
+   const renderer = new CircuitSceneManager(circuit, registry);
    ```
 
 3. **Consumer initializes renderer**
@@ -458,19 +458,19 @@ EventEmitter<T>
    // Emits 'ready' event
    ```
 
-### Update Flow (Static Renderer)
+### Update Flow (Static SceneManager)
 
 1. **Circuit topology changes** (external to renderer)
 2. **Consumer calls update()**
    ```typescript
    renderer.update({ addedComponents: [newId] });
    ```
-3. **Renderer processes changes**:
+3. **SceneManager processes changes**:
    - Adds new visual meshes for added components
    - Removes meshes for deleted components
    - Updates positions/rotations for modified components
 
-### Render Flow (Simulation Renderer)
+### Render Flow (Simulation SceneManager)
 
 1. **Consumer calls render() in animation loop**
    ```typescript
@@ -480,21 +480,21 @@ EventEmitter<T>
    }
    ```
 
-2. **Renderer computes interpolated states**:
+2. **SceneManager computes interpolated states**:
    - Gets current simulation tick from CircuitRunner
    - Interpolates between last tick and current tick based on elapsed time
 
-3. **Renderer updates visual properties**:
+3. **SceneManager updates visual properties**:
    - Sets material colors based on electrical state
    - Animates current flow on wires
    - Updates component visual states
 
 4. **Consumer renders scene** (external):
    ```typescript
-   webGLRenderer.render(renderer.getScene(), camera);
+   webGLSceneManager.render(renderer.getScene(), camera);
    ```
 
-### Tool Interaction Flow (Static Renderer)
+### Tool Interaction Flow (Static SceneManager)
 
 1. **Consumer enables edit mode**
    ```typescript
@@ -534,7 +534,7 @@ EventEmitter<T>
    - **If validation succeeds**:
      a. Tool calls Circuit API to modify topology
      b. Tool constructs ChangedData delta
-     c. Renderer calls internal update(changedData)
+     c. SceneManager calls internal update(changedData)
      d. Emits 'toolOperationCompleted' with changedData
      e. Consumer reacts to event (e.g., update UI)
 
@@ -589,7 +589,7 @@ EventEmitter<T>
 
 ### Data Volume
 
-- StaticCircuitRenderer: ~500 components, ~1000 wires, ~1500 enodes
-- SimulationCircuitRenderer: Same + interpolation state (~2x memory)
+- CircuitSceneManager: ~500 components, ~1000 wires, ~1500 enodes
+- SimulationCircuitSceneManager: Same + interpolation state (~2x memory)
 - FactoryRegistry: ~10-20 registered factories
 - EventEmitter: ~10-50 registered listeners per event type

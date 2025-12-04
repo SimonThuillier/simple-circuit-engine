@@ -52,10 +52,12 @@ export function createWirePathGeometry(waypoints: Position[]): THREE.BufferGeome
 export function createGridHelper(
   size: number = 50,
   divisions: number = 50,
-  colorCenterLine: number = 0x444444,
-  colorGrid: number = 0x222222
+  colorCenterLine: number = 0xaaaaaa,
+  colorGrid: number = 0x777777
 ): THREE.GridHelper {
-  return new THREE.GridHelper(size, divisions, colorCenterLine, colorGrid);
+    const helper = new THREE.GridHelper(size, divisions, colorCenterLine, colorGrid);
+    helper.position.set(0,0,0);
+  return helper;
 }
 
 /**
