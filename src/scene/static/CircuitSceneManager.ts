@@ -31,6 +31,12 @@ import { createWireGeometry } from '../shared/GeometryUtils';
 import { createLineMaterial } from '../shared/MaterialUtils';
 import { createEnodeGeometry } from '../shared/GeometryUtils';
 import { createStandardMaterial } from '../shared/MaterialUtils';
+import { SelectTool } from './tools/SelectTool';
+import { PlaceComponentTool } from './tools/PlaceComponentTool';
+import { WireTool } from './tools/WireTool';
+import { BranchingPointTool } from './tools/BranchingPointTool';
+import { DeleteTool } from './tools/DeleteTool';
+import type { IEditingTool } from '../shared/types';
 
 /**
  * Static Circuit Scene Manager Implementation
@@ -58,7 +64,7 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
   // Edit mode and tool system (Phase 5)
   private editMode: boolean = false;
   private activeTool: ToolType | null = null;
-  private tools: Map<ToolType, any> = new Map(); // Will be populated in Phase 5
+  private tools: Map<ToolType, IEditingTool> = new Map();
   private toolState: any = null;
   private previewObjects: THREE.Object3D[] = [];
 
@@ -109,6 +115,9 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
 
       // Add lights
       setupSceneLights(this.scene);
+
+      // Initialize tools (Phase 5)
+      this._initializeTools();
 
       this.initialized = true;
 
@@ -267,35 +276,128 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
   }
 
   /**
-   * Tool System Methods (Phase 5 - Stubs for now)
+   * Tool System Methods (Phase 5)
    */
 
+  /**
+   * Enable or disable edit mode (FR-006, FR-027)
+   * When disabled, deactivates any active tool and resets tool state
+   *
+   * @param enabled - True to enable edit mode, false to disable
+   */
   setEditMode(enabled: boolean): void {
     this._checkInitialized();
+
+    if (this.editMode === enabled) {
+      return; // No change
+    }
+
     this.editMode = enabled;
-    // Full implementation in Phase 5
+
+    if (!enabled) {
+      // Disable edit mode - deactivate active tool if any
+      if (this.activeTool !== null) {
+        const previousTool = this.activeTool;
+        const tool = this.tools.get(previousTool);
+
+        if (tool) {
+          tool.onDeactivate();
+        }
+
+        this.activeTool = null;
+        this.toolState = null;
+        this._clearPreviewObjects();
+
+        // Emit toolDeactivated event
+        this.emit('toolDeactivated', { toolType: previousTool });
+      }
+    }
   }
 
+  /**
+   * Set the active editing tool (FR-026, FR-028, FR-034)
+   * Only one tool can be active at a time
+   * Switching tools will deactivate the previous tool
+   *
+   * @param toolType - Type of tool to activate
+   * @throws {Error} If edit mode is not enabled
+   */
   setActiveTool(toolType: ToolType): void {
     this._checkInitialized();
+
     if (!this.editMode) {
       throw new Error('Edit mode must be enabled to activate tools');
     }
+
+    // Check if tool is already active
+    if (this.activeTool === toolType) {
+      return;
+    }
+
+    // Deactivate previous tool if any
+    if (this.activeTool !== null) {
+      const previousTool = this.activeTool;
+      const tool = this.tools.get(previousTool);
+
+      if (tool) {
+        tool.onDeactivate();
+      }
+
+      this._clearPreviewObjects();
+
+      // Emit toolDeactivated event
+      this.emit('toolDeactivated', { toolType: previousTool });
+    }
+
+    // Activate new tool
     this.activeTool = toolType;
-    // Full implementation in Phase 5
+    const tool = this.tools.get(toolType);
+
+    if (tool) {
+      tool.onActivate();
+
+      // Emit toolActivated event
+      this.emit('toolActivated', { toolType });
+
+      // Emit cursorChangeRequested event
+      const cursorType = tool.getCursorType();
+      this.emit('cursorChangeRequested', { cursorType });
+    }
   }
 
+  /**
+   * Get the currently active tool (FR-028)
+   *
+   * @returns Current tool type or null if no tool is active
+   */
   getActiveTool(): ToolType | null {
     return this.activeTool;
   }
 
+  /**
+   * Cancel the current tool operation (FR-031)
+   * Used for multi-step operations like wire creation
+   *
+   * @throws {Error} If no tool is active
+   */
   cancelCurrentToolOperation(): void {
     if (!this.activeTool) {
       throw new Error('No active tool');
     }
-    // Full implementation in Phase 5
+
+    const tool = this.tools.get(this.activeTool);
+    if (tool && typeof tool.cancelOperation === 'function') {
+      tool.cancelOperation();
+      this.emit('toolOperationCancelled', { toolType: this.activeTool });
+    }
   }
 
+  /**
+   * Handle tool click interaction (FR-029)
+   *
+   * @param worldPosition - 3D world position of click
+   * @throws {Error} If edit mode is not enabled or no tool is active
+   */
   handleToolClick(worldPosition: THREE.Vector3): void {
     if (!this.editMode) {
       throw new Error('Edit mode must be enabled');
@@ -303,22 +405,128 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
     if (!this.activeTool) {
       throw new Error('No active tool');
     }
-    // Full implementation in Phase 5
+
+    const tool = this.tools.get(this.activeTool);
+    if (tool && typeof tool.handleClick === 'function') {
+      tool.handleClick(worldPosition);
+    }
   }
 
+  /**
+   * Handle tool hover interaction
+   * Updates tool preview and cursor
+   *
+   * @param worldPosition - 3D world position of hover
+   */
   handleToolHover(worldPosition: THREE.Vector3): void {
-    // Silently ignored if no tool active
-    // Full implementation in Phase 5
+    if (!this.editMode || !this.activeTool) {
+      return; // Silently ignore if no tool active
+    }
+
+    const tool = this.tools.get(this.activeTool);
+    if (tool && typeof tool.handleHover === 'function') {
+      tool.handleHover(worldPosition);
+
+      // Update preview objects
+      this._updatePreviewObjects();
+
+      // Update cursor
+      const cursorType = tool.getCursorType();
+      this.emit('cursorChangeRequested', { cursorType });
+    }
   }
 
+  /**
+   * Handle tool scroll interaction
+   * Used for rotating components before placement
+   *
+   * @param delta - Scroll delta (positive = scroll up, negative = scroll down)
+   */
   handleToolScroll(delta: number): void {
-    // Silently ignored if no tool active
-    // Full implementation in Phase 5
+    if (!this.editMode || !this.activeTool) {
+      return; // Silently ignore if no tool active
+    }
+
+    const tool = this.tools.get(this.activeTool);
+    if (tool && typeof tool.handleScroll === 'function') {
+      tool.handleScroll(delta);
+
+      // Update preview objects
+      this._updatePreviewObjects();
+    }
+  }
+
+  /**
+   * Clear all preview objects from the scene
+   * @private
+   */
+  private _clearPreviewObjects(): void {
+    for (const obj of this.previewObjects) {
+      this.scene!.remove(obj);
+
+      // Dispose geometry and material
+      if (obj instanceof THREE.Mesh) {
+        obj.geometry.dispose();
+        if (Array.isArray(obj.material)) {
+          obj.material.forEach((mat) => mat.dispose());
+        } else {
+          obj.material.dispose();
+        }
+      } else if (obj instanceof THREE.Line) {
+        obj.geometry.dispose();
+        if (Array.isArray(obj.material)) {
+          obj.material.forEach((mat) => mat.dispose());
+        } else {
+          obj.material.dispose();
+        }
+      }
+    }
+
+    this.previewObjects = [];
+  }
+
+  /**
+   * Update preview objects from active tool
+   * @private
+   */
+  private _updatePreviewObjects(): void {
+    if (!this.activeTool) {
+      return;
+    }
+
+    const tool = this.tools.get(this.activeTool);
+    if (!tool) {
+      return;
+    }
+
+    // Clear existing preview objects
+    this._clearPreviewObjects();
+
+    // Get new preview objects from tool
+    const newPreviewObjects = tool.getPreviewObjects();
+    for (const obj of newPreviewObjects) {
+      this.scene!.add(obj);
+      this.previewObjects.push(obj);
+    }
   }
 
   /**
    * Private helper methods
    */
+
+  /**
+   * Initialize editing tools
+   * @private
+   */
+  private _initializeTools(): void {
+    // Create tool instances (circuit will be null initially, updated when setCircuit is called)
+    const circuit = this.circuit ?? null;
+    this.tools.set('select', new SelectTool(circuit, this));
+    this.tools.set('placeComponent', new PlaceComponentTool(circuit, this));
+    this.tools.set('wire', new WireTool(circuit, this));
+    this.tools.set('branchingPoint', new BranchingPointTool(circuit, this));
+    this.tools.set('delete', new DeleteTool(circuit, this));
+  }
 
   private _checkInitialized(): void {
     if (this.disposed) {

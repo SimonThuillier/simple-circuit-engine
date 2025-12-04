@@ -145,7 +145,7 @@
 
 ---
 
-## Phase 5: User Story 2 - Circuit Editing Interface (Priority: P2)
+## Phase 5: User Story 2 - Circuit Editing API (Priority: P2)
 
 **Goal**: Implement integrated tool system for circuit editing with 5 core tools (Select, PlaceComponent, Wire, BranchingPoint, Delete). Tools handle UI interaction patterns, preview rendering, validation, and delegate circuit modifications to core Circuit API.
 
@@ -157,49 +157,49 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T060 [P] [US2] Unit test for tool system architecture in tests/unit/scene/static/tools/ToolSystem.test.ts: verify setEditMode(), setActiveTool(), getActiveTool() per FR-026, FR-027, FR-028
-- [ ] T061 [P] [US2] Unit test for single active tool constraint in tests/unit/scene/static/tools/ToolSystem.test.ts: verify only one tool active at a time, switching deactivates previous per FR-026
-- [ ] T062 [P] [US2] Unit test for tool state management in tests/unit/scene/static/tools/ToolSystem.test.ts: verify tool state reset on edit mode disable per FR-027
-- [ ] T063 [P] [US2] Unit test for tool event emission in tests/unit/scene/static/tools/ToolSystem.test.ts: verify 'toolActivated', 'toolDeactivated', 'cursorChangeRequested' events per FR-034, FR-035
+- [X] T060 [P] [US2] Unit test for tool system architecture in tests/unit/scene/static/tools/ToolSystem.test.ts: verify setEditMode(), setActiveTool(), getActiveTool() per FR-026, FR-027, FR-028
+- [X] T061 [P] [US2] Unit test for single active tool constraint in tests/unit/scene/static/tools/ToolSystem.test.ts: verify only one tool active at a time, switching deactivates previous per FR-026
+- [X] T062 [P] [US2] Unit test for tool state management in tests/unit/scene/static/tools/ToolSystem.test.ts: verify tool state reset on edit mode disable per FR-027
+- [X] T063 [P] [US2] Unit test for tool event emission in tests/unit/scene/static/tools/ToolSystem.test.ts: verify 'toolActivated', 'toolDeactivated', 'cursorChangeRequested' events per FR-034, FR-035
 
 ### Individual Tool Tests
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T064 [P] [US2] Unit test for SelectTool in tests/unit/scene/static/tools/SelectTool.test.ts: verify click to select, drag to move, double-click to rotate per FR-029
-- [ ] T065 [P] [US2] Unit test for PlaceComponentTool in tests/unit/scene/static/tools/PlaceComponentTool.test.ts: verify preview rendering, scroll to rotate, click to place, overlap validation per FR-029, FR-030, FR-032
-- [ ] T066 [P] [US2] Unit test for WireTool in tests/unit/scene/static/tools/WireTool.test.ts: verify source selection, path preview, target selection, cancellation per FR-029, FR-030, FR-031
-- [ ] T067 [P] [US2] Unit test for BranchingPointTool in tests/unit/scene/static/tools/BranchingPointTool.test.ts: verify wire targeting, insertion at location per FR-029
-- [ ] T068 [P] [US2] Unit test for DeleteTool in tests/unit/scene/static/tools/DeleteTool.test.ts: verify component cascade deletion, wire deletion, branching point deletion per FR-029, FR-032
+- [X] T064 [P] [US2] Unit test for SelectTool in tests/unit/scene/static/tools/SelectTool.test.ts: verify click to select, drag to move, double-click to rotate per FR-029
+- [X] T065 [P] [US2] Unit test for PlaceComponentTool in tests/unit/scene/static/tools/PlaceComponentTool.test.ts: verify preview rendering, scroll to rotate, click to place, overlap validation per FR-029, FR-030, FR-032
+- [X] T066 [P] [US2] Unit test for WireTool in tests/unit/scene/static/tools/WireTool.test.ts: verify source selection, path preview, target selection, cancellation per FR-029, FR-030, FR-031
+- [X] T067 [P] [US2] Unit test for BranchingPointTool in tests/unit/scene/static/tools/BranchingPointTool.test.ts: verify wire targeting, insertion at location per FR-029
+- [X] T068 [P] [US2] Unit test for DeleteTool in tests/unit/scene/static/tools/DeleteTool.test.ts: verify component cascade deletion, wire deletion, branching point deletion per FR-029, FR-032
 
 ### Tool Operations Tests
 
-- [ ] T069 [P] [US2] Unit test for tool preview rendering in tests/unit/scene/static/tools/ToolPreview.test.ts: verify PlaceComponent ghost preview, Wire path preview, semi-transparent rendering per FR-030
-- [ ] T070 [P] [US2] Unit test for tool validation in tests/unit/scene/static/tools/ToolValidation.test.ts: verify overlap detection, endpoint validation, validation error events per FR-032, FR-036
-- [ ] T071 [P] [US2] Unit test for tool-circuit integration in tests/unit/scene/static/tools/ToolIntegration.test.ts: verify Circuit API delegation, ChangedData construction, update() calls per FR-033, FR-037
+- [X] T069 [P] [US2] Unit test for tool preview rendering in tests/unit/scene/static/tools/ToolPreview.test.ts: verify PlaceComponent ghost preview, Wire path preview, semi-transparent rendering per FR-030
+- [X] T070 [P] [US2] Unit test for tool validation in tests/unit/scene/static/tools/ToolValidation.test.ts: verify overlap detection, endpoint validation, validation error events per FR-032, FR-036
+- [X] T071 [P] [US2] Unit test for tool-circuit integration in tests/unit/scene/static/tools/ToolIntegration.test.ts: verify Circuit API delegation, ChangedData construction, update() calls per FR-033, FR-037
 
 ### Tool System Implementation
 
-- [ ] T072 [US2] Create IEditingTool interface in src/scene/static/tools/IEditingTool.ts: define onActivate(), onDeactivate(), getCursorType(), getPreviewObjects() per FR-025
-- [ ] T073 [US2] Add tool system fields to CircuitSceneManager in src/scene/static/CircuitSceneManager.ts: editMode, tools Map, activeTool, toolState, previewObjects per data-model.md
-- [ ] T074 [US2] Implement setEditMode() in src/scene/static/CircuitSceneManager.ts: activate/deactivate tool system, reset tool state on disable per FR-006, FR-027
-- [ ] T075 [US2] Implement setActiveTool(), getActiveTool() in src/scene/static/CircuitSceneManager.ts: enforce single active tool, emit events per FR-026, FR-028, FR-034
-- [ ] T076 [US2] Implement cancelCurrentToolOperation() in src/scene/static/CircuitSceneManager.ts: cancel multi-step tool operations, emit 'toolOperationCancelled' per FR-031
+- [X] T072 [US2] Create IEditingTool interface in src/scene/static/tools/IEditingTool.ts: define onActivate(), onDeactivate(), getCursorType(), getPreviewObjects() per FR-025
+- [X] T073 [US2] Add tool system fields to CircuitSceneManager in src/scene/static/CircuitSceneManager.ts: editMode, tools Map, activeTool, toolState, previewObjects per data-model.md
+- [X] T074 [US2] Implement setEditMode() in src/scene/static/CircuitSceneManager.ts: activate/deactivate tool system, reset tool state on disable per FR-006, FR-027
+- [X] T075 [US2] Implement setActiveTool(), getActiveTool() in src/scene/static/CircuitSceneManager.ts: enforce single active tool, emit events per FR-026, FR-028, FR-034
+- [X] T076 [US2] Implement cancelCurrentToolOperation() in src/scene/static/CircuitSceneManager.ts: cancel multi-step tool operations, emit 'toolOperationCancelled' per FR-031
 
 ### Individual Tool Implementations
 
-- [ ] T077 [US2] Implement SelectTool in src/scene/static/tools/SelectTool.ts: handleClick (select), handleDrag (move), handleDoubleClick (rotate), emit 'toolOperationCompleted' per FR-029, FR-037
-- [ ] T078 [US2] Implement PlaceComponentTool in src/scene/static/tools/PlaceComponentTool.ts: handleHover (preview), handleScroll (rotate), handleClick (place), overlap validation per FR-029, FR-030, FR-032
-- [ ] T079 [US2] Implement WireTool in src/scene/static/tools/WireTool.ts: handleClick (source/target), path preview, cancellation support, emit 'toolOperationStarted'/'toolOperationCompleted' per FR-029, FR-030, FR-031
-- [ ] T080 [US2] Implement BranchingPointTool in src/scene/static/tools/BranchingPointTool.ts: handleClick (wire targeting, insertion), wire validation per FR-029, FR-032
-- [ ] T081 [US2] Implement DeleteTool in src/scene/static/tools/DeleteTool.ts: handleClick (delete), cascade logic for component pins, emit 'toolOperationCompleted' per FR-029, FR-032, FR-037
+- [X] T077 [US2] Implement SelectTool in src/scene/static/tools/SelectTool.ts: handleClick (select), handleDrag (move), handleDoubleClick (rotate), emit 'toolOperationCompleted' per FR-029, FR-037
+- [X] T078 [US2] Implement PlaceComponentTool in src/scene/static/tools/PlaceComponentTool.ts: handleHover (preview), handleScroll (rotate), handleClick (place), overlap validation per FR-029, FR-030, FR-032
+- [X] T079 [US2] Implement WireTool in src/scene/static/tools/WireTool.ts: handleClick (source/target), path preview, cancellation support, emit 'toolOperationStarted'/'toolOperationCompleted' per FR-029, FR-030, FR-031
+- [X] T080 [US2] Implement BranchingPointTool in src/scene/static/tools/BranchingPointTool.ts: handleClick (wire targeting, insertion), wire validation per FR-029, FR-032
+- [X] T081 [US2] Implement DeleteTool in src/scene/static/tools/DeleteTool.ts: handleClick (delete), cascade logic for component pins, emit 'toolOperationCompleted' per FR-029, FR-032, FR-037
 
 ### Tool Operations Implementation
 
-- [ ] T082 [US2] Implement tool preview rendering in src/scene/static/CircuitSceneManager.ts: render preview objects semi-transparently, update on hover per FR-030
-- [ ] T083 [US2] Implement tool validation feedback in src/scene/static/CircuitSceneManager.ts: highlight conflicts, show error preview (red tint), emit 'toolValidationError' per FR-036
-- [ ] T084 [US2] Implement tool interaction handlers in src/scene/static/CircuitSceneManager.ts: handleToolClick(), handleToolHover(), handleToolScroll() delegate to active tool per FR-019
-- [ ] T085 [US2] Implement tool-circuit integration in tool classes: delegate to Circuit API, construct ChangedData, call sceneManager.update(), complete within 100ms per FR-033, FR-037
+- [X] T082 [US2] Implement tool preview rendering in src/scene/static/CircuitSceneManager.ts: render preview objects semi-transparently, update on hover per FR-030
+- [X] T083 [US2] Implement tool validation feedback in src/scene/static/CircuitSceneManager.ts: highlight conflicts, show error preview (red tint), emit 'toolValidationError' per FR-036
+- [X] T084 [US2] Implement tool interaction handlers in src/scene/static/CircuitSceneManager.ts: handleToolClick(), handleToolHover(), handleToolScroll() delegate to active tool per FR-019
+- [X] T085 [US2] Implement tool-circuit integration in tool classes: delegate to Circuit API, construct ChangedData, call sceneManager.update(), complete within 100ms per FR-033, FR-037
 
 **Checkpoint**: At this point, User Stories 1, 2, AND 3 work independently - static rendering supports full editing with 5 tools, simulation rendering animates
 
