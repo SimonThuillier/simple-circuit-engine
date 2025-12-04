@@ -1,12 +1,14 @@
-# Implementation Plan: 3D Circuit SceneManagers
+# Implementation Plan: 3D Circuit Scene Managers
 
-**Branch**: `003-threejs-rendering` | **Date**: 2025-12-02 | **Spec**: [spec.md](./spec.md)
+**Branch**: `003-threejs-rendering` | **Date**: 2025-12-02 | **Updated**: 2025-12-04 (Phase 1-3 POC) | **Spec**: [spec.md](./spec.md)
 
 ## Summary
 
-Implement two independent Three.js-based renderer classes (CircuitSceneManager for static/editing visualization, SimulationCircuitSceneManager for live simulation visualization) plus a shared utilities module. SceneManagers expose programmatic APIs with hookable callbacks but do not implement DOM event handling. External consumers own the animation loop and call render() each frame. Component visuals are provided via injected factory registries.
+Implement two independent Three.js-based scene manager classes (CircuitSceneManager for static/editing visualization, CircuitRunnerSceneManager for live simulation visualization) plus a shared utilities module. SceneManagers expose programmatic APIs with hookable callbacks but do not implement DOM event handling or WebGL rendering orchestration. Circuit/CircuitRunner instances are provided AFTER initialization via setCircuit() method, enabling scene manager reusability. External consumers own the WebGLRenderer, animation loop, and call renderer.render(scene, camera) each frame. Component visuals are provided via injected factory registries.
 
 **Update 2025-12-02**: CircuitSceneManager includes integrated tool system for circuit editing operations. Five core editing tools (Select, PlaceComponent, Wire, BranchingPoint, Delete) are built-in, each with distinct interaction patterns, preview rendering, and validation logic. Tools delegate circuit modifications to core Circuit API while providing visual feedback and event emission for consumer integration.
+
+**Update 2025-12-04 (Phase 1-3 POC)**: After POC implementation, refined architecture to completely delegate rendering orchestration to consumers. Renamed module from `rendering/` to `scene/` for clarity. Renamed classes from `*Renderer` to `*SceneManager` to accurately reflect responsibility. Changed API so Circuit/CircuitRunner are set after initialization via setCircuit(), not in constructor, enabling scene manager reuse across multiple circuits.
 
 ## Technical Context
 
@@ -36,7 +38,7 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 ### Gate 2: Modular Separation ✅ PASS
 
-**Requirement**: Strict dependency rules - `core/` (pure TS, no deps), `rendering/` (depends only on core + Three.js), `playback/` (depends on core + rendering)
+**Requirement**: Strict dependency rules - `core/` (pure TS, no deps), `scene/` (depends only on core + Three.js), `playback/` (depends on core + scene)
 
 **Status**: ✅ **PASS**
 - Feature adds code to `src/scene/` only
@@ -99,9 +101,9 @@ src/
 │   ├── Circuit.ts
 │   ├── simulation/CircuitRunner.ts
 │   └── types/
-├── rendering/                      # (NEW - primary work location)
-│   ├── index.ts                    # Exports CircuitSceneManager, SimulationCircuitSceneManager, shared utils
-│   ├── static/                     # Static circuit renderer module
+├── scene/                          # (NEW - primary work location)
+│   ├── index.ts                    # Exports CircuitSceneManager, CircuitRunnerSceneManager, shared utils
+│   ├── static/                     # Static circuit scene manager module
 │   │   ├── CircuitSceneManager.ts
 │   │   ├── StaticScene.ts
 │   │   ├── EditController.ts
@@ -112,8 +114,8 @@ src/
 │   │       ├── WireTool.ts         # Wire creation tool
 │   │       ├── BranchingPointTool.ts  # Branching point insertion tool
 │   │       └── DeleteTool.ts       # Deletion tool
-│   ├── simulation/                 # Simulation circuit renderer module
-│   │   ├── SimulationCircuitSceneManager.ts
+│   ├── simulation/                 # Simulation circuit scene manager module
+│   │   ├── CircuitRunnerSceneManager.ts
 │   │   ├── SimulationScene.ts
 │   │   └── AnimationController.ts
 │   └── shared/                     # Shared utilities module
@@ -128,9 +130,9 @@ src/
 
 tests/
 ├── unit/
-│   └── rendering/                  # (NEW - unit tests for renderers)
+│   └── scene/                      # (NEW - unit tests for scene managers)
 │       ├── CircuitSceneManager.test.ts
-│       ├── SimulationCircuitSceneManager.test.ts
+│       ├── CircuitRunnerSceneManager.test.ts
 │       ├── ComponentVisualFactory.test.ts
 │       ├── FactoryRegistry.test.ts
 │       ├── tools/                  # Tool system unit tests
@@ -145,7 +147,7 @@ tests/
 └── integration/                    # (not in scope for this feature)
 ```
 
-**Structure Decision**: Single project structure maintained. New code added to `src/scene/` with three submodules: `static/`, `simulation/`, and `shared/`. This aligns with constitution's modular separation and existing repository structure. Tests added to `tests/unit/scene/` with Three.js mocks.
+**Structure Decision**: Single project structure maintained. New code added to `src/scene/` with three submodules: `static/`, `simulation/`, and `shared/`. Module named `scene/` instead of `rendering/` to accurately reflect that these classes manage Three.js scenes, not rendering orchestration. This aligns with constitution's modular separation and existing repository structure. Tests added to `tests/unit/scene/` with Three.js mocks.
 
 ## Complexity Tracking
 
@@ -188,7 +190,7 @@ tests/
 
 **Entities**:
 1. **CircuitSceneManager**: Main class for static/editing visualization with integrated tool system
-2. **SimulationCircuitSceneManager**: Main class for live simulation visualization
+2. **CircuitRunnerSceneManager**: Main class for live simulation visualization
 3. **ComponentVisualFactory**: Factory function type for creating component visuals
 4. **FactoryRegistry**: Registry mapping ComponentType → ComponentVisualFactory
 5. **RenderEvent**: Union type of supported event types (includes tool events)
@@ -200,11 +202,12 @@ tests/
 11. **CursorType**: Union type for cursor styles ('default' | 'pointer' | 'crosshair' | 'move' | 'not-allowed' | 'grab' | 'grabbing')
 
 **Relationships**:
-- Both renderers depend on FactoryRegistry (constructor injection)
-- Both renderers maintain their own Three.js Scene
-- CircuitSceneManager operates on Circuit instances
-- SimulationCircuitSceneManager operates on CircuitRunner instances
+- Both scene managers depend on FactoryRegistry (constructor injection)
+- Both scene managers maintain their own Three.js Scene and Camera
+- CircuitSceneManager operates on Circuit instances (provided via setCircuit() after initialization)
+- CircuitRunnerSceneManager operates on CircuitRunner instances (provided via setCircuit() after initialization)
 - SceneManagers emit RenderEvents to registered RenderCallbacks
+- Consumer owns WebGLRenderer instance and animation loop
 - **CircuitSceneManager manages collection of IEditingTool instances**
 - **Each IEditingTool maintains ToolState and delegates Circuit modifications to core Circuit API**
 - **Tools emit tool-specific events through CircuitSceneManager's event system**
@@ -214,13 +217,16 @@ tests/
 **Public Interfaces** (to be generated in `/contracts/`):
 
 1. **CircuitSceneManager.ts**: Class signature with public methods
-   - `constructor(circuit: Circuit, factoryRegistry: FactoryRegistry)`
-   - `initialize(container: HTMLElement): void`
+   - `constructor(factoryRegistry: FactoryRegistry)`
+   - `initialize(container: HTMLElement, options?: RendererOptions): void`
+   - `setCircuit(circuit: Circuit | null): void`
+   - `clearVisuals(): void`
    - `update(changedData?: ChangedData): void`
    - `render(): void`
    - `dispose(): void`
    - `on(event: RenderEvent, callback: RenderCallback): void`
    - `getScene(): THREE.Scene`
+   - `getCamera(): THREE.PerspectiveCamera`
    - **Tool System Methods**:
    - `setEditMode(enabled: boolean): void`
    - `setActiveTool(toolType: ToolType): void`
@@ -230,14 +236,17 @@ tests/
    - `handleToolHover(worldPosition: THREE.Vector3): void`
    - `handleToolScroll(delta: number): void`
 
-2. **SimulationCircuitSceneManager.ts**: Class signature with public methods
-   - `constructor(circuitRunner: CircuitRunner, factoryRegistry: FactoryRegistry)`
-   - `initialize(container: HTMLElement): void`
+2. **CircuitRunnerSceneManager.ts**: Class signature with public methods
+   - `constructor(factoryRegistry: FactoryRegistry)`
+   - `initialize(container: HTMLElement, options?: RendererOptions): void`
+   - `setCircuit(circuitRunner: CircuitRunner | null): void`
+   - `clearVisuals(): void`
    - `update(changedData?: ChangedData): void`
    - `render(): void`
    - `dispose(): void`
    - `on(event: RenderEvent, callback: RenderCallback): void`
    - `getScene(): THREE.Scene`
+   - `getCamera(): THREE.PerspectiveCamera`
 
 3. **ComponentVisualFactory.ts**: Factory function types and registry interface
    - `ComponentVisualFactory`: Function type signature

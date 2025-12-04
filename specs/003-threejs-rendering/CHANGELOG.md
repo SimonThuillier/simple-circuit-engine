@@ -264,3 +264,149 @@ All 5 gates PASS with tool system additions:
 - ⏭️ `specs/003-threejs-rendering/tasks.md` - Regenerate Phase 5 tasks
 - ⏭️ `specs/003-threejs-rendering/plan.md` - Add tool system to implementation approach
 - ⏭️ `specs/003-threejs-rendering/quickstart.md` - Add tool system usage examples
+
+---
+
+# Architectural Refinements - Phase 1-3 POC
+
+**Date**: 2025-12-04
+**Trigger**: Completed POC implementation of Phases 1-3, identified architectural improvements
+
+---
+
+## Summary of Changes
+
+After implementing a proof-of-concept for Phases 1-3, we refined the architecture to delegate rendering orchestration fully to consumers and rename modules/classes to accurately reflect their responsibilities. Updated all specification documents to align with the POC implementation.
+
+---
+
+## Major Architectural Changes
+
+### 1. Module Rename: `rendering/` → `scene/`
+
+**Rationale**: Classes manage Three.js scenes (Scene + Camera), not rendering. Consumers own WebGLRenderer.
+
+**Files Changed**:
+- All paths: `src/rendering/` → `src/scene/`
+- All test paths: `tests/unit/rendering/` → `tests/unit/scene/`
+- Updated: spec.md, plan.md, contracts/*.ts
+
+### 2. Class Renames
+
+- `StaticCircuitRenderer` → `CircuitSceneManager`
+- `SimulationCircuitSceneManager` → `CircuitRunnerSceneManager`
+
+**Rationale**: "SceneManager" more accurately describes responsibility. Avoids confusion with Three.js WebGLRenderer.
+
+### 3. API Change: Circuit Provided After Initialization
+
+**Old**: `new CircuitSceneManager(circuit, factoryRegistry)`
+**New**: `new CircuitSceneManager(factoryRegistry)` + `setCircuit(circuit)`
+
+**New Methods**:
+- `setCircuit(circuit: Circuit | null)` - Set/change circuit, enables reusability
+- `clearVisuals()` - Clear visuals without disposing
+- `getCamera()` - Direct camera access
+
+**Rationale**: Enables scene manager reuse across multiple circuits without re-initialization.
+
+### 4. Rendering Delegation to Consumer
+
+**Consumer Owns**:
+- `THREE.WebGLRenderer` instance creation and management
+- Animation loop (`requestAnimationFrame`)
+- Calling `renderer.render(scene, camera)` each frame
+
+**SceneManager Owns**:
+- `THREE.Scene` management (objects, lighting)
+- `THREE.Camera` setup and exposure
+- Scene state updates based on circuit changes
+
+**Rationale**: Maximum flexibility for consumers to integrate into any rendering pipeline.
+
+---
+
+## Files Updated
+
+### Specification Documents
+- ✅ `spec.md` - All FRs updated, new session 2025-12-04 clarifications added
+- ✅ `plan.md` - Structure, API contracts, data model updated
+- ✅ `contracts/CircuitSceneManager.ts` - New methods added, examples updated
+- ✅ `contracts/types.ts` - Module path updated
+- ✅ `ARCHITECTURAL_CHANGES.md` - New comprehensive migration guide created
+
+### Implementation Files
+- ✅ `src/scene/` - Module renamed
+- ✅ `src/scene/static/CircuitSceneManager.ts` - Implemented with new API
+- ✅ `src/scene/index.ts` - Exports updated
+
+### Pending Updates
+- ⏭️ `tasks.md` - File paths and constructor descriptions
+- ⏭️ `quickstart.md` - Usage examples with new API
+- ⏭️ Phase 4+ implementation files
+
+---
+
+## Migration Example
+
+### Old API:
+```typescript
+import { StaticCircuitRenderer } from 'simple-circuit-engine/rendering';
+const renderer = new StaticCircuitRenderer(circuit, registry);
+renderer.initialize(container);
+```
+
+### New API:
+```typescript
+import { CircuitSceneManager } from 'simple-circuit-engine/scene';
+import * as THREE from 'three';
+
+const sceneManager = new CircuitSceneManager(registry);
+sceneManager.initialize(container);
+sceneManager.setCircuit(circuit);
+
+const webglRenderer = new THREE.WebGLRenderer();
+function animate() {
+  sceneManager.render();
+  webglRenderer.render(sceneManager.getScene(), sceneManager.getCamera());
+  requestAnimationFrame(animate);
+}
+animate();
+```
+
+### Circuit Reusability:
+```typescript
+sceneManager.setCircuit(circuit1);  // Load first circuit
+// ... work ...
+sceneManager.setCircuit(circuit2);  // Switch without re-init
+```
+
+---
+
+## Impact Assessment
+
+**Constitutional Compliance**: ✅ All gates still pass
+- Framework Agnosticism: Enhanced (consumer controls renderer)
+- Modular Separation: Maintained (`scene/` depends only on `core/` + Three.js)
+- Public API Shape: Improved (clearer separation)
+- Resource Management: Enhanced (circuit switching without dispose)
+
+**Breaking Changes**: Yes, for any code using old API
+- Constructor signature changed
+- Module path changed
+- Class names changed
+
+**Migration Effort**: Low - straightforward API translation
+
+---
+
+## Rationale Summary
+
+These changes emerged from POC implementation revealing:
+1. Naming clarity - "Scene Manager" vs "Renderer" more accurate
+2. Flexibility - Circuit separation enables reusability
+3. Separation of concerns - Consumer controls rendering, scene manager controls scene
+4. Three.js alignment - Matches Three.js architecture patterns
+
+All changes improve architecture without added complexity.
+
