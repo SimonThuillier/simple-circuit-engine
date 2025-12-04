@@ -115,31 +115,31 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T038 [P] [US3] Unit test for CircuitRunnerSceneManager constructor in tests/unit/scene/simulation/CircuitRunnerSceneManager.test.ts verifying factoryRegistry assignment (no circuitRunner parameter) per TS-004
-- [ ] T039 [P] [US3] Unit test for CircuitRunnerSceneManager.initialize() in tests/unit/scene/simulation/CircuitRunnerSceneManager.test.ts verifying scene creation, interpolation controller setup, 'ready' event per TS-004
-- [ ] T040 [P] [US3] Unit test for CircuitRunnerSceneManager.setCircuit() in tests/unit/scene/simulation/CircuitRunnerSceneManager.test.ts verifying circuitRunner assignment and initial visual creation per TS-004
-- [ ] T041 [P] [US3] Unit test for CircuitRunnerSceneManager.render() interpolation in tests/unit/scene/simulation/CircuitRunnerSceneManager.test.ts verifying state interpolation between simulation ticks per FR-011 and TS-001
-- [ ] T042 [P] [US3] Unit test for CircuitRunnerSceneManager.setInterpolationDuration() in tests/unit/scene/simulation/CircuitRunnerSceneManager.test.ts verifying duration update and validation
-- [ ] T043 [P] [US3] Unit test for CircuitRunnerSceneManager wire animation in tests/unit/scene/simulation/CircuitRunnerSceneManager.test.ts verifying current flow visual updates per FR-010
+- [x] T038 [P] [US3] Unit test for CircuitRunnerSceneManager constructor in tests/unit/scene/simulation/CircuitRunnerSceneManager.test.ts verifying factoryRegistry assignment (no circuitRunner parameter) per TS-004
+- [x] T039 [P] [US3] Unit test for CircuitRunnerSceneManager.initialize() in tests/unit/scene/simulation/CircuitRunnerSceneManager.test.ts verifying scene creation, interpolation controller setup, 'ready' event per TS-004
+- [x] T040 [P] [US3] Unit test for CircuitRunnerSceneManager.setCircuit() in tests/unit/scene/simulation/CircuitRunnerSceneManager.test.ts verifying circuitRunner assignment and initial visual creation per TS-004
+- [x] T041 [P] [US3] Unit test for CircuitRunnerSceneManager.render() interpolation in tests/unit/scene/simulation/CircuitRunnerSceneManager.test.ts verifying state interpolation between simulation ticks per FR-011 and TS-001
+- [x] T042 [P] [US3] Unit test for CircuitRunnerSceneManager.setInterpolationDuration() in tests/unit/scene/simulation/CircuitRunnerSceneManager.test.ts verifying duration update and validation
+- [x] T043 [P] [US3] Unit test for CircuitRunnerSceneManager wire animation in tests/unit/scene/simulation/CircuitRunnerSceneManager.test.ts verifying current flow visual updates per FR-010
 
 ### Implementation for User Story 3
 
-- [ ] T044 [US3] Create src/scene/simulation/CircuitRunnerSceneManager.ts with class skeleton: constructor(factoryRegistry), fields (scene, camera, circuitRunner, interpolationController, lastSimulationTick, lastRenderTime) per contracts/CircuitRunnerSceneManager.ts
-- [ ] T045 [US3] Implement CircuitRunnerSceneManager.initialize(container, options) in src/scene/simulation/CircuitRunnerSceneManager.ts: create Scene, Camera, lights, instantiate InterpolationController, emit 'ready' per FR-019 - does NOT create visuals yet
-- [ ] T046 [US3] Implement CircuitRunnerSceneManager.setCircuit(circuitRunner) in src/scene/simulation/CircuitRunnerSceneManager.ts: clear existing visuals, set circuitRunner reference, create initial visuals from CircuitRunner.stateManager per FR-019b
-- [ ] T047 [US3] Implement CircuitRunnerSceneManager.clearVisuals() in src/scene/simulation/CircuitRunnerSceneManager.ts per FR-019c
-- [ ] T048 [US3] Implement _createComponentMesh(component) in src/scene/simulation/CircuitRunnerSceneManager.ts using factoryRegistry with state-aware materials per FR-009
-- [ ] T049 [US3] Implement _createWireMesh(wire) in src/scene/simulation/CircuitRunnerSceneManager.ts with animation support (store animation state in userData) per FR-010
-- [ ] T050 [US3] Implement _createEnodeMesh(enode) in src/scene/simulation/CircuitRunnerSceneManager.ts (similar to Static but state-aware)
-- [ ] T051 [US3] Implement _updateComponentState(componentId) private method in src/scene/simulation/CircuitRunnerSceneManager.ts: read ComponentState from circuitRunner.stateManager, update material colors/emissive per FR-009
-- [ ] T052 [US3] Implement _updateWireAnimation(wireId) private method in src/scene/simulation/CircuitRunnerSceneManager.ts: animate current flow direction/magnitude based on NodeElectricalState per FR-010
-- [ ] T053 [US3] Implement CircuitRunnerSceneManager.render() in src/scene/simulation/CircuitRunnerSceneManager.ts: poll current simulation tick, call interpolationController.getInterpolatedState(), update all visual elements, animate wires per FR-011
-- [ ] T054 [US3] Implement CircuitRunnerSceneManager.update(changedData) in src/scene/simulation/CircuitRunnerSceneManager.ts for incremental updates (rare, only for topology changes during simulation) per FR-019a
-- [ ] T055 [US3] Implement CircuitRunnerSceneManager.setInterpolationDuration(durationMs) in src/scene/simulation/CircuitRunnerSceneManager.ts delegating to interpolationController per contract
-- [ ] T056 [US3] Implement CircuitRunnerSceneManager.dispose() in src/scene/simulation/CircuitRunnerSceneManager.ts: cleanup geometries/materials/interpolation state per FR-018
-- [ ] T057 [US3] Implement CircuitRunnerSceneManager.getScene() and getCamera() in src/scene/simulation/CircuitRunnerSceneManager.ts per FR-004 and FR-004a
-- [ ] T058 [US3] Add error handling to CircuitRunnerSceneManager per FR-018
-- [ ] T059 [US3] Export CircuitRunnerSceneManager from src/scene/index.ts
+- [x] T044 [US3] Create src/scene/simulation/CircuitRunnerSceneManager.ts with class skeleton: constructor(factoryRegistry), fields (scene, camera, circuitRunner, interpolationController, lastSimulationTick, lastRenderTime) per contracts/CircuitRunnerSceneManager.ts
+- [x] T045 [US3] Implement CircuitRunnerSceneManager.initialize(container, options) in src/scene/simulation/CircuitRunnerSceneManager.ts: create Scene, Camera, lights, instantiate InterpolationController, emit 'ready' per FR-019 - does NOT create visuals yet
+- [x] T046 [US3] Implement CircuitRunnerSceneManager.setCircuit(circuitRunner) in src/scene/simulation/CircuitRunnerSceneManager.ts: clear existing visuals, set circuitRunner reference, create initial visuals from CircuitRunner.stateManager per FR-019b
+- [x] T047 [US3] Implement CircuitRunnerSceneManager.clearVisuals() in src/scene/simulation/CircuitRunnerSceneManager.ts per FR-019c
+- [x] T048 [US3] Implement _createComponentMesh(component) in src/scene/simulation/CircuitRunnerSceneManager.ts using factoryRegistry with state-aware materials per FR-009
+- [x] T049 [US3] Implement _createWireMesh(wire) in src/scene/simulation/CircuitRunnerSceneManager.ts with animation support (store animation state in userData) per FR-010
+- [x] T050 [US3] Implement _createEnodeMesh(enode) in src/scene/simulation/CircuitRunnerSceneManager.ts (similar to Static but state-aware)
+- [x] T051 [US3] Implement _updateComponentState(componentId) private method in src/scene/simulation/CircuitRunnerSceneManager.ts: read ComponentState from circuitRunner.stateManager, update material colors/emissive per FR-009
+- [x] T052 [US3] Implement _updateWireAnimation(wireId) private method in src/scene/simulation/CircuitRunnerSceneManager.ts: animate current flow direction/magnitude based on NodeElectricalState per FR-010
+- [x] T053 [US3] Implement CircuitRunnerSceneManager.render() in src/scene/simulation/CircuitRunnerSceneManager.ts: poll current simulation tick, call interpolationController.getInterpolatedState(), update all visual elements, animate wires per FR-011
+- [x] T054 [US3] Implement CircuitRunnerSceneManager.update(changedData) in src/scene/simulation/CircuitRunnerSceneManager.ts for incremental updates (rare, only for topology changes during simulation) per FR-019a
+- [x] T055 [US3] Implement CircuitRunnerSceneManager.setInterpolationDuration(durationMs) in src/scene/simulation/CircuitRunnerSceneManager.ts delegating to interpolationController per contract
+- [x] T056 [US3] Implement CircuitRunnerSceneManager.dispose() in src/scene/simulation/CircuitRunnerSceneManager.ts: cleanup geometries/materials/interpolation state per FR-018
+- [x] T057 [US3] Implement CircuitRunnerSceneManager.getScene() and getCamera() in src/scene/simulation/CircuitRunnerSceneManager.ts per FR-004 and FR-004a
+- [x] T058 [US3] Add error handling to CircuitRunnerSceneManager per FR-018
+- [x] T059 [US3] Export CircuitRunnerSceneManager from src/scene/index.ts
 
 **Checkpoint**: At this point, User Stories 1 AND 3 (both P1) are complete - both static and simulation rendering work independently
 

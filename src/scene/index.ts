@@ -1,24 +1,25 @@
 /**
- * 3D Circuit Renderers Module
- * @module rendering
+ * 3D Circuit Scene Managers Module
+ * @module scene
  *
- * Provides Three.js-based renderers for circuit visualization:
+ * Provides Three.js-based scene managers for circuit visualization:
  * - CircuitSceneManager: Static circuit visualization with editing capabilities
- * - SimulationCircuitRenderer: Live simulation visualization with animation
+ * - CircuitRunnerSceneManager: Live simulation visualization with animation
  *
  * @example
  * ```typescript
- * import { CircuitSceneManager, FactoryRegistry } from 'simple-circuit-engine/rendering';
+ * import { CircuitSceneManager, FactoryRegistry } from 'simple-circuit-engine/scene';
  *
  * const registry = new FactoryRegistry(defaultFactory);
- * const renderer = new CircuitSceneManager(circuit, registry);
- * renderer.initialize(container);
+ * const sceneManager = new CircuitSceneManager(registry);
+ * sceneManager.initialize(container);
+ * sceneManager.setCircuit(circuit);
  * ```
  */
 
-// Renderer classes
+// Scene Manager classes
 export { CircuitSceneManager } from './static/CircuitSceneManager';
-export { SimulationCircuitRenderer } from './simulation/SimulationCircuitRenderer';
+export { CircuitRunnerSceneManager } from './simulation/CircuitRunnerSceneManager';
 
 // Shared utilities
 export { FactoryRegistry } from './shared/FactoryRegistry';
