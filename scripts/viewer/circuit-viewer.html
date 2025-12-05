@@ -242,7 +242,7 @@
       "type": "switch",
       "position": {
         "x": 5,
-        "y": 5
+        "y": 1
       },
       "rotation": 0,
       "pins": [
@@ -257,8 +257,8 @@
       "id": "0b2e768e-a727-4733-9139-15b594fb4a35",
       "type": "smallLED",
       "position": {
-        "x": 10,
-        "y": 0
+        "x": 5,
+        "y": -4
       },
       "rotation": 0,
       "pins": [
@@ -367,6 +367,9 @@
 
     const sceneManager = new window.CircuitSceneManager(window.componentsFactoryRegistry);
     sceneManager.initialize(viewerContainer);
+    sceneManager.getScene().add(window.axesHelper);
+    sceneManager.getCamera().layers.enable(2); // component hover layer
+    sceneManager.getCamera().layers.enable(4); // enode hover layer
 
     window.renderer.render(sceneManager.getScene(), sceneManager.getCamera());
     viewerContainer.appendChild(window.renderer.domElement);
@@ -400,7 +403,7 @@
     resizeRenderer();
     window.addEventListener('resize', resizeRenderer);
 
-    const controls = new window.OrbitControls(sceneManager.getCamera(), window.renderer.domElement);
+    const controls = new window.MapControls(sceneManager.getCamera(), window.renderer.domElement);
     controls.update();
 
     function animate() {

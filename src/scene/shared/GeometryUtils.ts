@@ -17,8 +17,8 @@ import type { Position } from '../../core/types/Position';
  */
 export function createWireGeometry(start: Position, end: Position): THREE.BufferGeometry {
   const points: THREE.Vector3[] = [
-    new THREE.Vector3(start.x, 0, start.y),
-    new THREE.Vector3(end.x, 0, end.y),
+    new THREE.Vector3(start.x, 0, -start.y),
+    new THREE.Vector3(end.x, 0, -end.y),
   ];
 
   const geometry = new THREE.BufferGeometry().setFromPoints(points);

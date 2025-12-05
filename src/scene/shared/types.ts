@@ -27,7 +27,9 @@ export type RenderEvent =
 /**
  * Object types that can be interacted with in the renderer
  */
-export type RenderObjectType = 'component' | 'wire' | 'enode';
+export type RenderObjectType = 'componentGroup' | 'component' | 'componentHitbox' |
+    'wireGroup' | 'wire' | 'wireHitbox' |
+    'enodeGroup' | 'enode' | 'enodeHitbox';
 
 /**
  * Event payload map for type-safe event emission

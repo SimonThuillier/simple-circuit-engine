@@ -639,7 +639,7 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
       const mesh = factory(component);
 
       // Position mesh at component location (2D circuit -> 3D world)
-      mesh.position.set(component.position.x, 0, component.position.y);
+      mesh.position.set(component.position.x, 0, -component.position.y);
 
       // Store component metadata
       mesh.userData.componentId = component.id;
@@ -701,7 +701,7 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
 
       // Use getPosition() to properly handle position retrieval
       const pos = enode.getPosition(this.circuit);
-      mesh.position.set(pos.x, 0, pos.y);
+      mesh.position.set(pos.x, 0, -pos.y);
 
       mesh.userData.enodeId = enode.id;
       mesh.userData.enodeType = enode.type;
