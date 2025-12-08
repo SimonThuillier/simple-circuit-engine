@@ -6,10 +6,12 @@
  */
 
 import * as THREE from 'three';
+import { MapControls } from 'three/addons/controls/MapControls.js';
 import type { Circuit } from '../../core/Circuit';
 import type { Component } from '../../core/components/Component';
 import type { Wire } from '../../core/Wire';
 import type { ENode } from '../../core/ENode';
+import type { UUID } from '../../core/types/Identifier';
 import { ENodeType } from '../../core/types/ENodeType';
 import { EventEmitter } from '../shared/EventEmitter';
 import type { IFactoryRegistry } from '../shared/ComponentVisualFactory';
@@ -19,6 +21,7 @@ import type {
   RenderCallback,
   ChangedData,
   RendererOptions,
+  MapControlsOptions,
   ToolType,
 } from '../shared/types';
 import {
@@ -37,6 +40,7 @@ import { WireTool } from './tools/WireTool';
 import { BranchingPointTool } from './tools/BranchingPointTool';
 import { DeleteTool } from './tools/DeleteTool';
 import type { IEditingTool } from '../shared/types';
+import { HoverManager } from '../shared/HoverManager';
 
 /**
  * Static Circuit Scene Manager Implementation
@@ -67,6 +71,16 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
   private tools: Map<ToolType, IEditingTool> = new Map();
   private toolState: any = null;
   private previewObjects: THREE.Object3D[] = [];
+
+  // MapControls (Phase 2)
+  private mapControls: MapControls | null = null;
+  private mapControlsOptions: MapControlsOptions = {};
+
+  // HoverManager (Phase 3)
+  private hoverManager: HoverManager | null = null;
+  private mouseMoveHandler: ((event: MouseEvent) => void) | null = null;
+  private mouseLeaveHandler: ((event: MouseEvent) => void) | null = null;
+  private mapControlsChangeHandler: (() => void) | null = null;
 
   /**
    * Create a new Static Circuit Renderer
@@ -113,11 +127,23 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
       const aspect = container.clientWidth / container.clientHeight || 1;
       this.camera = createPerspectiveCamera(options, aspect);
 
+      // Configure camera layers to only render layer 0 (visual layer) (Phase 5 - T034)
+      // This prevents hitbox meshes (layers 1, 2, 3) from being rendered
+      if (this.camera && this.camera.layers) {
+        this.camera.layers.set(0);
+      }
+
       // Add lights
       setupSceneLights(this.scene);
 
       // Initialize tools (Phase 5)
       this._initializeTools();
+
+      // Initialize MapControls (Phase 2)
+      this._initializeMapControls(options?.mapControls);
+
+      // Initialize HoverManager (Phase 3)
+      this._initializeHoverManager();
 
       this.initialized = true;
 
@@ -127,6 +153,126 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
       const err = error as Error;
       this.emit('error', { message: err.message, error: err });
       throw error;
+    }
+  }
+
+  /**
+   * Initialize MapControls for camera navigation
+   *
+   * @param options - Optional MapControls configuration
+   * @private
+   */
+  private _initializeMapControls(options?: MapControlsOptions): void {
+    if (!this.camera || !this.container) {
+      throw new Error('Camera and container must be initialized before MapControls');
+    }
+
+    // Store options for later updates
+    this.mapControlsOptions = options || {};
+
+    // Create MapControls instance
+    this.mapControls = new MapControls(this.camera, this.container);
+
+    // Apply default options
+    this.mapControls.enableDamping = this.mapControlsOptions.enableDamping ?? true;
+    this.mapControls.dampingFactor = this.mapControlsOptions.dampingFactor ?? 0.05;
+    this.mapControls.screenSpacePanning = true; // Always true for map-style panning
+
+    // Apply user options
+    if (this.mapControlsOptions.enablePan !== undefined) {
+      this.mapControls.enablePan = this.mapControlsOptions.enablePan;
+    }
+    if (this.mapControlsOptions.enableZoom !== undefined) {
+      this.mapControls.enableZoom = this.mapControlsOptions.enableZoom;
+    }
+    if (this.mapControlsOptions.enableRotate !== undefined) {
+      this.mapControls.enableRotate = this.mapControlsOptions.enableRotate;
+    }
+    if (this.mapControlsOptions.minDistance !== undefined) {
+      this.mapControls.minDistance = this.mapControlsOptions.minDistance;
+    }
+    if (this.mapControlsOptions.maxDistance !== undefined) {
+      this.mapControls.maxDistance = this.mapControlsOptions.maxDistance;
+    }
+    if (this.mapControlsOptions.panSpeed !== undefined) {
+      this.mapControls.panSpeed = this.mapControlsOptions.panSpeed;
+    }
+    if (this.mapControlsOptions.zoomSpeed !== undefined) {
+      this.mapControls.zoomSpeed = this.mapControlsOptions.zoomSpeed;
+    }
+    if (this.mapControlsOptions.rotateSpeed !== undefined) {
+      this.mapControls.rotateSpeed = this.mapControlsOptions.rotateSpeed;
+    }
+  }
+
+  /**
+   * Initialize HoverManager for hover detection (Phase 3)
+   *
+   * @private
+   */
+  private _initializeHoverManager(): void {
+    if (!this.scene || !this.camera || !this.container) {
+      throw new Error('Scene, camera, and container must be initialized before HoverManager');
+    }
+
+    // Create HoverManager instance
+    this.hoverManager = new HoverManager(this.scene, this.camera);
+
+    // Track previous hover state for unhover events
+    let previousElement: { id: UUID; objectType: any } | null = null;
+
+    // Register callback to emit hover/unhover events
+    this.hoverManager.onHoverChange((element) => {
+      // Emit unhover for previous element if it exists
+      if (previousElement && (!element || element.id !== previousElement.id)) {
+        this.emit('unhover', {
+          objectId: previousElement.id,
+          objectType: previousElement.objectType,
+        });
+      }
+
+      // Emit hover for new element
+      if (element) {
+        this.emit('hover', {
+          objectId: element.id,
+          objectType: element.objectType,
+        });
+        previousElement = { id: element.id, objectType: element.objectType };
+      } else {
+        previousElement = null;
+      }
+    });
+
+    // Setup mousemove event listener
+    this.mouseMoveHandler = (event: MouseEvent) => {
+      if (!this.container || !this.hoverManager) return;
+
+      const rect = this.container.getBoundingClientRect();
+      const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      this.hoverManager.updateFromMouse(x, y);
+    };
+
+    this.container.addEventListener('mousemove', this.mouseMoveHandler);
+
+    // Setup mouseleave event listener
+    this.mouseLeaveHandler = (event: MouseEvent) => {
+      if (this.hoverManager) {
+        this.hoverManager.clear();
+      }
+    };
+
+    this.container.addEventListener('mouseleave', this.mouseLeaveHandler);
+
+    // Setup MapControls 'change' listener to refresh hover on camera movement (Phase 4)
+    if (this.mapControls) {
+      this.mapControlsChangeHandler = () => {
+        if (this.hoverManager) {
+          this.hoverManager.refresh();
+        }
+      };
+      this.mapControls.addEventListener('change', this.mapControlsChangeHandler);
     }
   }
 
@@ -191,6 +337,11 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
     this._checkInitialized();
 
     try {
+      // Update MapControls if damping is enabled
+      if (this.mapControls) {
+        this.mapControls.update();
+      }
+
       // In CircuitSceneManager, render() is mostly a no-op
       // Scene updates are done in update()
       // Consumer handles actual WebGL rendering via getScene()
@@ -220,6 +371,175 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
         this._checkInitialized();
         return this.camera!;
     }
+
+  /**
+   * Get the MapControls instance for direct manipulation
+   *
+   * @returns MapControls instance or null if not initialized
+   */
+  getMapControls(): MapControls | null {
+    return this.mapControls;
+  }
+
+  /**
+   * Update MapControls options at runtime
+   *
+   * @param options - Partial options to update
+   */
+  updateMapControlsOptions(options: Partial<MapControlsOptions>): void {
+    this._checkInitialized();
+
+    if (!this.mapControls) {
+      throw new Error('MapControls not initialized');
+    }
+
+    // Merge new options with existing
+    this.mapControlsOptions = { ...this.mapControlsOptions, ...options };
+
+    // Apply updated options to MapControls
+    if (options.enablePan !== undefined) {
+      this.mapControls.enablePan = options.enablePan;
+    }
+    if (options.enableZoom !== undefined) {
+      this.mapControls.enableZoom = options.enableZoom;
+    }
+    if (options.enableRotate !== undefined) {
+      this.mapControls.enableRotate = options.enableRotate;
+    }
+    if (options.enableDamping !== undefined) {
+      this.mapControls.enableDamping = options.enableDamping;
+    }
+    if (options.dampingFactor !== undefined) {
+      this.mapControls.dampingFactor = options.dampingFactor;
+    }
+    if (options.minDistance !== undefined) {
+      this.mapControls.minDistance = options.minDistance;
+    }
+    if (options.maxDistance !== undefined) {
+      this.mapControls.maxDistance = options.maxDistance;
+    }
+    if (options.panSpeed !== undefined) {
+      this.mapControls.panSpeed = options.panSpeed;
+    }
+    if (options.zoomSpeed !== undefined) {
+      this.mapControls.zoomSpeed = options.zoomSpeed;
+    }
+    if (options.rotateSpeed !== undefined) {
+      this.mapControls.rotateSpeed = options.rotateSpeed;
+    }
+  }
+
+  /**
+   * Reset camera to default position
+   *
+   * @param animate - Whether to animate the transition (default: true)
+   */
+  resetCamera(animate: boolean = true): void {
+    this._checkInitialized();
+
+    if (!this.camera || !this.mapControls) {
+      throw new Error('Camera and MapControls must be initialized');
+    }
+
+    // Reset to default camera position (top-down view of circuit)
+    const target = new THREE.Vector3(0, 0, 0);
+    const position = new THREE.Vector3(0, 10, 10);
+
+    if (animate && this.mapControls.enableDamping) {
+      // Smoothly transition by updating target and position
+      this.mapControls.target.copy(target);
+      this.camera.position.copy(position);
+      this.mapControls.update();
+    } else {
+      // Instant reset
+      this.mapControls.target.copy(target);
+      this.camera.position.copy(position);
+      this.mapControls.update();
+    }
+  }
+
+  /**
+   * Focus camera on a specific element
+   *
+   * @param elementId - UUID of the element to focus on
+   * @param animate - Whether to animate the transition (default: true)
+   * @throws {Error} If element is not found in scene
+   */
+  focusOnElement(elementId: UUID, animate: boolean = true): void {
+    this._checkInitialized();
+
+    if (!this.camera || !this.mapControls) {
+      throw new Error('Camera and MapControls must be initialized');
+    }
+
+    // Find the element in the scene
+    let targetObject: THREE.Object3D | null = null;
+
+    // Check components
+    if (this.componentMeshes.has(elementId)) {
+      targetObject = this.componentMeshes.get(elementId)!;
+    }
+    // Check wires
+    else if (this.wireMeshes.has(elementId)) {
+      targetObject = this.wireMeshes.get(elementId)!;
+    }
+    // Check enodes
+    else if (this.enodeMeshes.has(elementId)) {
+      targetObject = this.enodeMeshes.get(elementId)!;
+    }
+
+    if (!targetObject) {
+      throw new Error(`Element ${elementId} not found in scene`);
+    }
+
+    // Get the element's world position
+    const position = new THREE.Vector3();
+    targetObject.getWorldPosition(position);
+
+    // Update MapControls target
+    if (animate && this.mapControls.enableDamping) {
+      // Smooth transition via damping
+      this.mapControls.target.copy(position);
+      this.mapControls.update();
+    } else {
+      // Instant focus
+      this.mapControls.target.copy(position);
+      this.mapControls.update();
+    }
+  }
+
+  // ==========================================
+  // HoverManager API (Phase 3)
+  // ==========================================
+
+  /**
+   * Get the currently hovered element
+   *
+   * @returns HoveredElement if something is hovered, null otherwise
+   */
+  getHoveredElement() {
+    return this.hoverManager?.getHoveredElement() ?? null;
+  }
+
+  /**
+   * Enable or disable hover detection
+   *
+   * @param enabled - Whether to enable hover detection
+   */
+  setHoverEnabled(enabled: boolean): void {
+    if (this.hoverManager) {
+      this.hoverManager.setEnabled(enabled);
+    }
+  }
+
+  /**
+   * Check if hover detection is enabled
+   *
+   * @returns true if hover detection is enabled
+   */
+  isHoverEnabled(): boolean {
+    return this.hoverManager?.isEnabled() ?? false;
+  }
 
   /**
    * Clean up all WebGL resources
@@ -262,6 +582,35 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
       this.componentMeshes.clear();
       this.wireMeshes.clear();
       this.enodeMeshes.clear();
+
+      // Dispose MapControls
+      if (this.mapControls) {
+        // Remove 'change' event listener (Phase 4)
+        if (this.mapControlsChangeHandler) {
+          this.mapControls.removeEventListener('change', this.mapControlsChangeHandler);
+          this.mapControlsChangeHandler = null;
+        }
+        this.mapControls.dispose();
+        this.mapControls = null;
+      }
+
+      // Dispose HoverManager (Phase 3)
+      if (this.hoverManager) {
+        this.hoverManager.dispose();
+        this.hoverManager = null;
+      }
+
+      // Remove DOM event listeners (Phase 3)
+      if (this.container) {
+        if (this.mouseMoveHandler) {
+          this.container.removeEventListener('mousemove', this.mouseMoveHandler);
+          this.mouseMoveHandler = null;
+        }
+        if (this.mouseLeaveHandler) {
+          this.container.removeEventListener('mouseleave', this.mouseLeaveHandler);
+          this.mouseLeaveHandler = null;
+        }
+      }
 
       // Clear event listeners
       this.removeAllListeners();

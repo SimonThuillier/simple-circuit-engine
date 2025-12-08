@@ -24,12 +24,12 @@
 
 **Purpose**: Extract and create shared types and constants needed by all user stories
 
-- [ ] T001 Create LayerConstants.ts by extracting LAYERS enum from ComponentVisuals.ts to `src/scene/shared/LayerConstants.ts` - export `HitboxLayers` constant with DEFAULT=0, ENODE=1, COMPONENT=2, WIRE=3
-- [ ] T002 [P] Update ComponentVisuals.ts to import LAYERS from LayerConstants.ts instead of defining locally in `src/scene/shared/ComponentVisuals.ts`
-- [ ] T003 [P] Add HoverableType, HoveredElement, and MapControlsOptions types to `src/scene/shared/types.ts` per contracts/types.ts specification
-- [ ] T004 [P] Add HitboxUserData types (EnodeHitboxUserData, ComponentHitboxUserData, WireHitboxUserData) to `src/scene/shared/types.ts`
-- [ ] T005 Add ExtendedRendererOptions interface extending RendererOptions with mapControls property in `src/scene/shared/types.ts`
-- [ ] T006 Export new types from scene module index in `src/scene/index.ts`
+- [x] T001 Create LayerConstants.ts by extracting LAYERS enum from ComponentVisuals.ts to `src/scene/shared/LayerConstants.ts` - export `HitboxLayers` constant with DEFAULT=0, ENODE=1, COMPONENT=2, WIRE=3
+- [x] T002 [P] Update ComponentVisuals.ts to import LAYERS from LayerConstants.ts instead of defining locally in `src/scene/shared/ComponentVisuals.ts`
+- [x] T003 [P] Add HoverableType, HoveredElement, and MapControlsOptions types to `src/scene/shared/types.ts` per contracts/types.ts specification
+- [x] T004 [P] Add HitboxUserData types (EnodeHitboxUserData, ComponentHitboxUserData, WireHitboxUserData) to `src/scene/shared/types.ts`
+- [x] T005 Add ExtendedRendererOptions interface extending RendererOptions with mapControls property in `src/scene/shared/types.ts`
+- [x] T006 Export new types from scene module index in `src/scene/index.ts`
 
 **Checkpoint**: Shared types and constants ready - user story implementation can now begin
 
@@ -43,15 +43,15 @@
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] Import MapControls from 'three/addons/controls/MapControls.js' and add mapControls property to CircuitSceneManager class in `src/scene/static/CircuitSceneManager.ts`
-- [ ] T008 [US1] Create private initializeMapControls() method in CircuitSceneManager that instantiates MapControls with camera and container, applies default options (enableDamping=true, dampingFactor=0.05, screenSpacePanning=true) in `src/scene/static/CircuitSceneManager.ts`
-- [ ] T009 [US1] Modify CircuitSceneManager.initialize() to accept ExtendedRendererOptions and call initializeMapControls() with mapControls options in `src/scene/static/CircuitSceneManager.ts`
-- [ ] T010 [US1] Add mapControls.update() call to CircuitSceneManager render loop (startRenderLoop method or equivalent) in `src/scene/static/CircuitSceneManager.ts`
-- [ ] T011 [US1] Add getMapControls(), updateMapControlsOptions(), resetCamera(), focusOnElement() public methods to CircuitSceneManager per SceneManagerExtensions contract in `src/scene/static/CircuitSceneManager.ts`
-- [ ] T012 [US1] Update CircuitSceneManager.dispose() to call mapControls.dispose() if initialized in `src/scene/static/CircuitSceneManager.ts`
-- [ ] T013 [P] [US1] Mirror T007-T012 changes in CircuitRunnerSceneManager - add MapControls import and property in `src/scene/simulation/CircuitRunnerSceneManager.ts`
-- [ ] T014 [P] [US1] Implement initializeMapControls(), modify initialize(), add update() to render loop in CircuitRunnerSceneManager in `src/scene/simulation/CircuitRunnerSceneManager.ts`
-- [ ] T015 [US1] Add getMapControls(), updateMapControlsOptions(), resetCamera(), focusOnElement() and dispose() updates to CircuitRunnerSceneManager in `src/scene/simulation/CircuitRunnerSceneManager.ts`
+- [x] T007 [US1] Import MapControls from 'three/addons/controls/MapControls.js' and add mapControls property to CircuitSceneManager class in `src/scene/static/CircuitSceneManager.ts`
+- [x] T008 [US1] Create private initializeMapControls() method in CircuitSceneManager that instantiates MapControls with camera and container, applies default options (enableDamping=true, dampingFactor=0.05, screenSpacePanning=true) in `src/scene/static/CircuitSceneManager.ts`
+- [x] T009 [US1] Modify CircuitSceneManager.initialize() to accept ExtendedRendererOptions and call initializeMapControls() with mapControls options in `src/scene/static/CircuitSceneManager.ts`
+- [x] T010 [US1] Add mapControls.update() call to CircuitSceneManager render loop (startRenderLoop method or equivalent) in `src/scene/static/CircuitSceneManager.ts`
+- [x] T011 [US1] Add getMapControls(), updateMapControlsOptions(), resetCamera(), focusOnElement() public methods to CircuitSceneManager per SceneManagerExtensions contract in `src/scene/static/CircuitSceneManager.ts`
+- [x] T012 [US1] Update CircuitSceneManager.dispose() to call mapControls.dispose() if initialized in `src/scene/static/CircuitSceneManager.ts`
+- [x] T013 [P] [US1] Mirror T007-T012 changes in CircuitRunnerSceneManager - add MapControls import and property in `src/scene/simulation/CircuitRunnerSceneManager.ts`
+- [x] T014 [P] [US1] Implement initializeMapControls(), modify initialize(), add update() to render loop in CircuitRunnerSceneManager in `src/scene/simulation/CircuitRunnerSceneManager.ts`
+- [x] T015 [US1] Add getMapControls(), updateMapControlsOptions(), resetCamera(), focusOnElement() and dispose() updates to CircuitRunnerSceneManager in `src/scene/simulation/CircuitRunnerSceneManager.ts`
 
 **Checkpoint**: MapControls working in both scene managers - users can navigate circuit views
 
@@ -65,19 +65,19 @@
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] Create HoverManager class skeleton implementing IHoverManager interface in `src/scene/shared/HoverManager.ts` with constructor(scene, camera), private raycaster property, private currentlyHovered state
-- [ ] T017 [US2] Implement HoverManager.updateFromMouse() - normalize coordinates, perform priority raycasting (ENODE layer first, then COMPONENT, then WIRE), extract hit info from userData in `src/scene/shared/HoverManager.ts`
-- [ ] T018 [US2] Implement HoverManager hover state comparison logic - compare new hit with currentlyHovered, trigger callbacks only on change in `src/scene/shared/HoverManager.ts`
-- [ ] T019 [US2] Implement HoverManager.onHoverChange(), offHoverChange() callback registration methods in `src/scene/shared/HoverManager.ts`
-- [ ] T020 [US2] Implement HoverManager.getHoveredElement(), setEnabled(), isEnabled(), clear(), refresh(), dispose() methods in `src/scene/shared/HoverManager.ts`
-- [ ] T021 [US2] Add hoverManager property and initializeHoverManager() method to CircuitSceneManager in `src/scene/static/CircuitSceneManager.ts`
-- [ ] T022 [US2] Add mousemove event listener in CircuitSceneManager.initialize() that calls hoverManager.updateFromMouse() with normalized coordinates in `src/scene/static/CircuitSceneManager.ts`
-- [ ] T023 [US2] Add mouseleave event listener in CircuitSceneManager.initialize() that calls hoverManager.clear() in `src/scene/static/CircuitSceneManager.ts`
-- [ ] T024 [US2] Register HoverManager callback in CircuitSceneManager that emits 'hover' and 'unhover' events via existing EventEmitter in `src/scene/static/CircuitSceneManager.ts`
-- [ ] T025 [US2] Add getHoveredElement(), setHoverEnabled(), isHoverEnabled() public methods to CircuitSceneManager per ISceneManagerHoverExtensions contract in `src/scene/static/CircuitSceneManager.ts`
-- [ ] T026 [US2] Update CircuitSceneManager.dispose() to remove event listeners and call hoverManager.dispose() in `src/scene/static/CircuitSceneManager.ts`
-- [ ] T027 [P] [US2] Mirror T021-T026 in CircuitRunnerSceneManager - add hoverManager property and initialization in `src/scene/simulation/CircuitRunnerSceneManager.ts`
-- [ ] T028 [P] [US2] Add event listeners, callback registration, public methods, and dispose cleanup in CircuitRunnerSceneManager in `src/scene/simulation/CircuitRunnerSceneManager.ts`
+- [x] T016 [US2] Create HoverManager class skeleton implementing IHoverManager interface in `src/scene/shared/HoverManager.ts` with constructor(scene, camera), private raycaster property, private currentlyHovered state
+- [x] T017 [US2] Implement HoverManager.updateFromMouse() - normalize coordinates, perform priority raycasting (ENODE layer first, then COMPONENT, then WIRE), extract hit info from userData in `src/scene/shared/HoverManager.ts`
+- [x] T018 [US2] Implement HoverManager hover state comparison logic - compare new hit with currentlyHovered, trigger callbacks only on change in `src/scene/shared/HoverManager.ts`
+- [x] T019 [US2] Implement HoverManager.onHoverChange(), offHoverChange() callback registration methods in `src/scene/shared/HoverManager.ts`
+- [x] T020 [US2] Implement HoverManager.getHoveredElement(), setEnabled(), isEnabled(), clear(), refresh(), dispose() methods in `src/scene/shared/HoverManager.ts`
+- [x] T021 [US2] Add hoverManager property and initializeHoverManager() method to CircuitSceneManager in `src/scene/static/CircuitSceneManager.ts`
+- [x] T022 [US2] Add mousemove event listener in CircuitSceneManager.initialize() that calls hoverManager.updateFromMouse() with normalized coordinates in `src/scene/static/CircuitSceneManager.ts`
+- [x] T023 [US2] Add mouseleave event listener in CircuitSceneManager.initialize() that calls hoverManager.clear() in `src/scene/static/CircuitSceneManager.ts`
+- [x] T024 [US2] Register HoverManager callback in CircuitSceneManager that emits 'hover' and 'unhover' events via existing EventEmitter in `src/scene/static/CircuitSceneManager.ts`
+- [x] T025 [US2] Add getHoveredElement(), setHoverEnabled(), isHoverEnabled() public methods to CircuitSceneManager per ISceneManagerHoverExtensions contract in `src/scene/static/CircuitSceneManager.ts`
+- [x] T026 [US2] Update CircuitSceneManager.dispose() to remove event listeners and call hoverManager.dispose() in `src/scene/static/CircuitSceneManager.ts`
+- [x] T027 [P] [US2] Mirror T021-T026 in CircuitRunnerSceneManager - add hoverManager property and initialization in `src/scene/simulation/CircuitRunnerSceneManager.ts`
+- [x] T028 [P] [US2] Add event listeners, callback registration, public methods, and dispose cleanup in CircuitRunnerSceneManager in `src/scene/simulation/CircuitRunnerSceneManager.ts`
 
 **Checkpoint**: Hover detection working with correct priority - users see hover/unhover events for enodes, components, and wires
 
@@ -91,9 +91,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T029 [US3] Add 'change' event listener on MapControls in CircuitSceneManager that calls hoverManager.refresh() to update hover state after camera movement in `src/scene/static/CircuitSceneManager.ts`
-- [ ] T030 [US3] Store bound handler reference for MapControls 'change' listener for proper cleanup in dispose() in `src/scene/static/CircuitSceneManager.ts`
-- [ ] T031 [P] [US3] Mirror T029-T030 in CircuitRunnerSceneManager - add 'change' listener on MapControls that refreshes hover state in `src/scene/simulation/CircuitRunnerSceneManager.ts`
+- [x] T029 [US3] Add 'change' event listener on MapControls in CircuitSceneManager that calls hoverManager.refresh() to update hover state after camera movement in `src/scene/static/CircuitSceneManager.ts`
+- [x] T030 [US3] Store bound handler reference for MapControls 'change' listener for proper cleanup in dispose() in `src/scene/static/CircuitSceneManager.ts`
+- [x] T031 [P] [US3] Mirror T029-T030 in CircuitRunnerSceneManager - add 'change' listener on MapControls that refreshes hover state in `src/scene/simulation/CircuitRunnerSceneManager.ts`
 
 **Checkpoint**: Navigation and hover detection work together seamlessly
 
@@ -107,9 +107,9 @@
 
 ### Implementation for User Story 4
 
-- [ ] T032 [US4] Optimize HoverManager raycasting - use early return on first hit (don't check all layers if higher priority found), ensure recursive=true for scene traversal in `src/scene/shared/HoverManager.ts`
-- [ ] T033 [US4] Add optional throttling/debouncing to updateFromMouse() - if last update was <8ms ago, skip (performance safety valve) in `src/scene/shared/HoverManager.ts`
-- [ ] T034 [US4] Ensure camera.layers only includes layer 0 to prevent hitbox meshes from being rendered (visual performance) in `src/scene/static/CircuitSceneManager.ts` and `src/scene/simulation/CircuitRunnerSceneManager.ts`
+- [x] T032 [US4] Optimize HoverManager raycasting - use early return on first hit (don't check all layers if higher priority found), ensure recursive=true for scene traversal in `src/scene/shared/HoverManager.ts`
+- [x] T033 [US4] Add optional throttling/debouncing to updateFromMouse() - if last update was <8ms ago, skip (performance safety valve) in `src/scene/shared/HoverManager.ts`
+- [x] T034 [US4] Ensure camera.layers only includes layer 0 to prevent hitbox meshes from being rendered (visual performance) in `src/scene/static/CircuitSceneManager.ts` and `src/scene/simulation/CircuitRunnerSceneManager.ts`
 
 **Checkpoint**: Hover detection performs smoothly on large circuits
 
@@ -119,12 +119,12 @@
 
 **Purpose**: Final cleanup and validation
 
-- [ ] T035 [P] Add JSDoc documentation to all public methods in HoverManager class in `src/scene/shared/HoverManager.ts`
-- [ ] T036 [P] Add JSDoc documentation to new public methods in CircuitSceneManager in `src/scene/static/CircuitSceneManager.ts`
-- [ ] T037 [P] Add JSDoc documentation to new public methods in CircuitRunnerSceneManager in `src/scene/simulation/CircuitRunnerSceneManager.ts`
-- [ ] T038 Validate implementation against quickstart.md examples - ensure all documented APIs work as shown in `specs/004-map-controls-hovering/quickstart.md`
-- [ ] T039 Run existing tests to ensure no regressions: `npm test`
-- [ ] T040 Run linting to ensure code style compliance: `npm run lint`
+- [x] T035 [P] Add JSDoc documentation to all public methods in HoverManager class in `src/scene/shared/HoverManager.ts`
+- [x] T036 [P] Add JSDoc documentation to new public methods in CircuitSceneManager in `src/scene/static/CircuitSceneManager.ts`
+- [x] T037 [P] Add JSDoc documentation to new public methods in CircuitRunnerSceneManager in `src/scene/simulation/CircuitRunnerSceneManager.ts`
+- [x] T038 Validate implementation against quickstart.md examples - ensure all documented APIs work as shown in `specs/004-map-controls-hovering/quickstart.md`
+- [x] T039 Run existing tests to ensure no regressions: `npm test`
+- [x] T040 Run linting to ensure code style compliance: `npm run lint`
 
 ---
 

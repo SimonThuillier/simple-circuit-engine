@@ -1,12 +1,14 @@
 import type {Component} from "@/core/Component";
 import * as THREE from "three";
 import type {ComponentVisualFactory} from "./ComponentVisualFactory";
+import { HitboxLayers } from "./LayerConstants";
 
-enum LAYERS {
-    ENODE_HITBOX = 1,
-    COMPONENT_HITBOX = 2,
-    WIRE_HITBOX = 3,
-}
+// Backward compatibility alias
+// const LAYERS = {
+//     ENODE_HITBOX: HitboxLayers.ENODE,
+//     COMPONENT_HITBOX: HitboxLayers.COMPONENT,
+//     WIRE_HITBOX: HitboxLayers.WIRE,
+// };
 
 //const textureLoader = new THREE.TextureLoader();
 // const lightningTexture = textureLoader.load('public/lightning.svg'); // TODO: add later
@@ -38,7 +40,7 @@ function createPinGroup(componentId: string, pinId: string, label: string): THRE
         pinId: pinId,  // Store actual pin UUID
         label: label,
     };
-    hitbox.layers.set(LAYERS.ENODE_HITBOX);
+    hitbox.layers.set(HitboxLayers.ENODE);
     pinGroup.add(hitbox);
 
     const visual = new THREE.Mesh(
@@ -82,7 +84,7 @@ export const batteryFactory: ComponentVisualFactory = (component: Component) => 
         type: 'componentHitbox',
         componentId: component.id
     };
-    hitbox.layers.set(LAYERS.COMPONENT_HITBOX);
+    hitbox.layers.set(HitboxLayers.COMPONENT);
     group.add(hitbox);
 
 
@@ -138,7 +140,7 @@ export const switchFactory: ComponentVisualFactory = (component: Component) => {
         type: 'componentHitbox',
         componentId: component.id
     };
-    hitbox.layers.set(LAYERS.COMPONENT_HITBOX);
+    hitbox.layers.set(HitboxLayers.COMPONENT);
     group.add(hitbox);
 
     // Visual: poles
@@ -237,7 +239,7 @@ export const smallLedFactory: ComponentVisualFactory = (component: Component) =>
         type: 'componentHitbox',
         componentId: component.id
     };
-    hitbox.layers.set(LAYERS.COMPONENT_HITBOX);
+    hitbox.layers.set(HitboxLayers.COMPONENT);
     group.add(hitbox);
 
 

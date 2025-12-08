@@ -33,6 +33,7 @@ export { FactoryRegistry } from './shared/FactoryRegistry';
 export { createDefaultFactory } from './shared/ComponentVisualFactory';
 export { EventEmitter } from './shared/EventEmitter';
 export { InterpolationController } from './shared/InterpolationController';
+export { HoverManager } from './shared/HoverManager';
 
 // Types
 export type {
@@ -42,6 +43,13 @@ export type {
   RenderObjectType,
   ChangedData,
   RendererOptions,
+  MapControlsOptions,
+  HoverableType,
+  HoveredElement,
+  EnodeHitboxUserData,
+  ComponentHitboxUserData,
+  WireHitboxUserData,
+  HitboxUserData,
   ToolType,
   CursorType,
   IEditingTool,
@@ -51,3 +59,6 @@ export type {
   ComponentVisualFactory,
   IFactoryRegistry,
 } from './shared/ComponentVisualFactory';
+
+export { HitboxLayers } from './shared/LayerConstants';
+export type { HitboxLayerValue } from './shared/LayerConstants';
