@@ -24,10 +24,7 @@ import type {
   RendererOptions,
   MapControlsOptions,
 } from '../shared/types';
-import {
-  createPerspectiveCamera,
-  setupCameraFromMetadata,
-} from '../shared/CameraUtils';
+import { createPerspectiveCamera, setupCameraFromMetadata } from '../shared/CameraUtils';
 import { setupSceneLights } from '../shared/LightingUtils';
 import { createWireGeometry } from '../shared/GeometryUtils';
 import { createLineMaterial } from '../shared/MaterialUtils';
@@ -1064,7 +1061,8 @@ export class CircuitRunnerSceneManager extends EventEmitter<RenderEventMap> {
     for (const [wireId, line] of this.wireMeshes) {
       // Update animation phase for current flow visualization
       const animationSpeed = 0.001; // Adjust for animation speed
-      line.userData.animationPhase = (line.userData.animationPhase + animationSpeed * (now - this.lastRenderTime)) % 1;
+      line.userData.animationPhase =
+        (line.userData.animationPhase + animationSpeed * (now - this.lastRenderTime)) % 1;
 
       // Update material based on current flow
       // This is a simple visualization - actual implementation could be more sophisticated

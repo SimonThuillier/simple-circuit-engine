@@ -50,11 +50,7 @@ export function setupCameraFromMetadata(
   const distance = maxDim / (2 * Math.tan(fov / 2));
 
   // Position camera above and away from circuit
-  camera.position.set(
-    circuitCenter.x,
-    circuitCenter.y,
-    circuitCenter.z + distance * 1.2
-  );
+  camera.position.set(circuitCenter.x, circuitCenter.y, circuitCenter.z + distance * 1.2);
   camera.lookAt(circuitCenter);
   camera.updateProjectionMatrix();
 }

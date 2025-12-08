@@ -71,10 +71,7 @@ export class HoverManager {
     this.lastMouseY = normalizedY;
 
     // Setup raycaster
-    this.raycaster.setFromCamera(
-      new THREE.Vector2(normalizedX, normalizedY),
-      this.camera
-    );
+    this.raycaster.setFromCamera(new THREE.Vector2(normalizedX, normalizedY), this.camera);
 
     // Try to find a hit in priority order: ENODE > COMPONENT > WIRE
     let hitElement: HoveredElement | null = null;
@@ -220,7 +217,7 @@ export class HoverManager {
         let elementId: string;
         if (userData.type === 'enodeHitbox') {
           // For enode hitboxes, use componentId (the component that owns the pin)
-          elementId = userData.componentId;
+          elementId = userData.enodeId;
         } else if (userData.type === 'componentHitbox') {
           elementId = userData.componentId;
         } else if (userData.type === 'wireHitbox') {

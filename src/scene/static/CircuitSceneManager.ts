@@ -23,11 +23,9 @@ import type {
   RendererOptions,
   MapControlsOptions,
   ToolType,
+  HitboxUserData,
 } from '../shared/types';
-import {
-  createPerspectiveCamera,
-  setupCameraFromMetadata,
-} from '../shared/CameraUtils';
+import { createPerspectiveCamera, setupCameraFromMetadata } from '../shared/CameraUtils';
 import { setupSceneLights } from '../shared/LightingUtils';
 import { createGridHelper } from '../shared/GeometryUtils';
 import { createWireGeometry } from '../shared/GeometryUtils';
@@ -50,9 +48,9 @@ import { HoverManager } from '../shared/HoverManager';
  * Provides event hooks for error handling and state changes.
  */
 export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
-    public readonly factoryRegistry: IFactoryRegistry;
+  public readonly factoryRegistry: IFactoryRegistry;
 
-    private circuit?: Circuit | null = null;
+  private circuit?: Circuit | null = null;
   private scene: THREE.Scene | null = null;
   private camera: THREE.PerspectiveCamera | null = null;
   private container: HTMLElement | null = null;
@@ -219,7 +217,11 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
     this.hoverManager = new HoverManager(this.scene, this.camera);
 
     // Track previous hover state for unhover events
-    let previousElement: { id: UUID; objectType: any } | null = null;
+    let previousElement: {
+      id: UUID;
+      objectType: any;
+      userData?: HitboxUserData | undefined;
+    } | null = null;
 
     // Register callback to emit hover/unhover events
     this.hoverManager.onHoverChange((element) => {
@@ -228,7 +230,12 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
         this.emit('unhover', {
           objectId: previousElement.id,
           objectType: previousElement.objectType,
+          userData: previousElement.userData,
         });
+        // TODO : just for a quick test, refactor later
+        if (previousElement.objectType == 'enodeHitbox') {
+          previousElement.userData?.hoverCallback?.(false);
+        }
       }
 
       // Emit hover for new element
@@ -236,9 +243,22 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
         this.emit('hover', {
           objectId: element.id,
           objectType: element.objectType,
+          userData: element.object3D.userData as HitboxUserData,
         });
-        previousElement = { id: element.id, objectType: element.objectType };
+        // TODO : just for a quick test, refactor later
+        previousElement = {
+          id: element.id,
+          objectType: element.objectType,
+          userData: element.object3D.userData as HitboxUserData,
+        };
+        if (previousElement.objectType == 'enodeHitbox') {
+          previousElement.userData?.hoverCallback?.(true);
+        }
       } else {
+        // TODO : just for a quick test, refactor later
+        if (!!previousElement && previousElement.objectType == 'enodeHitbox') {
+          previousElement.userData?.hoverCallback?.(false);
+        }
         previousElement = null;
       }
     });
@@ -276,24 +296,24 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
     }
   }
 
-    /**
-     * Update the circuit to visualize or indicate no circuit loaded
-     * @param circuit
-     */
+  /**
+   * Update the circuit to visualize or indicate no circuit loaded
+   * @param circuit
+   */
   setCircuit(circuit: Circuit | null): void {
     if (circuit === this.circuit) return; // No change
     // TODO reset changedData ?
-    if(!!this.circuit && this.initialized) {
-        // Clear existing visuals
-        this._removeAllVisuals();
-        return;
+    if (!!this.circuit && this.initialized) {
+      // Clear existing visuals
+      this._removeAllVisuals();
+      return;
     }
 
     this.circuit = circuit;
-    if(circuit !== null && this.initialized) {
-        // Perform full update with new circuit
-        this.scene!.name = this.circuit!.metadata.name || 'Circuit Scene';
-        this._fullUpdate();
+    if (circuit !== null && this.initialized) {
+      // Perform full update with new circuit
+      this.scene!.name = this.circuit!.metadata.name || 'Circuit Scene';
+      this._fullUpdate();
     }
   }
 
@@ -321,13 +341,13 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
   }
 
   /**
-  * Clear visuals but don't dispose completely renderer - may be used for next circuit
-  */
-  clearVisuals(){
-      if (!this.initialized) {
-          throw new Error('Cannot clear unitialized renderer');
-      }
-      this._removeAllVisuals();
+   * Clear visuals but don't dispose completely renderer - may be used for next circuit
+   */
+  clearVisuals() {
+    if (!this.initialized) {
+      throw new Error('Cannot clear unitialized renderer');
+    }
+    this._removeAllVisuals();
   }
 
   /**
@@ -362,22 +382,22 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
     return this.scene!;
   }
 
-    /**
-     * Get the Three.js camera for rendering
-     *
-     * @returns camera
-     */
-    getCamera(): THREE.PerspectiveCamera {
-        this._checkInitialized();
-        return this.camera!;
-    }
+  /**
+   * Get the Three.js camera for rendering
+   *
+   * @returns camera
+   */
+  getCamera(): THREE.PerspectiveCamera {
+    this._checkInitialized();
+    return this.camera!;
+  }
 
   /**
    * Get the MapControls instance for direct manipulation
    *
    * @returns MapControls instance or null if not initialized
    */
-  getMapControls(): MapControls | null {
+  getControls(): MapControls | null {
     return this.mapControls;
   }
 
@@ -386,7 +406,7 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
    *
    * @param options - Partial options to update
    */
-  updateMapControlsOptions(options: Partial<MapControlsOptions>): void {
+  updateControlsOptions(options: Partial<MapControlsOptions>): void {
     this._checkInitialized();
 
     if (!this.mapControls) {
@@ -886,22 +906,20 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
     }
   }
 
-    /**
-     * Perform a full update of all circuit visuals : if no circuit, clear scene
-     * @private
-     */
+  /**
+   * Perform a full update of all circuit visuals : if no circuit, clear scene
+   * @private
+   */
   private _fullUpdate(): void {
     // Remove all existing visual objects
     this._removeAllVisuals();
 
-    if(!this.circuit){
-        return;
+    if (!this.circuit) {
+      return;
     }
 
     // 1. Add circuit sized grid
-    this.grid = createGridHelper(
-        this.circuit.metadata.size,
-        this.circuit.metadata.divisions);
+    this.grid = createGridHelper(this.circuit.metadata.size, this.circuit.metadata.divisions);
     this.scene!.add(this.grid);
 
     // Create visuals for all circuit elements
@@ -1124,9 +1142,9 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
     }
 
     // remove grid
-    if(this.grid) {
-        this.scene!.remove(this.grid);
-        this.grid.geometry.dispose();
+    if (this.grid) {
+      this.scene!.remove(this.grid);
+      this.grid.geometry.dispose();
     }
   }
 }

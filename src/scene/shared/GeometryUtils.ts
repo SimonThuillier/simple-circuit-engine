@@ -32,9 +32,7 @@ export function createWireGeometry(start: Position, end: Position): THREE.Buffer
  * @returns BufferGeometry for the wire line
  */
 export function createWirePathGeometry(waypoints: Position[]): THREE.BufferGeometry {
-  const points: THREE.Vector3[] = waypoints.map(
-    (pos) => new THREE.Vector3(pos.x, 0, pos.y)
-  );
+  const points: THREE.Vector3[] = waypoints.map((pos) => new THREE.Vector3(pos.x, 0, pos.y));
 
   const geometry = new THREE.BufferGeometry().setFromPoints(points);
   return geometry;
@@ -55,8 +53,8 @@ export function createGridHelper(
   colorCenterLine: number = 0xaaaaaa,
   colorGrid: number = 0x777777
 ): THREE.GridHelper {
-    const helper = new THREE.GridHelper(size, divisions, colorCenterLine, colorGrid);
-    helper.position.set(0,0,0);
+  const helper = new THREE.GridHelper(size, divisions, colorCenterLine, colorGrid);
+  helper.position.set(0, 0, 0);
   return helper;
 }
 

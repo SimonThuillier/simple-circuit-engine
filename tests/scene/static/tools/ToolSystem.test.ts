@@ -92,12 +92,18 @@ vi.mock('three', () => {
   }
 
   class MockAmbientLight {
-    constructor(public color: number, public intensity: number) {}
+    constructor(
+      public color: number,
+      public intensity: number
+    ) {}
   }
 
   class MockDirectionalLight {
     position = new MockVector3();
-    constructor(public color: number, public intensity: number) {}
+    constructor(
+      public color: number,
+      public intensity: number
+    ) {}
   }
 
   return {
@@ -256,7 +262,7 @@ describe('Tool System Architecture (T060-T063)', () => {
       sceneManager.setActiveTool('select');
 
       expect(toolActivatedSpy).toHaveBeenCalledWith({
-        toolType: 'select'
+        toolType: 'select',
       });
     });
 
@@ -268,7 +274,7 @@ describe('Tool System Architecture (T060-T063)', () => {
       sceneManager.setActiveTool('wire');
 
       expect(toolDeactivatedSpy).toHaveBeenCalledWith({
-        toolType: 'select'
+        toolType: 'select',
       });
     });
 

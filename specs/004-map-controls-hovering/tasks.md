@@ -47,11 +47,11 @@
 - [x] T008 [US1] Create private initializeMapControls() method in CircuitSceneManager that instantiates MapControls with camera and container, applies default options (enableDamping=true, dampingFactor=0.05, screenSpacePanning=true) in `src/scene/static/CircuitSceneManager.ts`
 - [x] T009 [US1] Modify CircuitSceneManager.initialize() to accept ExtendedRendererOptions and call initializeMapControls() with mapControls options in `src/scene/static/CircuitSceneManager.ts`
 - [x] T010 [US1] Add mapControls.update() call to CircuitSceneManager render loop (startRenderLoop method or equivalent) in `src/scene/static/CircuitSceneManager.ts`
-- [x] T011 [US1] Add getMapControls(), updateMapControlsOptions(), resetCamera(), focusOnElement() public methods to CircuitSceneManager per SceneManagerExtensions contract in `src/scene/static/CircuitSceneManager.ts`
+- [x] T011 [US1] Add getControls(), updateControlsOptions(), resetCamera(), focusOnElement() public methods to CircuitSceneManager per SceneManagerExtensions contract in `src/scene/static/CircuitSceneManager.ts`
 - [x] T012 [US1] Update CircuitSceneManager.dispose() to call mapControls.dispose() if initialized in `src/scene/static/CircuitSceneManager.ts`
 - [x] T013 [P] [US1] Mirror T007-T012 changes in CircuitRunnerSceneManager - add MapControls import and property in `src/scene/simulation/CircuitRunnerSceneManager.ts`
 - [x] T014 [P] [US1] Implement initializeMapControls(), modify initialize(), add update() to render loop in CircuitRunnerSceneManager in `src/scene/simulation/CircuitRunnerSceneManager.ts`
-- [x] T015 [US1] Add getMapControls(), updateMapControlsOptions(), resetCamera(), focusOnElement() and dispose() updates to CircuitRunnerSceneManager in `src/scene/simulation/CircuitRunnerSceneManager.ts`
+- [x] T015 [US1] Add getControls(), updateControlsOptions(), resetCamera(), focusOnElement() and dispose() updates to CircuitRunnerSceneManager in `src/scene/simulation/CircuitRunnerSceneManager.ts`
 
 **Checkpoint**: MapControls working in both scene managers - users can navigate circuit views
 

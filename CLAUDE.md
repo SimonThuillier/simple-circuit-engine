@@ -3,6 +3,7 @@
 Auto-generated from all feature plans. Last updated: 2025-11-28
 
 ## Active Technologies
+
 - TypeScript (strict mode), targeting ES2022 + Three.js 0.181+ (already in project) (003-threejs-rendering)
 - N/A (renderers are stateless; state resides in Circuit/CircuitRunner instances) (003-threejs-rendering)
 - TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (already installed), three/addons/controls/MapControls.js (004-map-controls-hovering)
@@ -33,11 +34,11 @@ npm test && npm run lint
 TypeScript (strict mode), targeting ES2022: Follow standard conventions
 
 ## Recent Changes
+
 - 004-map-controls-hovering: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (already installed), three/addons/controls/MapControls.js (already installed)
 - 003-threejs-rendering: Added TypeScript (strict mode), targeting ES2022 + Three.js 0.181+ (already in project)
 
 - 001-simulation-engine: Added TypeScript (strict mode), targeting ES2022 + None for core simulation module (dependency-free per constitution)
-
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

@@ -27,16 +27,23 @@ export type RenderEvent =
 /**
  * Object types that can be interacted with in the renderer
  */
-export type RenderObjectType = 'componentGroup' | 'component' | 'componentHitbox' |
-    'wireGroup' | 'wire' | 'wireHitbox' |
-    'enodeGroup' | 'enode' | 'enodeHitbox';
+export type RenderObjectType =
+  | 'componentGroup'
+  | 'component'
+  | 'componentHitbox'
+  | 'wireGroup'
+  | 'wire'
+  | 'wireHitbox'
+  | 'enodeGroup'
+  | 'enode'
+  | 'enodeHitbox';
 
 /**
  * Event payload map for type-safe event emission
  */
 export interface RenderEventMap {
-  hover: { objectId: UUID; objectType: RenderObjectType };
-  unhover: { objectId: UUID; objectType: RenderObjectType };
+  hover: { objectId: UUID; objectType: RenderObjectType; userData?: HitboxUserData | undefined };
+  unhover: { objectId: UUID; objectType: RenderObjectType; userData?: HitboxUserData | undefined };
   select: { objectId: UUID; objectType: RenderObjectType };
   deselect: { objectId: UUID; objectType: RenderObjectType };
   error: { message: string; error?: Error };
@@ -173,9 +180,9 @@ export interface HoveredElement {
  * UserData structure for enode hitbox meshes
  */
 export interface EnodeHitboxUserData {
+  enodeId: string;
   type: 'enodeHitbox';
   componentId: string;
-  pinId: string;
   label: string;
 }
 
@@ -198,10 +205,7 @@ export interface WireHitboxUserData {
 /**
  * Union of all hitbox userData types
  */
-export type HitboxUserData =
-  | EnodeHitboxUserData
-  | ComponentHitboxUserData
-  | WireHitboxUserData;
+export type HitboxUserData = EnodeHitboxUserData | ComponentHitboxUserData | WireHitboxUserData;
 
 /**
  * Tool System Types

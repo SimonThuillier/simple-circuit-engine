@@ -55,10 +55,7 @@ export type {
   IEditingTool,
 } from './shared/types';
 
-export type {
-  ComponentVisualFactory,
-  IFactoryRegistry,
-} from './shared/ComponentVisualFactory';
+export type { ComponentVisualFactory, IFactoryRegistry } from './shared/ComponentVisualFactory';
 
 export { HitboxLayers } from './shared/LayerConstants';
 export type { HitboxLayerValue } from './shared/LayerConstants';

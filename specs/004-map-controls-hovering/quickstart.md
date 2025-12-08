@@ -137,20 +137,20 @@ manager.focusOnElement(componentId, false);
 
 ```typescript
 // Disable zoom temporarily
-manager.updateMapControlsOptions({ enableZoom: false });
+manager.updateControlsOptions({ enableZoom: false });
 
 // Change damping
-manager.updateMapControlsOptions({ dampingFactor: 0.2 });
+manager.updateControlsOptions({ dampingFactor: 0.2 });
 
 // Re-enable zoom
-manager.updateMapControlsOptions({ enableZoom: true });
+manager.updateControlsOptions({ enableZoom: true });
 ```
 
 ### Direct MapControls Access
 
 ```typescript
 // Get underlying MapControls for advanced usage
-const controls = manager.getMapControls();
+const controls = manager.getControls();
 
 if (controls) {
   // Access Three.js MapControls directly
@@ -300,5 +300,5 @@ manager.dispose();
 | Toggle hover | `manager.setHoverEnabled(bool)` |
 | Camera reset | `manager.resetCamera()` |
 | Focus element | `manager.focusOnElement(id)` |
-| Update options | `manager.updateMapControlsOptions({...})` |
-| Direct access | `manager.getMapControls()` |
+| Update options | `manager.updateControlsOptions({...})` |
+| Direct access | `manager.getControls()` |
