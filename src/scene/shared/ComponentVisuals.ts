@@ -142,17 +142,23 @@ export const switchFactory: ComponentVisualFactory = (component: Component) => {
     group.add(hitbox);
 
     // Visual: poles
-    const poleGeometry = new THREE.BoxGeometry(0.1, 0.2, 1);
+    const inputPoleGeometry = new THREE.SphereGeometry(
+        0.3, 16, 8,
+        Math.PI/2, Math.PI,
+        0, Math.PI);
     const poleMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
-    const inputPole = new THREE.Mesh(poleGeometry, poleMaterial);
+
+    const inputPole = new THREE.Mesh(inputPoleGeometry, poleMaterial);
     inputPole.userData = {
         type: 'component',
         componentId: component.id,
     };
-    inputPole.position.set(-0.5, 0,0)
+    inputPole.position.set(-1, 0,0);
+    //inputPole.rotateY( Math.PI / 2);
     group.add(inputPole);
 
-    const outputPole = new THREE.Mesh(poleGeometry, poleMaterial);
+    const outputPoleGeometry = new THREE.BoxGeometry(0.2, 0.3, 1);
+    const outputPole = new THREE.Mesh(outputPoleGeometry, poleMaterial);
     outputPole.userData = {
         type: 'component',
         componentId: component.id,
@@ -160,12 +166,112 @@ export const switchFactory: ComponentVisualFactory = (component: Component) => {
     outputPole.position.set(0.5, 0,0)
     group.add(outputPole);
 
+    // contactor
+    const contactorGroup = new THREE.Mesh(
+        new THREE.BoxGeometry(2, 1, 1),
+        new THREE.MeshBasicMaterial({
+            transparent: false,
+            visible: false,
+        })
+    )
+
+
+    const contactorMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    const contactorGeometry = new THREE.CylinderGeometry(
+        0.2, 0.12, 1.5, 8, 4,
+        false, 0, Math.PI * 2)
+    const contactor = new THREE.Mesh(contactorGeometry, contactorMaterial);
+    contactor.userData = {
+        type: 'component',
+        componentId: component.id,
+        part: 'contactor'
+    };
+    contactor.rotateZ(Math.PI / 2);
+    contactor.position.set(0.5, 0, 0);
+    contactorGroup.add(contactor);
+
+    group.add(contactorGroup);
+    contactorGroup.position.set(-1, 0,0);
+    contactorGroup.rotation.set(0.5, 0.8, 0);
+
     // input pin group
     const inputPinGroup = createPinGroup(
         component.id, component.pins[0]!,'input');
-    inputPinGroup.position.set(0, 0, 0);
-    inputPinGroup.rotateX( Math.PI / 2);
+    inputPinGroup.position.set(-1, 0, 0);
+    inputPinGroup.rotateZ( Math.PI /2);
+    inputPinGroup.rotateY( Math.PI);
     group.add(inputPinGroup);
+
+    // output pin group
+    const outputPinGroup = createPinGroup(
+        component.id, component.pins[1]!,'output');
+    outputPinGroup.position.set(0.6, 0, 0);
+    outputPinGroup.rotateZ( -Math.PI /2);
+    outputPinGroup.rotateY( Math.PI);
+    group.add(outputPinGroup);
+
+
+    return group;
+}
+
+export const smallLedFactory: ComponentVisualFactory = (component: Component) => {
+    console.log('Creating small LED visual for component', component.id);
+    // Root group (not rendered, just organizational)
+    const group = new THREE.Group();
+    group.userData = {
+        type: 'componentGroup',
+        componentId: component.id,
+        componentType: component.type,
+    };
+
+    // Component hitbox (invisible, raycastable)
+    const hitboxGeometry = new THREE.BoxGeometry(1, 1, 1);
+    const hitboxMaterial = new THREE.MeshBasicMaterial({
+        color: 0xffff00,
+        transparent: true,
+        opacity: 0.2,
+        visible: true,
+    });
+    const hitbox = new THREE.Mesh(hitboxGeometry, hitboxMaterial);
+    hitbox.userData = {
+        type: 'componentHitbox',
+        componentId: component.id
+    };
+    hitbox.layers.set(LAYERS.COMPONENT_HITBOX);
+    group.add(hitbox);
+
+
+    // visual leD
+    const ledMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    const ledGeometry = new THREE.CylinderGeometry(
+        0.25, 0.25, 1, 16, 4,
+        false, 0, Math.PI * 2)
+    const led = new THREE.Mesh(ledGeometry, ledMaterial);
+    led.userData = {
+        type: 'component',
+        componentId: component.id,
+        part: 'led'
+    };
+    led.position.set(0,0.2,0);
+    group.add(led);
+
+    // input pin group
+    const inputPinGroup = createPinGroup(
+        component.id, component.pins[0]!,'input');
+    inputPinGroup.position.set(-0.25, 0, 0);
+    inputPinGroup.rotateZ( Math.PI /2);
+    inputPinGroup.rotateY( Math.PI);
+    group.add(inputPinGroup);
+
+
+    // output pin group
+    const outputPinGroup = createPinGroup(
+        component.id, component.pins[1]!,'output');
+    outputPinGroup.position.set(0.25, 0, 0);
+    outputPinGroup.rotateZ( -Math.PI /2);
+    outputPinGroup.rotateY( Math.PI);
+    group.add(outputPinGroup);
+
 
     return group;
 }
