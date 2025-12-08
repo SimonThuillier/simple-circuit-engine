@@ -368,8 +368,8 @@
     const sceneManager = new window.CircuitSceneManager(window.componentsFactoryRegistry);
     sceneManager.initialize(viewerContainer);
     sceneManager.getScene().add(window.axesHelper);
+    sceneManager.getCamera().layers.enable(1); // enode hover layer
     sceneManager.getCamera().layers.enable(2); // component hover layer
-    sceneManager.getCamera().layers.enable(4); // enode hover layer
 
     window.renderer.render(sceneManager.getScene(), sceneManager.getCamera());
     viewerContainer.appendChild(window.renderer.domElement);

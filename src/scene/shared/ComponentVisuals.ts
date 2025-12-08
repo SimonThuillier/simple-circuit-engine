@@ -3,9 +3,9 @@ import * as THREE from "three";
 import type {ComponentVisualFactory} from "./ComponentVisualFactory";
 
 enum LAYERS {
+    ENODE_HITBOX = 1,
     COMPONENT_HITBOX = 2,
     WIRE_HITBOX = 3,
-    ENODE_HITBOX = 4,
 }
 
 //const textureLoader = new THREE.TextureLoader();
