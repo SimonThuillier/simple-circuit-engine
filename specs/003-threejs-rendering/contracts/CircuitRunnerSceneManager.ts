@@ -1,6 +1,6 @@
 /**
  * CircuitRunner SceneManager Contract
- * @module scene/contracts/SimulationCircuitSceneManager
+ * @module scene/contracts/CircuitRunnerSceneManager
  */
 
 import type { CircuitRunner } from '@/core/simulation/CircuitRunner';

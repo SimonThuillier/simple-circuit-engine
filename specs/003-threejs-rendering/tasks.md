@@ -3,20 +3,25 @@
 **Input**: Design documents from `/specs/003-threejs-rendering/`
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/, quickstart.md
 
-**Updated**: 2025-12-04 - Architectural changes from Phase 1-3 POC reflected
+**Updated**: 2025-12-08 - Phases 6 and 7 marked as DISMISSED (premature optimization and polish)
 
 **Tests**: Unit tests are REQUIRED per Testing Strategy section (TS-001 through TS-008)
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
-**Task Count**: 102 tasks total
-- Phase 1 (Setup): 4 tasks
-- Phase 2 (Foundational): 15 tasks
-- Phase 3 (US1 - Static Visualization P1): 16 tasks
-- Phase 4 (US3 - Live Simulation P1): 19 tasks
-- Phase 5 (US2 - Editing Interface P2): 26 tasks (updated with tool system)
-- Phase 6 (US4 - Performance P3): 9 tasks
-- Phase 7 (Polish): 13 tasks
+**Task Count**: 107 tasks total (22 dismissed, 85 active for MVP)
+- Phase 1 (Setup): 4 tasks ✅
+- Phase 2 (Foundational): 15 tasks ✅
+- Phase 3 (US1 - Static Visualization P1): 18 tasks ✅
+- Phase 4 (US3 - Live Simulation P1): 22 tasks ✅
+- Phase 5 (US2 - Editing Interface P2): 26 tasks ✅
+- Phase 6 (US4 - Performance P3): 9 tasks ⚠️ DISMISSED
+- Phase 7 (Polish): 13 tasks ⚠️ DISMISSED
+
+**MVP Status**: Phases 1-5 complete (85 tasks). Phases 6-7 dismissed as premature optimization and polish work.
+
+**Deferred Requirements**:
+- FR-016 (CircuitWorkspace bridge): Needed for production but deferred to post-MVP. Will enable seamless switching between static and simulation scene managers at application level.
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -205,7 +210,11 @@
 
 ---
 
-## Phase 6: User Story 4 - Performance Optimization for Complex Circuits (Priority: P3)
+## Phase 6: User Story 4 - Performance Optimization for Complex Circuits (Priority: P3) ⚠️ DISMISSED
+
+**Status**: DISMISSED - Deferred to post-MVP validation phase
+
+**Rationale**: Performance optimization is premature at this stage. Core functionality (Phases 1-5) must be validated in real-world usage before investing in optimization work. These tasks will be reconsidered after MVP deployment and performance profiling with actual use cases.
 
 **Goal**: Optimize scene management for circuits with up to 500 components maintaining 30+ FPS. Implement dirty tracking, incremental updates, Level of Detail (LOD).
 
@@ -217,40 +226,46 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T086 [P] [US4] Performance test for CircuitSceneManager with 500 components in tests/unit/scene/static/CircuitSceneManager.test.ts verifying render time <33ms per frame
-- [ ] T087 [P] [US4] Performance test for CircuitRunnerSceneManager with 500 components in tests/unit/scene/simulation/CircuitRunnerSceneManager.test.ts verifying render time <33ms per frame
-- [ ] T088 [P] [US4] Unit test for incremental update performance in tests/unit/scene/static/CircuitSceneManager.test.ts verifying only changed elements are updated
+- [ ] ~~T086 [P] [US4] Performance test for CircuitSceneManager with 500 components in tests/unit/scene/static/CircuitSceneManager.test.ts verifying render time <33ms per frame~~ **DISMISSED**
+- [ ] ~~T087 [P] [US4] Performance test for CircuitRunnerSceneManager with 500 components in tests/unit/scene/simulation/CircuitRunnerSceneManager.test.ts verifying render time <33ms per frame~~ **DISMISSED**
+- [ ] ~~T088 [P] [US4] Unit test for incremental update performance in tests/unit/scene/static/CircuitSceneManager.test.ts verifying only changed elements are updated~~ **DISMISSED**
 
 ### Implementation for User Story 4
 
-- [ ] T089 [P] [US4] Implement DirtyTracker class in src/scene/shared/DirtyTracker.ts with markDirty(objectId), clearDirty(), getDirtyObjects() methods per performance optimization pattern
-- [ ] T090 [US4] Integrate DirtyTracker into CircuitSceneManager.update() in src/scene/static/CircuitSceneManager.ts: track changed objects, only update dirty elements per FR-012
-- [ ] T091 [US4] Integrate DirtyTracker into CircuitRunnerSceneManager.render() in src/scene/simulation/CircuitRunnerSceneManager.ts: only update visuals for components/wires with state changes
-- [ ] T092 [P] [US4] Implement LOD (Level of Detail) system in src/scene/shared/LODManager.ts: reduce geometry detail for distant objects (optional enhancement)
-- [ ] T093 [US4] Add frustum culling optimization in CircuitSceneManager.render() in src/scene/static/CircuitSceneManager.ts: skip updates for off-screen objects (optional, Three.js does this by default)
-- [ ] T094 [US4] Add object pooling for frequently created/destroyed meshes in src/scene/shared/ObjectPool.ts: reuse geometries/materials (optional enhancement)
+- [ ] ~~T089 [P] [US4] Implement DirtyTracker class in src/scene/shared/DirtyTracker.ts with markDirty(objectId), clearDirty(), getDirtyObjects() methods per performance optimization pattern~~ **DISMISSED**
+- [ ] ~~T090 [US4] Integrate DirtyTracker into CircuitSceneManager.update() in src/scene/static/CircuitSceneManager.ts: track changed objects, only update dirty elements per FR-012~~ **DISMISSED**
+- [ ] ~~T091 [US4] Integrate DirtyTracker into CircuitRunnerSceneManager.render() in src/scene/simulation/CircuitRunnerSceneManager.ts: only update visuals for components/wires with state changes~~ **DISMISSED**
+- [ ] ~~T092 [P] [US4] Implement LOD (Level of Detail) system in src/scene/shared/LODManager.ts: reduce geometry detail for distant objects (optional enhancement)~~ **DISMISSED**
+- [ ] ~~T093 [US4] Add frustum culling optimization in CircuitSceneManager.render() in src/scene/static/CircuitSceneManager.ts: skip updates for off-screen objects (optional, Three.js does this by default)~~ **DISMISSED**
+- [ ] ~~T094 [US4] Add object pooling for frequently created/destroyed meshes in src/scene/shared/ObjectPool.ts: reuse geometries/materials (optional enhancement)~~ **DISMISSED**
 
-**Checkpoint**: All user stories complete - renderers work independently and perform well at scale
+**Checkpoint**: ~~All user stories complete - renderers work independently and perform well at scale~~ **PHASE DISMISSED - MVP complete after Phase 5**
 
 ---
 
-## Phase 7: Polish & Cross-Cutting Concerns
+## Phase 7: Polish & Cross-Cutting Concerns ⚠️ DISMISSED
+
+**Status**: DISMISSED - Deferred to post-MVP iteration
+
+**Rationale**: Polish and documentation tasks should occur after the MVP has been validated through real-world usage. This allows documentation and examples to reflect actual usage patterns discovered during integration. These tasks will be reconsidered in a future iteration focused on developer experience improvements.
+
+**Note**: JSDoc requirement from constitution remains as technical debt to be addressed in future iteration.
 
 **Purpose**: Improvements that affect multiple user stories, documentation, final validation
 
-- [ ] T095 [P] Add JSDoc comments to all public methods in src/scene/static/CircuitSceneManager.ts per FR-019 and constitution quality standards
-- [ ] T096 [P] Add JSDoc comments to all public methods in src/scene/simulation/CircuitRunnerSceneManager.ts per FR-019 and constitution quality standards
-- [ ] T097 [P] Add JSDoc comments to all shared utility functions in src/scene/shared/ files
-- [ ] T098 [P] Unit test for FactoryRegistry with unregistered component types in tests/unit/scene/FactoryRegistry.test.ts verifying fallback to default factory per TS-006
-- [ ] T099 [P] Unit test for error handling in tests/unit/scene/CircuitSceneManager.test.ts verifying initialization errors throw, runtime errors emit events per FR-018 and TS-002
-- [ ] T100 [P] Unit test for error handling in tests/unit/scene/CircuitRunnerSceneManager.test.ts verifying error emission per FR-018
-- [ ] T101 Validate quickstart.md examples in specs/003-threejs-rendering/quickstart.md: ensure all code samples compile and run with new API
-- [ ] T102 Create example usage in demo/ directory: static scene manager example with simple circuit showing new API pattern
-- [ ] T103 Create example usage in demo/ directory: simulation scene manager example with animated circuit showing CircuitRunner integration
-- [ ] T104 Run `npm test` to verify all unit tests pass with >80% coverage per constitution
-- [ ] T105 Run `npm run lint` to verify TypeScript strict mode compliance per constitution
-- [ ] T106 Update main README.md with scene module usage section referencing quickstart.md
-- [ ] T107 Update CHANGELOG.md with scene module additions for version tracking
+- [ ] ~~T095 [P] Add JSDoc comments to all public methods in src/scene/static/CircuitSceneManager.ts per FR-019 and constitution quality standards~~ **DISMISSED**
+- [ ] ~~T096 [P] Add JSDoc comments to all public methods in src/scene/simulation/CircuitRunnerSceneManager.ts per FR-019 and constitution quality standards~~ **DISMISSED**
+- [ ] ~~T097 [P] Add JSDoc comments to all shared utility functions in src/scene/shared/ files~~ **DISMISSED**
+- [ ] ~~T098 [P] Unit test for FactoryRegistry with unregistered component types in tests/unit/scene/FactoryRegistry.test.ts verifying fallback to default factory per TS-006~~ **DISMISSED**
+- [ ] ~~T099 [P] Unit test for error handling in tests/unit/scene/CircuitSceneManager.test.ts verifying initialization errors throw, runtime errors emit events per FR-018 and TS-002~~ **DISMISSED**
+- [ ] ~~T100 [P] Unit test for error handling in tests/unit/scene/CircuitRunnerSceneManager.test.ts verifying error emission per FR-018~~ **DISMISSED**
+- [ ] ~~T101 Validate quickstart.md examples in specs/003-threejs-rendering/quickstart.md: ensure all code samples compile and run with new API~~ **DISMISSED**
+- [ ] ~~T102 Create example usage in demo/ directory: static scene manager example with simple circuit showing new API pattern~~ **DISMISSED**
+- [ ] ~~T103 Create example usage in demo/ directory: simulation scene manager example with animated circuit showing CircuitRunner integration~~ **DISMISSED**
+- [ ] ~~T104 Run `npm test` to verify all unit tests pass with >80% coverage per constitution~~ **DISMISSED**
+- [ ] ~~T105 Run `npm run lint` to verify TypeScript strict mode compliance per constitution~~ **DISMISSED**
+- [ ] ~~T106 Update main README.md with scene module usage section referencing quickstart.md~~ **DISMISSED**
+- [ ] ~~T107 Update CHANGELOG.md with scene module additions for version tracking~~ **DISMISSED**
 
 ---
 

@@ -76,7 +76,7 @@ export interface ChangedData {
   addedENodes?: UUID[];
   /** ENode IDs that were removed from the circuit */
   removedENodes?: UUID[];
-  /** Flag indicating simulation state has changed (for SimulationCircuitSceneManager) */
+  /** Flag indicating simulation state has changed (for CircuitRunnerSceneManager) */
   stateChanged?: boolean;
 }
 

@@ -2,8 +2,8 @@
 
 **Feature Branch**: `003-threejs-rendering`
 **Created**: 2025-12-02
-**Updated**: 2025-12-04 (Phase 1-3 POC - Architectural refinements)
-**Status**: In Progress (Phases 1-3 Complete)
+**Updated**: 2025-12-08 (MVP Complete - Phases 6-7 Deferred)
+**Status**: ✅ MVP COMPLETE (Phases 1-5 Done, Phases 6-7 Dismissed)
 **Input**: User description: "I need two three.js scene managers : one for Circuit specialized for managing circuit scene and editing, one for CircuitRunner providing an animation optimized scene for live simulated circuits. These should be two well separated submodules in src/scene with a third shared utilities module."
 
 ## Clarifications
@@ -193,7 +193,7 @@ Users working with large circuits (hundreds of components) need responsive visua
 ### Key Entities
 
 - **CircuitSceneManager (Static)**: Responsible for visualizing circuit topology in a non-simulated state, supporting view manipulation and editing interactions. Circuit instances are provided via setCircuit() after initialization, not in constructor. Accepts component factory registry via constructor. Exposes hookable callbacks but does not implement event listeners or manage WebGLRenderer. Manages tool system for editing operations (FR-025 to FR-037). Can be reused across multiple circuits via setCircuit().
-- **SimulationCircuitSceneManager**: Responsible for visualizing circuit state during active simulation, displaying real-time updates, animations, and state changes. CircuitRunner instances are provided via setCircuit() after initialization. Accepts component factory registry via constructor. Exposes hookable callbacks but does not implement event listeners or manage WebGLRenderer.
+- **CircuitRunnerSceneManager**: Responsible for visualizing circuit state during active simulation, displaying real-time updates, animations, and state changes. CircuitRunner instances are provided via setCircuit() after initialization. Accepts component factory registry via constructor. Exposes hookable callbacks but does not implement event listeners or manage WebGLRenderer.
 - **Component Visual Factory Registry**: Registry of factory functions that create 3D representations for each component type. Injected into scene manager constructors. Provides fallback to default placeholder geometry (1-unit cube) for unregistered component types.
 - **Editing Tool**: Abstraction for circuit editing operations (Select, PlaceComponent, Wire, BranchingPoint, Delete). Each tool implements common interface (onActivate, onDeactivate, getCursorType, getPreviewState) and manages tool-specific operation state. Tools delegate circuit modifications to core Circuit API.
 - **Tool State**: Runtime state for active tool including operation-in-progress tracking, preview objects, and tool-specific data (e.g., wire source endpoint, component placement rotation). Reset when edit mode is disabled.
@@ -228,3 +228,51 @@ Users working with large circuits (hundreds of components) need responsive visua
 - Default camera perspectives and lighting will be sufficient for initial implementation (custom lighting setups can be added later)
 - Component visual representations can be standardized (spheres, cylinders, boxes) initially before adding custom geometries
 - Performance targets are based on typical development workstation capabilities, not mobile devices
+
+---
+
+## Deferred Work _(post-MVP)_
+
+The following requirements and user stories are deferred to future iterations after MVP validation:
+
+### Deferred Requirements
+
+**FR-016 - CircuitWorkspace Bridge** (Priority: Medium)
+- **What**: A CircuitWorkspace class to bridge between CircuitSceneManager and CircuitRunnerSceneManager, ensuring only one is active at a time and handling scene disposal/initialization during switches.
+- **Why Deferred**: While important for production applications, the core scene managers are functional without this bridge. Applications can implement their own bridging logic for MVP. This will be implemented once real-world usage patterns are understood.
+- **Future Implementation**: Create CircuitWorkspace class in src/scene/workspace/ that manages lifecycle of both scene managers, handles switching logic, and provides unified API for applications.
+
+### Deferred User Stories
+
+**User Story 4 - Performance Optimization (Priority: P3)** - 9 tasks dismissed
+- **What**: Performance optimization for circuits with 500+ components including dirty tracking, incremental updates, Level of Detail (LOD), frustum culling, and object pooling.
+- **Why Deferred**: Premature optimization. Current implementation should be validated with real-world circuits before investing in optimization work. Performance profiling with actual use cases will inform which optimizations provide the most value.
+- **Target Metrics**: 30+ FPS with 500 components, <33ms render time per frame
+- **Tasks**: T086-T094 in tasks.md
+
+**Polish & Documentation (Phase 7)** - 13 tasks dismissed
+- **What**: JSDoc documentation for all public APIs, comprehensive error handling tests, demo examples, README updates, and validation of quickstart examples.
+- **Why Deferred**: Documentation and polish should reflect real-world usage patterns discovered during MVP integration. This ensures examples and documentation match actual developer needs rather than assumptions.
+- **Technical Debt**: JSDoc requirement from constitution remains as documented technical debt to be addressed in future iteration focused on developer experience.
+- **Tasks**: T095-T107 in tasks.md
+
+### MVP Completeness
+
+**What's Included in MVP** (Phases 1-5, 85 tasks):
+- ✅ Two independent scene manager classes (CircuitSceneManager, CircuitRunnerSceneManager)
+- ✅ Shared utilities module (factories, geometry, materials, lighting, camera, interpolation)
+- ✅ Complete tool system with 5 editing tools (Select, PlaceComponent, Wire, BranchingPoint, Delete)
+- ✅ Static circuit visualization with hover/selection
+- ✅ Live simulation visualization with state interpolation and current flow animation
+- ✅ Event-driven API with hookable callbacks
+- ✅ Scene manager reusability via setCircuit() method
+- ✅ Unit tests for all core functionality (mocked Three.js)
+
+**What's Deferred**:
+- ⏭️ CircuitWorkspace bridging class (FR-016)
+- ⏭️ Performance optimization for large circuits (US4)
+- ⏭️ JSDoc documentation on public APIs
+- ⏭️ Demo examples and comprehensive documentation
+- ⏭️ Additional error handling test coverage
+
+The MVP delivers complete, functional scene managers ready for integration and real-world validation.

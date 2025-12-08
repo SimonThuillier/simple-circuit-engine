@@ -65,7 +65,7 @@
 
 ---
 
-### 2. SimulationCircuitSceneManager
+### 2. CircuitRunnerSceneManager
 
 **Purpose**: Render live circuit simulation with animated state changes
 

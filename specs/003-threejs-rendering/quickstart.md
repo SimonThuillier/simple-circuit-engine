@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide shows how to use the CircuitSceneManager and SimulationCircuitSceneManager classes to visualize circuits in 3D using Three.js.
+This guide shows how to use the CircuitSceneManager and CircuitRunnerSceneManager classes to visualize circuits in 3D using Three.js.
 
 ## Installation
 
@@ -196,16 +196,16 @@ const circuitRunner = new CircuitRunner(circuit, behaviorRegistry, {
 });
 ```
 
-### Step 2: Create Simulation SceneManager
+### Step 2: Create CircuitRunner Scene Manager
 
 ```typescript
-import { SimulationCircuitSceneManager } from 'simple-circuit-engine/scene';
+import { CircuitRunnerSceneManager } from 'simple-circuit-engine/scene';
 
-// Create renderer (uses same factory registry)
-const simSceneManager = new SimulationCircuitSceneManager(circuitRunner, registry);
+// Create scene manager (uses same factory registry)
+const simSceneManager = new CircuitRunnerSceneManager(circuitRunner, registry);
 
 simSceneManager.on('ready', () => {
-  console.log('Simulation renderer ready');
+  console.log('Simulation scene manager ready');
 });
 
 simSceneManager.initialize(container);
@@ -266,7 +266,7 @@ function switchToSimulation() {
   staticSceneManager.dispose();
 
   // Create and initialize simulation renderer
-  const simSceneManager = new SimulationCircuitSceneManager(circuitRunner, registry);
+  const simSceneManager = new CircuitRunnerSceneManager(circuitRunner, registry);
   simSceneManager.initialize(container);
 
   return simSceneManager;
