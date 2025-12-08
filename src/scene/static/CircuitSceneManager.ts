@@ -1,0 +1,783 @@
+/**
+ * Static Circuit Renderer
+ * @module rendering/static/StaticCircuitRenderer
+ *
+ * Renders static circuit topology in 3D space with support for editing tools.
+ */
+
+import * as THREE from 'three';
+import type { Circuit } from '../../core/Circuit';
+import type { Component } from '../../core/components/Component';
+import type { Wire } from '../../core/Wire';
+import type { ENode } from '../../core/ENode';
+import { ENodeType } from '../../core/types/ENodeType';
+import { EventEmitter } from '../shared/EventEmitter';
+import type { IFactoryRegistry } from '../shared/ComponentVisualFactory';
+import type {
+  RenderEvent,
+  RenderEventMap,
+  RenderCallback,
+  ChangedData,
+  RendererOptions,
+  ToolType,
+} from '../shared/types';
+import {
+  createPerspectiveCamera,
+  setupCameraFromMetadata,
+} from '../shared/CameraUtils';
+import { setupSceneLights } from '../shared/LightingUtils';
+import { createGridHelper } from '../shared/GeometryUtils';
+import { createWireGeometry } from '../shared/GeometryUtils';
+import { createLineMaterial } from '../shared/MaterialUtils';
+import { createEnodeGeometry } from '../shared/GeometryUtils';
+import { createStandardMaterial } from '../shared/MaterialUtils';
+import { SelectTool } from './tools/SelectTool';
+import { PlaceComponentTool } from './tools/PlaceComponentTool';
+import { WireTool } from './tools/WireTool';
+import { BranchingPointTool } from './tools/BranchingPointTool';
+import { DeleteTool } from './tools/DeleteTool';
+import type { IEditingTool } from '../shared/types';
+
+/**
+ * Static Circuit Scene Manager Implementation
+ *
+ * Manager providing a bidirectional interface between a Circuit and a Three.js scene/camera ready to be rendered.
+ * Supports view manipulation and editing via integrated tool system.
+ * Provides event hooks for error handling and state changes.
+ */
+export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
+    public readonly factoryRegistry: IFactoryRegistry;
+
+    private circuit?: Circuit | null = null;
+  private scene: THREE.Scene | null = null;
+  private camera: THREE.PerspectiveCamera | null = null;
+  private container: HTMLElement | null = null;
+  private initialized: boolean = false;
+  private disposed: boolean = false;
+
+  // Visual object tracking
+  private grid: THREE.GridHelper | null = null;
+  private componentMeshes: Map<string, THREE.Object3D> = new Map();
+  private wireMeshes: Map<string, THREE.Line> = new Map();
+  private enodeMeshes: Map<string, THREE.Mesh> = new Map();
+
+  // Edit mode and tool system (Phase 5)
+  private editMode: boolean = false;
+  private activeTool: ToolType | null = null;
+  private tools: Map<ToolType, IEditingTool> = new Map();
+  private toolState: any = null;
+  private previewObjects: THREE.Object3D[] = [];
+
+  /**
+   * Create a new Static Circuit Renderer
+   *
+   * @param factoryRegistry - Component visual factory registry
+   * @throws {TypeError} If circuit or factoryRegistry is null/undefined
+   */
+  constructor(factoryRegistry: IFactoryRegistry) {
+    super();
+
+    if (!factoryRegistry) {
+      throw new TypeError('FactoryRegistry is required');
+    }
+
+    this.factoryRegistry = factoryRegistry;
+  }
+
+  /**
+   * Initialize the renderer with a DOM container
+   *
+   * @param container - HTMLElement to attach scene to
+   * @param options - Optional renderer configuration
+   */
+  initialize(container: HTMLElement, options?: RendererOptions): void {
+    if (this.initialized) {
+      throw new Error('Renderer already initialized');
+    }
+
+    if (!container || !(container instanceof HTMLElement)) {
+      const error = new TypeError('Container must be a valid HTMLElement');
+      this.emit('error', { message: error.message, error });
+      throw error;
+    }
+
+    try {
+      this.container = container;
+
+      // Create scene
+      this.scene = new THREE.Scene();
+      this.scene.background = new THREE.Color(0x222230);
+
+      console.log(container.clientWidth, container.clientHeight);
+      // Create camera
+      const aspect = container.clientWidth / container.clientHeight || 1;
+      this.camera = createPerspectiveCamera(options, aspect);
+
+      // Add lights
+      setupSceneLights(this.scene);
+
+      // Initialize tools (Phase 5)
+      this._initializeTools();
+
+      this.initialized = true;
+
+      // Emit ready event
+      this.emit('ready', {});
+    } catch (error) {
+      const err = error as Error;
+      this.emit('error', { message: err.message, error: err });
+      throw error;
+    }
+  }
+
+    /**
+     * Update the circuit to visualize or indicate no circuit loaded
+     * @param circuit
+     */
+  setCircuit(circuit: Circuit | null): void {
+    if (circuit === this.circuit) return; // No change
+    // TODO reset changedData ?
+    if(!!this.circuit && this.initialized) {
+        // Clear existing visuals
+        this._removeAllVisuals();
+        return;
+    }
+
+    this.circuit = circuit;
+    if(circuit !== null && this.initialized) {
+        // Perform full update with new circuit
+        this.scene!.name = this.circuit!.metadata.name || 'Circuit Scene';
+        this._fullUpdate();
+    }
+  }
+
+  /**
+   * Update visualization based on circuit changes
+   *
+   * @param changedData - Optional incremental update specification
+   */
+  update(changedData?: ChangedData): void {
+    this._checkInitialized();
+
+    try {
+      if (!changedData) {
+        // Full update - rebuild all visuals
+        this._fullUpdate();
+      } else {
+        // Incremental update
+        this._incrementalUpdate(changedData);
+      }
+    } catch (error) {
+      const err = error as Error;
+      this.emit('error', { message: err.message, error: err });
+      throw error;
+    }
+  }
+
+  /**
+  * Clear visuals but don't dispose completely renderer - may be used for next circuit
+  */
+  clearVisuals(){
+      if (!this.initialized) {
+          throw new Error('Cannot clear unitialized renderer');
+      }
+      this._removeAllVisuals();
+  }
+
+  /**
+   * Render one frame (called by external animation loop)
+   */
+  render(): void {
+    this._checkInitialized();
+
+    try {
+      // In CircuitSceneManager, render() is mostly a no-op
+      // Scene updates are done in update()
+      // Consumer handles actual WebGL rendering via getScene()
+    } catch (error) {
+      const err = error as Error;
+      this.emit('error', { message: err.message, error: err });
+      throw error;
+    }
+  }
+
+  /**
+   * Get the Three.js scene for rendering
+   *
+   * @returns Scene
+   */
+  getScene(): THREE.Scene {
+    this._checkInitialized();
+    return this.scene!;
+  }
+
+    /**
+     * Get the Three.js camera for rendering
+     *
+     * @returns camera
+     */
+    getCamera(): THREE.PerspectiveCamera {
+        this._checkInitialized();
+        return this.camera!;
+    }
+
+  /**
+   * Clean up all WebGL resources
+   */
+  dispose(): void {
+    if (this.disposed) {
+      throw new Error('Renderer already disposed');
+    }
+
+    if (!this.initialized) {
+      throw new Error('Cannot dispose uninitialized renderer');
+    }
+
+    try {
+      // Dispose all geometries and materials
+      this.scene!.traverse((obj) => {
+        if (obj instanceof THREE.Mesh) {
+          obj.geometry.dispose();
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach((mat) => mat.dispose());
+          } else {
+            obj.material.dispose();
+          }
+        } else if (obj instanceof THREE.Line) {
+          obj.geometry.dispose();
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach((mat) => mat.dispose());
+          } else {
+            obj.material.dispose();
+          }
+        }
+      });
+
+      // Remove all objects from scene
+      while (this.scene!.children.length > 0) {
+        this.scene!.remove(this.scene!.children[0]);
+      }
+
+      // Clear tracking maps
+      this.componentMeshes.clear();
+      this.wireMeshes.clear();
+      this.enodeMeshes.clear();
+
+      // Clear event listeners
+      this.removeAllListeners();
+
+      this.disposed = true;
+      this.initialized = false;
+    } catch (error) {
+      const err = error as Error;
+      this.emit('error', { message: err.message, error: err });
+      throw error;
+    }
+  }
+
+  /**
+   * Tool System Methods (Phase 5)
+   */
+
+  /**
+   * Enable or disable edit mode (FR-006, FR-027)
+   * When disabled, deactivates any active tool and resets tool state
+   *
+   * @param enabled - True to enable edit mode, false to disable
+   */
+  setEditMode(enabled: boolean): void {
+    this._checkInitialized();
+
+    if (this.editMode === enabled) {
+      return; // No change
+    }
+
+    this.editMode = enabled;
+
+    if (!enabled) {
+      // Disable edit mode - deactivate active tool if any
+      if (this.activeTool !== null) {
+        const previousTool = this.activeTool;
+        const tool = this.tools.get(previousTool);
+
+        if (tool) {
+          tool.onDeactivate();
+        }
+
+        this.activeTool = null;
+        this.toolState = null;
+        this._clearPreviewObjects();
+
+        // Emit toolDeactivated event
+        this.emit('toolDeactivated', { toolType: previousTool });
+      }
+    }
+  }
+
+  /**
+   * Set the active editing tool (FR-026, FR-028, FR-034)
+   * Only one tool can be active at a time
+   * Switching tools will deactivate the previous tool
+   *
+   * @param toolType - Type of tool to activate
+   * @throws {Error} If edit mode is not enabled
+   */
+  setActiveTool(toolType: ToolType): void {
+    this._checkInitialized();
+
+    if (!this.editMode) {
+      throw new Error('Edit mode must be enabled to activate tools');
+    }
+
+    // Check if tool is already active
+    if (this.activeTool === toolType) {
+      return;
+    }
+
+    // Deactivate previous tool if any
+    if (this.activeTool !== null) {
+      const previousTool = this.activeTool;
+      const tool = this.tools.get(previousTool);
+
+      if (tool) {
+        tool.onDeactivate();
+      }
+
+      this._clearPreviewObjects();
+
+      // Emit toolDeactivated event
+      this.emit('toolDeactivated', { toolType: previousTool });
+    }
+
+    // Activate new tool
+    this.activeTool = toolType;
+    const tool = this.tools.get(toolType);
+
+    if (tool) {
+      tool.onActivate();
+
+      // Emit toolActivated event
+      this.emit('toolActivated', { toolType });
+
+      // Emit cursorChangeRequested event
+      const cursorType = tool.getCursorType();
+      this.emit('cursorChangeRequested', { cursorType });
+    }
+  }
+
+  /**
+   * Get the currently active tool (FR-028)
+   *
+   * @returns Current tool type or null if no tool is active
+   */
+  getActiveTool(): ToolType | null {
+    return this.activeTool;
+  }
+
+  /**
+   * Cancel the current tool operation (FR-031)
+   * Used for multi-step operations like wire creation
+   *
+   * @throws {Error} If no tool is active
+   */
+  cancelCurrentToolOperation(): void {
+    if (!this.activeTool) {
+      throw new Error('No active tool');
+    }
+
+    const tool = this.tools.get(this.activeTool);
+    if (tool && typeof tool.cancelOperation === 'function') {
+      tool.cancelOperation();
+      this.emit('toolOperationCancelled', { toolType: this.activeTool });
+    }
+  }
+
+  /**
+   * Handle tool click interaction (FR-029)
+   *
+   * @param worldPosition - 3D world position of click
+   * @throws {Error} If edit mode is not enabled or no tool is active
+   */
+  handleToolClick(worldPosition: THREE.Vector3): void {
+    if (!this.editMode) {
+      throw new Error('Edit mode must be enabled');
+    }
+    if (!this.activeTool) {
+      throw new Error('No active tool');
+    }
+
+    const tool = this.tools.get(this.activeTool);
+    if (tool && typeof tool.handleClick === 'function') {
+      tool.handleClick(worldPosition);
+    }
+  }
+
+  /**
+   * Handle tool hover interaction
+   * Updates tool preview and cursor
+   *
+   * @param worldPosition - 3D world position of hover
+   */
+  handleToolHover(worldPosition: THREE.Vector3): void {
+    if (!this.editMode || !this.activeTool) {
+      return; // Silently ignore if no tool active
+    }
+
+    const tool = this.tools.get(this.activeTool);
+    if (tool && typeof tool.handleHover === 'function') {
+      tool.handleHover(worldPosition);
+
+      // Update preview objects
+      this._updatePreviewObjects();
+
+      // Update cursor
+      const cursorType = tool.getCursorType();
+      this.emit('cursorChangeRequested', { cursorType });
+    }
+  }
+
+  /**
+   * Handle tool scroll interaction
+   * Used for rotating components before placement
+   *
+   * @param delta - Scroll delta (positive = scroll up, negative = scroll down)
+   */
+  handleToolScroll(delta: number): void {
+    if (!this.editMode || !this.activeTool) {
+      return; // Silently ignore if no tool active
+    }
+
+    const tool = this.tools.get(this.activeTool);
+    if (tool && typeof tool.handleScroll === 'function') {
+      tool.handleScroll(delta);
+
+      // Update preview objects
+      this._updatePreviewObjects();
+    }
+  }
+
+  /**
+   * Clear all preview objects from the scene
+   * @private
+   */
+  private _clearPreviewObjects(): void {
+    for (const obj of this.previewObjects) {
+      this.scene!.remove(obj);
+
+      // Dispose geometry and material
+      if (obj instanceof THREE.Mesh) {
+        obj.geometry.dispose();
+        if (Array.isArray(obj.material)) {
+          obj.material.forEach((mat) => mat.dispose());
+        } else {
+          obj.material.dispose();
+        }
+      } else if (obj instanceof THREE.Line) {
+        obj.geometry.dispose();
+        if (Array.isArray(obj.material)) {
+          obj.material.forEach((mat) => mat.dispose());
+        } else {
+          obj.material.dispose();
+        }
+      }
+    }
+
+    this.previewObjects = [];
+  }
+
+  /**
+   * Update preview objects from active tool
+   * @private
+   */
+  private _updatePreviewObjects(): void {
+    if (!this.activeTool) {
+      return;
+    }
+
+    const tool = this.tools.get(this.activeTool);
+    if (!tool) {
+      return;
+    }
+
+    // Clear existing preview objects
+    this._clearPreviewObjects();
+
+    // Get new preview objects from tool
+    const newPreviewObjects = tool.getPreviewObjects();
+    for (const obj of newPreviewObjects) {
+      this.scene!.add(obj);
+      this.previewObjects.push(obj);
+    }
+  }
+
+  /**
+   * Private helper methods
+   */
+
+  /**
+   * Initialize editing tools
+   * @private
+   */
+  private _initializeTools(): void {
+    // Create tool instances (circuit will be null initially, updated when setCircuit is called)
+    const circuit = this.circuit ?? null;
+    this.tools.set('select', new SelectTool(circuit, this));
+    this.tools.set('placeComponent', new PlaceComponentTool(circuit, this));
+    this.tools.set('wire', new WireTool(circuit, this));
+    this.tools.set('branchingPoint', new BranchingPointTool(circuit, this));
+    this.tools.set('delete', new DeleteTool(circuit, this));
+  }
+
+  private _checkInitialized(): void {
+    if (this.disposed) {
+      throw new Error('Renderer has been disposed');
+    }
+    if (!this.initialized) {
+      throw new Error('Renderer not initialized. Call initialize() first.');
+    }
+  }
+
+    /**
+     * Perform a full update of all circuit visuals : if no circuit, clear scene
+     * @private
+     */
+  private _fullUpdate(): void {
+    // Remove all existing visual objects
+    this._removeAllVisuals();
+
+    if(!this.circuit){
+        return;
+    }
+
+    // 1. Add circuit sized grid
+    this.grid = createGridHelper(
+        this.circuit.metadata.size,
+        this.circuit.metadata.divisions);
+    this.scene!.add(this.grid);
+
+    // Create visuals for all circuit elements
+    const components = this.circuit.getAllComponents();
+    const wires = this.circuit.getAllWires();
+    const enodes = this.circuit.getAllENodes();
+
+    for (const component of components) {
+      this._createComponentMesh(component);
+    }
+
+    for (const wire of wires) {
+      this._createWireMesh(wire);
+    }
+
+    for (const enode of enodes) {
+      this._createEnodeMesh(enode);
+    }
+  }
+
+  private _incrementalUpdate(changedData: ChangedData): void {
+    // Remove deleted objects
+    if (changedData.removedComponents) {
+      for (const id of changedData.removedComponents) {
+        this._removeComponentMesh(id);
+      }
+    }
+
+    if (changedData.removedWires) {
+      for (const id of changedData.removedWires) {
+        this._removeWireMesh(id);
+      }
+    }
+
+    if (changedData.removedENodes) {
+      for (const id of changedData.removedENodes) {
+        this._removeEnodeMesh(id);
+      }
+    }
+
+    // Add new objects
+    if (changedData.addedComponents) {
+      for (const id of changedData.addedComponents) {
+        const component = this.circuit.getComponent(id);
+        if (component) {
+          this._createComponentMesh(component);
+        }
+      }
+    }
+
+    if (changedData.addedWires) {
+      for (const id of changedData.addedWires) {
+        const wire = this.circuit.getWire(id);
+        if (wire) {
+          this._createWireMesh(wire);
+        }
+      }
+    }
+
+    if (changedData.addedENodes) {
+      for (const id of changedData.addedENodes) {
+        const enode = this.circuit.getENode(id);
+        if (enode) {
+          this._createEnodeMesh(enode);
+        }
+      }
+    }
+
+    // Update modified objects
+    if (changedData.modifiedComponents) {
+      for (const id of changedData.modifiedComponents) {
+        this._removeComponentMesh(id);
+        const component = this.circuit.getComponent(id);
+        if (component) {
+          this._createComponentMesh(component);
+        }
+      }
+    }
+  }
+
+  private _createComponentMesh(component: Component): void {
+    try {
+      const factory = this.factoryRegistry.get(component.type);
+      const mesh = factory(component);
+
+      // Position mesh at component location (2D circuit -> 3D world)
+      mesh.position.set(component.position.x, 0, -component.position.y);
+
+      // Store component metadata
+      mesh.userData.componentId = component.id;
+      mesh.userData.componentType = component.type;
+
+      this.scene!.add(mesh);
+      this.componentMeshes.set(component.id, mesh);
+    } catch (error) {
+      const err = error as Error;
+      console.warn(`Failed to create mesh for component ${component.id}:`, err.message);
+      this.emit('error', { message: `Component rendering failed: ${err.message}`, error: err });
+    }
+  }
+
+  private _createWireMesh(wire: Wire): void {
+    try {
+      const fromENode = this.circuit.getENode(wire.node1);
+      const toENode = this.circuit.getENode(wire.node2);
+
+      if (!fromENode || !toENode) {
+        console.warn(`Wire ${wire.id} missing endpoint enodes`);
+        return;
+      }
+
+      // Use getPosition() to handle both pin and branching point enodes
+      const fromPos = fromENode.getPosition(this.circuit);
+      const toPos = toENode.getPosition(this.circuit);
+
+      const geometry = createWireGeometry(fromPos, toPos);
+      const material = createLineMaterial(0xffffff, 2);
+
+      const line = new THREE.Line(geometry, material);
+      line.userData.wireId = wire.id;
+
+      this.scene!.add(line);
+      this.wireMeshes.set(wire.id, line);
+    } catch (error) {
+      const err = error as Error;
+      console.warn(`Failed to create mesh for wire ${wire.id}:`, err.message);
+    }
+  }
+
+  private _createEnodeMesh(enode: ENode): void {
+    try {
+      // Only visualize branching point enodes, not component pin enodes
+      // Pin enodes are connection points on components and don't need separate visualization
+      if (enode.type === ENodeType.Pin) {
+        // Skip pin enodes - they're visualized as part of their components
+        return;
+      }
+
+      const geometry = createEnodeGeometry(0.15);
+      const material = createStandardMaterial(0x00aaff, {
+        metalness: 0.5,
+        roughness: 0.3,
+      });
+
+      const mesh = new THREE.Mesh(geometry, material);
+
+      // Use getPosition() to properly handle position retrieval
+      const pos = enode.getPosition(this.circuit);
+      mesh.position.set(pos.x, 0, -pos.y);
+
+      mesh.userData.enodeId = enode.id;
+      mesh.userData.enodeType = enode.type;
+
+      this.scene!.add(mesh);
+      this.enodeMeshes.set(enode.id, mesh);
+    } catch (error) {
+      const err = error as Error;
+      console.warn(`Failed to create mesh for enode ${enode.id}:`, err.message);
+    }
+  }
+
+  private _removeComponentMesh(id: string): void {
+    const mesh = this.componentMeshes.get(id);
+    if (mesh) {
+      this.scene!.remove(mesh);
+      if (mesh instanceof THREE.Mesh) {
+        mesh.geometry.dispose();
+        if (Array.isArray(mesh.material)) {
+          mesh.material.forEach((mat) => mat.dispose());
+        } else {
+          mesh.material.dispose();
+        }
+      }
+      this.componentMeshes.delete(id);
+    }
+  }
+
+  private _removeWireMesh(id: string): void {
+    const line = this.wireMeshes.get(id);
+    if (line) {
+      this.scene!.remove(line);
+      line.geometry.dispose();
+      if (Array.isArray(line.material)) {
+        line.material.forEach((mat) => mat.dispose());
+      } else {
+        line.material.dispose();
+      }
+      this.wireMeshes.delete(id);
+    }
+  }
+
+  private _removeEnodeMesh(id: string): void {
+    const mesh = this.enodeMeshes.get(id);
+    if (mesh) {
+      this.scene!.remove(mesh);
+      mesh.geometry.dispose();
+      if (Array.isArray(mesh.material)) {
+        mesh.material.forEach((mat) => mat.dispose());
+      } else {
+        mesh.material.dispose();
+      }
+      this.enodeMeshes.delete(id);
+    }
+  }
+
+  private _removeAllVisuals(): void {
+    // Remove all component meshes
+    for (const id of Array.from(this.componentMeshes.keys())) {
+      this._removeComponentMesh(id);
+    }
+
+    // Remove all wire meshes
+    for (const id of Array.from(this.wireMeshes.keys())) {
+      this._removeWireMesh(id);
+    }
+
+    // Remove all enode meshes
+    for (const id of Array.from(this.enodeMeshes.keys())) {
+      this._removeEnodeMesh(id);
+    }
+
+    // remove grid
+    if(this.grid) {
+        this.scene!.remove(this.grid);
+        this.grid.geometry.dispose();
+    }
+  }
+}

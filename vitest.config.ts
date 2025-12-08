@@ -4,7 +4,7 @@ import { resolve } from 'path';
 export default defineConfig({
   test: {
     globals: true,
-    environment: 'node',
+    environment: 'jsdom', // Changed to jsdom to support DOM APIs for scene tests
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -32,7 +32,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@/core': resolve(__dirname, './src/core'),
-      '@/rendering': resolve(__dirname, './src/rendering'),
+      '@/scene': resolve(__dirname, './src/scene'),
       '@/playback': resolve(__dirname, './src/playback'),
     },
   },

@@ -298,7 +298,7 @@ interface VisualizerState {
 1. `idle` → `loading` (user inputs JSON)
 2. `loading` → `rendering` (JSON parsed successfully)
 3. `rendering` → `success` (graph rendered)
-4. `loading/rendering` → `error` (validation/render failure)
+4. `loading/scene` → `error` (validation/render failure)
 5. `error` → `idle` (user clears error)
 
 ## Performance Considerations
