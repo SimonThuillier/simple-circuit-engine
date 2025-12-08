@@ -67,7 +67,11 @@ export class Euler {
 
 // Mock Color
 export class Color {
-  constructor(public r: number = 1, public g: number = 1, public b: number = 1) {}
+  constructor(
+    public r: number = 1,
+    public g: number = 1,
+    public b: number = 1
+  ) {}
 
   setHex(hex: number): this {
     this.r = ((hex >> 16) & 255) / 255;
@@ -78,9 +82,7 @@ export class Color {
 
   getHex(): number {
     return (
-      ((Math.round(this.r * 255) << 16) ^
-      (Math.round(this.g * 255) << 8) ^
-      Math.round(this.b * 255))
+      (Math.round(this.r * 255) << 16) ^ (Math.round(this.g * 255) << 8) ^ Math.round(this.b * 255)
     );
   }
 }

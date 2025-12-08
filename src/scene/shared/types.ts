@@ -27,16 +27,23 @@ export type RenderEvent =
 /**
  * Object types that can be interacted with in the renderer
  */
-export type RenderObjectType = 'componentGroup' | 'component' | 'componentHitbox' |
-    'wireGroup' | 'wire' | 'wireHitbox' |
-    'enodeGroup' | 'enode' | 'enodeHitbox';
+export type RenderObjectType =
+  | 'componentGroup'
+  | 'component'
+  | 'componentHitbox'
+  | 'wireGroup'
+  | 'wire'
+  | 'wireHitbox'
+  | 'enodeGroup'
+  | 'enode'
+  | 'enodeHitbox';
 
 /**
  * Event payload map for type-safe event emission
  */
 export interface RenderEventMap {
-  hover: { objectId: UUID; objectType: RenderObjectType };
-  unhover: { objectId: UUID; objectType: RenderObjectType };
+  hover: { objectId: UUID; objectType: RenderObjectType; userData?: HitboxUserData | undefined };
+  unhover: { objectId: UUID; objectType: RenderObjectType; userData?: HitboxUserData | undefined };
   select: { objectId: UUID; objectType: RenderObjectType };
   deselect: { objectId: UUID; objectType: RenderObjectType };
   error: { message: string; error?: Error };
@@ -100,7 +107,105 @@ export interface RendererOptions {
   showGrid?: boolean;
   /** Enable axes helper visualization (default: false) */
   showAxes?: boolean;
+  /** MapControls configuration (optional) */
+  mapControls?: MapControlsOptions;
 }
+
+/**
+ * Configuration options for MapControls integration
+ *
+ * All properties are optional with sensible defaults.
+ *
+ * @example
+ * ```typescript
+ * manager.initialize(container, {
+ *   mapControls: {
+ *     enableRotate: false,  // Disable rotation for 2D-only view
+ *     maxDistance: 50,      // Limit zoom out
+ *   }
+ * });
+ * ```
+ */
+export interface MapControlsOptions {
+  /** Enable click-drag panning (default: true) */
+  enablePan?: boolean;
+  /** Enable scroll wheel zooming (default: true) */
+  enableZoom?: boolean;
+  /** Enable right-click rotation (default: true) */
+  enableRotate?: boolean;
+  /** Enable smooth deceleration when releasing controls (default: true) */
+  enableDamping?: boolean;
+  /** Damping strength (0 = instant stop, 1 = very slow stop) (default: 0.05) */
+  dampingFactor?: number;
+  /** Minimum zoom distance from target (default: 1) */
+  minDistance?: number;
+  /** Maximum zoom distance from target (default: 100) */
+  maxDistance?: number;
+  /** Pan speed multiplier (default: 1.0) */
+  panSpeed?: number;
+  /** Zoom speed multiplier (default: 1.0) */
+  zoomSpeed?: number;
+  /** Rotation speed multiplier (default: 1.0) */
+  rotateSpeed?: number;
+}
+
+/**
+ * Types of circuit elements that can be hovered
+ */
+export type HoverableType = 'enode' | 'component' | 'wire';
+
+/**
+ * Represents the currently hovered circuit element
+ *
+ * @example
+ * ```typescript
+ * const hovered = hoverManager.getHoveredElement();
+ * if (hovered?.type === 'component') {
+ *   highlightComponent(hovered.id);
+ * }
+ * ```
+ */
+export interface HoveredElement {
+  /** UUID of the hovered circuit element */
+  id: UUID;
+  /** Discriminated type for priority and handling */
+  type: HoverableType;
+  /** Three.js object type (matches existing RenderObjectType) */
+  objectType: RenderObjectType;
+  /** Reference to the Three.js hitbox mesh */
+  object3D: THREE.Object3D;
+}
+
+/**
+ * UserData structure for enode hitbox meshes
+ */
+export interface EnodeHitboxUserData {
+  enodeId: string;
+  type: 'enodeHitbox';
+  componentId: string;
+  label: string;
+}
+
+/**
+ * UserData structure for component hitbox meshes
+ */
+export interface ComponentHitboxUserData {
+  type: 'componentHitbox';
+  componentId: string;
+}
+
+/**
+ * UserData structure for wire hitbox meshes
+ */
+export interface WireHitboxUserData {
+  type: 'wireHitbox';
+  wireId: string;
+}
+
+/**
+ * Union of all hitbox userData types
+ */
+export type HitboxUserData = EnodeHitboxUserData | ComponentHitboxUserData | WireHitboxUserData;
 
 /**
  * Tool System Types

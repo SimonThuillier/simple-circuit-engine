@@ -25,7 +25,7 @@ export default defineConfig({
     alias: {
       '@viewer': resolve(__dirname, './scripts/viewer/src'),
       '@/core': resolve(__dirname, './src/core'),
-      '@/scene': resolve(__dirname, './src/scene')
+      '@/scene': resolve(__dirname, './src/scene'),
     },
   },
 });
