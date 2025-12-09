@@ -1094,15 +1094,24 @@ export class CircuitRunnerSceneManager extends EventEmitter<RenderEventMap> {
 
     for (const [componentId, mesh] of this.componentMeshes) {
       const componentState = interpolatedState.components[componentId];
-      if (componentState && mesh instanceof THREE.Mesh) {
-        // Update material based on powered state
-        const material = mesh.material as THREE.MeshStandardMaterial;
-        if (componentState.powered) {
-          material.emissive = new THREE.Color(0x00ff00);
-          material.emissiveIntensity = 0.5;
-        } else {
-          material.emissive = new THREE.Color(0x000000);
-          material.emissiveIntensity = 0;
+      if (componentState) {
+        // US3: Use factory updateAnimation method if available (class-based factory)
+        if (mesh.userData.factory && 'updateAnimation' in mesh.userData.factory) {
+          try {
+            mesh.userData.factory.updateAnimation(mesh, componentState);
+          } catch (error) {
+            console.warn(`Failed to update animation for component ${componentId}:`, error);
+          }
+        } else if (mesh instanceof THREE.Mesh) {
+          // Fallback: Legacy behavior for old function-based factories
+          const material = mesh.material as THREE.MeshStandardMaterial;
+          if (componentState.powered) {
+            material.emissive = new THREE.Color(0x00ff00);
+            material.emissiveIntensity = 0.5;
+          } else {
+            material.emissive = new THREE.Color(0x000000);
+            material.emissiveIntensity = 0;
+          }
         }
       }
     }

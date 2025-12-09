@@ -33,7 +33,8 @@ import type {
  * ```
  */
 export class FactoryRegistry implements IFactoryRegistry {
-  private factories: Map<ComponentType, IComponentVisualFactory | ComponentVisualFactory> = new Map();
+  private factories: Map<ComponentType, IComponentVisualFactory | ComponentVisualFactory> =
+    new Map();
   private fallbackFactory: IComponentVisualFactory | ComponentVisualFactory;
 
   /**

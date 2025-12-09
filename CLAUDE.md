@@ -3,6 +3,7 @@
 Auto-generated from all feature plans. Last updated: 2025-11-28
 
 ## Active Technologies
+
 - N/A (visual factories are stateless; state resides in Circuit/CircuitRunner instances) (005-visual-factory-classes)
 
 - TypeScript (strict mode), targeting ES2022 + Three.js 0.181+ (already in project) (003-threejs-rendering)
@@ -35,11 +36,11 @@ npm test && npm run lint
 TypeScript (strict mode), targeting ES2022: Follow standard conventions
 
 ## Recent Changes
+
 - 005-visual-factory-classes: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (already installed)
 
 - 004-map-controls-hovering: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (already installed), three/addons/controls/MapControls.js (already installed)
 - 003-threejs-rendering: Added TypeScript (strict mode), targeting ES2022 + Three.js 0.181+ (already in project)
-
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

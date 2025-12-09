@@ -1,6 +1,6 @@
-import {type ComponentVisualFactory, ComponentVisualFactoryBase} from "./ComponentVisualFactory";
-import type {Component} from "@/core/Component";
-import * as THREE from "three";
+import { type ComponentVisualFactory, ComponentVisualFactoryBase } from './ComponentVisualFactory';
+import type { Component } from '@/core/Component';
+import * as THREE from 'three';
 
 /**
  * Visual factory for Battery components
@@ -12,53 +12,53 @@ import * as THREE from "three";
  * - Component hitbox for raycasting
  */
 export class BatteryVisualFactory extends ComponentVisualFactoryBase {
-    createVisual(component: Component): THREE.Object3D {
-        console.log('Creating battery visual for component', component.id);
-        // Root group (not rendered, just organizational)
-        const group = new THREE.Group();
-        group.userData = {
-            type: 'componentGroup',
-            componentId: component.id,
-            componentType: component.type,
-        };
+  createVisual(component: Component): THREE.Object3D {
+    console.log('Creating battery visual for component', component.id);
+    // Root group (not rendered, just organizational)
+    const group = new THREE.Group();
+    group.userData = {
+      type: 'componentGroup',
+      componentId: component.id,
+      componentType: component.type,
+    };
 
-        // Component hitbox (invisible, raycastable)
-        const hitbox = this.createComponentHitbox(component.id, group.id, 2, 2, 3);
-        group.add(hitbox);
+    // Component hitbox (invisible, raycastable)
+    const hitbox = this.createComponentHitbox(component.id, group.id, 2, 2, 3);
+    group.add(hitbox);
 
-        // Visual: battery cylinder
-        const cylinderGeometry = new THREE.CylinderGeometry(0.5, 0.5, 2, 24);
-        const cylinderMaterial = new THREE.MeshStandardMaterial({color: 0xffffff});
-        const cylinder = new THREE.Mesh(cylinderGeometry, cylinderMaterial);
-        cylinder.userData = {
-            type: 'component',
-            componentId: component.id,
-        };
-        cylinder.rotateX(Math.PI / 2);
-        group.add(cylinder);
+    // Visual: battery cylinder
+    const cylinderGeometry = new THREE.CylinderGeometry(0.5, 0.5, 2, 24);
+    const cylinderMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    const cylinder = new THREE.Mesh(cylinderGeometry, cylinderMaterial);
+    cylinder.userData = {
+      type: 'component',
+      componentId: component.id,
+    };
+    cylinder.rotateX(Math.PI / 2);
+    group.add(cylinder);
 
-        // Cathode (positive pin) group
-        const cathodeGroup = this.createPinGroup(component.id, component.pins[0]!, 'cathode');
-        cathodeGroup.position.set(0, 0, -1);
-        cathodeGroup.rotateX(-Math.PI / 2);
-        group.add(cathodeGroup);
+    // Cathode (positive pin) group
+    const cathodeGroup = this.createPinGroup(component.id, component.pins[0]!, 'cathode');
+    cathodeGroup.position.set(0, 0, -1);
+    cathodeGroup.rotateX(-Math.PI / 2);
+    group.add(cathodeGroup);
 
-        // Anode (negative pin) group
-        const anodeGroup = this.createPinGroup(component.id, component.pins[1]!, 'anode');
-        anodeGroup.position.set(0, 0, 1);
-        anodeGroup.rotateX(Math.PI / 2);
-        group.add(anodeGroup);
+    // Anode (negative pin) group
+    const anodeGroup = this.createPinGroup(component.id, component.pins[1]!, 'anode');
+    anodeGroup.position.set(0, 0, 1);
+    anodeGroup.rotateX(Math.PI / 2);
+    group.add(anodeGroup);
 
-        return group;
-    }
+    return group;
+  }
 
-    // Uses default hover implementation
-    // No animation (battery is static)
+  // Uses default hover implementation
+  // No animation (battery is static)
 }
 
 /**
  * @deprecated Use BatteryVisualFactory class instance instead
  */
 export const batteryFactory: ComponentVisualFactory = (component: Component) => {
-    return new BatteryVisualFactory().createVisual(component);
+  return new BatteryVisualFactory().createVisual(component);
 };

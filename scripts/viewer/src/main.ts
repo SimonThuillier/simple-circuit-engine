@@ -10,9 +10,13 @@ import { Circuit } from '@/core/Circuit.js';
 import { AxesHelper, WebGLRenderer } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { ComponentType } from '@/core/types/ComponentType.js';
-import {BatteryVisualFactory, type IFactoryRegistry, SwitchVisualFactory} from '../../../src/scene';
+import {
+  BatteryVisualFactory,
+  type IFactoryRegistry,
+  SwitchVisualFactory,
+} from '../../../src/scene';
 import { MapControls } from 'three/addons/controls/MapControls.js';
-import {SmallLEDVisualFactory} from "../../../src/scene/shared/components/SmallLEDVisualFactory";
+import { SmallLEDVisualFactory } from '../../../src/scene/shared/components/SmallLEDVisualFactory';
 
 // Export to window object for use in HTML
 declare global {
@@ -33,7 +37,9 @@ declare global {
 
 // Immediately assign to window (for IIFE bundles)
 if (typeof window !== 'undefined') {
-  const componentsFactoryRegistry: IFactoryRegistry = new FactoryRegistry(new DefaultVisualFactory());
+  const componentsFactoryRegistry: IFactoryRegistry = new FactoryRegistry(
+    new DefaultVisualFactory()
+  );
   componentsFactoryRegistry.register(ComponentType.Battery, new BatteryVisualFactory());
   componentsFactoryRegistry.register(ComponentType.Switch, new SwitchVisualFactory());
   componentsFactoryRegistry.register(ComponentType.SmallLED, new SmallLEDVisualFactory());

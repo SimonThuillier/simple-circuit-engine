@@ -30,7 +30,11 @@ export { DeleteTool } from './static/tools/DeleteTool';
 
 // Shared utilities
 export { FactoryRegistry } from './shared/FactoryRegistry';
-export { createDefaultFactory, DefaultVisualFactory, ComponentVisualFactoryBase } from './shared/components/ComponentVisualFactory';
+export {
+  createDefaultFactory,
+  DefaultVisualFactory,
+  ComponentVisualFactoryBase,
+} from './shared/components/ComponentVisualFactory';
 export { EventEmitter } from './shared/EventEmitter';
 export { InterpolationController } from './shared/InterpolationController';
 export { HoverManager } from './shared/HoverManager';
@@ -57,10 +61,14 @@ export type {
   IEditingTool,
 } from './shared/types';
 
-export type { ComponentVisualFactory, IComponentVisualFactory, IFactoryRegistry } from './shared/components/ComponentVisualFactory';
+export type {
+  ComponentVisualFactory,
+  IComponentVisualFactory,
+  IFactoryRegistry,
+} from './shared/components/ComponentVisualFactory';
 
 export { HitboxLayers } from './shared/LayerConstants';
 export type { HitboxLayerValue } from './shared/LayerConstants';
-export {BatteryVisualFactory} from "./shared/components/BatteryVisualFactory";
-export {SwitchVisualFactory} from "./shared/components/SwitchVisualFactory";
-export {SmallLEDVisualFactory} from "./shared/components/SmallLEDVisualFactory";
+export { BatteryVisualFactory } from './shared/components/BatteryVisualFactory';
+export { SwitchVisualFactory } from './shared/components/SwitchVisualFactory';
+export { SmallLEDVisualFactory } from './shared/components/SmallLEDVisualFactory';

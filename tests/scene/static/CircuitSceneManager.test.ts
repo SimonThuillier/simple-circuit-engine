@@ -156,9 +156,7 @@ describe('CircuitSceneManager', () => {
       // Only branching point enodes are visualized (not pin enodes)
       const enodes = circuit.getAllENodes();
       const branchingPointEnodes = enodes.filter((e) => e.type !== ENodeType.Pin);
-      const enodeMeshes = scene.children.filter(
-        (obj) => obj.userData.enodeId !== undefined
-      );
+      const enodeMeshes = scene.children.filter((obj) => obj.userData.enodeId !== undefined);
 
       expect(enodeMeshes.length).toBe(branchingPointEnodes.length);
     });

@@ -479,6 +479,11 @@ export interface IFactoryRegistry {
  * const registry = new FactoryRegistry(createDefaultFactory());
  * // Any unregistered component type will render as a magenta cube
  * ```
+ *
+ * @deprecated Use DefaultVisualFactory class instance instead:
+ * ```typescript
+ * const registry = new FactoryRegistry(new DefaultVisualFactory());
+ * ```
  */
 export function createDefaultFactory(): ComponentVisualFactory {
   return (component: Component): THREE.Object3D => {

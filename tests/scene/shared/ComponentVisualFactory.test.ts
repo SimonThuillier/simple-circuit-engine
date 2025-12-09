@@ -10,9 +10,13 @@ import {
   DefaultVisualFactory,
   type IComponentVisualFactory,
 } from '../../../src/scene/shared/components/ComponentVisualFactory';
+import { SmallLEDVisualFactory } from '../../../src/scene/shared/components/SmallLEDVisualFactory';
+import { SwitchVisualFactory } from '../../../src/scene/shared/components/SwitchVisualFactory';
 import type { Component } from '../../../src/core/Component';
 import { ComponentType } from '../../../src/core/types/ComponentType';
 import { createMockCircuit } from '../helpers';
+import type { SmallLEDState } from '../../../src/core/simulation/states/SmallLEDState';
+import type { SwitchState } from '../../../src/core/simulation/states/SwitchState';
 
 /**
  * Test factory that extends ComponentVisualFactoryBase
@@ -93,7 +97,9 @@ describe('ComponentVisualFactoryBase', () => {
       visual.traverse((child) => {
         if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
           const material = child.material;
-          if (material.emissiveIntensity === ComponentVisualFactoryBase['DEFAULT_HOVER_INTENSITY']) {
+          if (
+            material.emissiveIntensity === ComponentVisualFactoryBase['DEFAULT_HOVER_INTENSITY']
+          ) {
             foundHoverIntensity = true;
           }
         }
@@ -420,7 +426,147 @@ describe('DefaultVisualFactory', () => {
       const mesh = visual as THREE.Mesh;
       const material = mesh.material as THREE.MeshStandardMaterial;
       expect(material.emissive.getHex()).toBe(ComponentVisualFactoryBase['DEFAULT_HOVER_COLOR']);
-      expect(material.emissiveIntensity).toBe(ComponentVisualFactoryBase['DEFAULT_HOVER_INTENSITY']);
+      expect(material.emissiveIntensity).toBe(
+        ComponentVisualFactoryBase['DEFAULT_HOVER_INTENSITY']
+      );
+    });
+  });
+});
+
+describe('SmallLEDVisualFactory - Animation', () => {
+  let factory: SmallLEDVisualFactory;
+  let circuit: any;
+  let component: Component;
+  let visual: THREE.Object3D;
+
+  beforeEach(() => {
+    factory = new SmallLEDVisualFactory();
+    circuit = createMockCircuit({
+      componentCount: 1,
+      componentTypes: [ComponentType.SmallLED],
+    });
+    component = circuit.getAllComponents()[0];
+    visual = factory.createVisual(component);
+  });
+
+  describe('updateAnimation()', () => {
+    it('should apply glow when state.isLit is true', () => {
+      const litState: SmallLEDState = {
+        componentId: component.id,
+        isLit: true,
+        voltage: 5,
+        current: 0.02,
+      } as SmallLEDState;
+
+      factory.updateAnimation(visual, litState);
+
+      // Find LED mesh and check emissive properties
+      let ledMeshFound = false;
+      visual.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.userData.part === 'led') {
+          ledMeshFound = true;
+          const material = child.material as THREE.MeshStandardMaterial;
+          expect(material.emissive.getHex()).toBeGreaterThan(0); // Should have some emissive color
+          expect(material.emissiveIntensity).toBeGreaterThan(0); // Should have intensity > 0
+        }
+      });
+
+      expect(ledMeshFound).toBe(true);
+    });
+
+    it('should remove glow when state.isLit is false', () => {
+      const unlitState: SmallLEDState = {
+        componentId: component.id,
+        isLit: false,
+        voltage: 0,
+        current: 0,
+      } as SmallLEDState;
+
+      // First set it to lit
+      const litState: SmallLEDState = {
+        componentId: component.id,
+        isLit: true,
+        voltage: 5,
+        current: 0.02,
+      } as SmallLEDState;
+      factory.updateAnimation(visual, litState);
+
+      // Then set to unlit
+      factory.updateAnimation(visual, unlitState);
+
+      // Find LED mesh and check it's dark
+      let ledMeshFound = false;
+      visual.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.userData.part === 'led') {
+          ledMeshFound = true;
+          const material = child.material as THREE.MeshStandardMaterial;
+          expect(material.emissive.getHex()).toBe(0x000000); // Black (no emissive)
+          expect(material.emissiveIntensity).toBe(0); // Zero intensity
+        }
+      });
+
+      expect(ledMeshFound).toBe(true);
+    });
+  });
+});
+
+describe('SwitchVisualFactory - Animation', () => {
+  let factory: SwitchVisualFactory;
+  let circuit: any;
+  let component: Component;
+  let visual: THREE.Object3D;
+
+  beforeEach(() => {
+    factory = new SwitchVisualFactory();
+    circuit = createMockCircuit({
+      componentCount: 1,
+      componentTypes: [ComponentType.Switch],
+    });
+    component = circuit.getAllComponents()[0];
+    visual = factory.createVisual(component);
+  });
+
+  describe('updateAnimation()', () => {
+    it('should rotate contactor based on state.isClosed', () => {
+      const closedState: SwitchState = {
+        componentId: component.id,
+        isClosed: true,
+      } as SwitchState;
+
+      const openState: SwitchState = {
+        componentId: component.id,
+        isClosed: false,
+      } as SwitchState;
+
+      // Get initial rotation
+      let contactorGroup: THREE.Object3D | null = null;
+      visual.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.userData.part === 'contactor') {
+          contactorGroup = child.parent;
+        }
+      });
+
+      expect(contactorGroup).not.toBeNull();
+
+      if (contactorGroup) {
+        const initialRotation = contactorGroup.rotation.clone();
+
+        // Apply closed state
+        factory.updateAnimation(visual, closedState);
+        const closedRotation = contactorGroup.rotation.clone();
+
+        // Apply open state
+        factory.updateAnimation(visual, openState);
+        const openRotation = contactorGroup.rotation.clone();
+
+        // Rotations should be different between open and closed
+        const closedOpenDifferent =
+          closedRotation.x !== openRotation.x ||
+          closedRotation.y !== openRotation.y ||
+          closedRotation.z !== openRotation.z;
+
+        expect(closedOpenDifferent).toBe(true);
+      }
     });
   });
 });
