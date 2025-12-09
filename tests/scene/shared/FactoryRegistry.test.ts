@@ -6,16 +6,16 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as THREE from 'three';
 import { FactoryRegistry } from '../../../src/scene/shared/FactoryRegistry';
-import { createDefaultFactory } from '../../../src/scene/shared/ComponentVisualFactory';
-import type { ComponentVisualFactory } from '../../../src/scene/shared/ComponentVisualFactory';
 import { ComponentType } from '../../../src/core/types/ComponentType';
-import { createMockCircuit, createSimpleTestFactory } from '../helpers';
+import { createMockCircuit } from '../helpers';
+import type { IComponentVisualFactory } from '../../../src/scene';
+import { DefaultVisualFactory } from '../../../src/scene';
 
 describe('FactoryRegistry', () => {
   let registry: FactoryRegistry;
 
   beforeEach(() => {
-    registry = new FactoryRegistry(createDefaultFactory());
+    registry = new FactoryRegistry(new DefaultVisualFactory());
   });
 
   describe('Constructor', () => {
@@ -25,7 +25,7 @@ describe('FactoryRegistry', () => {
     });
 
     it('should accept custom fallback factory', () => {
-      const customFallback = createSimpleTestFactory(0xff0000);
+      const customFallback = new DefaultVisualFactory();
       const customRegistry = new FactoryRegistry(customFallback);
 
       const circuit = createMockCircuit({ componentCount: 1 });
@@ -33,32 +33,24 @@ describe('FactoryRegistry', () => {
 
       // Get factory for unregistered type - should use custom fallback
       const factory = customRegistry.get(ComponentType.Battery);
-      const object = factory(component);
+      const object = factory.createVisual(component!);
 
-      expect(object).toBeInstanceOf(THREE.Mesh);
-      expect((object as THREE.Mesh).material).toBeInstanceOf(THREE.MeshStandardMaterial);
-      const material = (object as THREE.Mesh).material as THREE.MeshStandardMaterial;
-      expect(material.color.getHex()).toBe(0xff0000);
+      expect(object).toBeInstanceOf(THREE.Group);
     });
   });
 
   describe('register()', () => {
     it('should register a factory for a component type', () => {
-      const factory = createSimpleTestFactory(0x00ff00);
-      registry.register(ComponentType.Battery, factory);
+      registry.register(ComponentType.Battery, new DefaultVisualFactory());
 
       expect(registry.has(ComponentType.Battery)).toBe(true);
       expect(registry.getRegisteredTypes()).toContain(ComponentType.Battery);
     });
 
     it('should register multiple factories for different types', () => {
-      const batteryFactory = createSimpleTestFactory(0xff0000);
-      const ledFactory = createSimpleTestFactory(0x00ff00);
-      const switchFactory = createSimpleTestFactory(0x0000ff);
-
-      registry.register(ComponentType.Battery, batteryFactory);
-      registry.register(ComponentType.SmallLED, ledFactory);
-      registry.register(ComponentType.Switch, switchFactory);
+      registry.register(ComponentType.Battery, new DefaultVisualFactory());
+      registry.register(ComponentType.SmallLED, new DefaultVisualFactory());
+      registry.register(ComponentType.Switch, new DefaultVisualFactory());
 
       expect(registry.getRegisteredTypes()).toHaveLength(3);
       expect(registry.has(ComponentType.Battery)).toBe(true);
@@ -67,8 +59,8 @@ describe('FactoryRegistry', () => {
     });
 
     it('should overwrite existing factory when registering same type', () => {
-      const factory1 = createSimpleTestFactory(0xff0000);
-      const factory2 = createSimpleTestFactory(0x00ff00);
+      const factory1 = new DefaultVisualFactory();
+      const factory2 = new DefaultVisualFactory();
 
       registry.register(ComponentType.Battery, factory1);
       const firstFactory = registry.get(ComponentType.Battery);
@@ -81,7 +73,7 @@ describe('FactoryRegistry', () => {
     });
 
     it('should throw TypeError for invalid component type', () => {
-      const factory = createSimpleTestFactory(0x00ff00);
+      const factory = new DefaultVisualFactory();
 
       expect(() => {
         registry.register('' as ComponentType, factory);
@@ -92,7 +84,7 @@ describe('FactoryRegistry', () => {
       }).toThrow(TypeError);
     });
 
-    it('should throw TypeError for invalid factory function', () => {
+    it('should throw TypeError for invalid factory', () => {
       expect(() => {
         registry.register(ComponentType.Battery, null as any);
       }).toThrow(TypeError);
@@ -102,14 +94,14 @@ describe('FactoryRegistry', () => {
       }).toThrow(TypeError);
 
       expect(() => {
-        registry.register(ComponentType.Battery, 'not a function' as any);
+        registry.register(ComponentType.Battery, 'not a ComponentVisualFactory' as any);
       }).toThrow(TypeError);
     });
   });
 
   describe('get()', () => {
     it('should return registered factory for component type', () => {
-      const factory = createSimpleTestFactory(0x00ff00);
+      const factory = new DefaultVisualFactory();
       registry.register(ComponentType.Battery, factory);
 
       const retrieved = registry.get(ComponentType.Battery);
@@ -120,36 +112,52 @@ describe('FactoryRegistry', () => {
       const factory = registry.get('UnregisteredType' as ComponentType);
 
       expect(factory).toBeDefined();
-      expect(typeof factory).toBe('function');
+      expect(typeof factory).toBe('object');
 
       // Verify fallback creates placeholder object
       const circuit = createMockCircuit({ componentCount: 1 });
       const component = circuit.getAllComponents()[0];
-      const object = factory(component);
+      const object = factory.createVisual(component!);
 
       expect(object).toBeInstanceOf(THREE.Object3D);
       expect(object.userData.isPlaceholder).toBe(true);
     });
 
-    it('should always return a valid factory function', () => {
+    it('should always return an object implementing IComponentVisualFactory', () => {
       const registeredFactory = registry.get(ComponentType.Battery);
       const fallbackFactory = registry.get('UnknownType' as ComponentType);
 
-      expect(typeof registeredFactory).toBe('function');
-      expect(typeof fallbackFactory).toBe('function');
+      const checkFactoryInterface = (factory: any) => {
+        expect(typeof factory).toBe('object');
+        expect(factory['createVisual']).toBeDefined();
+        expect(typeof factory['createVisual']).toBe('function');
+        expect(factory['applyHover']).toBeDefined();
+        expect(typeof factory['applyHover']).toBe('function');
+        expect(factory['removeHover']).toBeDefined();
+        expect(typeof factory['removeHover']).toBe('function');
+        expect(factory['applySelection']).toBeDefined();
+        expect(typeof factory['applySelection']).toBe('function');
+        expect(factory['removeSelection']).toBeDefined();
+        expect(typeof factory['removeSelection']).toBe('function');
+        expect(factory['updateAnimation']).toBeDefined();
+        expect(typeof factory['updateAnimation']).toBe('function');
+      };
+
+      checkFactoryInterface(registeredFactory);
+      checkFactoryInterface(fallbackFactory);
 
       // Both factories should be callable
       const circuit = createMockCircuit({ componentCount: 1 });
       const component = circuit.getAllComponents()[0];
 
-      expect(() => registeredFactory(component)).not.toThrow();
-      expect(() => fallbackFactory(component)).not.toThrow();
+      expect(() => registeredFactory.createVisual(component!)).not.toThrow();
+      expect(() => fallbackFactory.createVisual(component!)).not.toThrow();
     });
   });
 
   describe('has()', () => {
     it('should return true for registered type', () => {
-      const factory = createSimpleTestFactory(0x00ff00);
+      const factory = new DefaultVisualFactory();
       registry.register(ComponentType.Battery, factory);
 
       expect(registry.has(ComponentType.Battery)).toBe(true);
@@ -161,7 +169,7 @@ describe('FactoryRegistry', () => {
     });
 
     it('should return true after registration and false after unregistration', () => {
-      const factory = createSimpleTestFactory(0x00ff00);
+      const factory = new DefaultVisualFactory();
 
       registry.register(ComponentType.Battery, factory);
       expect(registry.has(ComponentType.Battery)).toBe(true);
@@ -173,7 +181,7 @@ describe('FactoryRegistry', () => {
 
   describe('unregister()', () => {
     it('should remove a registered factory', () => {
-      const factory = createSimpleTestFactory(0x00ff00);
+      const factory = new DefaultVisualFactory();
       registry.register(ComponentType.Battery, factory);
 
       expect(registry.has(ComponentType.Battery)).toBe(true);
@@ -191,15 +199,15 @@ describe('FactoryRegistry', () => {
     });
 
     it('should only remove specified type, leaving others intact', () => {
-      registry.register(ComponentType.Battery, createSimpleTestFactory(0xff0000));
-      registry.register(ComponentType.SmallLED, createSimpleTestFactory(0x00ff00));
-      registry.register(ComponentType.Switch, createSimpleTestFactory(0x0000ff));
+      registry.register(ComponentType.Battery, new DefaultVisualFactory());
+      registry.register(ComponentType.SmallLED, new DefaultVisualFactory());
+      registry.register(ComponentType.Switch, new DefaultVisualFactory());
 
       registry.unregister(ComponentType.SmallLED);
 
       expect(registry.has(ComponentType.Battery)).toBe(true);
-      expect(registry.has(ComponentType.SmallLED)).toBe(false);
       expect(registry.has(ComponentType.Switch)).toBe(true);
+      expect(registry.has(ComponentType.SmallLED)).toBe(false);
       expect(registry.getRegisteredTypes()).toHaveLength(2);
     });
   });
@@ -210,9 +218,9 @@ describe('FactoryRegistry', () => {
     });
 
     it('should return array of all registered types', () => {
-      registry.register(ComponentType.Battery, createSimpleTestFactory(0xff0000));
-      registry.register(ComponentType.SmallLED, createSimpleTestFactory(0x00ff00));
-      registry.register(ComponentType.Switch, createSimpleTestFactory(0x0000ff));
+      registry.register(ComponentType.Battery, new DefaultVisualFactory());
+      registry.register(ComponentType.SmallLED, new DefaultVisualFactory());
+      registry.register(ComponentType.Switch, new DefaultVisualFactory());
 
       const types = registry.getRegisteredTypes();
 
@@ -223,7 +231,7 @@ describe('FactoryRegistry', () => {
     });
 
     it('should return new array on each call (not reference to internal state)', () => {
-      registry.register(ComponentType.Battery, createSimpleTestFactory(0xff0000));
+      registry.register(ComponentType.Battery, new DefaultVisualFactory());
 
       const types1 = registry.getRegisteredTypes();
       const types2 = registry.getRegisteredTypes();
@@ -237,10 +245,10 @@ describe('FactoryRegistry', () => {
     });
 
     it('should reflect changes after registration/unregistration', () => {
-      registry.register(ComponentType.Battery, createSimpleTestFactory(0xff0000));
+      registry.register(ComponentType.Battery, new DefaultVisualFactory());
       expect(registry.getRegisteredTypes()).toHaveLength(1);
 
-      registry.register(ComponentType.SmallLED, createSimpleTestFactory(0x00ff00));
+      registry.register(ComponentType.SmallLED, new DefaultVisualFactory());
       expect(registry.getRegisteredTypes()).toHaveLength(2);
 
       registry.unregister(ComponentType.Battery);
@@ -255,17 +263,10 @@ describe('FactoryRegistry', () => {
       const component = circuit.getAllComponents()[0];
 
       const factory = registry.get('UnknownType' as ComponentType);
-      const object = factory(component);
+      const object = factory.createVisual(component!);
 
-      // Default fallback creates magenta cube
-      expect(object).toBeInstanceOf(THREE.Mesh);
-      const mesh = object as THREE.Mesh;
-      expect(mesh.material).toBeInstanceOf(THREE.MeshStandardMaterial);
-      const material = mesh.material as THREE.MeshStandardMaterial;
-      expect(material.color.getHex()).toBe(0xff00ff); // Magenta
-      expect(object.userData.isPlaceholder).toBe(true);
-      expect(object.userData.componentId).toBe(component.id);
-      expect(object.userData.componentType).toBe(component.type);
+      // Default fallback creates group
+      expect(object).toBeInstanceOf(THREE.Group);
     });
 
     it('should preserve component metadata in fallback objects', () => {
@@ -273,20 +274,30 @@ describe('FactoryRegistry', () => {
       const component = circuit.getAllComponents()[0];
 
       const factory = registry.get('CustomType' as ComponentType);
-      const object = factory(component);
+      const object = factory.createVisual(component!);
 
       expect(object.userData.componentId).toBe(component.id);
       expect(object.userData.componentType).toBe(component.type);
     });
 
     it('should use custom fallback if provided to constructor', () => {
-      const customFallback: ComponentVisualFactory = (component) => {
-        const geometry = new THREE.SphereGeometry(2);
-        const material = new THREE.MeshStandardMaterial({ color: 0xffaa00 });
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.userData.customFallback = true;
-        mesh.userData.componentId = component.id;
-        return mesh;
+      const customFallback: IComponentVisualFactory = {
+        createVisual: (component) => {
+          const geometry = new THREE.SphereGeometry(0.5, 16, 16);
+          const material = new THREE.MeshStandardMaterial({ color: 0xffaa00 });
+          const mesh = new THREE.Mesh(geometry, material);
+          mesh.userData = {
+            componentId: component.id,
+            componentType: component.type,
+            customFallback: true,
+          };
+          return mesh;
+        },
+        applyHover: (_component) => {},
+        removeHover: (_component) => {},
+        applySelection: (_component) => {},
+        removeSelection: (_component) => {},
+        updateAnimation: (_component) => {},
       };
 
       const customRegistry = new FactoryRegistry(customFallback);
@@ -295,7 +306,7 @@ describe('FactoryRegistry', () => {
       const component = circuit.getAllComponents()[0];
 
       const factory = customRegistry.get('UnknownType' as ComponentType);
-      const object = factory(component);
+      const object = factory.createVisual(component!);
 
       expect(object.userData.customFallback).toBe(true);
       expect(object).toBeInstanceOf(THREE.Mesh);
@@ -303,24 +314,6 @@ describe('FactoryRegistry', () => {
       expect(mesh.geometry).toBeInstanceOf(THREE.SphereGeometry);
       const material = mesh.material as THREE.MeshStandardMaterial;
       expect(material.color.getHex()).toBe(0xffaa00);
-    });
-  });
-
-  describe('Integration with createDefaultFactory()', () => {
-    it('should work with default factory from ComponentVisualFactory module', () => {
-      const defaultFactory = createDefaultFactory();
-      const testRegistry = new FactoryRegistry(defaultFactory);
-
-      const circuit = createMockCircuit({ componentCount: 1 });
-      const component = circuit.getAllComponents()[0];
-
-      const factory = testRegistry.get('UnknownType' as ComponentType);
-      const object = factory(component);
-
-      // Default factory creates magenta cube placeholder
-      expect(object).toBeInstanceOf(THREE.Mesh);
-      expect(object.userData.isPlaceholder).toBe(true);
-      expect(object.userData.componentId).toBe(component.id);
     });
   });
 });

@@ -208,6 +208,25 @@ export interface WireHitboxUserData {
 export type HitboxUserData = EnodeHitboxUserData | ComponentHitboxUserData | WireHitboxUserData;
 
 /**
+ * UserData structure for component visual state management
+ *
+ * Tracks hover, selection, and animation state for component visuals.
+ * Used by visual factories to store original material properties for restoration.
+ */
+export interface ComponentVisualUserData {
+  /** Whether the component is currently hovered */
+  isHovered?: boolean;
+  /** Whether the component is currently selected (future feature) */
+  isSelected?: boolean;
+  /** Whether the component is currently being animated (simulation state) */
+  isAnimating?: boolean;
+  /** Original emissive color (for hover/animation restoration) */
+  originalEmissive?: THREE.Color;
+  /** Original emissive intensity (for hover/animation restoration) */
+  originalEmissiveIntensity?: number;
+}
+
+/**
  * Tool System Types
  */
 

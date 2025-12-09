@@ -7,8 +7,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CircuitSceneManager } from '../../../../src/scene/static/CircuitSceneManager';
 import { FactoryRegistry } from '../../../../src/scene/shared/FactoryRegistry';
-import { createDefaultFactory } from '../../../../src/scene/shared/ComponentVisualFactory';
 import type { ToolType } from '../../../../src/scene/shared/types';
+import { DefaultVisualFactory } from '../../../../src/scene';
 
 // Mock Three.js
 vi.mock('three', () => {
@@ -126,7 +126,7 @@ describe('Tool System Architecture (T060-T063)', () => {
   let containerElement: HTMLElement;
 
   beforeEach(() => {
-    factoryRegistry = new FactoryRegistry(createDefaultFactory());
+    factoryRegistry = new FactoryRegistry(new DefaultVisualFactory());
     sceneManager = new CircuitSceneManager(factoryRegistry);
 
     // Create mock container
@@ -136,12 +136,6 @@ describe('Tool System Architecture (T060-T063)', () => {
     document.body.appendChild(containerElement);
 
     sceneManager.initialize(containerElement);
-  });
-
-  afterEach(() => {
-    if (containerElement.parentNode) {
-      containerElement.parentNode.removeChild(containerElement);
-    }
   });
 
   describe('T060: Basic tool system methods', () => {

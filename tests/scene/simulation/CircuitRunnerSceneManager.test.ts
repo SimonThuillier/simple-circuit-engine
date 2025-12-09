@@ -9,14 +9,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as THREE from 'three';
 import { CircuitRunnerSceneManager } from '../../../src/scene/simulation/CircuitRunnerSceneManager';
 import { FactoryRegistry } from '../../../src/scene/shared/FactoryRegistry';
-import { createDefaultFactory } from '../../../src/scene/shared/ComponentVisualFactory';
-import {
-  createMockCircuit,
-  createMockCircuitRunner,
-  createSimpleTestFactory,
-  countObjectsInScene,
-  disposeScene,
-} from '../helpers';
+import { createMockCircuit, createMockCircuitRunner, countObjectsInScene } from '../helpers';
+import { DefaultVisualFactory } from '../../../src/scene';
 
 describe('CircuitRunnerSceneManager', () => {
   let registry: FactoryRegistry;
@@ -24,7 +18,7 @@ describe('CircuitRunnerSceneManager', () => {
 
   beforeEach(() => {
     // Create factory registry with default factory
-    const defaultFactory = createDefaultFactory();
+    const defaultFactory = new DefaultVisualFactory();
     registry = new FactoryRegistry(defaultFactory);
 
     // Create container element
