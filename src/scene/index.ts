@@ -30,10 +30,12 @@ export { DeleteTool } from './static/tools/DeleteTool';
 
 // Shared utilities
 export { FactoryRegistry } from './shared/FactoryRegistry';
-export { createDefaultFactory } from './shared/ComponentVisualFactory';
+export { createDefaultFactory, DefaultVisualFactory, ComponentVisualFactoryBase } from './shared/components/ComponentVisualFactory';
 export { EventEmitter } from './shared/EventEmitter';
 export { InterpolationController } from './shared/InterpolationController';
 export { HoverManager } from './shared/HoverManager';
+
+// Component Visual Factories
 
 // Types
 export type {
@@ -55,7 +57,10 @@ export type {
   IEditingTool,
 } from './shared/types';
 
-export type { ComponentVisualFactory, IFactoryRegistry } from './shared/ComponentVisualFactory';
+export type { ComponentVisualFactory, IComponentVisualFactory, IFactoryRegistry } from './shared/components/ComponentVisualFactory';
 
 export { HitboxLayers } from './shared/LayerConstants';
 export type { HitboxLayerValue } from './shared/LayerConstants';
+export {BatteryVisualFactory} from "./shared/components/BatteryVisualFactory";
+export {SwitchVisualFactory} from "./shared/components/SwitchVisualFactory";
+export {SmallLEDVisualFactory} from "./shared/components/SmallLEDVisualFactory";

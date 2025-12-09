@@ -7,7 +7,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CircuitSceneManager } from '../../../../src/scene/static/CircuitSceneManager';
 import { FactoryRegistry } from '../../../../src/scene/shared/FactoryRegistry';
-import { createDefaultFactory } from '../../../../src/scene/shared/ComponentVisualFactory';
+import { createDefaultFactory } from '../../../../src/scene/shared/components/ComponentVisualFactory';
 import type { ToolType } from '../../../../src/scene/shared/types';
 
 // Mock Three.js

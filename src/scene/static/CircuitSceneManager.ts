@@ -14,7 +14,7 @@ import type { ENode } from '../../core/ENode';
 import type { UUID } from '../../core/types/Identifier';
 import { ENodeType } from '../../core/types/ENodeType';
 import { EventEmitter } from '../shared/EventEmitter';
-import type { IFactoryRegistry } from '../shared/ComponentVisualFactory';
+import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
 import type {
   RenderEvent,
   RenderEventMap,
@@ -232,9 +232,24 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
           objectType: previousElement.objectType,
           userData: previousElement.userData,
         });
-        // TODO : just for a quick test, refactor later
-        if (previousElement.objectType == 'enodeHitbox') {
+
+        // Handle unhover for different object types
+        if (previousElement.objectType === 'enodeHitbox') {
+          // Enode hover callback (pin hover)
           previousElement.userData?.hoverCallback?.(false);
+        } else if (previousElement.objectType === 'componentHitbox') {
+          // Component hover - call factory.removeHover if available (US2)
+          const componentId = previousElement.userData?.componentId;
+          if (componentId) {
+            const componentMesh = this.componentMeshes.get(componentId);
+            if (componentMesh && componentMesh.userData.factory) {
+              try {
+                componentMesh.userData.factory.removeHover(componentMesh);
+              } catch (error) {
+                console.warn('Failed to remove hover effect:', error);
+              }
+            }
+          }
         }
       }
 
@@ -245,19 +260,48 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
           objectType: element.objectType,
           userData: element.object3D.userData as HitboxUserData,
         });
-        // TODO : just for a quick test, refactor later
+
         previousElement = {
           id: element.id,
           objectType: element.objectType,
           userData: element.object3D.userData as HitboxUserData,
         };
-        if (previousElement.objectType == 'enodeHitbox') {
+
+        // Handle hover for different object types
+        if (previousElement.objectType === 'enodeHitbox') {
+          // Enode hover callback (pin hover)
           previousElement.userData?.hoverCallback?.(true);
+        } else if (previousElement.objectType === 'componentHitbox') {
+          // Component hover - call factory.applyHover if available (US2)
+          const componentId = previousElement.userData?.componentId;
+          if (componentId) {
+            const componentMesh = this.componentMeshes.get(componentId);
+            if (componentMesh && componentMesh.userData.factory) {
+              try {
+                componentMesh.userData.factory.applyHover(componentMesh);
+              } catch (error) {
+                console.warn('Failed to apply hover effect:', error);
+              }
+            }
+          }
         }
       } else {
-        // TODO : just for a quick test, refactor later
-        if (!!previousElement && previousElement.objectType == 'enodeHitbox') {
+        // Clear hover state
+        if (!!previousElement && previousElement.objectType === 'enodeHitbox') {
           previousElement.userData?.hoverCallback?.(false);
+        } else if (!!previousElement && previousElement.objectType === 'componentHitbox') {
+          // Component unhover - call factory.removeHover if available (US2)
+          const componentId = previousElement.userData?.componentId;
+          if (componentId) {
+            const componentMesh = this.componentMeshes.get(componentId);
+            if (componentMesh && componentMesh.userData.factory) {
+              try {
+                componentMesh.userData.factory.removeHover(componentMesh);
+              } catch (error) {
+                console.warn('Failed to remove hover effect:', error);
+              }
+            }
+          }
         }
         previousElement = null;
       }
@@ -1003,7 +1047,9 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
   private _createComponentMesh(component: Component): void {
     try {
       const factory = this.factoryRegistry.get(component.type);
-      const mesh = factory(component);
+      // Support both function-based (legacy) and class-based (new) factories
+      const mesh =
+        typeof factory === 'function' ? factory(component) : factory.createVisual(component);
 
       // Position mesh at component location (2D circuit -> 3D world)
       mesh.position.set(component.position.x, 0, -component.position.y);
@@ -1011,6 +1057,12 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
       // Store component metadata
       mesh.userData.componentId = component.id;
       mesh.userData.componentType = component.type;
+
+      // Store factory reference for hover/selection/animation (US2)
+      // Only store if factory is class-based (has applyHover method)
+      if (typeof factory !== 'function' && 'applyHover' in factory) {
+        mesh.userData.factory = factory;
+      }
 
       this.scene!.add(mesh);
       this.componentMeshes.set(component.id, mesh);

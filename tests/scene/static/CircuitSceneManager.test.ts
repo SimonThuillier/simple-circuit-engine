@@ -8,7 +8,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as THREE from 'three';
 import { CircuitSceneManager } from '../../../src/scene/static/CircuitSceneManager';
 import { FactoryRegistry } from '../../../src/scene/shared/FactoryRegistry';
-import { createDefaultFactory } from '../../../src/scene/shared/ComponentVisualFactory';
+import { createDefaultFactory } from '../../../src/scene/shared/components/ComponentVisualFactory';
 import { ComponentType } from '../../../src/core/types/ComponentType';
 import { ENodeType } from '../../../src/core/types/ENodeType';
 import { createMockCircuit } from '../helpers';

@@ -6,8 +6,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as THREE from 'three';
 import { FactoryRegistry } from '../../../src/scene/shared/FactoryRegistry';
-import { createDefaultFactory } from '../../../src/scene/shared/ComponentVisualFactory';
-import type { ComponentVisualFactory } from '../../../src/scene/shared/ComponentVisualFactory';
+import { createDefaultFactory } from '../../../src/scene/shared/components/ComponentVisualFactory';
+import type { ComponentVisualFactory } from '../../../src/scene/shared/components/ComponentVisualFactory';
 import { ComponentType } from '../../../src/core/types/ComponentType';
 import { createMockCircuit, createSimpleTestFactory } from '../helpers';
 

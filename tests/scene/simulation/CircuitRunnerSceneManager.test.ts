@@ -9,7 +9,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as THREE from 'three';
 import { CircuitRunnerSceneManager } from '../../../src/scene/simulation/CircuitRunnerSceneManager';
 import { FactoryRegistry } from '../../../src/scene/shared/FactoryRegistry';
-import { createDefaultFactory } from '../../../src/scene/shared/ComponentVisualFactory';
+import { createDefaultFactory } from '../../../src/scene/shared/components/ComponentVisualFactory';
 import {
   createMockCircuit,
   createMockCircuitRunner,

@@ -15,7 +15,7 @@ import type { ENode } from '../../core/ENode';
 import type { UUID } from '../../core/types/Identifier';
 import { ENodeType } from '../../core/types/ENodeType';
 import { EventEmitter } from '../shared/EventEmitter';
-import type { IFactoryRegistry } from '../shared/ComponentVisualFactory';
+import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
 import type {
   RenderEvent,
   RenderEventMap,
@@ -654,7 +654,7 @@ export class CircuitRunnerSceneManager extends EventEmitter<RenderEventMap> {
     this.hoverManager = new HoverManager(this.scene, this.camera);
 
     // Track previous hover state for unhover events
-    let previousElement: { id: UUID; objectType: any } | null = null;
+    let previousElement: { id: UUID; objectType: any; userData?: any } | null = null;
 
     // Register callback to emit hover/unhover events
     this.hoverManager.onHoverChange((element) => {
@@ -664,6 +664,21 @@ export class CircuitRunnerSceneManager extends EventEmitter<RenderEventMap> {
           objectId: previousElement.id,
           objectType: previousElement.objectType,
         });
+
+        // Handle unhover for component hitboxes (US2)
+        if (previousElement.objectType === 'componentHitbox') {
+          const componentId = previousElement.userData?.componentId;
+          if (componentId) {
+            const componentMesh = this.componentMeshes.get(componentId);
+            if (componentMesh && componentMesh.userData.factory) {
+              try {
+                componentMesh.userData.factory.removeHover(componentMesh);
+              } catch (error) {
+                console.warn('Failed to remove hover effect:', error);
+              }
+            }
+          }
+        }
       }
 
       // Emit hover for new element
@@ -672,8 +687,41 @@ export class CircuitRunnerSceneManager extends EventEmitter<RenderEventMap> {
           objectId: element.id,
           objectType: element.objectType,
         });
-        previousElement = { id: element.id, objectType: element.objectType };
+        previousElement = {
+          id: element.id,
+          objectType: element.objectType,
+          userData: element.object3D.userData,
+        };
+
+        // Handle hover for component hitboxes (US2)
+        if (previousElement.objectType === 'componentHitbox') {
+          const componentId = previousElement.userData?.componentId;
+          if (componentId) {
+            const componentMesh = this.componentMeshes.get(componentId);
+            if (componentMesh && componentMesh.userData.factory) {
+              try {
+                componentMesh.userData.factory.applyHover(componentMesh);
+              } catch (error) {
+                console.warn('Failed to apply hover effect:', error);
+              }
+            }
+          }
+        }
       } else {
+        // Clear hover state (US2)
+        if (!!previousElement && previousElement.objectType === 'componentHitbox') {
+          const componentId = previousElement.userData?.componentId;
+          if (componentId) {
+            const componentMesh = this.componentMeshes.get(componentId);
+            if (componentMesh && componentMesh.userData.factory) {
+              try {
+                componentMesh.userData.factory.removeHover(componentMesh);
+              } catch (error) {
+                console.warn('Failed to remove hover effect:', error);
+              }
+            }
+          }
+        }
         previousElement = null;
       }
     });
@@ -857,7 +905,9 @@ export class CircuitRunnerSceneManager extends EventEmitter<RenderEventMap> {
    */
   private _createComponentMesh(component: Component): void {
     const factory = this.factoryRegistry.get(component.type);
-    const mesh = factory(component);
+    // Support both function-based (legacy) and class-based (new) factories
+    const mesh =
+      typeof factory === 'function' ? factory(component) : factory.createVisual(component);
 
     // Position mesh at component location
     mesh.position.set(component.position.x, component.position.y, 0);
@@ -866,6 +916,12 @@ export class CircuitRunnerSceneManager extends EventEmitter<RenderEventMap> {
     // Store component reference in userData
     mesh.userData.componentId = component.id;
     mesh.userData.componentType = component.type;
+
+    // Store factory reference for hover/selection/animation (US2)
+    // Only store if factory is class-based (has applyHover method)
+    if (typeof factory !== 'function' && 'applyHover' in factory) {
+      mesh.userData.factory = factory;
+    }
 
     // Add to scene and tracking map
     this.scene!.add(mesh);
