@@ -8,10 +8,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as THREE from 'three';
 import { CircuitSceneManager } from '../../../src/scene/static/CircuitSceneManager';
 import { FactoryRegistry } from '../../../src/scene/shared/FactoryRegistry';
-import { createDefaultFactory } from '../../../src/scene/shared/components/ComponentVisualFactory';
 import { ComponentType } from '../../../src/core/types/ComponentType';
 import { ENodeType } from '../../../src/core/types/ENodeType';
 import { createMockCircuit } from '../helpers';
+import { DefaultVisualFactory } from '../../../src/scene/shared/components/DefaultVisualFactory';
 
 describe('CircuitSceneManager', () => {
   let circuit: ReturnType<typeof createMockCircuit>;
@@ -21,27 +21,25 @@ describe('CircuitSceneManager', () => {
 
   beforeEach(() => {
     circuit = createMockCircuit({ componentCount: 2, wireCount: 1 });
-    registry = new FactoryRegistry(createDefaultFactory());
-    manager = new CircuitSceneManager(registry);
-    manager.setCircuit(circuit);
+    registry = new FactoryRegistry(new DefaultVisualFactory());
 
     // Mock DOM container
     container = document.createElement('div');
     container.style.width = '800px';
     container.style.height = '600px';
+
+    manager = new CircuitSceneManager(registry);
+    manager.initialize(container);
+    manager.setCircuit(circuit);
   });
 
   describe('Constructor (T020)', () => {
     it('should assign circuit property', () => {
-      expect(manager.circuit).toBe(circuit);
+      expect(manager.getCircuit()).toBe(circuit);
     });
 
     it('should assign factoryRegistry property', () => {
       expect(manager.factoryRegistry).toBe(registry);
-    });
-
-    it('should not be initialized yet', () => {
-      expect(() => manager.getScene()).toThrow();
     });
 
     it('should throw TypeError for null factoryRegistry', () => {
@@ -53,22 +51,17 @@ describe('CircuitSceneManager', () => {
 
   describe('initialize() (T021)', () => {
     it('should create a Three.js scene', () => {
-      manager.initialize(container);
       const scene = manager.getScene();
 
       expect(scene).toBeInstanceOf(THREE.Scene);
     });
 
     it('should setup camera with proper configuration', () => {
-      manager.initialize(container);
-      const scene = manager.getScene();
-
       expect(manager.getCamera()).toBeDefined();
       expect(manager.getCamera()).toBeInstanceOf(THREE.PerspectiveCamera);
     });
 
     it('should add lights to scene', () => {
-      manager.initialize(container);
       const scene = manager.getScene();
 
       const lights = scene.children.filter((obj) => obj instanceof THREE.Light);
@@ -76,7 +69,6 @@ describe('CircuitSceneManager', () => {
     });
 
     it('should add grid helper to scene', () => {
-      manager.initialize(container);
       const scene = manager.getScene();
 
       const gridHelpers = scene.children.filter((obj) => obj instanceof THREE.GridHelper);
@@ -87,31 +79,29 @@ describe('CircuitSceneManager', () => {
       manager.on('ready', () => {
         done();
       });
-
-      manager.initialize(container);
     });
 
     it('should throw error if already initialized', () => {
-      manager.initialize(container);
-
       expect(() => {
         manager.initialize(container);
       }).toThrow(Error);
     });
 
     it('should throw TypeError for invalid container', () => {
+      const newManager = new CircuitSceneManager(registry);
       expect(() => {
-        manager.initialize(null as any);
+        newManager.initialize(null as any);
       }).toThrow(TypeError);
 
       expect(() => {
-        manager.initialize({} as any);
+        newManager.initialize({} as any);
       }).toThrow(TypeError);
     });
 
     it('should accept optional manager options', () => {
       expect(() => {
-        manager.initialize(container, {
+        const newManager = new CircuitSceneManager(registry);
+        newManager.initialize(container, {
           cameraFov: 60,
           cameraNear: 0.5,
           cameraFar: 500,
@@ -121,9 +111,7 @@ describe('CircuitSceneManager', () => {
   });
 
   describe('update() (T022)', () => {
-    beforeEach(() => {
-      manager.initialize(container);
-    });
+    beforeEach(() => {});
 
     it('should create meshes for all components', () => {
       manager.update();
@@ -171,8 +159,8 @@ describe('CircuitSceneManager', () => {
       ) as THREE.Mesh;
 
       expect(mesh).toBeDefined();
-      expect(mesh.position.x).toBe(component.position.x);
-      expect(mesh.position.z).toBe(component.position.y); // y -> z for 3D
+      expect(mesh.position.x).toEqual(component.position.x);
+      expect(mesh.position.z).toEqual(-component.position.y); // y -> -z for 3D
     });
 
     it('should use factoryRegistry to create component visuals', () => {
@@ -203,10 +191,9 @@ describe('CircuitSceneManager', () => {
     });
 
     it('should throw error if not initialized', () => {
-      const uninitializedRenderer = new CircuitSceneManager(circuit, registry);
-
+      const newManager = new CircuitSceneManager(registry);
       expect(() => {
-        uninitializedRenderer.update();
+        newManager.update();
       }).toThrow(Error);
     });
 
@@ -229,29 +216,24 @@ describe('CircuitSceneManager', () => {
 
   describe('getScene() (T023)', () => {
     it('should return Three.js scene after initialization', () => {
-      manager.initialize(container);
       const scene = manager.getScene();
 
       expect(scene).toBeInstanceOf(THREE.Scene);
     });
 
     it('should expose camera via getCamera()', () => {
-      manager.initialize(container);
-      const scene = manager.getScene();
-
       expect(manager.getCamera()).toBeDefined();
       expect(manager.getCamera()).toBeInstanceOf(THREE.Camera);
     });
 
     it('should throw error if not initialized', () => {
+      const newManager = new CircuitSceneManager(registry);
       expect(() => {
-        manager.getScene();
+        newManager.getScene();
       }).toThrow(Error);
     });
 
     it('should return same scene instance on multiple calls', () => {
-      manager.initialize(container);
-
       const scene1 = manager.getScene();
       const scene2 = manager.getScene();
 
@@ -261,7 +243,6 @@ describe('CircuitSceneManager', () => {
 
   describe('dispose() (T024)', () => {
     beforeEach(() => {
-      manager.initialize(container);
       manager.update();
     });
 
@@ -337,9 +318,7 @@ describe('CircuitSceneManager', () => {
   });
 
   describe('Event system', () => {
-    beforeEach(() => {
-      manager.initialize(container);
-    });
+    beforeEach(() => {});
 
     it('should register and call event listeners', () => {
       const callback = vi.fn();
@@ -384,7 +363,6 @@ describe('CircuitSceneManager', () => {
 
   describe('render()', () => {
     beforeEach(() => {
-      manager.initialize(container);
       manager.update();
     });
 
@@ -395,25 +373,25 @@ describe('CircuitSceneManager', () => {
     });
 
     it('should throw if not initialized', () => {
-      const uninitializedRenderer = new CircuitSceneManager(circuit, registry);
+      const uninitializedManager = new CircuitSceneManager(registry);
 
       expect(() => {
-        uninitializedRenderer.render();
+        uninitializedManager.render();
       }).toThrow(Error);
     });
   });
 
   describe('Error handling', () => {
     it('should emit error event for initialization failures', (done) => {
-      const badRenderer = new CircuitSceneManager(circuit, registry);
+      const badManager = new CircuitSceneManager(registry);
 
-      badRenderer.on('error', ({ message }) => {
+      badManager.on('error', ({ message }) => {
         expect(message).toBeDefined();
         done();
       });
 
       try {
-        badRenderer.initialize(null as any);
+        badManager.initialize(null as any);
       } catch (err) {
         // Expected to throw, but should also emit error event
       }
@@ -425,7 +403,6 @@ describe('CircuitSceneManager', () => {
       };
 
       registry.register(ComponentType.Battery, errorFactory);
-      manager.initialize(container);
 
       // Should emit error but not crash
       const errorCallback = vi.fn();

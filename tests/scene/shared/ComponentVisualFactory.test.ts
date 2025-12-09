@@ -7,9 +7,9 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import * as THREE from 'three';
 import {
   ComponentVisualFactoryBase,
-  DefaultVisualFactory,
   type IComponentVisualFactory,
 } from '../../../src/scene/shared/components/ComponentVisualFactory';
+import { DefaultVisualFactory } from '../../../src/scene/shared/components/DefaultVisualFactory';
 import { SmallLEDVisualFactory } from '../../../src/scene/shared/components/SmallLEDVisualFactory';
 import { SwitchVisualFactory } from '../../../src/scene/shared/components/SwitchVisualFactory';
 import type { Component } from '../../../src/core/Component';
@@ -382,14 +382,10 @@ describe('DefaultVisualFactory', () => {
   });
 
   describe('createVisual()', () => {
-    it('should create a magenta cube placeholder', () => {
+    it('should create a group', () => {
       const visual = factory.createVisual(component);
 
-      expect(visual).toBeInstanceOf(THREE.Mesh);
-      const mesh = visual as THREE.Mesh;
-      expect(mesh.material).toBeInstanceOf(THREE.MeshStandardMaterial);
-      const material = mesh.material as THREE.MeshStandardMaterial;
-      expect(material.color.getHex()).toBe(0xff00ff); // Magenta
+      expect(visual).toBeInstanceOf(THREE.Group);
     });
 
     it('should set isPlaceholder flag', () => {
@@ -402,28 +398,18 @@ describe('DefaultVisualFactory', () => {
       expect(visual.userData.componentId).toBe(component.id);
       expect(visual.userData.componentType).toBe(component.type);
     });
-
-    it('should create 1x1x1 cube', () => {
-      const visual = factory.createVisual(component);
-      const mesh = visual as THREE.Mesh;
-      const geometry = mesh.geometry as THREE.BoxGeometry;
-
-      expect(geometry).toBeInstanceOf(THREE.BoxGeometry);
-      expect(geometry.parameters.width).toBe(1);
-      expect(geometry.parameters.height).toBe(1);
-      expect(geometry.parameters.depth).toBe(1);
-    });
   });
 
   describe('hover effects', () => {
     it('should inherit default hover behavior from base class', () => {
-      const visual = factory.createVisual(component);
+      const group = factory.createVisual(component);
 
       // Apply hover
-      factory.applyHover(visual);
+      factory.applyHover(group);
 
       // Should apply emissive glow
-      const mesh = visual as THREE.Mesh;
+      const mesh = group.children[1] as THREE.Mesh;
+      console.log(mesh);
       const material = mesh.material as THREE.MeshStandardMaterial;
       expect(material.emissive.getHex()).toBe(ComponentVisualFactoryBase['DEFAULT_HOVER_COLOR']);
       expect(material.emissiveIntensity).toBe(

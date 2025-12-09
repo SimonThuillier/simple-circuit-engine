@@ -8,7 +8,6 @@
 
 import type { ComponentType } from '../../core/types/ComponentType';
 import type {
-  ComponentVisualFactory,
   IComponentVisualFactory,
   IFactoryRegistry,
 } from './components/ComponentVisualFactory';
@@ -33,9 +32,8 @@ import type {
  * ```
  */
 export class FactoryRegistry implements IFactoryRegistry {
-  private factories: Map<ComponentType, IComponentVisualFactory | ComponentVisualFactory> =
-    new Map();
-  private fallbackFactory: IComponentVisualFactory | ComponentVisualFactory;
+  private factories: Map<ComponentType, IComponentVisualFactory> = new Map();
+  private fallbackFactory: IComponentVisualFactory;
 
   /**
    * Create a new factory registry
@@ -43,7 +41,7 @@ export class FactoryRegistry implements IFactoryRegistry {
    * @param fallbackFactory - Factory to use for unregistered component types
    * @throws {TypeError} If fallbackFactory is null or undefined
    */
-  constructor(fallbackFactory: IComponentVisualFactory | ComponentVisualFactory) {
+  constructor(fallbackFactory: IComponentVisualFactory) {
     if (!fallbackFactory) {
       throw new TypeError('FactoryRegistry requires a valid fallback factory');
     }
@@ -57,7 +55,7 @@ export class FactoryRegistry implements IFactoryRegistry {
    * @param factory - Factory (class instance or function) to create visuals for this type
    * @throws {TypeError} If type is empty/whitespace or factory is null/undefined
    */
-  register(type: ComponentType, factory: IComponentVisualFactory | ComponentVisualFactory): void {
+  register(type: ComponentType, factory: IComponentVisualFactory): void {
     if (typeof type !== 'string' || type.trim() === '') {
       throw new TypeError('Component type must be a non-empty string');
     }
@@ -86,7 +84,7 @@ export class FactoryRegistry implements IFactoryRegistry {
    * This method NEVER returns null/undefined. If the type is not registered,
    * the fallback factory provided in the constructor is returned.
    */
-  get(type: ComponentType): IComponentVisualFactory | ComponentVisualFactory {
+  get(type: ComponentType): IComponentVisualFactory {
     return this.factories.get(type) ?? this.fallbackFactory;
   }
 

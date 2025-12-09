@@ -5,7 +5,7 @@
 import { IntegrityError, RenderError, ValidationError, VisualizerError } from './errors.js';
 import { CircuitSceneManager } from '@/scene/static/CircuitSceneManager.js';
 import { FactoryRegistry } from '@/scene/shared/FactoryRegistry.js';
-import { DefaultVisualFactory } from '@/scene/shared/ComponentVisualFactory.js';
+import { DefaultVisualFactory } from '@/scene/shared/components/DefaultVisualFactory.js';
 import { Circuit } from '@/core/Circuit.js';
 import { AxesHelper, WebGLRenderer } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -14,9 +14,9 @@ import {
   BatteryVisualFactory,
   type IFactoryRegistry,
   SwitchVisualFactory,
+  SmallLEDVisualFactory,
 } from '../../../src/scene';
 import { MapControls } from 'three/addons/controls/MapControls.js';
-import { SmallLEDVisualFactory } from '../../../src/scene/shared/components/SmallLEDVisualFactory';
 
 // Export to window object for use in HTML
 declare global {

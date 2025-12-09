@@ -22,7 +22,7 @@ import { HitboxLayers } from '../LayerConstants';
  * Factories should:
  * - Set object.userData.componentId = component.id for identification
  * - Set object.userData.componentType = component.type for filtering
- * - Return objects positioned at origin (renderer handles placement)
+ * - Return objects positioned at origin (scene manager handles placement)
  * - Use appropriate materials that respond to lighting
  *
  * @example
@@ -176,7 +176,9 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
   protected static readonly DEFAULT_HOVER_COLOR = 0x4488ff;
 
   /** Default hover emissive intensity */
-  protected static readonly DEFAULT_HOVER_INTENSITY = 0.5;
+  protected static readonly DEFAULT_HOVER_INTENSITY = 0.6;
+
+  protected static readonly DEFAULT_PIN_COLOR = 0xb87333;
 
   /**
    * Create the Three.js visual representation for a component
@@ -293,11 +295,10 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     const hitboxGeom = new THREE.SphereGeometry(0.5, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
     const hitbox = new THREE.Mesh(
       hitboxGeom,
-      new THREE.MeshBasicMaterial({
-        color: 0xffff00,
+      new THREE.MeshStandardMaterial({
+        color: ComponentVisualFactoryBase.DEFAULT_HOVER_COLOR,
         transparent: true,
-        opacity: 0.5,
-        visible: true,
+        opacity: 0,
       })
     );
     hitbox.userData = {
@@ -313,7 +314,11 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     // Visual sphere
     const visual = new THREE.Mesh(
       new THREE.SphereGeometry(0.3, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
-      new THREE.MeshStandardMaterial({ color: 0x0000ff })
+      new THREE.MeshStandardMaterial({
+        color: ComponentVisualFactoryBase.DEFAULT_PIN_COLOR,
+        emissive: ComponentVisualFactoryBase.DEFAULT_PIN_COLOR,
+        emissiveIntensity: 0,
+      })
     );
     visual.userData = {
       type: 'enode',
@@ -322,15 +327,6 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
       label: label,
     };
     pinGroup.add(visual);
-
-    // Hover callback for enode (pin-specific hover)
-    hitbox.userData.hoverCallback = (isHovering: boolean) => {
-      if (isHovering) {
-        (visual.material as THREE.MeshStandardMaterial).color.setHex(0x00ff00);
-      } else {
-        (visual.material as THREE.MeshStandardMaterial).color.setHex(0x0000ff);
-      }
-    };
 
     return pinGroup;
   }
@@ -359,7 +355,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
       color: 0xffff00,
       transparent: true,
       opacity: 0.2,
-      visible: true,
+      visible: false,
     });
     const hitbox = new THREE.Mesh(geometry, material);
     hitbox.userData = {
@@ -369,30 +365,6 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     };
     hitbox.layers.set(HitboxLayers.COMPONENT);
     return hitbox;
-  }
-}
-
-/**
- * Default visual factory for unknown component types
- *
- * Creates a 1x1x1 magenta cube placeholder to clearly indicate missing visuals.
- * Used when a component type has no registered factory.
- *
- * @example
- * ```typescript
- * const registry = new FactoryRegistry(new DefaultVisualFactory());
- * // Any unregistered component type will render as a magenta cube
- * ```
- */
-export class DefaultVisualFactory extends ComponentVisualFactoryBase {
-  createVisual(component: Component): THREE.Object3D {
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshStandardMaterial({ color: 0xff00ff });
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.userData.componentId = component.id;
-    mesh.userData.componentType = component.type;
-    mesh.userData.isPlaceholder = true;
-    return mesh;
   }
 }
 
@@ -424,7 +396,7 @@ export interface IFactoryRegistry {
    * @param factory - Factory (class instance or function) to create visuals for this type
    * @throws {TypeError} If factory is null or undefined
    */
-  register(type: ComponentType, factory: IComponentVisualFactory | ComponentVisualFactory): void;
+  register(type: ComponentType, factory: IComponentVisualFactory): void;
 
   /**
    * Retrieve the factory for a component type
@@ -436,7 +408,7 @@ export interface IFactoryRegistry {
    * This method NEVER returns null/undefined. If the type is not registered,
    * the fallback factory provided in the constructor is returned.
    */
-  get(type: ComponentType): IComponentVisualFactory | ComponentVisualFactory;
+  get(type: ComponentType): IComponentVisualFactory;
 
   /**
    * Check if a factory is registered for a component type
@@ -463,36 +435,4 @@ export interface IFactoryRegistry {
    * @returns Array of ComponentType values that have registered factories
    */
   getRegisteredTypes(): ComponentType[];
-}
-
-/**
- * Default fallback factory that creates a simple placeholder cube
- *
- * Used when a component type has no registered factory.
- * Creates a 1x1x1 magenta cube to clearly indicate missing visuals.
- *
- * @param component - The circuit component
- * @returns THREE.Mesh with cube geometry and magenta material
- *
- * @example
- * ```typescript
- * const registry = new FactoryRegistry(createDefaultFactory());
- * // Any unregistered component type will render as a magenta cube
- * ```
- *
- * @deprecated Use DefaultVisualFactory class instance instead:
- * ```typescript
- * const registry = new FactoryRegistry(new DefaultVisualFactory());
- * ```
- */
-export function createDefaultFactory(): ComponentVisualFactory {
-  return (component: Component): THREE.Object3D => {
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshStandardMaterial({ color: 0xff00ff });
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.userData.componentId = component.id;
-    mesh.userData.componentType = component.type;
-    mesh.userData.isPlaceholder = true;
-    return mesh;
-  };
 }

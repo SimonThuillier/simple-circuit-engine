@@ -30,11 +30,8 @@ export { DeleteTool } from './static/tools/DeleteTool';
 
 // Shared utilities
 export { FactoryRegistry } from './shared/FactoryRegistry';
-export {
-  createDefaultFactory,
-  DefaultVisualFactory,
-  ComponentVisualFactoryBase,
-} from './shared/components/ComponentVisualFactory';
+export { ComponentVisualFactoryBase } from './shared/components/ComponentVisualFactory';
+export { DefaultVisualFactory } from './shared/components/DefaultVisualFactory';
 export { EventEmitter } from './shared/EventEmitter';
 export { InterpolationController } from './shared/InterpolationController';
 export { HoverManager } from './shared/HoverManager';
