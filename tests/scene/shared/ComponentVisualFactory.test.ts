@@ -259,28 +259,112 @@ describe('ComponentVisualFactoryBase', () => {
   });
 
   describe('applySelection()', () => {
-    it('should be a no-op (placeholder)', () => {
-      // Store state before
-      const beforeState = JSON.stringify(visual.userData);
-
+    it('should apply orange emissive glow to meshes', () => {
       factory.applySelection(visual);
 
-      // State should be unchanged
-      const afterState = JSON.stringify(visual.userData);
-      expect(afterState).toBe(beforeState);
+      visual.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+          expect(child.material.emissive.getHex()).toBe(0xff8800);
+          expect(child.material.emissiveIntensity).toBe(0.8);
+        }
+      });
+    });
+
+    it('should store original material values in userData', () => {
+      factory.applySelection(visual);
+
+      visual.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+          expect(child.userData.originalEmissive).toBeDefined();
+          expect(child.userData.originalEmissiveIntensity).toBeDefined();
+        }
+      });
+    });
+
+    it('should set isSelected flag on meshes and object', () => {
+      factory.applySelection(visual);
+
+      expect(visual.userData.isSelected).toBe(true);
+
+      visual.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+          expect(child.userData.isSelected).toBe(true);
+        }
+      });
+    });
+
+    it('should take precedence over hover effect', () => {
+      // Apply hover first
+      factory.applyHover(visual);
+      // Then apply selection
+      factory.applySelection(visual);
+
+      visual.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+          // Selection color should be applied (orange), not hover color (blue)
+          expect(child.material.emissive.getHex()).toBe(0xff8800);
+          expect(child.material.emissiveIntensity).toBe(0.8);
+        }
+      });
     });
   });
 
   describe('removeSelection()', () => {
-    it('should be a no-op (placeholder)', () => {
-      // Store state before
-      const beforeState = JSON.stringify(visual.userData);
+    it('should restore original material values', () => {
+      // Store original values
+      let originalEmissive: number | undefined;
+      let originalIntensity: number | undefined;
+      visual.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+          originalEmissive = child.material.emissive.getHex();
+          originalIntensity = child.material.emissiveIntensity;
+        }
+      });
 
+      // Apply and remove selection
+      factory.applySelection(visual);
       factory.removeSelection(visual);
 
-      // State should be unchanged
-      const afterState = JSON.stringify(visual.userData);
-      expect(afterState).toBe(beforeState);
+      visual.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+          expect(child.material.emissive.getHex()).toBe(originalEmissive);
+          expect(child.material.emissiveIntensity).toBe(originalIntensity);
+        }
+      });
+    });
+
+    it('should clear isSelected flag', () => {
+      factory.applySelection(visual);
+      factory.removeSelection(visual);
+
+      expect(visual.userData.isSelected).toBe(false);
+
+      visual.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+          expect(child.userData.isSelected).toBe(false);
+        }
+      });
+    });
+
+    it('should restore hover effect if component was hovered', () => {
+      // Apply hover first, then selection, then remove selection
+      factory.applyHover(visual);
+      factory.applySelection(visual);
+      factory.removeSelection(visual);
+
+      // Hover color (blue) should be restored
+      visual.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+          expect(child.material.emissive.getHex()).toBe(0x4488ff);
+          expect(child.material.emissiveIntensity).toBe(0.6);
+        }
+      });
+    });
+
+    it('should be safe to call when not selected', () => {
+      expect(() => {
+        factory.removeSelection(visual);
+      }).not.toThrow();
     });
   });
 

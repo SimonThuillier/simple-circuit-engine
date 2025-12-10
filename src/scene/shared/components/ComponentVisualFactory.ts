@@ -178,6 +178,12 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
   /** Default hover emissive intensity */
   protected static readonly DEFAULT_HOVER_INTENSITY = 0.6;
 
+  /** Default selection glow color (orange) */
+  protected static readonly DEFAULT_SELECTION_COLOR = 0xff8800;
+
+  /** Default selection emissive intensity (higher than hover) */
+  protected static readonly DEFAULT_SELECTION_INTENSITY = 0.8;
+
   protected static readonly DEFAULT_PIN_COLOR = 0xb87333;
 
   /**
@@ -191,6 +197,9 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
    *
    * Default implementation traverses all meshes and applies
    * an emissive blue glow effect, storing original values in userData.
+   *
+   * Note: If component is selected, selection visual takes precedence
+   * and hover visual is not applied (but isHovered flag is still set).
    */
   applyHover(object3D: THREE.Object3D): void {
     object3D.traverse((child) => {
@@ -203,12 +212,15 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
           }
 
           // Store original values if not already stored
-          if (!child.userData.isHovered) {
+          if (!child.userData.isHovered && !child.userData.isSelected) {
             child.userData.originalEmissive = material.emissive.clone();
             child.userData.originalEmissiveIntensity = material.emissiveIntensity;
-            child.userData.isHovered = true;
+          }
 
-            // Apply hover effect
+          child.userData.isHovered = true;
+
+          // Only apply hover visual if not selected (selection takes precedence)
+          if (!child.userData.isSelected) {
             material.emissive.setHex(ComponentVisualFactoryBase.DEFAULT_HOVER_COLOR);
             material.emissiveIntensity = ComponentVisualFactoryBase.DEFAULT_HOVER_INTENSITY;
           }
@@ -239,23 +251,76 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
   }
 
   /**
-   * Apply selection visual effect (placeholder)
+   * Apply selection visual effect using emissive orange glow
    *
-   * Default implementation is a no-op for future implementation.
+   * Selection takes precedence over hover effect.
+   * Stores original material state in userData for restoration.
+   *
+   * @param object3D - The component's root Three.js object
    */
   applySelection(object3D: THREE.Object3D): void {
-    // Placeholder - no-op
-    // Future implementation will add selection visual effect
+    object3D.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        const material = child.material;
+        if (material instanceof THREE.MeshStandardMaterial) {
+          // Skip hitboxes (invisible materials)
+          if (material.visible === false || material.opacity < 0.5) {
+            return;
+          }
+
+          // Store original values if not already stored (by hover or previous selection)
+          if (
+            child.userData.originalEmissive === undefined &&
+            !child.userData.isHovered &&
+            !child.userData.isSelected
+          ) {
+            child.userData.originalEmissive = material.emissive.clone();
+            child.userData.originalEmissiveIntensity = material.emissiveIntensity;
+          }
+
+          // Apply selection effect (overrides hover if present)
+          material.emissive.setHex(ComponentVisualFactoryBase.DEFAULT_SELECTION_COLOR);
+          material.emissiveIntensity = ComponentVisualFactoryBase.DEFAULT_SELECTION_INTENSITY;
+          child.userData.isSelected = true;
+        }
+      }
+    });
+
+    object3D.userData.isSelected = true;
   }
 
   /**
-   * Remove selection visual effect (placeholder)
+   * Remove selection visual effect, restoring original or hover state
    *
-   * Default implementation is a no-op for future implementation.
+   * If component was hovered before selection, restores hover visual.
+   * Otherwise, restores original material state.
+   *
+   * @param object3D - The component's root Three.js object
    */
   removeSelection(object3D: THREE.Object3D): void {
-    // Placeholder - no-op
-    // Future implementation will remove selection visual effect
+    object3D.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        if (child.userData.isSelected) {
+          const material = child.material;
+          if (material instanceof THREE.MeshStandardMaterial) {
+            // If component is still hovered, restore hover effect
+            if (child.userData.isHovered) {
+              material.emissive.setHex(ComponentVisualFactoryBase.DEFAULT_HOVER_COLOR);
+              material.emissiveIntensity = ComponentVisualFactoryBase.DEFAULT_HOVER_INTENSITY;
+            } else {
+              // Restore original values
+              if (child.userData.originalEmissive) {
+                material.emissive.copy(child.userData.originalEmissive);
+              }
+              material.emissiveIntensity = child.userData.originalEmissiveIntensity ?? 0;
+            }
+          }
+          child.userData.isSelected = false;
+        }
+      }
+    });
+
+    object3D.userData.isSelected = false;
   }
 
   /**
