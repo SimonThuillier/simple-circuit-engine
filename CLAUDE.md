@@ -3,8 +3,8 @@
 Auto-generated from all feature plans. Last updated: 2025-11-28
 
 ## Active Technologies
-- TypeScript (strict mode), targeting ES2022 + Three.js 0.181+ (already installed) (006-select-tool-wires)
-- N/A (in-memory circuit model, no persistence changes) (006-select-tool-wires)
+- TypeScript (strict mode), targeting ES2022 + Three.js 0.181+ (already installed) (006-position-tool-wires)
+- N/A (in-memory circuit model, no persistence changes) (006-position-tool-wires)
 
 - N/A (visual factories are stateless; state resides in Circuit/CircuitRunner instances) (005-visual-factory-classes)
 
@@ -69,7 +69,7 @@ function badExample(input: number | null): string {
 ```
 
 ## Recent Changes
-- 006-select-tool-wires: Added TypeScript (strict mode), targeting ES2022 + Three.js 0.181+ (already installed)
+- 006-position-tool-wires: Added TypeScript (strict mode), targeting ES2022 + Three.js 0.181+ (already installed)
 
 - 005-visual-factory-classes: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (already installed)
 

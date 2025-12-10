@@ -1,6 +1,6 @@
 # Research: Select Tool & Wire Visual Improvements
 
-**Feature**: 006-select-tool-wires
+**Feature**: 006-position-tool-wires
 **Date**: 2025-12-09
 
 ## Research Topics
@@ -25,15 +25,16 @@
 **Decision**: Create a dedicated SelectionManager class following the existing HoverManager pattern
 
 **Rationale**:
-- Separates concerns: SelectionManager owns selection state, tools request selection changes
+- Separates concerns: SelectionManager owns selection state, CircuitSceneManager and tools request selection changes
 - Consistent with existing architecture (HoverManager handles hover, SelectionManager handles selection)
 - Enables centralized event emission for selection changes
-- Allows future extension to multi-select without changing tool implementations
+- Allows future extension to multi-position without changing tool implementations
 
 **Alternatives Considered**:
-- Store selection in SelectTool directly: Rejected - selection state should persist across tool switches
+- Store selection in PositionTool directly: Rejected - selection state should persist across tool switches
 - Store selection in CircuitSceneManager: Rejected - bloats the already large manager class; better to delegate
 - Global state: Rejected - violates constitution's "no global state" rule
+- Have SelectionManager trigger visual changes through visual factories: Rejected - violates separation of concerns and mixes visual logic into pure selection management
 
 ### 3. Pin Position Calculation for Wire Endpoints
 

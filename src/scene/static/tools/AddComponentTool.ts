@@ -2,7 +2,7 @@
  * Place Component Tool Implementation
  * @module scene/static/tools/PlaceComponentTool
  *
- * Tool for placing new components in the circuit.
+ * Tool for adding new components in the circuit.
  * - Hover shows ghost preview
  * - Scroll to rotate preview
  * - Click to place component
@@ -16,11 +16,11 @@ import type { CircuitSceneManager } from '../CircuitSceneManager';
 import type { ComponentType } from '../../../core/types/ComponentType';
 
 /**
- * Tool for placing new components
+ * Tool for adding new components
  * Implements FR-029, FR-030, FR-032 (preview, scroll rotation, overlap validation)
  */
-export class PlaceComponentTool implements IEditingTool {
-  readonly type: ToolType = 'placeComponent';
+export class AddComponentTool implements IEditingTool {
+  readonly type: ToolType = 'addComponent';
 
   private _circuit: Circuit | null = null;
   private _sceneManager: CircuitSceneManager;

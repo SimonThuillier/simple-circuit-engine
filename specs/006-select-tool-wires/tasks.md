@@ -1,11 +1,14 @@
-# Tasks: Select Tool & Wire Visual Improvements
+# Tasks: Position Tool & Wire Visual Improvements
 
-**Input**: Design documents from `/specs/006-select-tool-wires/`
+**Input**: Design documents from `/specs/006-position-tool-wires/`
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/, quickstart.md
+**Updated**: 2025-12-11
 
 **Tests**: Test tasks are included as specified in plan.md (scene module requires 60% coverage minimum).
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing.
+
+**Architecture Note**: Selection behavior (click to select/deselect) is implemented in CircuitSceneManager, not in PositionTool. Tasks T027-T029 were originally assigned to PositionTool but are implemented in CircuitSceneManager.handlePointerDown().
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -43,7 +46,7 @@
 ### 2.2 SelectionManager Foundation
 
 - [X] T010 [P] Create SelectionManager class with selection state tracking in src/scene/shared/SelectionManager.ts
-- [X] T011 Implement select(), deselect(), isSelected(), getSelectedComponentId() methods in src/scene/shared/SelectionManager.ts
+- [X] T011 Implement position(), deselect(), isSelected(), getSelectedComponentId() methods in src/scene/shared/SelectionManager.ts
 - [X] T012 Implement onSelectionChange() callback registration and dispose() in src/scene/shared/SelectionManager.ts
 - [X] T013 [P] Create SelectionManager unit tests in tests/scene/shared/SelectionManager.test.ts
 
@@ -65,10 +68,10 @@
 
 ### Implementation for User Story 3
 
-- [ ] T017 [US3] Integrate WireVisualManager into CircuitSceneManager, replacing _createWireMesh() in src/scene/static/CircuitSceneManager.ts
-- [ ] T018 [US3] Update _updateCircuitVisualsIncremental() to use WireVisualManager for wire creation in src/scene/static/CircuitSceneManager.ts
-- [ ] T019 [US3] Update _updateCircuitVisualsFull() to use WireVisualManager for all wire rendering in src/scene/static/CircuitSceneManager.ts
-- [ ] T020 [US3] Ensure wire endpoints derive from pin world positions (via getENodeWorldPosition) in src/scene/static/CircuitSceneManager.ts
+- [X] T017 [US3] Integrate WireVisualManager into CircuitSceneManager, replacing _createWireMesh() in src/scene/static/CircuitSceneManager.ts
+- [X] T018 [US3] Update _updateCircuitVisualsIncremental() to use WireVisualManager for wire creation in src/scene/static/CircuitSceneManager.ts
+- [X] T019 [US3] Update _updateCircuitVisualsFull() to use WireVisualManager for all wire rendering in src/scene/static/CircuitSceneManager.ts
+- [X] T020 [US3] Ensure wire endpoints derive from pin world positions (via getENodeWorldPosition) in src/scene/static/CircuitSceneManager.ts
 
 **Checkpoint**: Wire endpoints now target actual pin positions
 
@@ -82,9 +85,9 @@
 
 ### Implementation for User Story 5
 
-- [ ] T021 [US5] Verify computeWirePath() includes intermediatePositions in path array in src/scene/shared/WireVisualManager.ts
-- [ ] T022 [US5] Test wire rendering with 1, 5, and 10 intermediate positions in tests/scene/shared/WireVisualManager.test.ts
-- [ ] T023 [US5] Ensure straight wires (no intermediatePositions) render correctly as single segment in src/scene/shared/WireVisualManager.ts
+- [X] T021 [US5] Verify computeWirePath() includes intermediatePositions in path array in src/scene/shared/WireVisualManager.ts
+- [X] T022 [US5] Test wire rendering with 1, 5, and 10 intermediate positions in tests/scene/shared/WireVisualManager.test.ts
+- [X] T023 [US5] Ensure straight wires (no intermediatePositions) render correctly as single segment in src/scene/shared/WireVisualManager.ts
 
 **Checkpoint**: Multi-segment wires render correctly through all waypoints
 
@@ -92,45 +95,45 @@
 
 ## Phase 5: User Story 1 - Select and Move Component (Priority: P1) 🎯 MVP
 
-**Goal**: Users can select a component by clicking, then drag it to a new grid position with wires following
+**Goal**: Users can position a component by clicking, then drag it to a new grid position with wires following
 
-**Independent Test**: Place a component, select it, drag to new position, verify component and connected wires update correctly
+**Independent Test**: Place a component, position it, drag to new position, verify component and connected wires update correctly
 
 ### 5.1 Selection Integration
 
-- [ ] T024 [US1] Create SelectionManager instance in CircuitSceneManager constructor in src/scene/static/CircuitSceneManager.ts
-- [ ] T025 [US1] Wire up SelectionManager callbacks to apply/remove selection visuals in src/scene/static/CircuitSceneManager.ts
-- [ ] T026 [US1] Add selectionChange event emission to CircuitSceneManager event map in src/scene/static/CircuitSceneManager.ts
+- [X] T024 [US1] Create SelectionManager instance in CircuitSceneManager constructor in src/scene/static/CircuitSceneManager.ts
+- [X] T025 [US1] Wire up SelectionManager callbacks to apply/remove selection visuals in src/scene/static/CircuitSceneManager.ts : in CircuitSceneManager visual factories of components can be retrieved by const factory = this.factoryRegistry.get(componentGroup.userData.componentType);
+- [X] T026 [US1] Add selectionChange event emission to CircuitSceneManager event map in src/scene/static/CircuitSceneManager.ts
 
-### 5.2 SelectTool Click Handling
+### 5.2 Selection Click Handling (Implemented in CircuitSceneManager)
 
-- [ ] T027 [US1] Implement handleClick() to select clicked component via SelectionManager in src/scene/static/tools/SelectTool.ts
-- [ ] T028 [US1] Handle click on empty space to deselect in src/scene/static/tools/SelectTool.ts
-- [ ] T029 [US1] Handle click on different component to change selection in src/scene/static/tools/SelectTool.ts
+- [X] T027 [US1] Implement click to select hovered element via SelectionManager in src/scene/static/CircuitSceneManager.ts (handlePointerDown)
+- [X] T028 [US1] Handle click on empty space to deselect in src/scene/static/CircuitSceneManager.ts (handlePointerDown)
+- [X] T029 [US1] Handle click on different element to change selection in src/scene/static/CircuitSceneManager.ts (handlePointerDown)
 
-### 5.3 SelectTool Drag Handling
+### 5.3 PositionTool Drag Handling
 
-- [ ] T030 [US1] Implement DragState interface and internal state tracking in src/scene/static/tools/SelectTool.ts
-- [ ] T031 [US1] Implement handleMouseDown() to start drag on selected component in src/scene/static/tools/SelectTool.ts
-- [ ] T032 [US1] Implement handleMouseMove() with grid snapping (Math.round) during drag in src/scene/static/tools/SelectTool.ts
-- [ ] T033 [US1] Update component visual position during drag (before committing to model) in src/scene/static/tools/SelectTool.ts
-- [ ] T034 [US1] Implement handleMouseUp() to commit position to Circuit model in src/scene/static/tools/SelectTool.ts
+- [X] T030 [US1] Implement DragState interface and internal state tracking in src/scene/static/tools/PositionTool.ts
+- [X] T031 [US1] Implement handleMouseDown() to start drag on selected component in src/scene/static/tools/PositionTool.ts
+- [X] T032 [US1] Implement handleMouseMove() with grid snapping (Math.round) during drag in src/scene/static/tools/PositionTool.ts
+- [X] T033 [US1] Update component visual position during drag (before committing to model) in src/scene/static/tools/PositionTool.ts
+- [X] T034 [US1] Implement handleMouseUp() to commit position to Circuit model in src/scene/static/tools/PositionTool.ts
 
 ### 5.4 User Story 4 - Wires Follow Pins During Movement (Priority: P1)
 
-- [ ] T035 [US1] [US4] Call WireVisualManager.updateWiresForComponent() on each drag move in src/scene/static/tools/SelectTool.ts
-- [ ] T036 [US1] [US4] Ensure all wires connected to dragged component update in real-time in src/scene/static/tools/SelectTool.ts
+- [ ] T035 [US1] [US4] Call WireVisualManager.updateWiresForComponent() on each drag move in src/scene/static/tools/PositionTool.ts (TODO in code)
+- [ ] T036 [US1] [US4] Ensure all wires connected to dragged component update in real-time in src/scene/static/tools/PositionTool.ts (TODO in code)
 
 ### 5.5 CircuitSceneManager Integration
 
-- [ ] T037 [US1] Add mouse event handlers (mousedown, mousemove, mouseup) to CircuitSceneManager in src/scene/static/CircuitSceneManager.ts
-- [ ] T038 [US1] Route mouse events to SelectTool methods in src/scene/static/CircuitSceneManager.ts
-- [ ] T039 [US1] Add dragStart, dragMove, dragEnd event emissions in src/scene/static/CircuitSceneManager.ts
+- [X] T037 [US1] Add pointerdown handler to CircuitSceneManager for selection in src/scene/static/CircuitSceneManager.ts (handlePointerDown)
+- [X] T038 [US1] PositionTool handles its own event listeners in onActivate()/onDeactivate() - no CSM routing needed
+- [ ] T039 [US1] Add dragStart, dragMove, dragEnd event emissions in src/scene/static/CircuitSceneManager.ts (optional - not yet implemented)
 
 ### 5.6 Tests
 
-- [ ] T040 [P] [US1] Create SelectTool unit tests for click selection in tests/scene/static/tools/SelectTool.test.ts
-- [ ] T041 [P] [US1] Create SelectTool unit tests for drag operations in tests/scene/static/tools/SelectTool.test.ts
+- [ ] T040 [P] [US1] Create PositionTool unit tests for click selection in tests/scene/static/tools/PositionTool.test.ts
+- [ ] T041 [P] [US1] Create PositionTool unit tests for drag operations in tests/scene/static/tools/PositionTool.test.ts
 
 **Checkpoint**: Select and move functionality complete with wire following
 
@@ -138,17 +141,19 @@
 
 ## Phase 6: User Story 6 - Deselect Component (Priority: P2)
 
-**Goal**: Users can deselect via clicking empty space or pressing Escape
+**Goal**: Users can deselect via clicking empty space; Escape cancels drag
 
-**Independent Test**: Select a component, click empty space or press Escape, verify selection is cleared
+**Independent Test**: Select a component, click empty space to deselect; start drag and press Escape to cancel
 
 ### Implementation for User Story 6
 
-- [ ] T042 [US6] Implement handleKeyDown() for Escape key to deselect in src/scene/static/tools/SelectTool.ts
-- [ ] T043 [US6] Add keyboard event listener to CircuitSceneManager and route to SelectTool in src/scene/static/CircuitSceneManager.ts
-- [ ] T044 [US6] Add dragCancel event emission when Escape cancels drag in src/scene/static/CircuitSceneManager.ts
+- [X] T042 [US6] Implement handleKeyDown() for Escape key to cancel drag in src/scene/static/tools/PositionTool.ts
+- [X] T043 [US6] PositionTool adds keyboard event listener in onActivate() - no CSM routing needed
+- [ ] T044 [US6] Add dragCancel event emission when Escape cancels drag in src/scene/static/CircuitSceneManager.ts (optional)
 
-**Checkpoint**: Deselection via empty space click and Escape key works
+**Note**: Empty space click deselection is handled in CircuitSceneManager.handlePointerDown() (T028). Escape key in PositionTool cancels drag but preserves selection.
+
+**Checkpoint**: Deselection via empty space click works; Escape cancels drag
 
 ---
 
@@ -160,14 +165,14 @@
 
 ### Implementation for User Story 2
 
-- [ ] T045 [US2] Implement handleDoubleClick() to rotate selected component 90° clockwise in src/scene/static/tools/SelectTool.ts
-- [ ] T046 [US2] Implement handleKeyDown('r') to rotate selected component in src/scene/static/tools/SelectTool.ts
-- [ ] T047 [US2] Update component rotation in Circuit model after rotation in src/scene/static/tools/SelectTool.ts
-- [ ] T048 [US2] Update component visual rotation (Object3D.rotation.y) in src/scene/static/tools/SelectTool.ts
-- [ ] T049 [US2] Call WireVisualManager.updateWiresForComponent() after rotation in src/scene/static/tools/SelectTool.ts
+- [ ] T045 [US2] Implement handleDoubleClick() to rotate selected component 90° clockwise in src/scene/static/tools/PositionTool.ts
+- [ ] T046 [US2] Implement handleKeyDown('r') to rotate selected component in src/scene/static/tools/PositionTool.ts
+- [ ] T047 [US2] Update component rotation in Circuit model after rotation in src/scene/static/tools/PositionTool.ts
+- [ ] T048 [US2] Update component visual rotation (Object3D.rotation.y) in src/scene/static/tools/PositionTool.ts
+- [ ] T049 [US2] Call WireVisualManager.updateWiresForComponent() after rotation in src/scene/static/tools/PositionTool.ts
 - [ ] T050 [US2] Add double-click event handler to CircuitSceneManager in src/scene/static/CircuitSceneManager.ts
 - [ ] T051 [US2] Add componentRotated event emission in src/scene/static/CircuitSceneManager.ts
-- [ ] T052 [P] [US2] Create rotation unit tests in tests/scene/static/tools/SelectTool.test.ts
+- [ ] T052 [P] [US2] Create rotation unit tests in tests/scene/static/tools/PositionTool.test.ts
 
 **Checkpoint**: Rotation functionality complete with wire updates
 
@@ -179,7 +184,7 @@
 
 - [ ] T053 [P] Add JSDoc documentation to WireVisualManager public methods in src/scene/shared/WireVisualManager.ts
 - [ ] T054 [P] Add JSDoc documentation to SelectionManager public methods in src/scene/shared/SelectionManager.ts
-- [ ] T055 [P] Add JSDoc documentation to SelectTool public methods in src/scene/static/tools/SelectTool.ts
+- [ ] T055 [P] Add JSDoc documentation to PositionTool public methods in src/scene/static/tools/PositionTool.ts
 - [ ] T056 Ensure all new code passes npm run lint in project root
 - [ ] T057 Run npm test and verify 60% coverage for scene module
 - [ ] T058 Verify quickstart.md testing checklist passes (manual validation)
@@ -195,8 +200,8 @@
 - **User Story 3 (Phase 3)**: Depends on Foundational (WireVisualManager)
 - **User Story 5 (Phase 4)**: Depends on Foundational (WireVisualManager)
 - **User Story 1 (Phase 5)**: Depends on Foundational (SelectionManager + WireVisualManager)
-- **User Story 6 (Phase 6)**: Depends on User Story 1 (SelectTool infrastructure)
-- **User Story 2 (Phase 7)**: Depends on User Story 1 (SelectTool infrastructure)
+- **User Story 6 (Phase 6)**: Depends on User Story 1 (PositionTool infrastructure)
+- **User Story 2 (Phase 7)**: Depends on User Story 1 (PositionTool infrastructure)
 - **Polish (Phase 8)**: Depends on all user stories being complete
 
 ### User Story Dependencies
@@ -205,8 +210,8 @@
 - **User Story 5 (P2)**: Multi-line wires - Can start after Foundational (parallel with US3)
 - **User Story 1 (P1)**: Select/Move - Can start after Foundational
 - **User Story 4 (P1)**: Wires follow pins - Integrated into US1 (T035-T036)
-- **User Story 6 (P2)**: Deselect - Requires US1 SelectTool infrastructure
-- **User Story 2 (P2)**: Rotate - Requires US1 SelectTool infrastructure
+- **User Story 6 (P2)**: Deselect - Requires US1 PositionTool infrastructure
+- **User Story 2 (P2)**: Rotate - Requires US1 PositionTool infrastructure
 
 ### Within Each User Story
 
@@ -249,8 +254,8 @@ Task: "Implement applySelection() in src/scene/shared/components/ComponentVisual
 1. Complete Phase 1: Setup (verify structure)
 2. Complete Phase 2: Foundational (WireVisualManager + SelectionManager)
 3. Complete Phase 3: User Story 3 (wire pin targeting)
-4. Complete Phase 5: User Story 1 + 4 (select/move with wire following)
-5. **STOP and VALIDATE**: Test select-move workflow with wire updates
+4. Complete Phase 5: User Story 1 + 4 (position/move with wire following)
+5. **STOP and VALIDATE**: Test position-move workflow with wire updates
 6. Deploy/demo if ready - core editing capability is functional
 
 ### Incremental Delivery

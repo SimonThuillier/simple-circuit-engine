@@ -33,6 +33,6 @@
 
 - Specification is complete and ready for `/speckit.clarify` or `/speckit.plan`
 - All items pass validation
-- The spec covers both the Select Tool functionality (select, move, rotate) and wire visual improvements (pin targeting, real-time updates, multi-line rendering)
-- Single-component selection scope is explicitly defined (no multi-select)
+- The spec covers both the Select Tool functionality (position, move, rotate) and wire visual improvements (pin targeting, real-time updates, multi-line rendering)
+- Single-component selection scope is explicitly defined (no multi-position)
 - Collision detection is explicitly out of scope

@@ -1,5 +1,6 @@
 /**
  * Unit tests for ComponentVisualFactory classes
+ * Updated: 2025-12-11 to match refactored implementation
  * @module tests/unit/rendering/ComponentVisualFactory.test
  */
 
@@ -56,22 +57,6 @@ describe('ComponentVisualFactoryBase', () => {
   });
 
   describe('applyHover()', () => {
-    it('should set isHovered flag in userData', () => {
-      factory.applyHover(visual);
-
-      // Find the mesh child
-      let foundHoveredFlag = false;
-      visual.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-          if (child.userData.isHovered === true) {
-            foundHoveredFlag = true;
-          }
-        }
-      });
-
-      expect(foundHoveredFlag).toBe(true);
-    });
-
     it('should modify emissive color to default hover color', () => {
       factory.applyHover(visual);
 
@@ -108,64 +93,28 @@ describe('ComponentVisualFactoryBase', () => {
       expect(foundHoverIntensity).toBe(true);
     });
 
-    it('should store original emissive color in userData', () => {
-      factory.applyHover(visual);
+    it('should skip hover visual when component is selected', () => {
+      // Mark as selected
+      visual.userData.isSelected = true;
 
-      // Check that original values are stored
-      let foundOriginalEmissive = false;
-      visual.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.userData.originalEmissive) {
-          foundOriginalEmissive = true;
-          expect(child.userData.originalEmissive).toBeInstanceOf(THREE.Color);
-        }
-      });
-
-      expect(foundOriginalEmissive).toBe(true);
-    });
-
-    it('should store original emissive intensity in userData', () => {
-      factory.applyHover(visual);
-
-      // Check that original intensity is stored
-      let foundOriginalIntensity = false;
-      visual.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.userData.originalEmissiveIntensity !== undefined) {
-          foundOriginalIntensity = true;
-          expect(typeof child.userData.originalEmissiveIntensity).toBe('number');
-        }
-      });
-
-      expect(foundOriginalIntensity).toBe(true);
-    });
-
-    it('should be idempotent (safe to call multiple times)', () => {
-      factory.applyHover(visual);
-
-      // Store state after first call
-      let firstHoverColor: number | undefined;
-      let firstHoverIntensity: number | undefined;
-      let firstOriginalEmissive: THREE.Color | undefined;
-      let firstOriginalIntensity: number | undefined;
-
+      // Store current state
+      let originalEmissiveHex: number | undefined;
+      let originalIntensity: number | undefined;
       visual.traverse((child) => {
         if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-          firstHoverColor = child.material.emissive.getHex();
-          firstHoverIntensity = child.material.emissiveIntensity;
-          firstOriginalEmissive = child.userData.originalEmissive?.clone();
-          firstOriginalIntensity = child.userData.originalEmissiveIntensity;
+          originalEmissiveHex = child.material.emissive.getHex();
+          originalIntensity = child.material.emissiveIntensity;
         }
       });
 
-      // Call again
+      // Apply hover
       factory.applyHover(visual);
 
-      // Verify state is unchanged
+      // Should not have changed (selection takes precedence)
       visual.traverse((child) => {
         if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-          expect(child.material.emissive.getHex()).toBe(firstHoverColor);
-          expect(child.material.emissiveIntensity).toBe(firstHoverIntensity);
-          expect(child.userData.originalEmissive.equals(firstOriginalEmissive)).toBe(true);
-          expect(child.userData.originalEmissiveIntensity).toBe(firstOriginalIntensity);
+          expect(child.material.emissive.getHex()).toBe(originalEmissiveHex);
+          expect(child.material.emissiveIntensity).toBe(originalIntensity);
         }
       });
     });
@@ -173,55 +122,45 @@ describe('ComponentVisualFactoryBase', () => {
     it('should skip invisible materials (hitboxes)', () => {
       // Add an invisible hitbox mesh
       const hitboxGeometry = new THREE.BoxGeometry(2, 2, 2);
-      const hitboxMaterial = new THREE.MeshBasicMaterial({
+      const hitboxMaterial = new THREE.MeshStandardMaterial({
         visible: false,
         transparent: true,
         opacity: 0.2,
       });
       const hitbox = new THREE.Mesh(hitboxGeometry, hitboxMaterial);
+      const originalIntensity = hitboxMaterial.emissiveIntensity;
       visual.add(hitbox);
 
       factory.applyHover(visual);
 
-      // Hitbox should not have isHovered flag
-      expect(hitbox.userData.isHovered).toBeUndefined();
+      // Hitbox emissive should not have changed
+      expect(hitboxMaterial.emissiveIntensity).toBe(originalIntensity);
     });
   });
 
   describe('removeHover()', () => {
-    it('should restore original material state', () => {
-      // Store original state
-      let originalColor: number | undefined;
-      let originalIntensity: number | undefined;
+    it('should reset emissive intensity to 0', () => {
+      // Apply hover first
+      factory.applyHover(visual);
 
+      // Verify hover is applied
+      let hoverApplied = false;
       visual.traverse((child) => {
         if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-          originalColor = child.material.emissive.getHex();
-          originalIntensity = child.material.emissiveIntensity;
+          if (child.material.emissiveIntensity > 0) {
+            hoverApplied = true;
+          }
         }
       });
+      expect(hoverApplied).toBe(true);
 
-      // Apply and then remove hover
-      factory.applyHover(visual);
+      // Remove hover
       factory.removeHover(visual);
 
-      // Check restoration
+      // Check intensity is reset to 0
       visual.traverse((child) => {
         if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-          expect(child.material.emissive.getHex()).toBe(originalColor);
-          expect(child.material.emissiveIntensity).toBe(originalIntensity);
-        }
-      });
-    });
-
-    it('should clear isHovered flag', () => {
-      factory.applyHover(visual);
-      factory.removeHover(visual);
-
-      // Verify flag is cleared
-      visual.traverse((child) => {
-        if (child instanceof THREE.Mesh) {
-          expect(child.userData.isHovered).toBe(false);
+          expect(child.material.emissiveIntensity).toBe(0);
         }
       });
     });
@@ -243,18 +182,30 @@ describe('ComponentVisualFactoryBase', () => {
       }).not.toThrow();
     });
 
-    it('should handle missing original emissive gracefully', () => {
-      // Manually set isHovered without storing original values
+    it('should skip when component is selected', () => {
+      // Apply selection first
+      factory.applySelection(visual);
+
+      // Store selection state
+      let selectionEmissiveHex: number | undefined;
+      let selectionIntensity: number | undefined;
       visual.traverse((child) => {
-        if (child instanceof THREE.Mesh) {
-          child.userData.isHovered = true;
+        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+          selectionEmissiveHex = child.material.emissive.getHex();
+          selectionIntensity = child.material.emissiveIntensity;
         }
       });
 
-      // Should not throw
-      expect(() => {
-        factory.removeHover(visual);
-      }).not.toThrow();
+      // Try to remove hover (should be ignored since selected)
+      factory.removeHover(visual);
+
+      // Selection visual should remain unchanged
+      visual.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+          expect(child.material.emissive.getHex()).toBe(selectionEmissiveHex);
+          expect(child.material.emissiveIntensity).toBe(selectionIntensity);
+        }
+      });
     });
   });
 
@@ -264,38 +215,53 @@ describe('ComponentVisualFactoryBase', () => {
 
       visual.traverse((child) => {
         if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+          // Skip invisible materials
+          if (child.material.visible === false || child.material.opacity < 0.5) {
+            return;
+          }
           expect(child.material.emissive.getHex()).toBe(0xff8800);
           expect(child.material.emissiveIntensity).toBe(0.8);
         }
       });
     });
 
-    it('should store original material values in userData', () => {
-      factory.applySelection(visual);
+    it('should set isSelected flag on root object', () => {
+      expect(visual.userData.isSelected).toBeUndefined();
 
-      visual.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-          expect(child.userData.originalEmissive).toBeDefined();
-          expect(child.userData.originalEmissiveIntensity).toBeDefined();
-        }
-      });
-    });
-
-    it('should set isSelected flag on meshes and object', () => {
       factory.applySelection(visual);
 
       expect(visual.userData.isSelected).toBe(true);
+    });
 
-      visual.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-          expect(child.userData.isSelected).toBe(true);
-        }
+    it('should skip invisible materials (hitboxes)', () => {
+      // Add an invisible hitbox
+      const hitboxGeometry = new THREE.BoxGeometry(2, 2, 2);
+      const hitboxMaterial = new THREE.MeshStandardMaterial({
+        visible: false,
+        transparent: true,
+        opacity: 0.2,
       });
+      const hitbox = new THREE.Mesh(hitboxGeometry, hitboxMaterial);
+      const originalIntensity = hitboxMaterial.emissiveIntensity;
+      visual.add(hitbox);
+
+      factory.applySelection(visual);
+
+      // Hitbox should not have selection applied
+      expect(hitboxMaterial.emissiveIntensity).toBe(originalIntensity);
     });
 
     it('should take precedence over hover effect', () => {
       // Apply hover first
       factory.applyHover(visual);
+
+      // Verify hover is applied
+      visual.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+          expect(child.material.emissive.getHex()).toBe(0x4488ff);
+        }
+      });
+
       // Then apply selection
       factory.applySelection(visual);
 
@@ -310,55 +276,38 @@ describe('ComponentVisualFactoryBase', () => {
   });
 
   describe('removeSelection()', () => {
-    it('should restore original material values', () => {
-      // Store original values
-      let originalEmissive: number | undefined;
-      let originalIntensity: number | undefined;
+    it('should reset emissive intensity to 0', () => {
+      // Apply selection
+      factory.applySelection(visual);
+
+      // Verify selection is applied
+      let selectionApplied = false;
       visual.traverse((child) => {
         if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-          originalEmissive = child.material.emissive.getHex();
-          originalIntensity = child.material.emissiveIntensity;
+          if (child.material.emissiveIntensity === 0.8) {
+            selectionApplied = true;
+          }
         }
       });
+      expect(selectionApplied).toBe(true);
 
-      // Apply and remove selection
-      factory.applySelection(visual);
+      // Remove selection
       factory.removeSelection(visual);
 
       visual.traverse((child) => {
         if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-          expect(child.material.emissive.getHex()).toBe(originalEmissive);
-          expect(child.material.emissiveIntensity).toBe(originalIntensity);
+          expect(child.material.emissiveIntensity).toBe(0);
         }
       });
     });
 
-    it('should clear isSelected flag', () => {
+    it('should clear isSelected flag on root object', () => {
       factory.applySelection(visual);
+      expect(visual.userData.isSelected).toBe(true);
+
       factory.removeSelection(visual);
 
       expect(visual.userData.isSelected).toBe(false);
-
-      visual.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-          expect(child.userData.isSelected).toBe(false);
-        }
-      });
-    });
-
-    it('should restore hover effect if component was hovered', () => {
-      // Apply hover first, then selection, then remove selection
-      factory.applyHover(visual);
-      factory.applySelection(visual);
-      factory.removeSelection(visual);
-
-      // Hover color (blue) should be restored
-      visual.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-          expect(child.material.emissive.getHex()).toBe(0x4488ff);
-          expect(child.material.emissiveIntensity).toBe(0.6);
-        }
-      });
     });
 
     it('should be safe to call when not selected', () => {
@@ -491,9 +440,8 @@ describe('DefaultVisualFactory', () => {
       // Apply hover
       factory.applyHover(group);
 
-      // Should apply emissive glow
+      // Should apply emissive glow to body mesh
       const mesh = group.children[1] as THREE.Mesh;
-      console.log(mesh);
       const material = mesh.material as THREE.MeshStandardMaterial;
       expect(material.emissive.getHex()).toBe(ComponentVisualFactoryBase['DEFAULT_HOVER_COLOR']);
       expect(material.emissiveIntensity).toBe(

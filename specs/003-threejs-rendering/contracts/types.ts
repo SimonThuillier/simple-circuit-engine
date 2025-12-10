@@ -129,8 +129,8 @@ export type CursorType =
  *
  * @example
  * ```typescript
- * class SelectTool implements IEditingTool {
- *   readonly type = 'select';
+ * class PositionTool implements IEditingTool {
+ *   readonly type = 'position';
  *
  *   onActivate() {
  *     // Setup selection mode

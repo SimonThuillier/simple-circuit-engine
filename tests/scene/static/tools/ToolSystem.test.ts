@@ -10,114 +10,11 @@ import { FactoryRegistry } from '../../../../src/scene/shared/FactoryRegistry';
 import type { ToolType } from '../../../../src/scene/shared/types';
 import { DefaultVisualFactory } from '../../../../src/scene';
 
-// Mock Three.js
-vi.mock('three', () => {
-  const mockGeometry = {
-    dispose: vi.fn(),
-  };
-
-  const mockMaterial = {
-    dispose: vi.fn(),
-  };
-
-  class MockScene {
-    children: any[] = [];
-    background = null;
-    name = '';
-    add = vi.fn((obj) => this.children.push(obj));
-    remove = vi.fn((obj) => {
-      const index = this.children.indexOf(obj);
-      if (index > -1) this.children.splice(index, 1);
-    });
-    traverse = vi.fn((callback) => {
-      const traverseRecursive = (obj: any) => {
-        callback(obj);
-        if (obj.children) {
-          obj.children.forEach(traverseRecursive);
-        }
-      };
-      this.children.forEach(traverseRecursive);
-    });
-  }
-
-  class MockPerspectiveCamera {
-    position = { set: vi.fn(), x: 0, y: 0, z: 0 };
-    lookAt = vi.fn();
-    aspect = 1;
-    updateProjectionMatrix = vi.fn();
-  }
-
-  class MockVector3 {
-    x: number;
-    y: number;
-    z: number;
-    constructor(x = 0, y = 0, z = 0) {
-      this.x = x;
-      this.y = y;
-      this.z = z;
-    }
-    set(x: number, y: number, z: number) {
-      this.x = x;
-      this.y = y;
-      this.z = z;
-      return this;
-    }
-    copy(v: MockVector3) {
-      this.x = v.x;
-      this.y = v.y;
-      this.z = v.z;
-      return this;
-    }
-  }
-
-  class MockColor {
-    constructor(public value: number) {}
-  }
-
-  class MockMesh {
-    geometry = mockGeometry;
-    material = mockMaterial;
-    position = new MockVector3();
-    userData: any = {};
-  }
-
-  class MockLine {
-    geometry = mockGeometry;
-    material = mockMaterial;
-    userData: any = {};
-  }
-
-  class MockGridHelper {
-    geometry = mockGeometry;
-  }
-
-  class MockAmbientLight {
-    constructor(
-      public color: number,
-      public intensity: number
-    ) {}
-  }
-
-  class MockDirectionalLight {
-    position = new MockVector3();
-    constructor(
-      public color: number,
-      public intensity: number
-    ) {}
-  }
-
-  return {
-    Scene: MockScene,
-    PerspectiveCamera: MockPerspectiveCamera,
-    Vector3: MockVector3,
-    Color: MockColor,
-    Mesh: MockMesh,
-    Line: MockLine,
-    GridHelper: MockGridHelper,
-    Object3D: class MockObject3D {},
-    AmbientLight: MockAmbientLight,
-    DirectionalLight: MockDirectionalLight,
-  };
+// Mock Three.js - use importOriginal to get real THREE classes
+// This avoids having to mock everything, we just use the real THREE.js
+vi.mock('three', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('three')>();
+  return actual; // Use real THREE.js - no mocking needed
 });
 
 describe('Tool System Architecture (T060-T063)', () => {
@@ -154,14 +51,14 @@ describe('Tool System Architecture (T060-T063)', () => {
     it('should enable edit mode when setEditMode(true) is called', () => {
       sceneManager.setEditMode(true);
       // Edit mode is enabled, should be able to set a tool
-      expect(() => sceneManager.setActiveTool('select')).not.toThrow();
+      expect(() => sceneManager.setActiveTool('position')).not.toThrow();
     });
 
     it('should disable edit mode when setEditMode(false) is called', () => {
       sceneManager.setEditMode(true);
       sceneManager.setEditMode(false);
       // Edit mode disabled, setting tool should throw
-      expect(() => sceneManager.setActiveTool('select')).toThrow('Edit mode must be enabled');
+      expect(() => sceneManager.setActiveTool('position')).toThrow('Edit mode must be enabled');
     });
   });
 
@@ -172,33 +69,33 @@ describe('Tool System Architecture (T060-T063)', () => {
 
     it('should allow activating a tool when no tool is active', () => {
       expect(sceneManager.getActiveTool()).toBeNull();
-      sceneManager.setActiveTool('select');
-      expect(sceneManager.getActiveTool()).toBe('select');
+      sceneManager.setActiveTool('position');
+      expect(sceneManager.getActiveTool()).toBe('position');
     });
 
     it('should only have one tool active at a time', () => {
-      sceneManager.setActiveTool('select');
-      expect(sceneManager.getActiveTool()).toBe('select');
+      sceneManager.setActiveTool('position');
+      expect(sceneManager.getActiveTool()).toBe('position');
 
-      sceneManager.setActiveTool('placeComponent');
-      expect(sceneManager.getActiveTool()).toBe('placeComponent');
-      expect(sceneManager.getActiveTool()).not.toBe('select');
+      sceneManager.setActiveTool('addComponent');
+      expect(sceneManager.getActiveTool()).toBe('addComponent');
+      expect(sceneManager.getActiveTool()).not.toBe('position');
     });
 
     it('should deactivate previous tool when switching to a new tool', () => {
       const toolDeactivatedSpy = vi.fn();
       sceneManager.on('toolDeactivated', toolDeactivatedSpy);
 
-      sceneManager.setActiveTool('select');
+      sceneManager.setActiveTool('position');
       sceneManager.setActiveTool('wire');
 
       expect(toolDeactivatedSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ toolType: 'select' })
+        expect.objectContaining({ toolType: 'position' })
       );
     });
 
     it('should support all five tool types', () => {
-      const tools: ToolType[] = ['select', 'placeComponent', 'wire', 'branchingPoint', 'delete'];
+      const tools: ToolType[] = ['position', 'addComponent', 'wire', 'branchingPoint', 'delete'];
 
       tools.forEach((toolType) => {
         sceneManager.setActiveTool(toolType);
@@ -210,8 +107,8 @@ describe('Tool System Architecture (T060-T063)', () => {
   describe('T062: Tool state management', () => {
     it('should reset tool state when edit mode is disabled', () => {
       sceneManager.setEditMode(true);
-      sceneManager.setActiveTool('select');
-      expect(sceneManager.getActiveTool()).toBe('select');
+      sceneManager.setActiveTool('position');
+      expect(sceneManager.getActiveTool()).toBe('position');
 
       sceneManager.setEditMode(false);
       expect(sceneManager.getActiveTool()).toBeNull();
@@ -234,7 +131,7 @@ describe('Tool System Architecture (T060-T063)', () => {
       sceneManager.setEditMode(true);
 
       // Activate first tool
-      sceneManager.setActiveTool('placeComponent');
+      sceneManager.setActiveTool('addComponent');
 
       // Switch to second tool - should clear first tool's state
       sceneManager.setActiveTool('delete');
@@ -253,10 +150,10 @@ describe('Tool System Architecture (T060-T063)', () => {
       const toolActivatedSpy = vi.fn();
       sceneManager.on('toolActivated', toolActivatedSpy);
 
-      sceneManager.setActiveTool('select');
+      sceneManager.setActiveTool('position');
 
       expect(toolActivatedSpy).toHaveBeenCalledWith({
-        toolType: 'select',
+        toolType: 'position',
       });
     });
 
@@ -264,11 +161,11 @@ describe('Tool System Architecture (T060-T063)', () => {
       const toolDeactivatedSpy = vi.fn();
       sceneManager.on('toolDeactivated', toolDeactivatedSpy);
 
-      sceneManager.setActiveTool('select');
+      sceneManager.setActiveTool('position');
       sceneManager.setActiveTool('wire');
 
       expect(toolDeactivatedSpy).toHaveBeenCalledWith({
-        toolType: 'select',
+        toolType: 'position',
       });
     });
 
@@ -276,7 +173,7 @@ describe('Tool System Architecture (T060-T063)', () => {
       const cursorChangeSpy = vi.fn();
       sceneManager.on('cursorChangeRequested', cursorChangeSpy);
 
-      sceneManager.setActiveTool('select');
+      sceneManager.setActiveTool('position');
 
       expect(cursorChangeSpy).toHaveBeenCalled();
     });
@@ -287,7 +184,7 @@ describe('Tool System Architecture (T060-T063)', () => {
       sceneManager.on('toolDeactivated', () => events.push('deactivated'));
       sceneManager.on('toolActivated', () => events.push('activated'));
 
-      sceneManager.setActiveTool('select');
+      sceneManager.setActiveTool('position');
       events.length = 0; // Clear initial activation
 
       sceneManager.setActiveTool('wire');
@@ -311,7 +208,7 @@ describe('Tool System Architecture (T060-T063)', () => {
 
   describe('Error handling', () => {
     it('should throw error when trying to activate tool without edit mode', () => {
-      expect(() => sceneManager.setActiveTool('select')).toThrow('Edit mode must be enabled');
+      expect(() => sceneManager.setActiveTool('position')).toThrow('Edit mode must be enabled');
     });
 
     it('should throw error when trying to use tool methods before initialization', () => {

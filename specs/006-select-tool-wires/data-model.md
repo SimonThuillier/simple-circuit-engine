@@ -1,11 +1,14 @@
-# Data Model: Select Tool & Wire Visual Improvements
+# Data Model: Position Tool & Wire Visual Improvements
 
-**Feature**: 006-select-tool-wires
+**Feature**: 006-position-tool-wires
 **Date**: 2025-12-09
+**Updated**: 2025-12-11
 
 ## Overview
 
 This feature primarily operates at the scene/visualization layer, not the core data model. The core `Circuit`, `Component`, `Wire`, and `ENode` classes already support all required data. This document focuses on the new state and structures needed in the scene module.
+
+**Key Architecture**: Selection behavior is centralized in CircuitSceneManager (via SelectionManager), while the PositionTool handles drag/move operations on selected elements.
 
 ## Existing Core Entities (No Changes Required)
 
@@ -36,54 +39,71 @@ Already supports:
 
 ## New Scene Layer Entities
 
-### SelectionState
+### HoverableType
 
-Represents the current selection in the scene.
+Defines the types of circuit elements that can be hovered or selected.
 
 ```typescript
-interface SelectionState {
-  /** Currently selected component ID, or null if nothing selected */
-  selectedComponentId: UUID | null;
-
-  /** Timestamp of selection for potential future use (e.g., double-click detection) */
-  selectedAt: number | null;
-}
+type HoverableType = 'enode' | 'component' | 'wire';
 ```
 
-**Lifecycle**:
-- Initial: `{ selectedComponentId: null, selectedAt: null }`
-- On select: `{ selectedComponentId: <uuid>, selectedAt: Date.now() }`
-- On deselect: `{ selectedComponentId: null, selectedAt: null }`
+### SelectionData (Discriminated Union)
+
+Represents the current selection in the scene. Supports both single and multi-selection patterns.
+
+```typescript
+/** Represents the Selection of one Hoverable Element of the scene */
+interface MonoSelectionData {
+  kind: 'mono';
+  type: HoverableType;
+  id: UUID;
+  data?: string | null; // optional extra data
+}
+
+/** Represents the Selection of multiple Hoverable Elements of the scene */
+interface MultiSelectionData {
+  kind: 'multi';
+  components?: Map<UUID, string | null>;
+  enodes?: Map<UUID, string | null>;
+  wires?: Map<UUID, string | null>;
+}
+
+type SelectionData = MonoSelectionData | MultiSelectionData;
+```
+
+**Note**: Multi-selection (`MultiSelectionData`) is prepared for future implementation but not actively used in this feature.
+
+**Lifecycle** (managed by SelectionManager):
+- Initial: `null` (nothing selected)
+- On selectOne(): `{ kind: 'mono', type: <type>, id: <uuid>, data: null }`
+- On deselect(): `null`
 
 ### DragState
 
-Represents an active drag operation.
+Represents an active drag operation in PositionTool.
 
 ```typescript
 interface DragState {
-  /** Whether a drag is currently in progress */
-  isDragging: boolean;
+  /** The current selection being dragged */
+  selection: SelectionData;
 
-  /** Component being dragged */
-  componentId: UUID | null;
+  /** Map of object IDs to their type and starting position */
+  positionsAtStart: Map<UUID, { type: HoverableType; position: THREE.Vector3 }>;
 
-  /** Starting grid position before drag began */
-  startPosition: Position | null;
+  /** Cursor position when drag started (grid-snapped) */
+  startPosition: THREE.Vector3;
 
-  /** Current preview position during drag (may not be snapped) */
-  currentWorldPosition: { x: number; z: number } | null;
-
-  /** Snapped grid position for preview/commit */
-  snappedPosition: Position | null;
+  /** Current cursor position during drag (grid-snapped) */
+  currentPosition: THREE.Vector3;
 }
 ```
 
 **Lifecycle**:
-- Initial: `{ isDragging: false, componentId: null, ... }`
-- On drag start: Populate all fields from selected component
-- On drag move: Update currentWorldPosition and snappedPosition
-- On drag end: Commit snappedPosition to component, reset to initial
-- On drag cancel: Reset to initial without committing
+- Initial: `null` (no drag in progress)
+- On pointerdown with selection: Populate from current selection and cursor position
+- On gridPositionMove: Update currentPosition, move objects by delta
+- On pointerup: Commit positions to circuit model, reset to null
+- On Escape: Restore objects to positionsAtStart, reset to null
 
 ### WirePath
 
@@ -131,7 +151,7 @@ interface PinWorldPosition {
   componentId: UUID;
 
   /** World position from visual hierarchy */
-  worldPosition: THREE.Vector3;
+  cursorGroundPlanePosition: THREE.Vector3;
 }
 ```
 
@@ -139,38 +159,37 @@ interface PinWorldPosition {
 
 ## State Transitions
 
-### Selection State Machine
+### Selection State Machine (CircuitSceneManager)
 
 ```
 [Nothing Selected]
     │
-    ├── click component ──────► [Component Selected]
+    ├── click on element ─────► [Element Selected]
     │                               │
     │                               ├── click empty space ──► [Nothing Selected]
-    │                               ├── press Escape ────────► [Nothing Selected]
-    │                               ├── click other component ► [Component Selected] (different)
-    │                               └── start drag ──────────► [Dragging]
+    │                               ├── click other element ► [Element Selected] (different)
+    │                               └── start drag ──────────► [Dragging] (selection preserved)
     │
     └── click empty space ────► [Nothing Selected] (no change)
 
-[Dragging]
+[Dragging] (PositionTool active)
     │
-    ├── release mouse ───► [Component Selected] (position committed)
-    └── press Escape ────► [Component Selected] (position reverted)
+    ├── release mouse ───► [Element Selected] (position committed)
+    └── press Escape ────► [Element Selected] (position reverted, selection preserved)
 ```
 
-### Drag State Machine
+**Note**: Selection is managed by CircuitSceneManager.handlePointerDown(), not by individual tools. The PositionTool only handles drag operations on already-selected elements.
+
+### Drag State Machine (PositionTool)
 
 ```
-[Idle]
+[Idle] (dragState = null)
     │
-    └── mousedown on selected component ──► [Drag Started]
-                                                │
-                                                └── mousemove ──► [Dragging]
-                                                                    │
-                                                                    ├── mousemove ──► [Dragging] (update position)
-                                                                    ├── mouseup ────► [Idle] (commit)
-                                                                    └── Escape ─────► [Idle] (cancel)
+    └── pointerdown with selection ──► [Dragging]
+                                           │
+                                           ├── gridPositionMove ──► [Dragging] (update positions)
+                                           ├── pointerup ──────────► [Idle] (commit to model)
+                                           └── Escape ─────────────► [Idle] (restore original)
 ```
 
 ## Visual State Management
@@ -183,7 +202,7 @@ Each component can be in one of these visual states:
 |-------|---------------|-----------|---------|
 | Normal | none (original) | original | default |
 | Hovered | Blue (#4488ff) | 0.6 | mouse over |
-| Selected | Orange (#ff8800) | 0.8 | click to select |
+| Selected | Orange (#ff8800) | 0.8 | click to position |
 | Selected + Hovered | Orange (#ff8800) | 0.8 | selected and mouse over |
 
 **Priority**: Selected > Hovered > Normal

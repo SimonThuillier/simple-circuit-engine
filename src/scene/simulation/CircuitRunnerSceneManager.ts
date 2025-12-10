@@ -670,9 +670,10 @@ export class CircuitRunnerSceneManager extends EventEmitter<RenderEventMap> {
           const componentId = previousElement.userData?.componentId;
           if (componentId) {
             const componentMesh = this.componentMeshes.get(componentId);
-            if (componentMesh && componentMesh.userData.factory) {
+            if (componentMesh) {
               try {
-                componentMesh.userData.factory.removeHover(componentMesh);
+                const factory = this.factoryRegistry.get(componentMesh.userData.componentType);
+                factory.applyHover(componentMesh);
               } catch (error) {
                 console.warn('Failed to remove hover effect:', error);
               }
@@ -698,9 +699,10 @@ export class CircuitRunnerSceneManager extends EventEmitter<RenderEventMap> {
           const componentId = previousElement.userData?.componentId;
           if (componentId) {
             const componentMesh = this.componentMeshes.get(componentId);
-            if (componentMesh && componentMesh.userData.factory) {
+            if (componentMesh) {
               try {
-                componentMesh.userData.factory.applyHover(componentMesh);
+                const factory = this.factoryRegistry.get(componentMesh.userData.componentType);
+                factory.applyHover(componentMesh);
               } catch (error) {
                 console.warn('Failed to apply hover effect:', error);
               }
@@ -713,9 +715,10 @@ export class CircuitRunnerSceneManager extends EventEmitter<RenderEventMap> {
           const componentId = previousElement.userData?.componentId;
           if (componentId) {
             const componentMesh = this.componentMeshes.get(componentId);
-            if (componentMesh && componentMesh.userData.factory) {
+            if (componentMesh) {
               try {
-                componentMesh.userData.factory.removeHover(componentMesh);
+                const factory = this.factoryRegistry.get(componentMesh.userData.componentType);
+                factory.applyHover(componentMesh);
               } catch (error) {
                 console.warn('Failed to remove hover effect:', error);
               }
@@ -916,12 +919,6 @@ export class CircuitRunnerSceneManager extends EventEmitter<RenderEventMap> {
     // Store component reference in userData
     mesh.userData.componentId = component.id;
     mesh.userData.componentType = component.type;
-
-    // Store factory reference for hover/selection/animation (US2)
-    // Only store if factory is class-based (has applyHover method)
-    if (typeof factory !== 'function' && 'applyHover' in factory) {
-      mesh.userData.factory = factory;
-    }
 
     // Add to scene and tracking map
     this.scene!.add(mesh);

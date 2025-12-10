@@ -240,6 +240,55 @@ describe('WireVisualManager', () => {
       expect(wirePath.points[2].z).toBe(-5);
     });
 
+    it('should handle wire with 1 intermediate position', () => {
+      const comp1 = circuit.addComponent(ComponentType.Battery, { x: 0, y: 0 }, 0);
+      const comp2 = circuit.addComponent(ComponentType.Battery, { x: 10, y: 0 }, 0);
+
+      const wire = circuit.addWire(comp1.pins[0], comp2.pins[0], [new Position(5, 2)]);
+
+      componentGroups.set(
+        comp1.id,
+        createMockComponentGroup(comp1.id, [...comp1.pins], { x: 0, y: 0 })
+      );
+      componentGroups.set(
+        comp2.id,
+        createMockComponentGroup(comp2.id, [...comp2.pins], { x: 10, y: 0 })
+      );
+
+      const wirePath = wireManager.computeWirePath(wire, circuit, componentGroups);
+
+      // Should have: start + 1 intermediate + end = 3 points
+      expect(wirePath.points).toHaveLength(3);
+      expect(wirePath.points[1].x).toBe(5);
+      expect(wirePath.points[1].z).toBe(-2);
+    });
+
+    it('should handle wire with 5 intermediate positions', () => {
+      const comp1 = circuit.addComponent(ComponentType.Battery, { x: 0, y: 0 }, 0);
+      const comp2 = circuit.addComponent(ComponentType.Battery, { x: 10, y: 0 }, 0);
+
+      const intermediates: Position[] = [];
+      for (let i = 1; i <= 5; i++) {
+        intermediates.push(new Position(i * 2, i));
+      }
+
+      const wire = circuit.addWire(comp1.pins[0], comp2.pins[0], intermediates);
+
+      componentGroups.set(
+        comp1.id,
+        createMockComponentGroup(comp1.id, [...comp1.pins], { x: 0, y: 0 })
+      );
+      componentGroups.set(
+        comp2.id,
+        createMockComponentGroup(comp2.id, [...comp2.pins], { x: 10, y: 0 })
+      );
+
+      const wirePath = wireManager.computeWirePath(wire, circuit, componentGroups);
+
+      // Should have: start + 5 intermediate + end = 7 points
+      expect(wirePath.points).toHaveLength(7);
+    });
+
     it('should handle wire with many intermediate positions', () => {
       const comp1 = circuit.addComponent(ComponentType.Battery, { x: 0, y: 0 }, 0);
       const comp2 = circuit.addComponent(ComponentType.Battery, { x: 10, y: 0 }, 0);

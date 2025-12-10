@@ -109,8 +109,8 @@ src/
 │   │   ├── EditController.ts
 │   │   └── tools/                  # Editing tool implementations
 │   │       ├── IEditingTool.ts     # Tool interface definition
-│   │       ├── SelectTool.ts       # Select/drag/rotate tool
-│   │       ├── PlaceComponentTool.ts  # Component placement tool
+│   │       ├── PositionTool.ts       # Select/drag/rotate tool
+│   │       ├── AddComponentTool.ts  # Component placement tool
 │   │       ├── WireTool.ts         # Wire creation tool
 │   │       ├── BranchingPointTool.ts  # Branching point insertion tool
 │   │       └── DeleteTool.ts       # Deletion tool
@@ -136,8 +136,8 @@ tests/
 │       ├── ComponentVisualFactory.test.ts
 │       ├── FactoryRegistry.test.ts
 │       ├── tools/                  # Tool system unit tests
-│       │   ├── SelectTool.test.ts
-│       │   ├── PlaceComponentTool.test.ts
+│       │   ├── PositionTool.test.ts
+│       │   ├── AddComponentTool.test.ts
 │       │   ├── WireTool.test.ts
 │       │   ├── BranchingPointTool.test.ts
 │       │   ├── DeleteTool.test.ts
@@ -197,7 +197,7 @@ tests/
 6. **RenderCallback**: Function signature for event callbacks
 7. **ChangedData**: Optional parameter type for incremental updates
 8. **IEditingTool**: Interface defining tool contract (onActivate, onDeactivate, getCursorType, getPreviewState)
-9. **ToolType**: Union type of available tools ('select' | 'placeComponent' | 'wire' | 'branchingPoint' | 'delete')
+9. **ToolType**: Union type of available tools ('position' | 'addComponent' | 'wire' | 'branchingPoint' | 'delete')
 10. **ToolState**: Runtime state for active tool (operation tracking, preview objects, tool-specific data)
 11. **CursorType**: Union type for cursor styles ('default' | 'pointer' | 'crosshair' | 'move' | 'not-allowed' | 'grab' | 'grabbing')
 
@@ -232,8 +232,8 @@ tests/
    - `setActiveTool(toolType: ToolType): void`
    - `getActiveTool(): ToolType | null`
    - `cancelCurrentToolOperation(): void`
-   - `handleToolClick(worldPosition: THREE.Vector3): void`
-   - `handleToolHover(worldPosition: THREE.Vector3): void`
+   - `handleToolClick(cursorGroundPlanePosition: THREE.Vector3): void`
+   - `handleToolHover(cursorGroundPlanePosition: THREE.Vector3): void`
    - `handleToolScroll(delta: number): void`
 
 2. **CircuitRunnerSceneManager.ts**: Class signature with public methods
@@ -254,13 +254,13 @@ tests/
    - `VisualMesh`: Return type from factories (THREE.Object3D wrapper)
 
 4. **types.ts**: Shared types and enums
-   - `RenderEvent`: 'hover' | 'unhover' | 'select' | 'deselect' | 'error' | 'ready' | 'toolActivated' | 'toolDeactivated' | 'toolOperationStarted' | 'toolOperationCompleted' | 'toolOperationCancelled' | 'toolValidationError' | 'cursorChangeRequested'
+   - `RenderEvent`: 'hover' | 'unhover' | 'position' | 'deselect' | 'error' | 'ready' | 'toolActivated' | 'toolDeactivated' | 'toolOperationStarted' | 'toolOperationCompleted' | 'toolOperationCancelled' | 'toolValidationError' | 'cursorChangeRequested'
    - `RenderEventMap`: Type-safe event payload mapping
    - `RenderCallback`: Function signature
    - `ChangedData`: Object type for incremental updates
    - `SceneManagerOptions`: Optional configuration
    - **Tool System Types**:
-   - `ToolType`: 'select' | 'placeComponent' | 'wire' | 'branchingPoint' | 'delete'
+   - `ToolType`: 'position' | 'addComponent' | 'wire' | 'branchingPoint' | 'delete'
    - `CursorType`: 'default' | 'pointer' | 'crosshair' | 'move' | 'not-allowed' | 'grab' | 'grabbing'
    - `IEditingTool`: Tool interface with lifecycle methods
    - `RenderObjectType`: 'component' | 'wire' | 'enode'

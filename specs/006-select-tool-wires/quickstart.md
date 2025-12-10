@@ -1,11 +1,14 @@
-# Quickstart: Select Tool & Wire Visual Improvements
+# Quickstart: Position Tool & Wire Visual Improvements
 
-**Feature**: 006-select-tool-wires
+**Feature**: 006-position-tool-wires
 **Date**: 2025-12-09
+**Updated**: 2025-12-11
 
 ## Overview
 
-This guide provides a quick reference for implementing the Select Tool and wire visual improvements. Follow these steps in order for the smoothest implementation path.
+This guide provides a quick reference for implementing the Position Tool and wire visual improvements. Follow these steps in order for the smoothest implementation path.
+
+**Architecture Note**: Selection behavior (click to select/deselect) is centralized in CircuitSceneManager via SelectionManager. The PositionTool handles only drag/move operations on already-selected elements.
 
 ## Implementation Order
 
@@ -21,49 +24,48 @@ This guide provides a quick reference for implementing the Select Tool and wire 
    - Replace `_createWireMesh()` to use WireVisualManager
    - Wire endpoints now target pin positions, not component centers
 
-### Phase 2: Selection Foundation (P1 stories)
+### Phase 2: Selection Foundation (P1 stories) ✅ COMPLETE
 
-3. **Implement SelectionManager** (`src/scene/shared/SelectionManager.ts`)
-   - Track `selectedComponentId: UUID | null`
-   - Implement `select()`, `deselect()`, `isSelected()`
+3. **Implement SelectionManager** (`src/scene/shared/SelectionManager.ts`) ✅
+   - Track selection via `SelectionData` discriminated union (mono/multi)
+   - Implement `selectOne()`, `deselect()`, `isSelected()`, `hasSelection()`
    - Manage callbacks via `onSelectionChange()`
 
-4. **Implement applySelection/removeSelection** in ComponentVisualFactoryBase
-   - Orange emissive (#ff8800) at 0.8 intensity
-   - Store/restore original material state in userData
-   - Handle interaction with hover state
+4. **Integrate SelectionManager into CircuitSceneManager** ✅
+   - Create SelectionManager instance in `_initializeSelectionManager()`
+   - Wire up selection change callbacks to apply/remove visuals via factory
 
-5. **Integrate SelectionManager into CircuitSceneManager**
-   - Create SelectionManager instance
-   - Wire up selection change callbacks to apply/remove visuals
+5. **Implement selection click handling in CircuitSceneManager** ✅
+   - `handlePointerDown()` handles all selection behavior centrally
+   - Given a hovered unselected element, click → selectOne() and emit 'select'
+   - Given hovering on nothing with selection, click → deselect() and emit 'deselect'
 
-### Phase 3: Select Tool Core (P1 stories)
+### Phase 3: Position Tool Core (P1 stories) 🔄 IN PROGRESS
 
-6. **Implement SelectTool click handling** (`src/scene/static/tools/SelectTool.ts`)
-   - `handleClick()` - select clicked component via SelectionManager
-   - Click empty space → deselect
-   - Click different component → change selection
+6. **PositionTool handles drag only** (`src/scene/static/tools/PositionTool.ts`)
+   - Selection is handled by CircuitSceneManager, NOT PositionTool
+   - PositionTool registers its own event listeners in `onActivate()`
 
-7. **Implement SelectTool drag handling**
-   - `handleMouseDown()` - start drag if clicking selected component
-   - `handleMouseMove()` - update component visual position, update wire visuals
-   - `handleMouseUp()` - commit position to Circuit model
+7. **Implement PositionTool drag handling** ✅
+   - `handlePointerDown()` - start drag on selected element
+   - `handleGridPositionMove()` - update visual positions with grid snapping
+   - `handlePointerUp()` - commit position to Circuit model (TODO: actual model update)
 
-8. **Wire updates during drag**
-   - Use WireVisualManager.updateWiresForComponent() on each drag move
-   - Commit final wire positions on drag end
+8. **Wire updates during drag** ⚠️ TODO
+   - Call WireVisualManager.updateWiresForComponent() on each grid move
+   - See TODO in PositionTool.handleGridPositionMove()
 
-### Phase 4: Rotation & Deselection (P2 stories)
+### Phase 4: Rotation & Deselection (P2 stories) ⏳ PENDING
 
-9. **Implement rotation in SelectTool**
+9. **Implement rotation in PositionTool** ⏳
    - `handleDoubleClick()` - rotate 90° clockwise
    - `handleKeyDown('r')` - rotate 90° clockwise
    - Update component rotation in Circuit model
    - Update wire visuals for rotated pin positions
 
-10. **Implement deselection**
-    - `handleKeyDown('Escape')` - deselect
-    - Already handled: click empty space, click different component
+10. **Deselection behavior** ✅ PARTIALLY COMPLETE
+    - Empty space click deselection: Handled in CircuitSceneManager.handlePointerDown()
+    - Escape key: Cancels drag and restores position (selection preserved)
 
 ### Phase 5: Multi-Line Wire Rendering (P2 stories)
 
@@ -155,28 +157,29 @@ computeWirePath(wire: Wire, circuit: Circuit): WirePath {
 
 ## Testing Checklist
 
-- [ ] Click component → visually selected (orange glow)
-- [ ] Click empty space → deselected
-- [ ] Click different component → selection changes
-- [ ] Escape key → deselects
-- [ ] Drag selected component → moves with mouse
-- [ ] Release drag → snaps to grid
-- [ ] Wires follow component during drag
-- [ ] Double-click selected → rotates 90°
-- [ ] R key with selected → rotates 90°
-- [ ] Wires update after rotation
-- [ ] Wire endpoints are at pin positions (not component center)
-- [ ] Wires with intermediatePositions render as multi-segment
+- [X] Click component → visually selected (orange glow)
+- [X] Click empty space → deselected
+- [X] Click different component → selection changes
+- [X] Escape key → cancels drag, restores position (selection preserved)
+- [X] Drag selected component → moves with mouse (grid-snapped)
+- [X] Release drag → position committed
+- [ ] ⚠️ Wires follow component during drag (TODO: T035-T036)
+- [ ] Double-click selected → rotates 90° (Phase 7)
+- [ ] R key with selected → rotates 90° (Phase 7)
+- [ ] Wires update after rotation (Phase 7)
+- [X] Wire endpoints are at pin positions (not component center)
+- [X] Wires with intermediatePositions render as multi-segment
 
 ## Files to Create/Modify
 
-| File | Action | Priority |
-|------|--------|----------|
-| `src/scene/shared/WireVisualManager.ts` | CREATE | P1 |
-| `src/scene/shared/SelectionManager.ts` | CREATE | P1 |
-| `src/scene/shared/components/ComponentVisualFactory.ts` | MODIFY | P1 |
-| `src/scene/static/CircuitSceneManager.ts` | MODIFY | P1 |
-| `src/scene/static/tools/SelectTool.ts` | MODIFY | P1 |
-| `tests/scene/WireVisualManager.test.ts` | CREATE | P1 |
-| `tests/scene/SelectionManager.test.ts` | CREATE | P1 |
-| `tests/scene/SelectTool.test.ts` | CREATE | P2 |
+| File | Action | Status |
+|------|--------|--------|
+| `src/scene/shared/WireVisualManager.ts` | CREATED | ✅ Done |
+| `src/scene/shared/SelectionManager.ts` | CREATED | ✅ Done |
+| `src/scene/shared/types.ts` | MODIFIED | ✅ Done (SelectionData types) |
+| `src/scene/shared/components/ComponentVisualFactory.ts` | MODIFIED | ✅ Done |
+| `src/scene/static/CircuitSceneManager.ts` | MODIFIED | ✅ Done |
+| `src/scene/static/tools/PositionTool.ts` | MODIFIED | 🔄 In Progress |
+| `tests/scene/shared/WireVisualManager.test.ts` | CREATED | ✅ Done |
+| `tests/scene/shared/SelectionManager.test.ts` | CREATED | ✅ Done |
+| `tests/scene/static/tools/PositionTool.test.ts` | TODO | ⏳ Pending |

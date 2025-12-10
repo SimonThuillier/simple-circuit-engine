@@ -22,8 +22,8 @@ export { CircuitSceneManager } from './static/CircuitSceneManager';
 export { CircuitRunnerSceneManager } from './simulation/CircuitRunnerSceneManager';
 
 // Editing Tools
-export { SelectTool } from './static/tools/SelectTool';
-export { PlaceComponentTool } from './static/tools/PlaceComponentTool';
+export { PositionTool } from './static/tools/PositionTool';
+export { AddComponentTool } from './static/tools/AddComponentTool';
 export { WireTool } from './static/tools/WireTool';
 export { BranchingPointTool } from './static/tools/BranchingPointTool';
 export { DeleteTool } from './static/tools/DeleteTool';

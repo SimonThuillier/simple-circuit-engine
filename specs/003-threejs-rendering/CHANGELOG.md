@@ -55,7 +55,7 @@ Updated `spec.md` to incorporate comprehensive tool system requirements based on
 
 **FR-029**: Standard Tool Set
 - Defines 5 core editing tools with their interaction patterns:
-  - **Select**: click to select, drag to move, double-click to rotate
+  - **Select**: click to position, drag to move, double-click to rotate
   - **PlaceComponent**: palette choose type, click to place, scroll to rotate before placement
   - **Wire**: click source pin/branching point, click target, Escape to cancel
   - **BranchingPoint**: click on wire to split and insert branching point
@@ -179,8 +179,8 @@ The following contract files will need updates (per analysis.md):
   - `setActiveTool(toolType: ToolType): void`
   - `getActiveTool(): ToolType | null`
   - `cancelCurrentToolOperation(): void`
-  - `handleToolClick(worldPosition: THREE.Vector3): void`
-  - `handleToolHover(worldPosition: THREE.Vector3): void`
+  - `handleToolClick(cursorGroundPlanePosition: THREE.Vector3): void`
+  - `handleToolHover(cursorGroundPlanePosition: THREE.Vector3): void`
   - `handleToolScroll(delta: number): void`
 
 ---

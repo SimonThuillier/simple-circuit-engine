@@ -1,11 +1,8 @@
 /**
  * ComponentVisualFactory Contract Extension
  *
- * Documents the selection-related methods that need to be
- * implemented in ComponentVisualFactoryBase.
- *
- * These methods already exist as placeholders; this contract
- * defines their required behavior.
+ * Documents the selection-related methods implemented in ComponentVisualFactoryBase.
+ * Updated 2025-12-11 to match actual implementation.
  */
 
 import type * as THREE from 'three';
@@ -38,23 +35,27 @@ export const DEFAULT_HOVER_CONFIG: SelectionVisualConfig = {
 };
 
 /**
- * existing component visual factory interface with implemented selection methods
+ * Component visual factory interface with selection methods
  *
  * Selection and hover are mutually exclusive visually:
- * - If selected, show selection visual (orange)
+ * - If selected, show selection visual (orange) - hover visual is skipped
  * - If hovered but not selected, show hover visual (blue)
  * - If both selected and hovered, show selection visual (orange)
+ *
+ * Implementation Note: The current implementation uses a simplified approach
+ * where emissive intensity is reset to 0 on remove (instead of tracking
+ * original values). This works because components have 0 emissive by default.
  */
 export interface IComponentVisualFactory {
   /**
    * Apply selection visual effect to a component
    *
-   * Implementation requirements:
-   * - Store original material state in userData (if not already stored)
-   * - Set emissive color to selection color (orange #ff8800)
-   * - Set emissive intensity to 0.8
-   * - Mark component as selected in userData.isSelected
-   * - Idempotent: safe to call multiple times
+   * Implementation:
+   * - Traverses all meshes with MeshStandardMaterial
+   * - Skips invisible materials (hitboxes)
+   * - Sets emissive color to orange (#ff8800)
+   * - Sets emissive intensity to 0.8
+   * - Sets userData.isSelected = true on root object
    *
    * @param object3D - The component's root Three.js object
    */
@@ -63,49 +64,30 @@ export interface IComponentVisualFactory {
   /**
    * Remove selection visual effect from a component
    *
-   * Implementation requirements:
-   * - If component was hovered before selection, restore hover visual
-   * - Otherwise, restore original material state
-   * - Clear userData.isSelected flag
-   * - Safe to call even if not selected
+   * Implementation:
+   * - Traverses all meshes with MeshStandardMaterial
+   * - Resets emissive intensity to 0
+   * - Sets userData.isSelected = false on root object
+   *
+   * Note: Does not restore original emissive values (assumes default is 0)
    *
    * @param object3D - The component's root Three.js object
    */
   removeSelection(object3D: THREE.Object3D): void;
-
-  /**
-   * Check if a component is currently selected
-   *
-   * @param object3D - The component's root Three.js object
-   * @returns true if the component has selection visual applied
-   */
-  isSelected?(object3D: THREE.Object3D): boolean;
 }
 
 /**
  * userData structure for visual state tracking
  *
- * This extends the existing userData pattern used by hover.
+ * Stored on the component's root THREE.Group object.
  */
 export interface ComponentVisualUserData {
   /** Component ID */
   componentId: string;
 
-  /** Component type */
+  /** Component type - enables factory lookup by type */
   componentType: string;
 
-  /** Whether hover visual is currently applied */
-  isHovered?: boolean;
-
-  /** Whether selection visual is currently applied */
+  /** Whether selection visual is currently applied (on root group) */
   isSelected?: boolean;
-
-  /** Original emissive color before hover/selection */
-  originalEmissive?: THREE.Color;
-
-  /** Original emissive intensity before hover/selection */
-  originalEmissiveIntensity?: number;
-
-  /** Factory reference for applying/removing effects */
-  factory?: IComponentVisualFactory;
 }

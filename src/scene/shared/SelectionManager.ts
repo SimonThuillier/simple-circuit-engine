@@ -3,56 +3,46 @@
  * @module scene/shared/SelectionManager
  *
  * Manages component selection state in the circuit scene.
- * Follows the same pattern as HoverManager for consistency.
+ * However SceneManager handles applying or not visuals for selection, based on current toolState.
+ * Follows a similar pattern as HoverManager for consistency.
  */
 
 import type { UUID } from '../../core/types/Identifier';
-import type * as THREE from 'three';
-import type { IComponentVisualFactory } from './components/ComponentVisualFactory';
+import type {HoverableType, SelectionData} from "./types";
 
 /**
  * Callback invoked when selection changes
  *
- * @param componentId - The newly selected component ID, or null if deselected
- * @param previousId - The previously selected component ID, or null if none was selected
+ * @param newSelection - The new selection, or null if deselected
+ * @param previousSelection - The previous selection, or null if none was selected
  */
-export type SelectionCallback = (componentId: UUID | null, previousId: UUID | null) => void;
+export type SelectionCallback = (newSelection: SelectionData | null, previousSelection: SelectionData | null) => void;
 
 /**
- * Manages component selection state for the circuit scene.
+ * Manages selected components, enodes or wires for the circuit scene.
+ * Multi-selection is planned (notably with the use of a flexible SelectionData) but still to implement.
  *
- * Key responsibilities:
- * - Track single-component selection state
- * - Notify listeners of selection changes
- * - Apply/remove selection visuals via factory callbacks
+ * Key current responsibilities:
+ * - Track -currently single object- selection state
+ * - Notify listeners of selection changes (observer pattern)
  *
  * @example
  * ```typescript
  * const selectionManager = new SelectionManager();
  *
- * // Listen for selection changes
- * selectionManager.onSelectionChange((componentId, previousId) => {
- *   if (previousId) {
- *     factory.removeSelection(previousObject);
- *   }
- *   if (componentId) {
- *     factory.applySelection(newObject);
- *   }
- * });
  *
- * // Select a component
- * selectionManager.select(componentId, componentObject);
+ * // Select a single object
+ * selectionManager.selectOne('component', 'component-uuid-1234');
+ * selectionManager.selectOne('enode', 'enode-uuid-1234');
+ * selectionManager.selectOne('wire', 'wire-uuid-1234');
  *
  * // Deselect
  * selectionManager.deselect();
  * ```
  */
 export class SelectionManager {
-  /** Currently selected component ID */
-  private selectedComponentId: UUID | null = null;
-
-  /** Currently selected component's Three.js object */
-  private selectedObject: THREE.Object3D | null = null;
+  /** Current selection */
+  private selection: SelectionData | null = null;
 
   /** Timestamp when selection occurred (for double-click detection) */
   private selectedAt: number | null = null;
@@ -60,43 +50,19 @@ export class SelectionManager {
   /** Registered selection change callbacks */
   private callbacks: Set<SelectionCallback> = new Set();
 
-  /** Factory for applying/removing selection visuals */
-  private factory: IComponentVisualFactory | null = null;
-
   /**
    * Create a new SelectionManager
-   *
-   * @param factory - Optional factory for applying selection visuals
    */
-  constructor(factory?: IComponentVisualFactory) {
-    this.factory = factory ?? null;
+  constructor() {
   }
 
   /**
-   * Set the factory used for selection visuals
+   * Get the current selection
    *
-   * @param factory - Factory implementing applySelection/removeSelection
+   * @returns The SelectionData, or null if nothing is selected
    */
-  setFactory(factory: IComponentVisualFactory): void {
-    this.factory = factory;
-  }
-
-  /**
-   * Get the currently selected component ID
-   *
-   * @returns The selected component ID, or null if nothing is selected
-   */
-  getSelectedComponentId(): UUID | null {
-    return this.selectedComponentId;
-  }
-
-  /**
-   * Get the currently selected component's Three.js object
-   *
-   * @returns The selected Object3D, or null if nothing is selected
-   */
-  getSelectedObject(): THREE.Object3D | null {
-    return this.selectedObject;
+  getSelection(): SelectionData | null {
+    return this.selection;
   }
 
   /**
@@ -109,82 +75,129 @@ export class SelectionManager {
   }
 
   /**
-   * Check if a specific component is selected
+   * Check if a specific object is selected
    *
-   * @param componentId - The component ID to check
-   * @returns true if the component is currently selected
+   * @param type - The type of hoverable object
+   * @param objectId - The object ID to check
+   * @returns true if the object is currently selected
    */
-  isSelected(componentId: UUID): boolean {
-    return this.selectedComponentId === componentId;
+  isSelected(type: HoverableType, objectId: UUID): boolean {
+    if (!this.selection) {
+      return false;
+    }
+    if (this.selection.kind === 'mono'){
+      return this.selection.type === type && this.selection.id === objectId;
+    }
+    if (this.selection.kind === 'multi'){
+      if (type === 'component'){
+        return this.selection.components?.has(objectId) ?? false;
+      }
+      if (type === 'enode'){
+        return this.selection.enodes?.has(objectId) ?? false;
+      }
+      if (type === 'wire'){
+        return this.selection.wires?.has(objectId) ?? false;
+      }
+    }
+    return false;
   }
 
   /**
    * Check if anything is selected
    *
-   * @returns true if a component is currently selected
+   * @returns true if one object is currently selected or several objects are currently selected
    */
   hasSelection(): boolean {
-    return this.selectedComponentId !== null;
+    return this.selection !== null;
+  }
+
+  private _selectionsEqual(a: SelectionData | null, b: SelectionData | null): boolean {
+    if (a === b) {
+      return true;
+    }
+    if (a === null || b === null) {
+      return false;
+    }
+    if (a.kind !== b.kind) {
+      return false;
+    }
+    if (a.kind === 'mono' && b.kind === 'mono') {
+      return a.id === b.id;
+    }
+    if (a.kind === 'multi' && b.kind === 'multi') {
+      const aComponents = a.components ?? new Map<UUID, string | null>();
+      const bComponents = b.components ?? new Map<UUID, string | null>();
+      const aEnodes = a.enodes ?? new Map<UUID, string | null>();
+      const bEnodes = b.enodes ?? new Map<UUID, string | null>();
+      const aWires = a.wires ?? new Map<UUID, string | null>();
+      const bWires = b.wires ?? new Map<UUID, string | null>();
+
+      if (aComponents.size !== bComponents.size ||
+          aEnodes.size !== bEnodes.size ||
+          aWires.size !== bWires.size) {
+        return false;
+      }
+
+      for (const id of aComponents.keys()) {
+        if (!bComponents.has(id)) {
+          return false;
+        }
+      }
+      for (const id of aEnodes.keys()) {
+        if (!bEnodes.has(id)) {
+          return false;
+        }
+      }
+      for (const id of aWires.keys()) {
+        if (!bWires.has(id)) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   /**
-   * Select a component
+   * Select one object
    *
-   * If another component was previously selected, it will be deselected first.
+   * If another object was previously selected or a multi selection existed, they will be deselected first.
    *
-   * @param componentId - The component ID to select
-   * @param object3D - The Three.js object to apply selection visual to
+   * @param type - The type of hoverable object to select
+   * @param objectId - The object ID to select
+   * @param data - Optional extra data
    */
-  select(componentId: UUID, object3D: THREE.Object3D): void {
-    const previousId = this.selectedComponentId;
+  selectOne(type: HoverableType, objectId: UUID, data: string | null = null): void {
+    const previousSelection = this.selection;
+    const newSelection: SelectionData = { kind: 'mono', type: type, id: objectId, data: data };
 
-    // No change if already selected
-    if (previousId === componentId) {
+    // No change if selections are equal
+    if (this._selectionsEqual(newSelection, previousSelection)) {
       return;
     }
 
-    // Remove selection visual from previous component
-    if (this.selectedObject && this.factory) {
-      this.factory.removeSelection(this.selectedObject);
-    }
-
     // Update state
-    this.selectedComponentId = componentId;
-    this.selectedObject = object3D;
+    this.selection = newSelection;
     this.selectedAt = Date.now();
 
-    // Apply selection visual to new component
-    if (this.factory) {
-      this.factory.applySelection(object3D);
-    }
-
     // Notify callbacks
-    this.notifyCallbacks(componentId, previousId);
+    this.notifyCallbacks(newSelection, previousSelection);
   }
 
   /**
    * Deselect the current selection
    */
   deselect(): void {
-    const previousId = this.selectedComponentId;
-
+    const previousSelection = this.selection;
     // Nothing to deselect
-    if (!previousId) {
+    if (!previousSelection) {
       return;
     }
-
-    // Remove selection visual
-    if (this.selectedObject && this.factory) {
-      this.factory.removeSelection(this.selectedObject);
-    }
-
     // Clear state
-    this.selectedComponentId = null;
-    this.selectedObject = null;
+    this.selection = null;
     this.selectedAt = null;
 
     // Notify callbacks
-    this.notifyCallbacks(null, previousId);
+    this.notifyCallbacks(null, previousSelection);
   }
 
   /**
@@ -204,13 +217,13 @@ export class SelectionManager {
   /**
    * Notify all registered callbacks of selection change
    *
-   * @param componentId - New selection
-   * @param previousId - Previous selection
+   * @param newSelection - New selection
+   * @param previousSelection - Previous selection
    */
-  private notifyCallbacks(componentId: UUID | null, previousId: UUID | null): void {
+  private notifyCallbacks(newSelection: SelectionData | null, previousSelection: SelectionData | null): void {
     for (const callback of this.callbacks) {
       try {
-        callback(componentId, previousId);
+        callback(newSelection, previousSelection);
       } catch (error) {
         console.error('Selection callback error:', error);
       }
@@ -221,16 +234,8 @@ export class SelectionManager {
    * Clean up resources
    */
   dispose(): void {
-    // Remove selection visual if present
-    if (this.selectedObject && this.factory) {
-      this.factory.removeSelection(this.selectedObject);
-    }
-
-    // Clear all state
-    this.selectedComponentId = null;
-    this.selectedObject = null;
+    this.selection = null;
     this.selectedAt = null;
     this.callbacks.clear();
-    this.factory = null;
   }
 }

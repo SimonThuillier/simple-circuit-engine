@@ -202,28 +202,36 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
    * and hover visual is not applied (but isHovered flag is still set).
    */
   applyHover(object3D: THREE.Object3D): void {
+    if (object3D.userData.isSelected) {
+      // Component is selected; skip hover visual
+      return;
+    }
+
     object3D.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         const material = child.material;
         if (material instanceof THREE.MeshStandardMaterial) {
-          // Skip hitboxes (invisible materials)
-          if (material.visible === false || material.opacity < 0.5) {
+          // Skip invisible materials
+          if (material.visible === false) {
             return;
           }
 
-          // Store original values if not already stored
-          if (!child.userData.isHovered && !child.userData.isSelected) {
-            child.userData.originalEmissive = material.emissive.clone();
-            child.userData.originalEmissiveIntensity = material.emissiveIntensity;
-          }
+          material.emissive.setHex(ComponentVisualFactoryBase.DEFAULT_HOVER_COLOR);
+          material.emissiveIntensity = ComponentVisualFactoryBase.DEFAULT_HOVER_INTENSITY;
 
-          child.userData.isHovered = true;
-
-          // Only apply hover visual if not selected (selection takes precedence)
-          if (!child.userData.isSelected) {
-            material.emissive.setHex(ComponentVisualFactoryBase.DEFAULT_HOVER_COLOR);
-            material.emissiveIntensity = ComponentVisualFactoryBase.DEFAULT_HOVER_INTENSITY;
-          }
+          // // Store original values if not already stored
+          // if (!child.userData.isHovered && !child.userData.isSelected) {
+          //   child.userData.originalEmissive = material.emissive.clone();
+          //   child.userData.originalEmissiveIntensity = material.emissiveIntensity;
+          // }
+          //
+          // child.userData.isHovered = true;
+          //
+          // // Only apply hover visual if not selected (selection takes precedence)
+          // if (!child.userData.isSelected) {
+          //   material.emissive.setHex(ComponentVisualFactoryBase.DEFAULT_HOVER_COLOR);
+          //   material.emissiveIntensity = ComponentVisualFactoryBase.DEFAULT_HOVER_INTENSITY;
+          // }
         }
       }
     });
@@ -233,18 +241,16 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
    * Remove hover visual effect, restoring original materials
    */
   removeHover(object3D: THREE.Object3D): void {
+    if (object3D.userData.isSelected) {
+      // Component is selected; skip unhover visual
+      return;
+    }
     object3D.traverse((child) => {
       if (child instanceof THREE.Mesh) {
-        if (child.userData.isHovered) {
-          const material = child.material;
-          if (material instanceof THREE.MeshStandardMaterial) {
-            // Restore original values
-            if (child.userData.originalEmissive) {
-              material.emissive.copy(child.userData.originalEmissive);
-            }
-            material.emissiveIntensity = child.userData.originalEmissiveIntensity ?? 0;
-          }
-          child.userData.isHovered = false;
+        const material = child.material;
+
+        if (material instanceof THREE.MeshStandardMaterial) {
+          material.emissiveIntensity = 0;
         }
       }
     });
@@ -268,20 +274,9 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
             return;
           }
 
-          // Store original values if not already stored (by hover or previous selection)
-          if (
-            child.userData.originalEmissive === undefined &&
-            !child.userData.isHovered &&
-            !child.userData.isSelected
-          ) {
-            child.userData.originalEmissive = material.emissive.clone();
-            child.userData.originalEmissiveIntensity = material.emissiveIntensity;
-          }
-
           // Apply selection effect (overrides hover if present)
           material.emissive.setHex(ComponentVisualFactoryBase.DEFAULT_SELECTION_COLOR);
           material.emissiveIntensity = ComponentVisualFactoryBase.DEFAULT_SELECTION_INTENSITY;
-          child.userData.isSelected = true;
         }
       }
     });
@@ -300,26 +295,12 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
   removeSelection(object3D: THREE.Object3D): void {
     object3D.traverse((child) => {
       if (child instanceof THREE.Mesh) {
-        if (child.userData.isSelected) {
-          const material = child.material;
-          if (material instanceof THREE.MeshStandardMaterial) {
-            // If component is still hovered, restore hover effect
-            if (child.userData.isHovered) {
-              material.emissive.setHex(ComponentVisualFactoryBase.DEFAULT_HOVER_COLOR);
-              material.emissiveIntensity = ComponentVisualFactoryBase.DEFAULT_HOVER_INTENSITY;
-            } else {
-              // Restore original values
-              if (child.userData.originalEmissive) {
-                material.emissive.copy(child.userData.originalEmissive);
-              }
-              material.emissiveIntensity = child.userData.originalEmissiveIntensity ?? 0;
-            }
-          }
-          child.userData.isSelected = false;
+        const material = child.material;
+        if (material instanceof THREE.MeshStandardMaterial) {
+          material.emissiveIntensity = 0;
         }
       }
     });
-
     object3D.userData.isSelected = false;
   }
 
@@ -357,14 +338,14 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     };
 
     // Hitbox (hemisphere, raycastable)
-    const hitboxGeom = new THREE.SphereGeometry(0.5, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+    const hitboxGeom = new THREE.SphereGeometry(0.9, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
     const hitbox = new THREE.Mesh(
-      hitboxGeom,
-      new THREE.MeshStandardMaterial({
-        color: ComponentVisualFactoryBase.DEFAULT_HOVER_COLOR,
-        transparent: true,
-        opacity: 0,
-      })
+        hitboxGeom,
+        new THREE.MeshStandardMaterial({
+          color: ComponentVisualFactoryBase.DEFAULT_HOVER_COLOR,
+          transparent: true,
+          opacity: 0,
+        })
     );
     hitbox.userData = {
       type: 'enodeHitbox',
@@ -378,12 +359,12 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
 
     // Visual sphere
     const visual = new THREE.Mesh(
-      new THREE.SphereGeometry(0.3, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
-      new THREE.MeshStandardMaterial({
-        color: ComponentVisualFactoryBase.DEFAULT_PIN_COLOR,
-        emissive: ComponentVisualFactoryBase.DEFAULT_PIN_COLOR,
-        emissiveIntensity: 0,
-      })
+        new THREE.SphereGeometry(0.3, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+        new THREE.MeshStandardMaterial({
+          color: ComponentVisualFactoryBase.DEFAULT_PIN_COLOR,
+          emissive: ComponentVisualFactoryBase.DEFAULT_PIN_COLOR,
+          emissiveIntensity: 0,
+        })
     );
     visual.userData = {
       type: 'enode',
@@ -409,11 +390,11 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
    * @returns THREE.Mesh configured as component hitbox
    */
   protected createComponentHitbox(
-    componentId: string,
-    groupId: number,
-    width: number,
-    height: number,
-    depth: number
+      componentId: string,
+      groupId: number,
+      width: number,
+      height: number,
+      depth: number
   ): THREE.Mesh {
     const geometry = new THREE.BoxGeometry(width, height, depth);
     const material = new THREE.MeshBasicMaterial({

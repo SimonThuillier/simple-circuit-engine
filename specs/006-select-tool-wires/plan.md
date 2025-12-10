@@ -1,13 +1,13 @@
-# Implementation Plan: Select Tool & Wire Visual Improvements
+# Implementation Plan: Position Tool & Wire Visual Improvements
 
-**Branch**: `006-select-tool-wires` | **Date**: 2025-12-09 | **Spec**: [spec.md](./spec.md)
-**Input**: Feature specification from `/specs/006-select-tool-wires/spec.md`
+**Branch**: `006-position-tool-wires` | **Date**: 2025-12-09 | **Updated**: 2025-12-11 | **Spec**: [spec.md](./spec.md)
+**Input**: Feature specification from `/specs/006-position-tool-wires/spec.md`
 
 **Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
 
 ## Summary
 
-Implement the first circuit editing tool (Select) enabling users to select, drag/move, and rotate components on the 3D scene. Concurrently improve wire visual management to target actual pin positions (not component centers), follow pins during component movement/rotation, and support multi-segment rendering via intermediatePositions waypoints.
+Implement the Position tool enabling users to drag/move and rotate selected elements on the 3D scene. Selection behavior (click to select/deselect) is handled centrally by CircuitSceneManager. Concurrently improve wire visual management to target actual pin positions (not component centers), follow pins during component movement/rotation, and support multi-segment rendering via intermediatePositions waypoints.
 
 ## Technical Context
 
@@ -30,9 +30,9 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 | Principle | Status | Notes |
 |-----------|--------|-------|
 | Framework Agnosticism | ✅ PASS | No UI framework dependencies; pure Three.js + event-driven API |
-| Modular Separation | ✅ PASS | SelectTool lives in `scene/static/tools/`; wire rendering in `scene/`; no core/ contamination |
+| Modular Separation | ✅ PASS | PositionTool lives in `scene/static/tools/`; wire rendering in `scene/`; no core/ contamination |
 | Module Import Rules | ✅ PASS | scene/ imports only core/ and three; no playback/ dependencies |
-| Public API Shape | ✅ PASS | Event-based communication (select/deselect events already defined) |
+| Public API Shape | ✅ PASS | Event-based communication (position/deselect events already defined) |
 | Resource Management | ✅ PASS | Selection state scoped to scene manager instance |
 | No `any` Types | ✅ PASS | Will use strict TypeScript throughout |
 | Test Coverage | ✅ PASS | Scene module requires 60% minimum; will add tests for new functionality |
@@ -44,17 +44,21 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 | Framework Agnosticism | ✅ PASS | SelectionManager and WireVisualManager are pure TypeScript + Three.js |
 | Modular Separation | ✅ PASS | New files in scene/shared/ follow existing patterns; core/ unchanged |
 | Module Import Rules | ✅ PASS | Contracts reference core types appropriately; no circular dependencies |
-| Public API Shape | ✅ PASS | New events (selectionChange, dragStart, etc.) follow existing EventEmitter pattern |
+| Public API Shape | ✅ PASS | New events (selectionChange, gridPositionMove, etc.) follow existing EventEmitter pattern |
 | Resource Management | ✅ PASS | SelectionManager.dispose() and WireVisualManager.dispose() defined in contracts |
 | No `any` Types | ✅ PASS | All contracts use proper TypeScript types |
-| Test Coverage | ✅ PASS | Test files specified for SelectionManager, WireVisualManager, SelectTool |
+| Test Coverage | ✅ PASS | Test files specified for SelectionManager, WireVisualManager, PositionTool |
+
+### Architecture Note
+
+Selection behavior is centralized in CircuitSceneManager via SelectionManager integration. The PositionTool does not handle click-to-select; it only handles drag/move operations on already-selected elements. This allows consistent selection behavior across all tools.
 
 ## Project Structure
 
 ### Documentation (this feature)
 
 ```text
-specs/006-select-tool-wires/
+specs/006-position-tool-wires/
 ├── plan.md              # This file (/speckit.plan command output)
 ├── research.md          # Phase 0 output (/speckit.plan command)
 ├── data-model.md        # Phase 1 output (/speckit.plan command)
@@ -75,15 +79,16 @@ src/
 ├── scene/
 │   ├── shared/
 │   │   ├── components/
-│   │   │   └── ComponentVisualFactory.ts  # MODIFY: Implement applySelection/removeSelection
+│   │   │   └── ComponentVisualFactory.ts  # MODIFIED: applySelection/removeSelection implemented
 │   │   ├── SelectionManager.ts            # NEW: Centralized selection state management
 │   │   ├── WireVisualManager.ts           # NEW: Wire rendering with pin positions & waypoints
-│   │   └── GeometryUtils.ts               # MODIFY: Enhance wire path geometry if needed
+│   │   ├── GeometryUtils.ts               # MODIFIED: nearestGridMagnetPosition() added
+│   │   └── types.ts                       # MODIFIED: SelectionData, HoverableType types added
 │   │
 │   └── static/
-│       ├── CircuitSceneManager.ts         # MODIFY: Integrate SelectionManager, wire updates
+│       ├── CircuitSceneManager.ts         # MODIFIED: SelectionManager integration, wire updates
 │       └── tools/
-│           └── SelectTool.ts              # MODIFY: Implement select/drag/rotate functionality
+│           └── PositionTool.ts            # MODIFIED: Drag/move functionality (selection in CSM)
 │
 tests/
 ├── scene/
@@ -91,11 +96,13 @@ tests/
 │   │   ├── SelectionManager.test.ts           # NEW: SelectionManager unit tests
 │   │   └── WireVisualManager.test.ts          # NEW: Wire rendering tests
 │   └── static/
-│       └── tools/     
-              └── SelectTool.test.ts           # MODIFY: implement actual SelectTool unit tests
+│       └── tools/
+              └── PositionTool.test.ts           # TODO: Implement actual PositionTool unit tests
 ```
 
-**Structure Decision**: Single library project following existing patterns. New functionality integrates into existing `scene/` module hierarchy. SelectionManager and WireVisualManager are new shared utilities. SelectTool extends the existing tool system in `scene/static/tools/`.
+**Structure Decision**: Single library project following existing patterns. New functionality integrates into existing `scene/` module hierarchy. SelectionManager and WireVisualManager are new shared utilities. PositionTool extends the existing tool system in `scene/static/tools/`.
+
+**Architecture Note**: Selection behavior (click-to-select/deselect) is handled in CircuitSceneManager._initializeSelectionManager() and handlePointerDown(), not in PositionTool. This centralizes selection logic for consistency across all tools.
 
 ## Complexity Tracking
 

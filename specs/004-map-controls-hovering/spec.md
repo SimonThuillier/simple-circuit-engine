@@ -30,7 +30,7 @@ NB : this is the default beahvior of already installed three/addons/controls/Map
 
 Users need visual feedback when their cursor hovers over circuit elements. The system must detect which element is under the cursor following priority: enode > component > wire. This enables future selection, editing, and tool interactions.
 
-**Why this priority**: Hovering detection is the foundation for all user interactions. Without knowing what's under the cursor, users cannot select, edit, or interact with any circuit element.
+**Why this priority**: Hovering detection is the foundation for all user interactions. Without knowing what's under the cursor, users cannot position, edit, or interact with any circuit element.
 
 **Independent Test**: Can be fully tested by moving the cursor over different circuit elements and observing that the correct element is detected and reported, enabling downstream hover effects.
 

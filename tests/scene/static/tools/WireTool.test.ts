@@ -22,11 +22,11 @@ describe('WireTool (T066)', () => {
   });
 
   describe.skip('Source selection (first click)', () => {
-    it('should select pin as source endpoint', () => {
+    it('should position pin as source endpoint', () => {
       expect(true).toBe(false);
     });
 
-    it('should select branching point as source endpoint', () => {
+    it('should position branching point as source endpoint', () => {
       expect(true).toBe(false);
     });
 

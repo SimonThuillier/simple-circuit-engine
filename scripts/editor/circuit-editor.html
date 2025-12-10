@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Circuit Viewer</title>
+  <title>Circuit Editor</title>
   <style>
     body {
       font-family:
@@ -43,6 +43,23 @@
       display: flex;
       gap: 10px;
       margin-bottom: 20px;
+    }
+
+    .tool-button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+    }
+
+    .tool-button:hover {
+        background-color: #f0f0f0;
+    }
+
+    .tool-button .active {
+        background-color: #e0e0e0;
     }
 
     button {
@@ -162,7 +179,7 @@
     /* Ensure viewer adapts smoothly */
     /* viewer fixed to viewport edges (10px each side). top is computed in JS so the viewer sits
          just below the top UI (.container). */
-    #viewer-container {
+    #editor-container {
       box-sizing: border-box;
       position: fixed; /* horizontal anchored to viewport */
       left: 10px;
@@ -175,6 +192,24 @@
       transition: height 0.25s ease, top 0.25s ease;
       min-height: 120px; /* fallback */
       z-index: 4;
+      display: grid;
+      grid-template-columns: 1fr 5fr;
+      grid-template-rows: 1fr;
+    }
+
+    #editor-menu {
+      border-right: 1px solid #ddd;
+      padding: 0px;
+      min-width: 170px;
+      width: 170px;
+      height: 100%;
+
+    }
+
+    /* Ensure viewer adapts smoothly */
+    /* viewer fixed to viewport edges (10px each side). top is computed in JS so the viewer sits
+         just below the top UI (.container). */
+    #viewer-container {
     }
 
     .instructions {
@@ -197,7 +232,7 @@
   </style>
 </head>
 <body>
-<h1>Circuit Viewer</h1>
+<h1>Circuit Editor</h1>
 
 <div class="container">
   <!-- modified input-container to be an accordion -->
@@ -371,10 +406,17 @@
   </div>
 </div>
 
-<div id="viewer-container"></div>
+<div id="editor-container">
+  <div id="editor-menu">
+    <div id="tool-position" class="tool-button">Position</div>
 
 
-<script src="circuit-viewer.js"></script>
+  </div>
+  <div id="viewer-container"></div>
+</div>
+
+
+<script src="circuit-editor.js"></script>
 <script>
   // Initialize visualizer
   // Remplace 'container' par 'viewerContainer' pour plus de clarté
@@ -405,7 +447,7 @@
 
     // ensure horizontal anchoring and vertical placement
     viewerContainer.style.position = 'fixed';
-    viewerContainer.style.left = '10px';
+    viewerContainer.style.left = '180px';
     viewerContainer.style.right = '10px';
     viewerContainer.style.top = top + 'px';
 
@@ -441,8 +483,15 @@
   sceneManager.on('deselect', (e) => {
     console.log('deselect', e);
   });
+  sceneManager.on('toolActivated', (e) => {
+    console.log('toolActivated', e);
+  });
+  sceneManager.on('toolDeactivated', (e) => {
+    console.log('toolDeactivated', e);
+  });
 
   sceneManager.getControls().update();
+  sceneManager.setEditMode(true);
 
   function animate() {
     requestAnimationFrame(animate);
@@ -526,6 +575,12 @@
       setCollapsed(!isCollapsed);
     });
   })();
+
+  document.getElementById('tool-position').addEventListener('click', (e) => {
+    sceneManager.toggleTool('position');
+  });
+
+
 </script>
 </body>
 </html>

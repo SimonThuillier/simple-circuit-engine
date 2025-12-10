@@ -1,9 +1,11 @@
-# Feature Specification: Select Tool & Wire Visual Improvements
+# Feature Specification: Position Tool & Wire Visual Improvements
 
-**Feature Branch**: `006-select-tool-wires`
+**Feature Branch**: `006-position-tool-wires`
 **Created**: 2025-12-09
-**Status**: Draft
-**Input**: User description: "The first circuit edit tool, Select which allows to select, drag/move, and rotate components on the scene must be implemented. In the same time wires visual management must be improved, first to target their pins (instead of the component currently) and to follow those pins as components move/rotate, and also to support multi lines wires (to handle intermediatePositions)"
+**Status**: In Progress
+**Input**: User description: "The first circuit edit tool, Position which allows to position, drag/move, and rotate components on the scene must be implemented. In the same time wires visual management must be improved, first to target their pins (instead of the component currently) and to follow those pins as components move/rotate, and also to support multi lines wires (to handle intermediatePositions)"
+
+**Architecture Note**: Selection behavior (click to select/deselect) is handled by CircuitSceneManager as a common behavior across all tools. The PositionTool specifically handles drag/move and rotation operations on selected elements.
 
 ## User Scenarios & Testing _(mandatory)_
 
@@ -17,9 +19,9 @@ A circuit designer needs to rearrange components on the scene to improve layout 
 
 **Acceptance Scenarios**:
 
-1. **Given** a circuit with components on the scene and Select tool activated, **When** the user clicks on a component, **Then** the component becomes visually selected (highlighted) and ready for manipulation
-2. **Given** a selected component and Select tool activated, **When** the user drags it to a new grid position, **Then** the component moves to the nearest grid cell and all connected wires update their endpoints to follow the component's pins
-3. **Given** a selected component with multiple wire connections and Select tool activated, **When** the component is moved, **Then** all wires connected to any of the component's pins update their visual paths in real-time during the drag operation
+1. **Given** a circuit with components on the scene and Position tool activated, **When** the user clicks on a component, **Then** the component becomes visually selected (highlighted) and ready for manipulation
+2. **Given** a selected component and Position tool activated, **When** the user drags it to a new grid position, **Then** the component moves to the nearest grid cell and all connected wires update their endpoints to follow the component's pins
+3. **Given** a selected component with multiple wire connections and Position tool activated, **When** the component is moved, **Then** all wires connected to any of the component's pins update their visual paths in real-time during the drag operation
 4. **Given** a component is being dragged, **When** the user releases the mouse button, **Then** the component snaps to the nearest grid position and the component's position in the circuit data model is updated
 
 ---
@@ -34,9 +36,9 @@ A circuit designer needs to change the orientation of a component to better alig
 
 **Acceptance Scenarios**:
 
-1. **Given** Select tool activated and a selected component, **When** the user triggers a rotation action (via keyboard shortcut or mouse left double click), **Then** the component rotates by 90 degrees clockwise
-2. **Given** Select tool activated and a rotated component with wire connections, **When** the rotation completes, **Then** all wires update their endpoints to match the new pin positions
-3. **Given** Select tool activated a component being rotated, **When** rotation occurs, **Then** the visual rotation and wire updates happen immediately
+1. **Given** Position tool activated and a selected component, **When** the user triggers a rotation action (via keyboard shortcut or mouse left double click), **Then** the component rotates by 90 degrees clockwise
+2. **Given** Position tool activated and a rotated component with wire connections, **When** the rotation completes, **Then** all wires update their endpoints to match the new pin positions
+3. **Given** Position tool activated a component being rotated, **When** rotation occurs, **Then** the visual rotation and wire updates happen immediately
 
 ---
 
@@ -60,7 +62,7 @@ Wire visuals must accurately connect to the specific pins of components rather t
 
 When a component is moved or rotated, all wires connected to its pins must dynamically update their endpoints to track the new pin positions. This ensures visual continuity during editing operations.
 
-**Why this priority**: This is essential for the select/move tool to be usable. If wires don't follow components during movement, the editing experience is broken and users cannot see the result of their changes.
+**Why this priority**: This is essential for the position/move tool to be usable. If wires don't follow components during movement, the editing experience is broken and users cannot see the result of their changes.
 
 **Independent Test**: Can be fully tested by moving a component with connected wires and verifying wires update in real-time. Delivers seamless editing experience.
 
@@ -92,14 +94,14 @@ Wires with intermediate positions (waypoints) should render as connected line se
 
 A user needs to deselect a currently selected component to stop editing it or to select a different component. They can click on empty space or press Escape to clear the selection.
 
-**Why this priority**: Deselection is necessary for proper selection state management but is secondary to the core select/move/rotate functionality.
+**Why this priority**: Deselection is necessary for proper selection state management but is secondary to the core position/move/rotate functionality.
 
 **Independent Test**: Can be fully tested by selecting a component, then clicking empty space or pressing Escape, and verifying the selection is cleared. Delivers complete selection workflow.
 
 **Acceptance Scenarios**:
 
 1. **Given** a selected component, **When** the user clicks on empty scene space, **Then** the component is deselected and no component is selected
-2. **Given** a selected component, **When** the user presses the Escape key, **Then** the component is deselected
+2. **Given** a selected component and Position tool activated with an in-progress drag, **When** the user presses the Escape key, **Then** the drag is cancelled and the component returns to its original position (selection is preserved)
 3. **Given** a selected component, **When** the user clicks on a different component, **Then** the first component is deselected and the clicked component becomes selected
 
 ---
@@ -118,27 +120,28 @@ A user needs to deselect a currently selected component to stop editing it or to
 
 ### Functional Requirements
 
-- **FR-001**: System MUST allow users to select a component by clicking on it
-- **FR-002**: System MUST provide visual feedback indicating which component is currently selected using a different emissive color (e.g., orange or yellow glow) distinct from the blue hover glow
-- **FR-003**: System MUST allow users to drag a selected component to a new grid position
+- **FR-001**: System MUST allow users to select a component, enode, or wire by clicking on it (handled by CircuitSceneManager)
+- **FR-002**: System MUST provide visual feedback indicating which element is currently selected using orange emissive glow (#ff8800) at 0.8 intensity, distinct from the blue hover glow (#4488ff at 0.6 intensity)
+- **FR-003**: System MUST allow users to drag a selected component to a new grid position (Position tool)
 - **FR-004**: System MUST snap dragged components to the nearest grid cell when released
 - **FR-005**: System MUST update the component's position in the circuit data model after a move operation
-- **FR-006**: System MUST allow users to rotate a selected component by 90-degree increments
+- **FR-006**: System MUST allow users to rotate a selected component by 90-degree increments (Position tool)
 - **FR-007**: System MUST update the component's rotation in the circuit data model after a rotation operation
 - **FR-008**: System MUST render wire endpoints at actual pin positions (derived from component position, rotation, and pin offset)
 - **FR-009**: System MUST update wire visuals in real-time when connected components are moved
 - **FR-010**: System MUST update wire visuals when connected components are rotated
 - **FR-011**: System MUST render wires with intermediate positions as connected multi-segment lines through all waypoints
-- **FR-012**: System MUST allow users to deselect a component by clicking on empty space
-- **FR-013**: System MUST allow users to deselect a component by pressing the Escape key
-- **FR-014**: System MUST support only single-component selection (no multi-select in this feature)
-- **FR-015**: System MUST distinguish between hover state (temporary) and selected state (persistent until deselected)
+- **FR-012**: System MUST allow users to deselect by clicking on empty space (handled by CircuitSceneManager)
+- **FR-013**: System MUST cancel in-progress drag operations when user presses Escape key (Position tool)
+- **FR-014**: System MUST support single-element selection for this feature (multi-selection types prepared but not implemented)
+- **FR-015**: System MUST distinguish between hover state (temporary) and selected state (persistent until deselected), with selection visual taking precedence over hover
 
 ### Key Entities
 
-- **SelectionState**: Represents the currently selected component (if any), managed by the scene/interaction layer
+- **SelectionData**: Discriminated union representing the current selection state - either MonoSelectionData (single element) or MultiSelectionData (multiple elements), managed by SelectionManager
 - **Pin Position**: The derived world position of a component pin based on component position, rotation, and pin-specific offset
 - **Wire Path**: The complete visual path of a wire, including start pin position, intermediate waypoints, and end pin position
+- **DragState**: Internal state tracking for drag operations including selection, start positions, and current positions
 
 ## Clarifications
 
@@ -150,9 +153,9 @@ A user needs to deselect a currently selected component to stop editing it or to
 
 ### Measurable Outcomes
 
-- **SC-001**: Users can select, move, and release a component in under 2 seconds for a simple repositioning operation
+- **SC-001**: Users can position, move, and release a component in under 2 seconds for a simple repositioning operation
 - **SC-002**: Wire endpoints are visually positioned within 0.1 grid units of actual pin centers
 - **SC-003**: Wire visuals update within the same frame as component position changes during drag operations (no visible lag)
 - **SC-004**: 100% of wires connected to a moved component correctly update their endpoints
 - **SC-005**: Multi-segment wires render correctly for wires with 1 to 10 intermediate positions
-- **SC-006**: Users can complete a select-move-rotate workflow without any stuck or inconsistent visual states
+- **SC-006**: Users can complete a position-move-rotate workflow without any stuck or inconsistent visual states

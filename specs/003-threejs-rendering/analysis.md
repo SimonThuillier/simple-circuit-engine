@@ -66,7 +66,7 @@ This analysis examines the updated User Story 2 (Circuit Editing Interface) whic
 
 | Tool | Interaction Pattern | State Requirements |
 |------|-------------------|-------------------|
-| **Select** (AS2.2) | Click to select, drag to move, double-click to rotate | Selected component reference, drag start position, rotation angle |
+| **Select** (AS2.2) | Click to position, drag to move, double-click to rotate | Selected component reference, drag start position, rotation angle |
 | **Place Component** (AS2.3) | Palette choose type, click to place, scroll to rotate before placement | Component type, preview position, preview rotation |
 | **Wire** (AS2.4) | Click source pin/branching point, click target, Escape to cancel | Source endpoint reference, wire-in-progress state, preview path |
 | **Branching Point** (AS2.5) | Click on wire to split and insert branching point | Target wire reference, insertion position |
@@ -334,7 +334,7 @@ This update MUST complete within 100ms to meet SC-005 performance target.
 ---
 
 #### **FR-021 (Clarification - No Change Needed)**
-**Current**: "SceneManagers MUST expose hookable callbacks for the following events via on(event, callback): 'hover', 'unhover', 'select', 'deselect', 'error', 'ready'; renderers MUST NOT implement mouse/keyboard event listeners"
+**Current**: "SceneManagers MUST expose hookable callbacks for the following events via on(event, callback): 'hover', 'unhover', 'position', 'deselect', 'error', 'ready'; renderers MUST NOT implement mouse/keyboard event listeners"
 
 **Analysis**: This requirement is CORRECT and COMPATIBLE with tool system. Consumer implements event listeners, translates to tool method calls on renderer. SceneManager exposes tool APIs and emits tool events.
 
@@ -370,7 +370,7 @@ The following contract files will need additions:
 Add to `RenderEvent` type:
 ```typescript
 export type RenderEvent =
-  | 'hover' | 'unhover' | 'select' | 'deselect' | 'error' | 'ready'
+  | 'hover' | 'unhover' | 'position' | 'deselect' | 'error' | 'ready'
   | 'toolActivated' | 'toolDeactivated' | 'toolOperationStarted'
   | 'toolOperationCompleted' | 'toolOperationCancelled'
   | 'toolValidationError' | 'cursorChangeRequested';
@@ -389,7 +389,7 @@ cursorChangeRequested: { cursorType: CursorType };
 
 Add new types:
 ```typescript
-export type ToolType = 'select' | 'placeComponent' | 'wire' | 'branchingPoint' | 'delete';
+export type ToolType = 'position' | 'addComponent' | 'wire' | 'branchingPoint' | 'delete';
 export type CursorType = 'default' | 'pointer' | 'crosshair' | 'move' | 'not-allowed' | 'grab' | 'grabbing';
 
 export interface IEditingTool {
@@ -451,19 +451,19 @@ cancelCurrentToolOperation(): void;
  * Delegates to active tool's click handler. Consumer translates
  * screen coordinates to world coordinates before calling.
  *
- * @param worldPosition - Click position in 3D world space
+ * @param cursorGroundPlanePosition - Click position in 3D world space
  * @throws {Error} If no tool is active
  */
-handleToolClick(worldPosition: THREE.Vector3): void;
+handleToolClick(cursorGroundPlanePosition: THREE.Vector3): void;
 
 /**
  * Handle tool hover interaction at world coordinates
  *
  * Updates tool preview rendering. Consumer calls this on mouse move.
  *
- * @param worldPosition - Hover position in 3D world space
+ * @param cursorGroundPlanePosition - Hover position in 3D world space
  */
-handleToolHover(worldPosition: THREE.Vector3): void;
+handleToolHover(cursorGroundPlanePosition: THREE.Vector3): void;
 
 /**
  * Handle tool scroll interaction for rotation/scaling

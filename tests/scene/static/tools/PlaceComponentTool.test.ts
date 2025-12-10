@@ -1,14 +1,14 @@
 /**
- * Unit tests for PlaceComponentTool
+ * Unit tests for AddComponentTool
  * Test: T065
- * @module tests/scene/static/tools/PlaceComponentTool.test
+ * @module tests/scene/static/tools/AddComponentTool.test
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-describe('PlaceComponentTool (T065)', () => {
+describe('AddComponentTool (T065)', () => {
   describe.skip('Tool activation', () => {
-    it('should have type "placeComponent"', () => {
+    it('should have type "addComponent"', () => {
       expect(true).toBe(false); // Intentional failure for TDD
     });
 

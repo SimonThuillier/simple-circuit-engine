@@ -20,9 +20,9 @@ export function applyENodeHover(enodeGroup: THREE.Group): void {
       const material = child.material as THREE.MeshStandardMaterial;
 
       if (child.userData.type === 'enodeHitbox') {
-        material.opacity = 0.4;
+        material.opacity = 0.3;
       } else if (child.userData.type === 'enode') {
-        material.color.setHex(0xffd700);
+        material.color.setHex(0x00ff00);
         // Apply hover effect
         material.emissiveIntensity = 0.9;
       }

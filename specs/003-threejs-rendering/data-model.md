@@ -37,8 +37,8 @@
 - `setActiveTool(toolType: ToolType): void`
 - `getActiveTool(): ToolType | null`
 - `cancelCurrentToolOperation(): void`
-- `handleToolClick(worldPosition: THREE.Vector3): void`
-- `handleToolHover(worldPosition: THREE.Vector3): void`
+- `handleToolClick(cursorGroundPlanePosition: THREE.Vector3): void`
+- `handleToolHover(cursorGroundPlanePosition: THREE.Vector3): void`
 - `handleToolScroll(delta: number): void`
 
 **State Transitions**:
@@ -162,7 +162,7 @@ type ComponentVisualFactory = (component: Component) => THREE.Object3D;
 **Type Definition**:
 ```typescript
 type RenderEvent =
-  | 'hover' | 'unhover' | 'select' | 'deselect' | 'error' | 'ready'
+  | 'hover' | 'unhover' | 'position' | 'deselect' | 'error' | 'ready'
   | 'toolActivated' | 'toolDeactivated' | 'toolOperationStarted'
   | 'toolOperationCompleted' | 'toolOperationCancelled'
   | 'toolValidationError' | 'cursorChangeRequested';
@@ -171,7 +171,7 @@ type RenderEvent =
 **Event Payloads**:
 - `hover`: `{ objectId: UUID, objectType: 'component' | 'wire' | 'enode' }`
 - `unhover`: `{ objectId: UUID, objectType: 'component' | 'wire' | 'enode' }`
-- `select`: `{ objectId: UUID, objectType: 'component' | 'wire' | 'enode' }`
+- `position`: `{ objectId: UUID, objectType: 'component' | 'wire' | 'enode' }`
 - `deselect`: `{ objectId: UUID, objectType: 'component' | 'wire' | 'enode' }`
 - `error`: `{ message: string, error?: Error }`
 - `ready`: `{ renderer: 'static' | 'simulation' }`
@@ -245,7 +245,7 @@ interface ChangedData {
 interface RenderEventMap {
   hover: { objectId: UUID; objectType: 'component' | 'wire' | 'enode' };
   unhover: { objectId: UUID; objectType: 'component' | 'wire' | 'enode' };
-  select: { objectId: UUID; objectType: 'component' | 'wire' | 'enode' };
+  position: { objectId: UUID; objectType: 'component' | 'wire' | 'enode' };
   deselect: { objectId: UUID; objectType: 'component' | 'wire' | 'enode' };
   error: { message: string; error?: Error };
   ready: { renderer: 'static' | 'simulation' };
@@ -294,15 +294,15 @@ interface IEditingTool {
 ```
 
 **Contract**:
-- `type`: Unique identifier for the tool ('select', 'placeComponent', 'wire', 'branchingPoint', 'delete')
+- `type`: Unique identifier for the tool ('position', 'addComponent', 'wire', 'branchingPoint', 'delete')
 - `onActivate()`: Called when tool becomes active (setup state, show previews)
 - `onDeactivate()`: Called when tool is deactivated (cleanup state, hide previews)
 - `getCursorType()`: Returns current cursor style for this tool
 - `getPreviewObjects()`: Returns array of Three.js objects to render as previews
 
 **Implementations**:
-- **SelectTool**: Click to select, drag to move, double-click to rotate
-- **PlaceComponentTool**: Palette choose type, click to place, scroll to rotate before placement
+- **PositionTool**: Click to position, drag to move, double-click to rotate
+- **AddComponentTool**: Palette choose type, click to place, scroll to rotate before placement
 - **WireTool**: Click source pin/branching point, click target, Escape to cancel
 - **BranchingPointTool**: Click on wire to split and insert branching point
 - **DeleteTool**: Click component/wire/branching point to delete
@@ -315,12 +315,12 @@ interface IEditingTool {
 
 **Type Definition**:
 ```typescript
-type ToolType = 'select' | 'placeComponent' | 'wire' | 'branchingPoint' | 'delete';
+type ToolType = 'position' | 'addComponent' | 'wire' | 'branchingPoint' | 'delete';
 ```
 
 **Values**:
-- `select`: Select/move/rotate components
-- `placeComponent`: Place new components with preview
+- `position`: Select/move/rotate components
+- `addComponent`: Place new components with preview
 - `wire`: Create wires between pins/branching points
 - `branchingPoint`: Insert branching points on wires
 - `delete`: Delete components/wires/branching points
@@ -355,11 +355,11 @@ type CursorType = 'default' | 'pointer' | 'crosshair' | 'move' | 'not-allowed' |
 - **Common**:
   - `operationInProgress: boolean` - Multi-step operation active
   - `previewObjects: THREE.Object3D[]` - Visual previews
-- **SelectTool**:
+- **PositionTool**:
   - `selectedComponent: UUID | null` - Currently selected component
   - `dragStart: THREE.Vector3 | null` - Drag operation start position
   - `rotationAngle: number` - Current rotation angle
-- **PlaceComponentTool**:
+- **AddComponentTool**:
   - `componentType: ComponentType | null` - Type to place
   - `previewPosition: THREE.Vector3` - Ghost preview position
   - `previewRotation: number` - Preview rotation angle
@@ -401,8 +401,8 @@ SimulationCircuitSceneManager
   └─ uses → THREE.Scene, THREE.Camera (Three.js)
 
 IEditingTool (implementations)
-  ├─ SelectTool → depends on Circuit (for modification)
-  ├─ PlaceComponentTool → depends on Circuit, ComponentType
+  ├─ PositionTool → depends on Circuit (for modification)
+  ├─ AddComponentTool → depends on Circuit, ComponentType
   ├─ WireTool → depends on Circuit
   ├─ BranchingPointTool → depends on Circuit
   └─ DeleteTool → depends on Circuit
@@ -504,7 +504,7 @@ EventEmitter<T>
 
 2. **Consumer activates a tool**
    ```typescript
-   renderer.setActiveTool('placeComponent');
+   renderer.setActiveTool('addComponent');
    // Emits 'toolActivated' with toolType
    // Emits 'cursorChangeRequested' with cursorType
    ```

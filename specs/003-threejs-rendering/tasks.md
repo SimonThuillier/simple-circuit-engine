@@ -171,8 +171,8 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [X] T064 [P] [US2] Unit test for SelectTool in tests/unit/scene/static/tools/SelectTool.test.ts: verify click to select, drag to move, double-click to rotate per FR-029
-- [X] T065 [P] [US2] Unit test for PlaceComponentTool in tests/unit/scene/static/tools/PlaceComponentTool.test.ts: verify preview rendering, scroll to rotate, click to place, overlap validation per FR-029, FR-030, FR-032
+- [X] T064 [P] [US2] Unit test for PositionTool in tests/unit/scene/static/tools/PositionTool.test.ts: verify click to position, drag to move, double-click to rotate per FR-029
+- [X] T065 [P] [US2] Unit test for AddComponentTool in tests/unit/scene/static/tools/AddComponentTool.test.ts: verify preview rendering, scroll to rotate, click to place, overlap validation per FR-029, FR-030, FR-032
 - [X] T066 [P] [US2] Unit test for WireTool in tests/unit/scene/static/tools/WireTool.test.ts: verify source selection, path preview, target selection, cancellation per FR-029, FR-030, FR-031
 - [X] T067 [P] [US2] Unit test for BranchingPointTool in tests/unit/scene/static/tools/BranchingPointTool.test.ts: verify wire targeting, insertion at location per FR-029
 - [X] T068 [P] [US2] Unit test for DeleteTool in tests/unit/scene/static/tools/DeleteTool.test.ts: verify component cascade deletion, wire deletion, branching point deletion per FR-029, FR-032
@@ -193,8 +193,8 @@
 
 ### Individual Tool Implementations
 
-- [X] T077 [US2] Implement SelectTool in src/scene/static/tools/SelectTool.ts: handleClick (select), handleDrag (move), handleDoubleClick (rotate), emit 'toolOperationCompleted' per FR-029, FR-037
-- [X] T078 [US2] Implement PlaceComponentTool in src/scene/static/tools/PlaceComponentTool.ts: handleHover (preview), handleScroll (rotate), handleClick (place), overlap validation per FR-029, FR-030, FR-032
+- [X] T077 [US2] Implement PositionTool in src/scene/static/tools/PositionTool.ts: handleClick (position), handleDrag (move), handleDoubleClick (rotate), emit 'toolOperationCompleted' per FR-029, FR-037
+- [X] T078 [US2] Implement AddComponentTool in src/scene/static/tools/AddComponentTool.ts: handleHover (preview), handleScroll (rotate), handleClick (place), overlap validation per FR-029, FR-030, FR-032
 - [X] T079 [US2] Implement WireTool in src/scene/static/tools/WireTool.ts: handleClick (source/target), path preview, cancellation support, emit 'toolOperationStarted'/'toolOperationCompleted' per FR-029, FR-030, FR-031
 - [X] T080 [US2] Implement BranchingPointTool in src/scene/static/tools/BranchingPointTool.ts: handleClick (wire targeting, insertion), wire validation per FR-029, FR-032
 - [X] T081 [US2] Implement DeleteTool in src/scene/static/tools/DeleteTool.ts: handleClick (delete), cascade logic for component pins, emit 'toolOperationCompleted' per FR-029, FR-032, FR-037
