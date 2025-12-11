@@ -119,10 +119,22 @@ export class WireVisualManager {
     }
 
     // Get start position
-    const startPos = this.getENodeWorldPosition(node1.id, node1.type, node1.component, circuit, componentGroups);
+    const startPos = this.getENodeWorldPosition(
+      node1.id,
+      node1.type,
+      node1.component,
+      circuit,
+      componentGroups
+    );
 
     // Get end position
-    const endPos = this.getENodeWorldPosition(node2.id, node2.type, node2.component, circuit, componentGroups);
+    const endPos = this.getENodeWorldPosition(
+      node2.id,
+      node2.type,
+      node2.component,
+      circuit,
+      componentGroups
+    );
 
     // Build full path: start -> intermediate positions -> end
     const points: THREE.Vector3[] = [startPos];
@@ -189,7 +201,10 @@ export class WireVisualManager {
    * @param componentGroup - The component's Three.js group
    * @returns World position of the pin, or null if not found
    */
-  getPinWorldPositionFromGroup(enodeId: UUID, componentGroup: THREE.Object3D): THREE.Vector3 | null {
+  getPinWorldPositionFromGroup(
+    enodeId: UUID,
+    componentGroup: THREE.Object3D
+  ): THREE.Vector3 | null {
     const target = new THREE.Vector3();
     let found = false;
 
@@ -256,11 +271,7 @@ export class WireVisualManager {
    * @param circuit - Circuit for wire/ENode lookup
    * @param componentGroups - Map of component ID to Three.js objects
    */
-  updateWire(
-    wireId: UUID,
-    circuit: Circuit,
-    componentGroups: Map<UUID, THREE.Object3D>
-  ): void {
+  updateWire(wireId: UUID, circuit: Circuit, componentGroups: Map<UUID, THREE.Object3D>): void {
     if (!this.scene) return;
 
     const wire = circuit.getWire(wireId);

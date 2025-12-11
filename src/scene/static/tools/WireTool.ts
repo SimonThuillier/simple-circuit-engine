@@ -21,15 +21,13 @@ import type { CircuitSceneManager } from '../CircuitSceneManager';
 export class WireTool implements IEditingTool {
   readonly type: ToolType = 'wire';
 
-  private _circuit: Circuit | null = null;
   private _sceneManager: CircuitSceneManager;
   private _sourceEndpointId: string | null = null;
   private _operationInProgress: boolean = false;
   private isHoveringEndpoint: boolean = false;
   private isValidTarget: boolean = true;
 
-  constructor(circuit: Circuit | null, sceneManager: CircuitSceneManager) {
-    this._circuit = circuit;
+  constructor(sceneManager: CircuitSceneManager) {
     this._sceneManager = sceneManager;
   }
 

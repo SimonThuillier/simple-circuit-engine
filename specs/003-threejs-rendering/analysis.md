@@ -367,16 +367,16 @@ renderer.on('toolValidationError', ({ errorMessage }) => {
 The following contract files will need additions:
 
 #### **types.ts**
-Add to `RenderEvent` type:
+Add to `SceneManagerEvent` type:
 ```typescript
-export type RenderEvent =
+export type SceneManagerEvent =
   | 'hover' | 'unhover' | 'position' | 'deselect' | 'error' | 'ready'
   | 'toolActivated' | 'toolDeactivated' | 'toolOperationStarted'
   | 'toolOperationCompleted' | 'toolOperationCancelled'
   | 'toolValidationError' | 'cursorChangeRequested';
 ```
 
-Add to `RenderEventMap`:
+Add to `SceneManagerEventMap`:
 ```typescript
 toolActivated: { toolType: ToolType };
 toolDeactivated: { toolType: ToolType };

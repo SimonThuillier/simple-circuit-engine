@@ -64,11 +64,7 @@ export function createGridHelper(
  * @constructor
  */
 export function nearestGridMagnetPosition(position: THREE.Vector3): THREE.Vector3 {
-  return new THREE.Vector3(
-    Math.round(position.x),
-    0,
-    Math.round(position.z)
-  );
+  return new THREE.Vector3(Math.round(position.x), 0, Math.round(position.z));
 }
 
 /**

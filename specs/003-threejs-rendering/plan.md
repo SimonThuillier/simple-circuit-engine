@@ -193,8 +193,8 @@ tests/
 2. **CircuitRunnerSceneManager**: Main class for live simulation visualization
 3. **ComponentVisualFactory**: Factory function type for creating component visuals
 4. **FactoryRegistry**: Registry mapping ComponentType → ComponentVisualFactory
-5. **RenderEvent**: Union type of supported event types (includes tool events)
-6. **RenderCallback**: Function signature for event callbacks
+5. **SceneManagerEvent**: Union type of supported event types (includes tool events)
+6. **SceneManagerCallback**: Function signature for event callbacks
 7. **ChangedData**: Optional parameter type for incremental updates
 8. **IEditingTool**: Interface defining tool contract (onActivate, onDeactivate, getCursorType, getPreviewState)
 9. **ToolType**: Union type of available tools ('position' | 'addComponent' | 'wire' | 'branchingPoint' | 'delete')
@@ -206,7 +206,7 @@ tests/
 - Both scene managers maintain their own Three.js Scene and Camera
 - CircuitSceneManager operates on Circuit instances (provided via setCircuit() after initialization)
 - CircuitRunnerSceneManager operates on CircuitRunner instances (provided via setCircuit() after initialization)
-- SceneManagers emit RenderEvents to registered RenderCallbacks
+- SceneManagers emit SceneManagerEvents to registered SceneManagerCallbacks
 - Consumer owns WebGLRenderer instance and animation loop
 - **CircuitSceneManager manages collection of IEditingTool instances**
 - **Each IEditingTool maintains ToolState and delegates Circuit modifications to core Circuit API**
@@ -218,13 +218,13 @@ tests/
 
 1. **CircuitSceneManager.ts**: Class signature with public methods
    - `constructor(factoryRegistry: FactoryRegistry)`
-   - `initialize(container: HTMLElement, options?: RendererOptions): void`
+   - `initialize(container: HTMLElement, options?: SceneManagerOptions): void`
    - `setCircuit(circuit: Circuit | null): void`
    - `clearVisuals(): void`
    - `update(changedData?: ChangedData): void`
    - `render(): void`
    - `dispose(): void`
-   - `on(event: RenderEvent, callback: RenderCallback): void`
+   - `on(event: SceneManagerEvent, callback: SceneManagerCallback): void`
    - `getScene(): THREE.Scene`
    - `getCamera(): THREE.PerspectiveCamera`
    - **Tool System Methods**:
@@ -238,13 +238,13 @@ tests/
 
 2. **CircuitRunnerSceneManager.ts**: Class signature with public methods
    - `constructor(factoryRegistry: FactoryRegistry)`
-   - `initialize(container: HTMLElement, options?: RendererOptions): void`
+   - `initialize(container: HTMLElement, options?: SceneManagerOptions): void`
    - `setCircuit(circuitRunner: CircuitRunner | null): void`
    - `clearVisuals(): void`
    - `update(changedData?: ChangedData): void`
    - `render(): void`
    - `dispose(): void`
-   - `on(event: RenderEvent, callback: RenderCallback): void`
+   - `on(event: SceneManagerEvent, callback: SceneManagerCallback): void`
    - `getScene(): THREE.Scene`
    - `getCamera(): THREE.PerspectiveCamera`
 
@@ -254,16 +254,16 @@ tests/
    - `VisualMesh`: Return type from factories (THREE.Object3D wrapper)
 
 4. **types.ts**: Shared types and enums
-   - `RenderEvent`: 'hover' | 'unhover' | 'position' | 'deselect' | 'error' | 'ready' | 'toolActivated' | 'toolDeactivated' | 'toolOperationStarted' | 'toolOperationCompleted' | 'toolOperationCancelled' | 'toolValidationError' | 'cursorChangeRequested'
-   - `RenderEventMap`: Type-safe event payload mapping
-   - `RenderCallback`: Function signature
+   - `SceneManagerEvent`: 'hover' | 'unhover' | 'position' | 'deselect' | 'error' | 'ready' | 'toolActivated' | 'toolDeactivated' | 'toolOperationStarted' | 'toolOperationCompleted' | 'toolOperationCancelled' | 'toolValidationError' | 'cursorChangeRequested'
+   - `SceneManagerEventMap`: Type-safe event payload mapping
+   - `SceneManagerCallback`: Function signature
    - `ChangedData`: Object type for incremental updates
    - `SceneManagerOptions`: Optional configuration
    - **Tool System Types**:
    - `ToolType`: 'position' | 'addComponent' | 'wire' | 'branchingPoint' | 'delete'
    - `CursorType`: 'default' | 'pointer' | 'crosshair' | 'move' | 'not-allowed' | 'grab' | 'grabbing'
    - `IEditingTool`: Tool interface with lifecycle methods
-   - `RenderObjectType`: 'component' | 'wire' | 'enode'
+   - `CircuitSceneObjectType`: 'component' | 'wire' | 'enode'
 
 ### Quickstart Guide
 

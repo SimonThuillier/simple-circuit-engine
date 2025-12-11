@@ -207,7 +207,7 @@ export class HoverManager {
    *
    * @param layer - Hitbox layer number to raycast against
    * @param hoverableType - Type for HoveredElement
-   * @param objectType - RenderObjectType for event payload
+   * @param objectType - CircuitSceneObjectType for event payload
    * @returns HoveredElement if hit found, null otherwise
    */
   private _raycastLayer(

@@ -9,7 +9,7 @@ import type * as THREE from 'three';
 /**
  * Supported renderer event types (includes tool system events)
  */
-export type RenderEvent =
+export type SceneManagerEvent =
   | 'hover'
   | 'unhover'
   | 'select'
@@ -27,16 +27,16 @@ export type RenderEvent =
 /**
  * Object types that can be interacted with in the renderer
  */
-export type RenderObjectType = 'component' | 'wire' | 'enode';
+export type CircuitSceneObjectType = 'component' | 'wire' | 'enode';
 
 /**
  * Event payload map for type-safe event emission
  */
-export interface RenderEventMap {
-  hover: { objectId: UUID; objectType: RenderObjectType };
-  unhover: { objectId: UUID; objectType: RenderObjectType };
-  select: { objectId: UUID; objectType: RenderObjectType };
-  deselect: { objectId: UUID; objectType: RenderObjectType };
+export interface SceneManagerEventMap {
+  hover: { objectId: UUID; objectType: CircuitSceneObjectType };
+  unhover: { objectId: UUID; objectType: CircuitSceneObjectType };
+  select: { objectId: UUID; objectType: CircuitSceneObjectType };
+  deselect: { objectId: UUID; objectType: CircuitSceneObjectType };
   error: { message: string; error?: Error };
   ready: { renderer: 'static' | 'simulation' };
   // Tool system events
@@ -52,7 +52,7 @@ export interface RenderEventMap {
 /**
  * Callback function type for renderer events
  */
-export type RenderCallback<T = any> = (payload: T) => void;
+export type SceneManagerCallback<T = any> = (payload: T) => void;
 
 /**
  * Optional parameter for incremental renderer updates

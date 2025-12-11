@@ -340,12 +340,12 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     // Hitbox (hemisphere, raycastable)
     const hitboxGeom = new THREE.SphereGeometry(0.9, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
     const hitbox = new THREE.Mesh(
-        hitboxGeom,
-        new THREE.MeshStandardMaterial({
-          color: ComponentVisualFactoryBase.DEFAULT_HOVER_COLOR,
-          transparent: true,
-          opacity: 0,
-        })
+      hitboxGeom,
+      new THREE.MeshStandardMaterial({
+        color: ComponentVisualFactoryBase.DEFAULT_HOVER_COLOR,
+        transparent: true,
+        opacity: 0,
+      })
     );
     hitbox.userData = {
       type: 'enodeHitbox',
@@ -359,12 +359,12 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
 
     // Visual sphere
     const visual = new THREE.Mesh(
-        new THREE.SphereGeometry(0.3, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
-        new THREE.MeshStandardMaterial({
-          color: ComponentVisualFactoryBase.DEFAULT_PIN_COLOR,
-          emissive: ComponentVisualFactoryBase.DEFAULT_PIN_COLOR,
-          emissiveIntensity: 0,
-        })
+      new THREE.SphereGeometry(0.3, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+      new THREE.MeshStandardMaterial({
+        color: ComponentVisualFactoryBase.DEFAULT_PIN_COLOR,
+        emissive: ComponentVisualFactoryBase.DEFAULT_PIN_COLOR,
+        emissiveIntensity: 0,
+      })
     );
     visual.userData = {
       type: 'enode',
@@ -390,11 +390,11 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
    * @returns THREE.Mesh configured as component hitbox
    */
   protected createComponentHitbox(
-      componentId: string,
-      groupId: number,
-      width: number,
-      height: number,
-      depth: number
+    componentId: string,
+    groupId: number,
+    width: number,
+    height: number,
+    depth: number
   ): THREE.Mesh {
     const geometry = new THREE.BoxGeometry(width, height, depth);
     const material = new THREE.MeshBasicMaterial({

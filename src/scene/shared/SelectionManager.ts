@@ -8,7 +8,7 @@
  */
 
 import type { UUID } from '../../core/types/Identifier';
-import type {HoverableType, SelectionData} from "./types";
+import type { HoverableType, SelectionData } from './types';
 
 /**
  * Callback invoked when selection changes
@@ -16,7 +16,10 @@ import type {HoverableType, SelectionData} from "./types";
  * @param newSelection - The new selection, or null if deselected
  * @param previousSelection - The previous selection, or null if none was selected
  */
-export type SelectionCallback = (newSelection: SelectionData | null, previousSelection: SelectionData | null) => void;
+export type SelectionCallback = (
+  newSelection: SelectionData | null,
+  previousSelection: SelectionData | null
+) => void;
 
 /**
  * Manages selected components, enodes or wires for the circuit scene.
@@ -53,8 +56,7 @@ export class SelectionManager {
   /**
    * Create a new SelectionManager
    */
-  constructor() {
-  }
+  constructor() {}
 
   /**
    * Get the current selection
@@ -85,17 +87,17 @@ export class SelectionManager {
     if (!this.selection) {
       return false;
     }
-    if (this.selection.kind === 'mono'){
+    if (this.selection.kind === 'mono') {
       return this.selection.type === type && this.selection.id === objectId;
     }
-    if (this.selection.kind === 'multi'){
-      if (type === 'component'){
+    if (this.selection.kind === 'multi') {
+      if (type === 'component') {
         return this.selection.components?.has(objectId) ?? false;
       }
-      if (type === 'enode'){
+      if (type === 'enode') {
         return this.selection.enodes?.has(objectId) ?? false;
       }
-      if (type === 'wire'){
+      if (type === 'wire') {
         return this.selection.wires?.has(objectId) ?? false;
       }
     }
@@ -132,9 +134,11 @@ export class SelectionManager {
       const aWires = a.wires ?? new Map<UUID, string | null>();
       const bWires = b.wires ?? new Map<UUID, string | null>();
 
-      if (aComponents.size !== bComponents.size ||
-          aEnodes.size !== bEnodes.size ||
-          aWires.size !== bWires.size) {
+      if (
+        aComponents.size !== bComponents.size ||
+        aEnodes.size !== bEnodes.size ||
+        aWires.size !== bWires.size
+      ) {
         return false;
       }
 
@@ -220,7 +224,10 @@ export class SelectionManager {
    * @param newSelection - New selection
    * @param previousSelection - Previous selection
    */
-  private notifyCallbacks(newSelection: SelectionData | null, previousSelection: SelectionData | null): void {
+  private notifyCallbacks(
+    newSelection: SelectionData | null,
+    previousSelection: SelectionData | null
+  ): void {
     for (const callback of this.callbacks) {
       try {
         callback(newSelection, previousSelection);

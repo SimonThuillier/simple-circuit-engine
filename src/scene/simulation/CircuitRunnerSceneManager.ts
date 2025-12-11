@@ -17,11 +17,11 @@ import { ENodeType } from '../../core/types/ENodeType';
 import { EventEmitter } from '../shared/EventEmitter';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
 import type {
-  RenderEvent,
-  RenderEventMap,
-  RenderCallback,
+  SceneManagerEvent,
+  SceneManagerEventMap,
+  SceneManagerCallback,
   ChangedData,
-  RendererOptions,
+  SceneManagerOptions,
   MapControlsOptions,
 } from '../shared/types';
 import { createPerspectiveCamera, setupCameraFromMetadata } from '../shared/CameraUtils';
@@ -40,7 +40,7 @@ import { HoverManager } from '../shared/HoverManager';
  * Provides smooth interpolation between simulation ticks for 60fps rendering.
  * Animates current flow through wires and component state changes.
  */
-export class CircuitRunnerSceneManager extends EventEmitter<RenderEventMap> {
+export class CircuitRunnerSceneManager extends EventEmitter<SceneManagerEventMap> {
   public readonly factoryRegistry: IFactoryRegistry;
 
   private circuitRunner: CircuitRunner | null = null;
@@ -97,7 +97,7 @@ export class CircuitRunnerSceneManager extends EventEmitter<RenderEventMap> {
    * @throws {Error} If already initialized
    * @throws {TypeError} If container is not valid HTMLElement
    */
-  initialize(container: HTMLElement, options?: RendererOptions): void {
+  initialize(container: HTMLElement, options?: SceneManagerOptions): void {
     if (this.initialized) {
       throw new Error('SceneManager already initialized');
     }

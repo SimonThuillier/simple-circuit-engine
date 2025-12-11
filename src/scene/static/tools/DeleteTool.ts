@@ -9,7 +9,12 @@
  */
 
 import * as THREE from 'three';
-import type { IEditingTool, ToolType, CursorType, RenderObjectType } from '../../shared/types';
+import type {
+  IEditingTool,
+  ToolType,
+  CursorType,
+  CircuitSceneObjectType,
+} from '../../shared/types';
 import type { Circuit } from '../../../core/Circuit';
 import type { CircuitSceneManager } from '../CircuitSceneManager';
 
@@ -20,13 +25,11 @@ import type { CircuitSceneManager } from '../CircuitSceneManager';
 export class DeleteTool implements IEditingTool {
   readonly type: ToolType = 'delete';
 
-  private _circuit: Circuit | null = null;
   private _sceneManager: CircuitSceneManager;
-  private _targetObject: { id: string; type: RenderObjectType } | null = null;
+  private _targetObject: { id: string; type: CircuitSceneObjectType } | null = null;
   private isHoveringObject: boolean = false;
 
-  constructor(circuit: Circuit | null, sceneManager: CircuitSceneManager) {
-    this._circuit = circuit;
+  constructor(sceneManager: CircuitSceneManager) {
     this._sceneManager = sceneManager;
   }
 

@@ -1,74 +1,67 @@
 /**
  * Event Contracts for Select Tool & Wire Improvements
  *
- * Extends the existing RenderEventMap with selection and drag events.
+ * Extends the existing SceneManagerEventMap with selection and drag events.
  */
 
 import type { UUID } from '../../../src/core/types/UUID';
 import type { Position } from '../../../src/core/types/Position';
+import type {SelectionData} from "../../../src/scene/shared/types";
+import type * as THREE from "three";
 
 /**
  * Selection change event payload
  */
 export interface SelectionChangeEvent {
-  /** Newly selected component ID, or null if deselected */
-  componentId: UUID | null;
+  /** New selection, or null if deselected */
+  newSelection: SelectionData | null;
 
-  /** Previously selected component ID, or null if none was selected */
-  previousComponentId: UUID | null;
+  /** Previous selection, or null if nothing was selected */
+  previousSelection: SelectionData | null;
 }
 
 /**
  * Drag start event payload
  */
 export interface DragStartEvent {
-  /** Component being dragged */
-  componentId: UUID;
+  /** Selection being dragged */
+  selection: SelectionData;
 
   /** Starting grid position */
-  startPosition: Position;
+  startPosition: THREE.Vector3;
 }
 
 /**
  * Drag move event payload
  */
 export interface DragMoveEvent {
-  /** Component being dragged */
-  componentId: UUID;
+  /** Selection being dragged */
+  selection: SelectionData;
 
-  /** Current snapped grid position */
-  currentPosition: Position;
+  /** Current cursor grid position */
+  currentPosition: THREE.Vector3;
 
-  /** Raw world position (not snapped) */
-  worldPosition: { x: number; z: number };
+  /** delta between current Position and start position */
+  delta: THREE.Vector3;
 }
 
 /**
  * Drag end event payload
  */
 export interface DragEndEvent {
-  /** Component that was dragged */
-  componentId: UUID;
+  /** Selection which was dragged */
+  selection: SelectionData;
 
-  /** Original position before drag */
-  startPosition: Position;
-
-  /** Final position after drag */
-  endPosition: Position;
-
-  /** Whether the position actually changed */
-  positionChanged: boolean;
+  /** finishing grid position */
+  finalPosition: THREE.Vector3;
 }
 
 /**
  * Drag cancel event payload
  */
 export interface DragCancelEvent {
-  /** Component whose drag was cancelled */
-  componentId: UUID;
-
-  /** Position restored to */
-  restoredPosition: Position;
+  /** Selection which was dragged */
+  selection: SelectionData;
 }
 
 /**
@@ -78,34 +71,6 @@ export interface RotationEvent {
   /** Component that was rotated */
   componentId: UUID;
 
-  /** Previous rotation in degrees */
-  previousRotation: number;
-
-  /** New rotation in degrees */
+  /** New rotation in radian */
   newRotation: number;
-}
-
-/**
- * Extended event map for CircuitSceneManager
- *
- * These events should be added to the existing RenderEventMap.
- */
-export interface SelectToolEventMap {
-  /** Emitted when selection changes */
-  selectionChange: SelectionChangeEvent;
-
-  /** Emitted when drag operation starts */
-  dragStart: DragStartEvent;
-
-  /** Emitted during drag operation (throttled) */
-  dragMove: DragMoveEvent;
-
-  /** Emitted when drag operation completes successfully */
-  dragEnd: DragEndEvent;
-
-  /** Emitted when drag operation is cancelled */
-  dragCancel: DragCancelEvent;
-
-  /** Emitted when a component is rotated */
-  componentRotated: RotationEvent;
 }

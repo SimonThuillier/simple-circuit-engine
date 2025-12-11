@@ -3,6 +3,7 @@
 Auto-generated from all feature plans. Last updated: 2025-11-28
 
 ## Active Technologies
+
 - TypeScript (strict mode), targeting ES2022 + Three.js 0.181+ (already installed) (006-position-tool-wires)
 - N/A (in-memory circuit model, no persistence changes) (006-position-tool-wires)
 
@@ -37,6 +38,7 @@ npm test && npm run lint
 
 TypeScript (strict mode), targeting ES2022: Follow standard conventions
 When possible level of nested conditional structures should be minimized by using guard clauses and early returns. Example below:
+
 ```typescript
 /**
  * Example of GOOD practice for minimizing nested conditionals
@@ -44,14 +46,14 @@ When possible level of nested conditional structures should be minimized by usin
  * @param input
  */
 function goodExample(input: number | null): string {
-    if (input === null) {
-        return "No input provided";
-    }
-    // process securized input
-    // Main logic (possibily big) continues here without additional nesting : more readable, clearer
-    let output = input * 2;
-    
-    return `Output is ${output}`;
+  if (input === null) {
+    return 'No input provided';
+  }
+  // process securized input
+  // Main logic (possibily big) continues here without additional nesting : more readable, clearer
+  let output = input * 2;
+
+  return `Output is ${output}`;
 }
 /**
  * Example of BAD practice that increases nested conditionals
@@ -59,16 +61,17 @@ function goodExample(input: number | null): string {
  * @param input
  */
 function badExample(input: number | null): string {
-    if (input !== null) {
-        // Main logic (possibily big) embedded under an if : less readable, less clear
-        let output = input * 2;
-        return `Output is ${output}`;
-    }
-    return "No input provided";
+  if (input !== null) {
+    // Main logic (possibily big) embedded under an if : less readable, less clear
+    let output = input * 2;
+    return `Output is ${output}`;
+  }
+  return 'No input provided';
 }
 ```
 
 ## Recent Changes
+
 - 006-position-tool-wires: Added TypeScript (strict mode), targeting ES2022 + Three.js 0.181+ (already installed)
 
 - 005-visual-factory-classes: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (already installed)

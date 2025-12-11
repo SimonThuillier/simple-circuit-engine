@@ -169,8 +169,8 @@ Updated `spec.md` to incorporate comprehensive tool system requirements based on
 The following contract files will need updates (per analysis.md):
 
 ### types.ts
-- Extend `RenderEvent` type with 6 new tool-related events
-- Add to `RenderEventMap` with proper payloads
+- Extend `SceneManagerEvent` type with 6 new tool-related events
+- Add to `SceneManagerEventMap` with proper payloads
 - Add new types: `ToolType`, `CursorType`, `IEditingTool` interface
 
 ### CircuitSceneManager.ts

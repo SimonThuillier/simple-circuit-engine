@@ -16,21 +16,25 @@ import { ENodeType } from '../../core/types/ENodeType';
 import { EventEmitter } from '../shared/EventEmitter';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
 import type {
-  RenderEvent,
-  RenderEventMap,
-  RenderCallback,
+  SceneManagerEvent,
+  SceneManagerEventMap,
+  SceneManagerCallback,
   ChangedData,
-  RendererOptions,
+  SceneManagerOptions,
   MapControlsOptions,
   ToolType,
-  HitboxUserData, HoveredElement, RenderObjectType, EnodeHitboxUserData, ComponentHitboxUserData, SelectionData,
-  HoverableType, MultiSelectionData,
+  HitboxUserData,
+  HoveredElement,
+  CircuitSceneObjectType,
+  EnodeHitboxUserData,
+  ComponentHitboxUserData,
+  SelectionData,
+  HoverableType,
+  MultiSelectionData,
 } from '../shared/types';
 import { createPerspectiveCamera, setupCameraFromMetadata } from '../shared/CameraUtils';
 import { setupSceneLights } from '../shared/LightingUtils';
 import { createGridHelper } from '../shared/GeometryUtils';
-import { createWireGeometry } from '../shared/GeometryUtils';
-import { createLineMaterial } from '../shared/MaterialUtils';
 import { createEnodeGeometry } from '../shared/GeometryUtils';
 import { createStandardMaterial } from '../shared/MaterialUtils';
 import { PositionTool } from './tools/PositionTool';
@@ -41,9 +45,10 @@ import { DeleteTool } from './tools/DeleteTool';
 import type { IEditingTool } from '../shared/types';
 import { HoverManager } from '../shared/HoverManager';
 import { applyENodeHover, removeENodeHover } from '../shared/ENodesUtils';
-import {SelectionManager} from "../shared/SelectionManager";
+import { SelectionManager } from '../shared/SelectionManager';
 import { WireVisualManager } from '../shared/WireVisualManager';
-import type {ComponentType} from "@/core/types/ComponentType";
+import type { ComponentType } from '@/core/types/ComponentType';
+import { CircuitEditionManager } from './CircuitEditionManager';
 
 /**
  * Static Circuit Scene Manager Implementation
@@ -52,7 +57,7 @@ import type {ComponentType} from "@/core/types/ComponentType";
  * Supports view manipulation and editing via integrated tool system.
  * Provides event hooks for error handling and state changes.
  */
-export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
+export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
   public readonly factoryRegistry: IFactoryRegistry;
 
   private circuit?: Circuit | null = null;
@@ -92,6 +97,9 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
   // WireVisualManager (Phase 3 - User Story 3)
   private wireVisualManager: WireVisualManager = new WireVisualManager();
 
+  // CircuitEditionManager handles saving edits to the core model
+  private circuitEditionManager: CircuitEditionManager = new CircuitEditionManager(this);
+
   /**
    * Create a new Static Circuit Renderer
    *
@@ -115,7 +123,7 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
    * @param container - HTMLElement to attach scene to
    * @param options - Optional renderer configuration
    */
-  initialize(container: HTMLElement, options?: RendererOptions): void {
+  initialize(container: HTMLElement, options?: SceneManagerOptions): void {
     if (this.initialized) {
       throw new Error('Renderer already initialized');
     }
@@ -157,7 +165,7 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
       this._initializeHoverManager();
 
       // Initialize SelectionManager (Phase 6)
-      this._initializeSelectionManager()
+      this._initializeSelectionManager();
 
       this.initialized = true;
 
@@ -220,12 +228,12 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
   }
 
   cursorGroundPlanePosition(): THREE.Vector3 {
-    const gridHalfSize = this.circuit ? Math.ceil(this.circuit.metadata.size/2) : 10;
+    const gridHalfSize = this.circuit ? Math.ceil(this.circuit.metadata.size / 2) : 10;
     const vector = this.hoverManager!.getGroundPlanePosition().clone();
     vector.set(
-        Math.min(Math.max(vector.x, -gridHalfSize),gridHalfSize),
-        0,
-        Math.min(Math.max(vector.z, -gridHalfSize),gridHalfSize),
+      Math.min(Math.max(vector.x, -gridHalfSize), gridHalfSize),
+      0,
+      Math.min(Math.max(vector.z, -gridHalfSize), gridHalfSize)
     );
     return vector;
   }
@@ -248,13 +256,11 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
       userData: HitboxUserData;
     } | null = null;
 
-    const unhoverPreviousElement = (
-        element: {
-          objectId: string,
-          objectType: RenderObjectType,
-          userData: HitboxUserData
-        }) => {
-
+    const unhoverPreviousElement = (element: {
+      objectId: string;
+      objectType: CircuitSceneObjectType;
+      userData: HitboxUserData;
+    }) => {
       if (element.objectType === 'enodeHitbox') {
         const userData = element.userData as EnodeHitboxUserData;
         const enodeId = userData.enodeId;
@@ -341,7 +347,7 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
       // Emit unhover for previous element if it exists
       if (previousElement && (!element || element.id !== previousElement.objectId)) {
         unhoverPreviousElement(previousElement);
-        this.emit('unhover', {...previousElement});
+        this.emit('unhover', { ...previousElement });
         previousElement = null;
       }
 
@@ -353,7 +359,7 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
           objectType: element.objectType,
           userData: element.object3D.userData as HitboxUserData,
         };
-        this.emit('hover', {...previousElement});
+        this.emit('hover', { ...previousElement });
       }
     });
 
@@ -397,24 +403,23 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
   private handlePointerDown(event: MouseEvent): void {
     // discard if right click or middle click
     if (event.button !== 0) {
-        return;
+      return;
     }
     // common behavior regardless of the tool: select on pointer down
 
     console.log('pointer down handler called', this.hoverManager?.getHoveredElement());
-    if (this.hoverManager?.getHoveredElement()){
+    if (this.hoverManager?.getHoveredElement()) {
       // always: emit position event when hovered element
       const element = this.hoverManager.getHoveredElement()!;
       const alreadySelected = this.selectionManager!.isSelected(element.type, element.id);
-      if(!alreadySelected){
+      if (!alreadySelected) {
         this.selectionManager?.selectOne(element.type, element.id);
         this.emit('select', this.selectionManager!.getSelection()!);
       }
-    }
-    else {
+    } else {
       // always: emit deselect event when not hovered element
       const hasSelection = this.selectionManager?.hasSelection();
-      if(hasSelection){
+      if (hasSelection) {
         const selection = this.selectionManager!.getSelection()!;
         this.selectionManager?.deselect();
         this.emit('deselect', selection);
@@ -423,28 +428,27 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
   }
 
   private _applySelectionVisual(selection: SelectionData, selected: boolean): void {
-    let components : Map<UUID, string | null> | null = null;
+    let components: Map<UUID, string | null> | null = null;
     let enodes: Map<UUID, string | null> | null = null;
     let wires: Map<UUID, string | null> | null = null;
     if (selection.kind === 'mono') {
       switch (selection.type) {
         case 'component':
-            components = new Map<UUID, string | null>();
-            components.set(selection.id, selection.data ?? null);
-            break;
+          components = new Map<UUID, string | null>();
+          components.set(selection.id, selection.data ?? null);
+          break;
         case 'enode':
-            enodes = new Map<UUID, string | null>();
-            enodes.set(selection.id, selection.data ?? null);
-            break;
+          enodes = new Map<UUID, string | null>();
+          enodes.set(selection.id, selection.data ?? null);
+          break;
         case 'wire':
-            wires = new Map<UUID, string | null>();
-            wires.set(selection.id, selection.data ?? null);
-            break;
+          wires = new Map<UUID, string | null>();
+          wires.set(selection.id, selection.data ?? null);
+          break;
         default:
           break;
       }
-    }
-    else {
+    } else {
       components = selection.components || null;
       enodes = selection.enodes || null;
       wires = selection.wires || null;
@@ -455,27 +459,29 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
         console.log(`Applying selection visual to component ${id}, selected=${selected}`);
         const group = this.componentGroups.get(id);
         console.log(group);
-        if (!group) {continue;}
+        if (!group) {
+          continue;
+        }
         try {
           const componentType = group.userData.componentType as ComponentType;
           const factory = this.factoryRegistry.get(componentType);
           if (selected) {
             console.log('apply selection visual');
             factory.applySelection(group);
-          }
-          else {
+          } else {
             console.log('remove selection visual');
             factory.removeSelection(group);
           }
         } catch (error) {
-          console.warn(`Failed to ${selected ? 'apply': 'remove'} component selection visual:`, error);
+          console.warn(
+            `Failed to ${selected ? 'apply' : 'remove'} component selection visual:`,
+            error
+          );
         }
       }
       // TODO Wires and enodes selection visual handling can be added here in the future
     }
   }
-
-
 
   private _initializeSelectionManager(): void {
     if (!this.scene || !this.camera || !this.container) {
@@ -516,7 +522,7 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
    */
   setCircuit(circuit: Circuit | null): void {
     if (circuit === this.circuit) return; // No change
-// TODO reset changedData ?
+    // TODO reset changedData ?
     if (!!this.circuit && this.initialized) {
       // Clear existing visuals
       this._removeAllVisuals();
@@ -576,9 +582,9 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
         this.mapControls.update();
       }
 
-// In CircuitSceneManager, render() is mostly a no-op
-// Scene updates are done in update()
-// Consumer handles actual WebGL rendering via getScene()
+      // In CircuitSceneManager, render() is mostly a no-op
+      // Scene updates are done in update()
+      // Consumer handles actual WebGL rendering via getScene()
     } catch (error) {
       const err = error as Error;
       this.emit('error', { message: err.message, error: err });
@@ -613,7 +619,7 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
   getContainer(): HTMLElement {
     this._checkInitialized();
     if (!this.container) {
-        throw new Error('Container not initialized');
+      throw new Error('Container not initialized');
     }
     return this.container!;
   }
@@ -625,9 +631,17 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
   getSelectionManager(): SelectionManager {
     this._checkInitialized();
     if (!this.selectionManager) {
-        throw new Error('SelectionManager not initialized');
+      throw new Error('SelectionManager not initialized');
     }
     return this.selectionManager!;
+  }
+
+  /**
+   * Get the CircuitEditionManager instance for calls by tools
+   */
+  getCircuitEditionManager(): CircuitEditionManager {
+    this._checkInitialized();
+    return this.circuitEditionManager;
   }
 
   /**
@@ -639,7 +653,7 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
     return this.mapControls;
   }
 
-  getSelection(id: string) : THREE.Group | undefined {
+  getSelection(id: string): THREE.Group | undefined {
     return this.componentGroups.get(id);
   }
 
@@ -650,14 +664,14 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
    */
   getGroup(type: HoverableType, id: UUID): THREE.Group | undefined {
     switch (type) {
-        case 'component':
-            return this.componentGroups.get(id);
-        case 'enode':
-            return this.enodeGroups.get(id);
-        case 'wire':
-            return this.wireGroups.get(id) as THREE.Group;
-        default:
-            return undefined;
+      case 'component':
+        return this.componentGroups.get(id);
+      case 'enode':
+        return this.enodeGroups.get(id);
+      case 'wire':
+        return this.wireGroups.get(id) as THREE.Group;
+      default:
+        return undefined;
     }
   }
 
@@ -665,21 +679,25 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
    * Get current positions of selected objects
    * @param selection
    */
-  getSelectionPositions(selection: SelectionData): Map<UUID, {type: HoverableType, position: THREE.Vector3}> {
-    const selectionPositions = new Map<UUID, {type: HoverableType, position: THREE.Vector3}>();
-    if (selection.kind === 'mono'){
+  getSelectionPositions(
+    selection: SelectionData
+  ): Map<UUID, { type: HoverableType; position: THREE.Vector3 }> {
+    const selectionPositions = new Map<UUID, { type: HoverableType; position: THREE.Vector3 }>();
+    if (selection.kind === 'mono') {
       const object = this.getGroup(selection.type, selection.id);
-      if (object){
-        selectionPositions.set(selection.id as UUID, {type: selection.type, position: object.position.clone()});
+      if (object) {
+        selectionPositions.set(selection.id as UUID, {
+          type: selection.type,
+          position: object.position.clone(),
+        });
       }
-    }
-    else {
+    } else {
       const multiSelection = selection as MultiSelectionData;
-      if(multiSelection.components) {
+      if (multiSelection.components) {
         for (const id of multiSelection.components.keys()) {
           const object = this.getGroup('component', id);
           if (object) {
-            selectionPositions.set(id, {type: 'component', position: object.position.clone()});
+            selectionPositions.set(id, { type: 'component', position: object.position.clone() });
           }
         }
       }
@@ -700,10 +718,10 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
       throw new Error('MapControls not initialized');
     }
 
-// Merge new options with existing
+    // Merge new options with existing
     this.mapControlsOptions = { ...this.mapControlsOptions, ...options };
 
-// Apply updated options to MapControls
+    // Apply updated options to MapControls
     if (options.enablePan !== undefined) {
       this.mapControls.enablePan = options.enablePan;
     }
@@ -748,7 +766,7 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
       throw new Error('Camera and MapControls must be initialized');
     }
 
-// Reset to default camera position (top-down view of circuit)
+    // Reset to default camera position (top-down view of circuit)
     const target = new THREE.Vector3(0, 0, 0);
     const position = new THREE.Vector3(0, 10, 10);
 
@@ -779,18 +797,18 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
       throw new Error('Camera and MapControls must be initialized');
     }
 
-// Find the element in the scene
+    // Find the element in the scene
     let targetObject: THREE.Object3D | null = null;
 
-// Check components
+    // Check components
     if (this.componentGroups.has(elementId)) {
       targetObject = this.componentGroups.get(elementId)!;
     }
-// Check wires
+    // Check wires
     else if (this.wireGroups.has(elementId)) {
       targetObject = this.wireGroups.get(elementId)!;
     }
-// Check enodes
+    // Check enodes
     else if (this.enodeGroups.has(elementId)) {
       targetObject = this.enodeGroups.get(elementId)!;
     }
@@ -799,11 +817,11 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
       throw new Error(`Element ${elementId} not found in scene`);
     }
 
-// Get the element's world position
+    // Get the element's world position
     const position = new THREE.Vector3();
     targetObject.getWorldPosition(position);
 
-// Update MapControls target
+    // Update MapControls target
     if (animate && this.mapControls.enableDamping) {
       // Smooth transition via damping
       this.mapControls.target.copy(position);
@@ -815,9 +833,9 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
     }
   }
 
-// ==========================================
-// HoverManager API (Phase 3)
-// ==========================================
+  // ==========================================
+  // HoverManager API (Phase 3)
+  // ==========================================
 
   /**
    * Get the currently hovered element
@@ -993,7 +1011,7 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
     if (this.activeTool === null) {
       return;
     }
-    if(this.activeTool !== toolType) {
+    if (this.activeTool !== toolType) {
       return; // only deactivate if the specified tool is active
     }
 
@@ -1027,8 +1045,7 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
     // Check if tool is already active
     if (this.activeTool === toolType) {
       return;
-    }
-    else if (this.activeTool !== null) {
+    } else if (this.activeTool !== null) {
       // Deactivate previous tool
       this.deactivateTool(this.activeTool);
     }
@@ -1183,10 +1200,10 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
       return;
     }
 
-// Clear existing preview objects
+    // Clear existing preview objects
     this._clearPreviewObjects();
 
-// Get new preview objects from tool
+    // Get new preview objects from tool
     const newPreviewObjects = tool.getPreviewObjects();
     for (const obj of newPreviewObjects) {
       this.scene!.add(obj);
@@ -1203,13 +1220,12 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
    * @private
    */
   private _initializeTools(): void {
-    // Create tool instances (circuit will be null initially, updated when setCircuit is called)
-    const circuit = this.circuit ?? null;
-    this.tools.set('position', new PositionTool(circuit, this));
-    this.tools.set('addComponent', new AddComponentTool(circuit, this));
-    this.tools.set('wire', new WireTool(circuit, this));
-    this.tools.set('branchingPoint', new BranchingPointTool(circuit, this));
-    this.tools.set('delete', new DeleteTool(circuit, this));
+    // Create tool instances
+    this.tools.set('position', new PositionTool(this));
+    this.tools.set('addComponent', new AddComponentTool(this));
+    this.tools.set('wire', new WireTool(this));
+    this.tools.set('branchingPoint', new BranchingPointTool(this));
+    this.tools.set('delete', new DeleteTool(this));
   }
 
   private _checkInitialized(): void {
@@ -1233,11 +1249,11 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
       return;
     }
 
-// 1. Add circuit sized grid
+    // 1. Add circuit sized grid
     this.grid = createGridHelper(this.circuit.metadata.size, this.circuit.metadata.divisions);
     this.scene!.add(this.grid);
 
-// Create visuals for all circuit elements
+    // Create visuals for all circuit elements
     const components = this.circuit.getAllComponents();
     const wires = this.circuit.getAllWires();
     const enodes = this.circuit.getAllENodes();
@@ -1275,7 +1291,7 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
       }
     }
 
-// Add new objects
+    // Add new objects
     if (changedData.addedComponents) {
       for (const id of changedData.addedComponents) {
         const component = this.circuit.getComponent(id);
@@ -1303,7 +1319,7 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
       }
     }
 
-// Update modified objects
+    // Update modified objects
     if (changedData.modifiedComponents) {
       for (const id of changedData.modifiedComponents) {
         this._removeComponentGroup(id);
@@ -1320,7 +1336,7 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
       const factory = this.factoryRegistry.get(component.type);
       // Support both function-based (legacy) and class-based (new) factories
       const mesh =
-          typeof factory === 'function' ? factory(component) : factory.createVisual(component);
+        typeof factory === 'function' ? factory(component) : factory.createVisual(component);
 
       // Position mesh at component location (2D circuit -> 3D world)
       mesh.position.set(component.position.x, 0, -component.position.y);
@@ -1375,15 +1391,15 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
         return;
       }
 
-// Use WireVisualManager to create wire with pin-accurate endpoints
+      // Use WireVisualManager to create wire with pin-accurate endpoints
       const line = this.wireVisualManager.createOrUpdateWire(
-          wire,
-          this.circuit,
-          this.scene,
-          this.componentGroups
+        wire,
+        this.circuit,
+        this.scene,
+        this.componentGroups
       );
 
-// Track in wireGroups for backward compatibility
+      // Track in wireGroups for backward compatibility
       this.wireGroups.set(wire.id, line);
     } catch (error) {
       const err = error as Error;
@@ -1408,7 +1424,7 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
 
       const mesh = new THREE.Mesh(geometry, material);
 
-// Use getPosition() to properly handle position retrieval
+      // Use getPosition() to properly handle position retrieval
       const pos = enode.getPosition(this.circuit);
       mesh.position.set(pos.x, 0, -pos.y);
 
@@ -1494,17 +1510,17 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
       this._removeComponentGroup(id);
     }
 
-// Remove all wire meshes
+    // Remove all wire meshes
     for (const id of Array.from(this.wireGroups.keys())) {
       this._removeWireGroup(id);
     }
 
-// Remove all enode meshes
+    // Remove all enode meshes
     for (const id of Array.from(this.enodeGroups.keys())) {
       this._removeEnodeGroup(id);
     }
 
-// remove grid
+    // remove grid
     if (this.grid) {
       this.scene!.remove(this.grid);
       this.grid.geometry.dispose();

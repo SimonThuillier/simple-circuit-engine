@@ -22,15 +22,13 @@ import type { ComponentType } from '../../../core/types/ComponentType';
 export class AddComponentTool implements IEditingTool {
   readonly type: ToolType = 'addComponent';
 
-  private _circuit: Circuit | null = null;
   private _sceneManager: CircuitSceneManager;
   private _componentType: ComponentType | null = null;
   private previewPosition: THREE.Vector3 = new THREE.Vector3();
   private previewRotation: number = 0;
   private hasOverlap: boolean = false;
 
-  constructor(circuit: Circuit | null, sceneManager: CircuitSceneManager) {
-    this._circuit = circuit;
+  constructor(sceneManager: CircuitSceneManager) {
     this._sceneManager = sceneManager;
   }
 

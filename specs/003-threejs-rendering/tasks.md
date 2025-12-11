@@ -52,7 +52,7 @@
 
 **⚠️ CRITICAL**: No user story renderer implementation can begin until this phase is complete
 
-- [x] T005 [P] Create src/scene/shared/types.ts with RenderEvent, RenderEventMap, ChangedData, SceneManagerOptions types per contracts/types.ts
+- [x] T005 [P] Create src/scene/shared/types.ts with SceneManagerEvent, SceneManagerEventMap, ChangedData, SceneManagerOptions types per contracts/types.ts
 - [x] T006 [P] Implement EventEmitter<EventMap> class in src/scene/shared/EventEmitter.ts with on(), off(), emit() methods per research.md decision on type-safe event pattern
 - [x] T007 [P] Create src/scene/shared/ComponentVisualFactory.ts with ComponentVisualFactory type and IFactoryRegistry interface per contracts/ComponentVisualFactory.ts
 - [x] T008 [P] Implement FactoryRegistry class in src/scene/shared/FactoryRegistry.ts with register(), get(), has(), unregister(), getRegisteredTypes() methods
@@ -317,7 +317,7 @@
 
 ```bash
 # Phase 2: Launch all foundational utilities together:
-Task: "Create src/scene/shared/types.ts with RenderEvent types"
+Task: "Create src/scene/shared/types.ts with SceneManagerEvent types"
 Task: "Implement EventEmitter class in src/scene/shared/EventEmitter.ts"
 Task: "Create src/scene/shared/ComponentVisualFactory.ts"
 Task: "Implement FactoryRegistry class"

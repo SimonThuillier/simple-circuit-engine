@@ -40,12 +40,12 @@ export { HoverManager } from './shared/HoverManager';
 
 // Types
 export type {
-  RenderEvent,
-  RenderEventMap,
-  RenderCallback,
-  RenderObjectType,
+  SceneManagerEvent,
+  SceneManagerEventMap,
+  SceneManagerCallback,
+  CircuitSceneObjectType,
   ChangedData,
-  RendererOptions,
+  SceneManagerOptions,
   MapControlsOptions,
   HoverableType,
   HoveredElement,

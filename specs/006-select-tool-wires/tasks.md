@@ -121,21 +121,21 @@
 
 ### 5.4 User Story 4 - Wires Follow Pins During Movement (Priority: P1)
 
-- [ ] T035 [US1] [US4] Call WireVisualManager.updateWiresForComponent() on each drag move in src/scene/static/tools/PositionTool.ts (TODO in code)
-- [ ] T036 [US1] [US4] Ensure all wires connected to dragged component update in real-time in src/scene/static/tools/PositionTool.ts (TODO in code)
+- [reported for future spec] T035 [US1] [US4] Call WireVisualManager.updateWiresForComponent() on each drag move in src/scene/static/tools/PositionTool.ts (TODO in code)
+- [reported for future spec] T036 [US1] [US4] Ensure all wires connected to dragged component update in real-time in src/scene/static/tools/PositionTool.ts (TODO in code)
 
 ### 5.5 CircuitSceneManager Integration
 
 - [X] T037 [US1] Add pointerdown handler to CircuitSceneManager for selection in src/scene/static/CircuitSceneManager.ts (handlePointerDown)
 - [X] T038 [US1] PositionTool handles its own event listeners in onActivate()/onDeactivate() - no CSM routing needed
-- [ ] T039 [US1] Add dragStart, dragMove, dragEnd event emissions in src/scene/static/CircuitSceneManager.ts (optional - not yet implemented)
+- [X] T039 [US1] Add dragStart, dragMove, dragEnd event emissions in src/scene/static/CircuitSceneManager.ts
 
 ### 5.6 Tests
 
-- [ ] T040 [P] [US1] Create PositionTool unit tests for click selection in tests/scene/static/tools/PositionTool.test.ts
-- [ ] T041 [P] [US1] Create PositionTool unit tests for drag operations in tests/scene/static/tools/PositionTool.test.ts
+- [X] T040 [P] [US1] Create PositionTool unit tests for click selection in tests/scene/static/tools/PositionTool.test.ts
+- [X] T041 [P] [US1] Create PositionTool unit tests for drag operations in tests/scene/static/tools/PositionTool.test.ts
 
-**Checkpoint**: Select and move functionality complete with wire following
+**Checkpoint**: Select and move functionality complete without wire following (reported for future spec)
 
 ---
 
@@ -149,7 +149,7 @@
 
 - [X] T042 [US6] Implement handleKeyDown() for Escape key to cancel drag in src/scene/static/tools/PositionTool.ts
 - [X] T043 [US6] PositionTool adds keyboard event listener in onActivate() - no CSM routing needed
-- [ ] T044 [US6] Add dragCancel event emission when Escape cancels drag in src/scene/static/CircuitSceneManager.ts (optional)
+- [X] T044 [US6] Add dragCancel event emission when Escape cancels drag in src/scene/static/CircuitSceneManager.ts
 
 **Note**: Empty space click deselection is handled in CircuitSceneManager.handlePointerDown() (T028). Escape key in PositionTool cancels drag but preserves selection.
 
@@ -165,16 +165,16 @@
 
 ### Implementation for User Story 2
 
-- [ ] T045 [US2] Implement handleDoubleClick() to rotate selected component 90° clockwise in src/scene/static/tools/PositionTool.ts
-- [ ] T046 [US2] Implement handleKeyDown('r') to rotate selected component in src/scene/static/tools/PositionTool.ts
-- [ ] T047 [US2] Update component rotation in Circuit model after rotation in src/scene/static/tools/PositionTool.ts
-- [ ] T048 [US2] Update component visual rotation (Object3D.rotation.y) in src/scene/static/tools/PositionTool.ts
-- [ ] T049 [US2] Call WireVisualManager.updateWiresForComponent() after rotation in src/scene/static/tools/PositionTool.ts
-- [ ] T050 [US2] Add double-click event handler to CircuitSceneManager in src/scene/static/CircuitSceneManager.ts
-- [ ] T051 [US2] Add componentRotated event emission in src/scene/static/CircuitSceneManager.ts
-- [ ] T052 [P] [US2] Create rotation unit tests in tests/scene/static/tools/PositionTool.test.ts
+- [X] T045 [US2] Implement handleDoubleClick() to rotate selected component 90° clockwise in src/scene/static/tools/PositionTool.ts
+- [X] T046 [US2] Implement handleKeyDown('r') to rotate selected component in src/scene/static/tools/PositionTool.ts
+- [X] T047 [US2] Update component rotation in Circuit model after rotation in src/scene/static/tools/PositionTool.ts
+- [X] T048 [US2] Update component visual rotation (Object3D.rotation.y) in src/scene/static/tools/PositionTool.ts
+- [reported for future spec] T049 [US2] Call WireVisualManager.updateWiresForComponent() after rotation in src/scene/static/tools/PositionTool.ts
+- [X] T050 [US2] Add double-click event handler to CircuitSceneManager in src/scene/static/tools/PositionTool.ts
+- [X] T051 [US2] Add componentRotated event emission in src/scene/static/CircuitSceneManager.ts
+- [X] T052 [P] [US2] Create rotation unit tests in tests/scene/static/tools/PositionTool.test.ts
 
-**Checkpoint**: Rotation functionality complete with wire updates
+**Checkpoint**: Rotation functionality complete without wire updates (reported for future spec)
 
 ---
 
@@ -182,11 +182,11 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T053 [P] Add JSDoc documentation to WireVisualManager public methods in src/scene/shared/WireVisualManager.ts
-- [ ] T054 [P] Add JSDoc documentation to SelectionManager public methods in src/scene/shared/SelectionManager.ts
-- [ ] T055 [P] Add JSDoc documentation to PositionTool public methods in src/scene/static/tools/PositionTool.ts
-- [ ] T056 Ensure all new code passes npm run lint in project root
-- [ ] T057 Run npm test and verify 60% coverage for scene module
+- [X] T053 [P] Add JSDoc documentation to WireVisualManager public methods in src/scene/shared/WireVisualManager.ts
+- [X] T054 [P] Add JSDoc documentation to SelectionManager public methods in src/scene/shared/SelectionManager.ts
+- [X] T055 [P] Add JSDoc documentation to PositionTool public methods in src/scene/static/tools/PositionTool.ts
+- [X] T056 Ensure all new code passes npm run lint in project root
+- [X] T057 Run npm test and verify 60% coverage for scene module
 - [ ] T058 Verify quickstart.md testing checklist passes (manual validation)
 
 ---

@@ -13,7 +13,7 @@
 - `camera: THREE.PerspectiveCamera` - Camera for viewing the scene (private)
 - `container: HTMLElement | null` - DOM container for rendering (private)
 - `initialized: boolean` - Initialization state flag (private)
-- `eventEmitter: EventEmitter<RenderEventMap>` - Event system (private)
+- `eventEmitter: EventEmitter<SceneManagerEventMap>` - Event system (private)
 - `componentMeshes: Map<UUID, THREE.Object3D>` - Component ID → visual mesh (private)
 - `wireMeshes: Map<UUID, THREE.Line>` - Wire ID → visual line (private)
 - `enodeMeshes: Map<UUID, THREE.Mesh>` - ENode ID → visual sphere (private)
@@ -76,7 +76,7 @@
 - `camera: THREE.PerspectiveCamera` - Camera for viewing the scene (private)
 - `container: HTMLElement | null` - DOM container for rendering (private)
 - `initialized: boolean` - Initialization state flag (private)
-- `eventEmitter: EventEmitter<RenderEventMap>` - Event system (private)
+- `eventEmitter: EventEmitter<SceneManagerEventMap>` - Event system (private)
 - `componentMeshes: Map<UUID, THREE.Object3D>` - Component ID → visual mesh (private)
 - `wireMeshes: Map<UUID, THREE.Line>` - Wire ID → animated line (private)
 - `enodeMeshes: Map<UUID, THREE.Mesh>` - ENode ID → visual sphere (private)
@@ -155,13 +155,13 @@ type ComponentVisualFactory = (component: Component) => THREE.Object3D;
 
 ---
 
-### 5. RenderEvent
+### 5. SceneManagerEvent
 
 **Purpose**: Union type of supported event types (includes tool system events)
 
 **Type Definition**:
 ```typescript
-type RenderEvent =
+type SceneManagerEvent =
   | 'hover' | 'unhover' | 'position' | 'deselect' | 'error' | 'ready'
   | 'toolActivated' | 'toolDeactivated' | 'toolOperationStarted'
   | 'toolOperationCompleted' | 'toolOperationCancelled'
@@ -186,13 +186,13 @@ type RenderEvent =
 
 ---
 
-### 6. RenderCallback
+### 6. SceneManagerCallback
 
 **Purpose**: Function signature for event callbacks
 
 **Type Definition**:
 ```typescript
-type RenderCallback<T = any> = (payload: T) => void;
+type SceneManagerCallback<T = any> = (payload: T) => void;
 ```
 
 **Contract**:
@@ -242,7 +242,7 @@ interface ChangedData {
 
 **Generic Parameter**:
 ```typescript
-interface RenderEventMap {
+interface SceneManagerEventMap {
   hover: { objectId: UUID; objectType: 'component' | 'wire' | 'enode' };
   unhover: { objectId: UUID; objectType: 'component' | 'wire' | 'enode' };
   position: { objectId: UUID; objectType: 'component' | 'wire' | 'enode' };
@@ -371,7 +371,7 @@ type CursorType = 'default' | 'pointer' | 'crosshair' | 'move' | 'not-allowed' |
   - `targetWire: UUID | null` - Wire to split
   - `insertionPosition: THREE.Vector3 | null` - Where to insert
 - **DeleteTool**:
-  - `targetObject: { id: UUID, type: RenderObjectType } | null` - Object to delete
+  - `targetObject: { id: UUID, type: CircuitSceneObjectType } | null` - Object to delete
 
 **Lifecycle**:
 - Created when tool activated
@@ -419,10 +419,10 @@ EventEmitter<T>
 
 ### Composition Relationships
 
-- **CircuitSceneManager** *contains* EventEmitter<RenderEventMap>
+- **CircuitSceneManager** *contains* EventEmitter<SceneManagerEventMap>
 - **CircuitSceneManager** *contains* Map<ToolType, IEditingTool> (tool registry)
 - **CircuitSceneManager** *contains* ToolState | null (active tool state)
-- **SimulationCircuitSceneManager** *contains* EventEmitter<RenderEventMap>
+- **SimulationCircuitSceneManager** *contains* EventEmitter<SceneManagerEventMap>
 - **SimulationCircuitSceneManager** *contains* InterpolationController
 - **Both renderers** *contain* THREE.Scene, THREE.Camera
 - **Both renderers** *reference* FactoryRegistry (injected dependency)

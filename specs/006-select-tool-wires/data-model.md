@@ -157,6 +157,52 @@ interface PinWorldPosition {
 
 **Derivation**: Read from Three.js Object3D hierarchy via `pinGroup.getWorldPosition(target)`
 
+### CircuitEditionManager
+
+Manages synchronization between the scene layer (Three.js visual representation) and the core circuit model. Acts as a bridge for editing operations.
+
+**Location**: `src/scene/static/CircuitEditionManager.ts`
+
+**Primary Responsibility**: Convert visual space coordinates and rotations to model space, then update the core Circuit entities.
+
+**Key Methods**:
+- `saveComponentAction(componentId: UUID, action: ModelEditAction, component: Object3D): void`
+- `saveEnodeAction(enodeId: UUID, action: ModelEditAction, enode: Object3D): void` (future)
+- `saveWireAction(wireId: UUID, action: ModelEditAction, wire: Object3D): void` (future)
+
+**Coordinate Conversions**:
+
+| Aspect | Visual Space (Three.js) | Model Space (Circuit) | Conversion |
+|--------|------------------------|----------------------|------------|
+| Position X | Scene X coordinate | Circuit X coordinate | `modelX = round(visualX)` |
+| Position Y/Z | Scene Z coordinate (negative) | Circuit Y coordinate | `modelY = round(-visualZ)` |
+| Rotation | Radians, Y-axis, negative = clockwise | Degrees, 0/90/180/270, positive = clockwise | `modelDegrees = -round(visualRadians × 180 / π)` |
+
+**Event Emission**:
+Emits `circuitElementAction` event for every save operation:
+```typescript
+interface CircuitElementActionEvent {
+  type: 'component' | 'enode' | 'wire';
+  action: 'add' | 'edit' | 'delete';
+  id: UUID;
+  error: Error | null;  // Error if failed, null if successful
+  data: object | null;  // Data must remain unconstrained in its structure : it can be a lot of things depending on the type and action
+}
+```
+
+**Error Handling**:
+- Throws and catches errors internally
+- Always emits event with either error or data (never both)
+- Errors emitted for: missing circuit, invalid component ID
+
+**Usage Example**:
+```typescript
+// Visual component at (10, 0, -15) with rotation -π/2
+manager.saveComponentAction(componentId, 'edit', componentGroup);
+// → Updates circuit model to position (10, 15), rotation 90°
+// → Emits circuitElementAction event with success/error
+```
+
 ## State Transitions
 
 ### Selection State Machine (CircuitSceneManager)
@@ -232,6 +278,9 @@ Circuit (1) ─────────► Component (*)
 SelectionState ─── references ──► Component (0..1)
 DragState ─── references ──► Component (0..1)
 WirePath ─── derived from ──► Wire + ENode positions
+
+CircuitEditionManager ─── updates ──► Circuit Model
+                      └── reads from ──► THREE.Object3D (visual layer)
 ```
 
 ## Validation Rules
