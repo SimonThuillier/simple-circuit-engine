@@ -30,7 +30,7 @@ NB : this is the default beahvior of already installed three/addons/controls/Map
 
 Users need visual feedback when their cursor hovers over circuit elements. The system must detect which element is under the cursor following priority: enode > component > wire. This enables future selection, editing, and tool interactions.
 
-**Why this priority**: Hovering detection is the foundation for all user interactions. Without knowing what's under the cursor, users cannot select, edit, or interact with any circuit element.
+**Why this priority**: Hovering detection is the foundation for all user interactions. Without knowing what's under the cursor, users cannot position, edit, or interact with any circuit element.
 
 **Independent Test**: Can be fully tested by moving the cursor over different circuit elements and observing that the correct element is detected and reported, enabling downstream hover effects.
 
@@ -144,7 +144,7 @@ The hover detection system must perform efficiently, even for circuits with many
 
 - Three.js MapControls addon is available and suitable for the project's Three.js version (0.181+)
 - Circuit elements (components, wires, enodes) already have appropriate Three.js meshes with userData containing element IDs
-- The existing event system (EventEmitter with RenderEventMap) is sufficient for hover events
+- The existing event system (EventEmitter with SceneManagerEventMap) is sufficient for hover events
 - The existing types.ts hover/unhover events are sufficient; no new event types are needed
 - Three.js layers 1, 2, 3 are available and not used by other systems (will be assigned to enode, component, wire hitboxes respectively)
 - Layer 0 remains the default layer for visual rendering

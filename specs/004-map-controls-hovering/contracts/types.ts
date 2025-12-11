@@ -7,7 +7,7 @@
 
 import type { UUID } from '../../../src/core/types/Identifier';
 import type * as THREE from 'three';
-import type { RenderObjectType } from '../../../src/scene/shared/types';
+import type { CircuitSceneObjectType } from '../../../src/scene/shared/types';
 
 // ============================================================================
 // Layer Constants
@@ -67,8 +67,8 @@ export interface HoveredElement {
   id: UUID;
   /** Discriminated type for priority and handling */
   type: HoverableType;
-  /** Three.js object type (matches existing RenderObjectType) */
-  objectType: RenderObjectType;
+  /** Three.js object type (matches existing CircuitSceneObjectType) */
+  objectType: CircuitSceneObjectType;
   /** Reference to the Three.js hitbox mesh */
   object3D: THREE.Object3D;
 }
@@ -162,9 +162,9 @@ export interface MapControlsOptions {
 /**
  * Extended renderer options including MapControls configuration
  *
- * Extends existing RendererOptions with mapControls property.
+ * Extends existing SceneManagerOptions with mapControls property.
  */
-export interface ExtendedRendererOptions {
+export interface ExtendedSceneManagerOptions {
   /** Background color for the scene (default: 0x000000) */
   backgroundColor?: number;
   /** Enable anti-aliasing (default: true) */

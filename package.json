@@ -28,6 +28,7 @@
     "build:demo": "vite build --config vite.demo.config.ts",
     "build:visualizer": "vite build --config vite.visualizer.config.ts && cp scripts/visualizer/circuit-topology-visualizer.html output/",
     "build:viewer": "vite build --config vite.circuit-viewer.config.ts && cp scripts/viewer/circuit-viewer.html output/",
+    "build:editor": "vite build --config vite.circuit-editor.config.ts && cp scripts/editor/circuit-editor.html output/",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",

@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Circuit Editor</title>
+    <style>
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
+          sans-serif;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+
+      h1 {
+        color: #333;
+        margin-bottom: 20px;
+      }
+
+      .container {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      #circuit-input {
+        width: 100%;
+        min-height: 150px;
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        resize: vertical;
+        margin-bottom: 10px;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .tool-button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+      }
+
+      .tool-button:hover {
+        background-color: #f0f0f0;
+      }
+
+      .tool-button .active {
+        background-color: #e0e0e0;
+      }
+
+      button {
+        padding: 10px 20px;
+        font-size: 14px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      #visualize-btn {
+        background-color: #4caf50;
+        color: white;
+      }
+
+      #visualize-btn:hover {
+        background-color: #45a049;
+      }
+
+      #clear-btn {
+        background-color: #f44336;
+        color: white;
+      }
+
+      #clear-btn:hover {
+        background-color: #da190b;
+      }
+
+      #error-display {
+        background-color: #ffebee;
+        color: #c62828;
+        padding: 15px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        border-left: 4px solid #c62828;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      #error-display.hidden {
+        display: none;
+      }
+
+      #error-message {
+        flex: 1;
+      }
+
+      #clear-error-btn {
+        background: transparent;
+        border: none;
+        font-size: 20px;
+        color: #c62828;
+        cursor: pointer;
+        padding: 0;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #clear-error-btn:hover {
+        background-color: rgba(198, 40, 40, 0.1);
+        border-radius: 4px;
+      }
+
+      /* Accordion styles for .input-container */
+      .input-container {
+        overflow: visible;
+      }
+      .input-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        margin-bottom: 8px;
+      }
+      .toggle-btn {
+        background: transparent;
+        border: none;
+        padding: 8px 12px;
+        font-size: 16px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+      }
+      .chev {
+        display: inline-block;
+        transition: transform 0.25s ease;
+        font-size: 14px;
+        line-height: 1;
+      }
+      .input-container.collapsed .chev {
+        transform: rotate(-90deg);
+      }
+
+      .input-body {
+        overflow: hidden;
+        transition:
+          max-height 0.35s ease,
+          opacity 0.25s ease,
+          padding 0.25s ease;
+        max-height: 2000px;
+        opacity: 1;
+      }
+      .input-container.collapsed .input-body {
+        max-height: 0;
+        opacity: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+      }
+
+      /* Ensure viewer adapts smoothly */
+      /* viewer fixed to viewport edges (10px each side). top is computed in JS so the viewer sits
+         just below the top UI (.container). */
+      #editor-container {
+        box-sizing: border-box;
+        position: fixed; /* horizontal anchored to viewport */
+        left: 10px;
+        right: 10px;
+        /* top is set dynamically in JS (so it follows .container height) */
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: white;
+        overflow: hidden;
+        transition:
+          height 0.25s ease,
+          top 0.25s ease;
+        min-height: 120px; /* fallback */
+        z-index: 4;
+        display: grid;
+        grid-template-columns: 1fr 5fr;
+        grid-template-rows: 1fr;
+      }
+
+      #editor-menu {
+        border-right: 1px solid #ddd;
+        padding: 0px;
+        min-width: 170px;
+        width: 170px;
+        height: 100%;
+      }
+
+      /* Ensure viewer adapts smoothly */
+      /* viewer fixed to viewport edges (10px each side). top is computed in JS so the viewer sits
+         just below the top UI (.container). */
+      #viewer-container {
+      }
+
+      .instructions {
+        background-color: #e3f2fd;
+        padding: 15px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        border-left: 4px solid #2196f3;
+      }
+
+      .instructions h3 {
+        margin-top: 0;
+        color: #1976d2;
+      }
+
+      .instructions p {
+        margin: 5px 0;
+        color: #555;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Circuit Editor</h1>
+
+    <div class="container">
+      <!-- modified input-container to be an accordion -->
+      <div class="input-container" id="input-accordion" aria-live="polite">
+        <div class="input-header" id="input-header">
+          <button
+            class="toggle-btn"
+            id="toggle-input"
+            aria-expanded="true"
+            aria-controls="input-body"
+          >
+            <span id="toggle-label">Circuit Input</span>
+            <span class="chev" aria-hidden="true">▾</span>
+          </button>
+          <div style="color: #666; font-size: 12px; padding-right: 8px">
+            Cliquer pour réduire/ouvrir
+          </div>
+        </div>
+
+        <div class="input-body" id="input-body">
+          <div class="instructions">
+            <h3>How to use:</h3>
+            <p>1. Paste your circuit JSON into the textarea below</p>
+            <p>2. Click "Visualize Circuit" to generate the topology graph</p>
+            <p>3. View the rendered graph showing components, pins, and connections</p>
+          </div>
+
+          <textarea
+            id="circuit-input"
+            placeholder='Paste circuit JSON here (e.g., from output/sample-circuits/*.json)&#10;&#10;Example format:&#10;{&#10;  "metadata": { "name": "My Circuit", ... },&#10;  "components": [...],&#10;  "enodes": [...],&#10;  "wires": [...]&#10;}'
+          >
+    {
+  "metadata": {
+    "name": "Switch-Controlled LED Circuit",
+    "size": 20,
+    "divisions": 20,
+    "cameraStartup": {
+      "x": 0,
+      "y": 0,
+      "z": 50
+    }
+  },
+  "components": [
+    {
+      "id": "e16b79a0-c6e2-49d2-8d23-852266cdf3d2",
+      "type": "battery",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "rotation": 0,
+      "pins": [
+        "5e87fd9e-d08b-4dae-bf9e-f9fd4f95d569",
+        "75360089-6b35-4c9a-a08e-4257a2d34968"
+      ],
+      "config": {}
+    },
+    {
+      "id": "9cfa2f2d-3660-4f4f-98a5-b719ed7d12e9",
+      "type": "switch",
+      "position": {
+        "x": 5,
+        "y": 1
+      },
+      "rotation": 0,
+      "pins": [
+        "97b91b70-caa6-4a91-bfc0-6f290f33661c",
+        "db83437e-efba-419a-8b8e-cdf3b1b25745"
+      ],
+      "config": {
+        "initialState": "open"
+      }
+    },
+    {
+      "id": "0b2e768e-a727-4733-9139-15b594fb4a35",
+      "type": "smallLED",
+      "position": {
+        "x": 5,
+        "y": -4
+      },
+      "rotation": 0,
+      "pins": [
+        "295298ee-5ecc-4474-9acb-9be1feee059f",
+        "ddf99ca2-8426-4a02-8b13-b05560806564"
+      ],
+      "config": {
+        "mode": "symmetric",
+        "activeColor": "red",
+        "idleColor": "black"
+      }
+    }
+  ],
+  "enodes": [
+    {
+      "id": "5e87fd9e-d08b-4dae-bf9e-f9fd4f95d569",
+      "type": "Pin",
+      "source": "Voltage",
+      "component": "e16b79a0-c6e2-49d2-8d23-852266cdf3d2",
+      "pinLabel": "cathode"
+    },
+    {
+      "id": "75360089-6b35-4c9a-a08e-4257a2d34968",
+      "type": "Pin",
+      "source": "Current",
+      "component": "e16b79a0-c6e2-49d2-8d23-852266cdf3d2",
+      "pinLabel": "anode"
+    },
+    {
+      "id": "97b91b70-caa6-4a91-bfc0-6f290f33661c",
+      "type": "Pin",
+      "source": null,
+      "component": "9cfa2f2d-3660-4f4f-98a5-b719ed7d12e9",
+      "pinLabel": "input"
+    },
+    {
+      "id": "db83437e-efba-419a-8b8e-cdf3b1b25745",
+      "type": "Pin",
+      "source": null,
+      "component": "9cfa2f2d-3660-4f4f-98a5-b719ed7d12e9",
+      "pinLabel": "output"
+    },
+    {
+      "id": "295298ee-5ecc-4474-9acb-9be1feee059f",
+      "type": "Pin",
+      "source": null,
+      "component": "0b2e768e-a727-4733-9139-15b594fb4a35",
+      "pinLabel": "cathode"
+    },
+    {
+      "id": "ddf99ca2-8426-4a02-8b13-b05560806564",
+      "type": "Pin",
+      "source": null,
+      "component": "0b2e768e-a727-4733-9139-15b594fb4a35",
+      "pinLabel": "anode"
+    }
+  ],
+  "wires": [
+    {
+      "id": "63ac676e-bc4f-4522-a286-a4b46e5fda53",
+      "node1": "5e87fd9e-d08b-4dae-bf9e-f9fd4f95d569",
+      "node2": "97b91b70-caa6-4a91-bfc0-6f290f33661c",
+      "intermediatePositions": []
+    },
+    {
+      "id": "f8d4e220-6376-4002-be89-e8190d19607b",
+      "node1": "db83437e-efba-419a-8b8e-cdf3b1b25745",
+      "node2": "ddf99ca2-8426-4a02-8b13-b05560806564",
+      "intermediatePositions": []
+    },
+    {
+      "id": "e4b1e554-2a6c-4615-a72b-2d4a1a90a3d4",
+      "node1": "295298ee-5ecc-4474-9acb-9be1feee059f",
+      "node2": "75360089-6b35-4c9a-a08e-4257a2d34968",
+      "intermediatePositions": []
+    }
+  ]
+}
+            </textarea
+          >
+
+          <div class="button-group">
+            <button id="visualize-btn">Render Circuit</button>
+            <button id="clear-btn">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="error-display" class="hidden">
+        <span id="error-message"></span>
+        <button id="clear-error-btn" title="Dismiss">&times;</button>
+      </div>
+    </div>
+
+    <div id="editor-container">
+      <div id="editor-menu">
+        <div id="tool-position" class="tool-button">Position</div>
+      </div>
+      <div id="viewer-container"></div>
+    </div>
+
+    <script src="circuit-editor.js"></script>
+    <script>
+      // Initialize visualizer
+      // Remplace 'container' par 'viewerContainer' pour plus de clarté
+      const viewerContainer = document.getElementById('viewer-container');
+
+      if (typeof window.CircuitSceneManager !== 'function') {
+        console.error('CircuitSceneManager is not a constructor!');
+        alert('ERROR: CircuitSceneManager failed to load. Check browser console for details.');
+      }
+
+      const sceneManager = new window.CircuitSceneManager(window.componentsFactoryRegistry);
+      sceneManager.initialize(viewerContainer);
+      sceneManager.getScene().add(window.axesHelper);
+      sceneManager.getCamera().layers.enable(1); // enode hover layer
+      sceneManager.getCamera().layers.enable(2); // component hover layer
+
+      window.renderer.render(sceneManager.getScene(), sceneManager.getCamera());
+      viewerContainer.appendChild(window.renderer.domElement);
+
+      // Redimensionner le renderer pour remplir la hauteur disponible jusqu'en bas de la page,
+      // en tenant compte dynamiquement de l'état de l'accordion et de l'affichage d'erreur.
+      function resizeRenderer() {
+        // compute top as the bottom of the page .container (so viewer always starts just under it)
+        const pageContainer = document.querySelector('.container');
+        const containerRect = pageContainer ? pageContainer.getBoundingClientRect() : { bottom: 0 };
+        const top = Math.max(Math.floor(containerRect.bottom) + 8, 0); // 8px gap
+        const marginBottom = 16;
+
+        // ensure horizontal anchoring and vertical placement
+        viewerContainer.style.position = 'fixed';
+        viewerContainer.style.left = '180px';
+        viewerContainer.style.right = '10px';
+        viewerContainer.style.top = top + 'px';
+
+        // height available from top to viewport bottom
+        const availableHeight = Math.max(window.innerHeight - top - marginBottom, 120);
+        viewerContainer.style.height = availableHeight + 'px';
+
+        const w = viewerContainer.clientWidth || window.innerWidth - 20;
+        const h = availableHeight;
+        if (typeof window.renderer === 'object' && typeof window.renderer.setSize === 'function') {
+          window.renderer.setSize(w, h);
+          window.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        }
+        const cam = sceneManager.getCamera();
+        if (cam && typeof cam.updateProjectionMatrix === 'function') {
+          if (cam.aspect !== undefined) cam.aspect = w / h;
+          cam.updateProjectionMatrix();
+        }
+      }
+      // initial resize
+      resizeRenderer();
+      window.addEventListener('resize', resizeRenderer);
+
+      sceneManager.on('hover', (e) => {
+        //console.log('hover', e);
+      });
+      sceneManager.on('unhover', (e) => {
+        //console.log('unhover', e);
+      });
+      sceneManager.on('select', (e) => {
+        console.log('select', e);
+      });
+      sceneManager.on('deselect', (e) => {
+        console.log('deselect', e);
+      });
+      sceneManager.on('toolActivated', (e) => {
+        console.log('toolActivated', e);
+      });
+      sceneManager.on('toolDeactivated', (e) => {
+        console.log('toolDeactivated', e);
+      });
+      sceneManager.on('circuitElementAction', (e) => {
+        console.log('circuitElementAction', e);
+      });
+
+      sceneManager.getControls().update();
+      sceneManager.setEditMode(true);
+
+      function animate() {
+        requestAnimationFrame(animate);
+        sceneManager.getControls().update();
+        renderer.render(sceneManager.getScene(), sceneManager.getCamera());
+      }
+      animate();
+
+      // Wire up event listeners (visualize / clear / errors) - ensure resizeRenderer is appelé après changements d'UI
+      document.getElementById('visualize-btn').addEventListener('click', async () => {
+        const json = document.getElementById('circuit-input').value;
+        const errorDisplay = document.getElementById('error-display');
+        const errorMessage = document.getElementById('error-message');
+
+        if (!json.trim()) {
+          errorMessage.textContent = 'Please enter circuit JSON';
+          errorDisplay.classList.remove('hidden');
+          resizeRenderer();
+          return;
+        }
+
+        try {
+          const circuitData = JSON.parse(json);
+          const circuit = window.Circuit.fromJSON(circuitData);
+          sceneManager.setCircuit(circuit);
+          window.renderer.render(sceneManager.getScene(), sceneManager.getCamera());
+          errorDisplay.classList.add('hidden');
+          resizeRenderer();
+        } catch (error) {
+          if (error instanceof window.ValidationError) {
+            errorMessage.textContent = `❌ Validation Error: ${error.message}`;
+          } else if (error instanceof window.IntegrityError) {
+            errorMessage.textContent = `❌ Integrity Error: ${error.message}`;
+          } else if (error instanceof window.RenderError) {
+            errorMessage.textContent = `❌ Render Error: ${error.message}`;
+          } else {
+            errorMessage.textContent = `❌ Error: ${error.message}`;
+          }
+          errorDisplay.classList.remove('hidden');
+          resizeRenderer();
+        }
+      });
+
+      document.getElementById('clear-btn').addEventListener('click', () => {
+        sceneManager.clearVisuals();
+        document.getElementById('circuit-input').value = '';
+        document.getElementById('error-display').classList.add('hidden');
+        resizeRenderer();
+      });
+
+      document.getElementById('clear-error-btn').addEventListener('click', () => {
+        document.getElementById('error-display').classList.add('hidden');
+        resizeRenderer();
+      });
+
+      // Accordion toggle logic
+      (function () {
+        const accordion = document.getElementById('input-accordion');
+        const toggleBtn = document.getElementById('toggle-input');
+        const label = document.getElementById('toggle-label');
+
+        function setCollapsed(collapsed) {
+          if (collapsed) {
+            accordion.classList.add('collapsed');
+            toggleBtn.setAttribute('aria-expanded', 'false');
+            label.textContent = "Afficher l'input";
+          } else {
+            accordion.classList.remove('collapsed');
+            toggleBtn.setAttribute('aria-expanded', 'true');
+            label.textContent = 'Circuit Input';
+          }
+          // after transition, force resize to adapt viewer to new layout
+          setTimeout(resizeRenderer, 360);
+        }
+
+        // Initial state: expanded
+        setCollapsed(false);
+
+        toggleBtn.addEventListener('click', () => {
+          const isCollapsed = accordion.classList.contains('collapsed');
+          setCollapsed(!isCollapsed);
+        });
+      })();
+
+      document.getElementById('tool-position').addEventListener('click', (e) => {
+        sceneManager.toggleTool('position');
+      });
+    </script>
+  </body>
+</html>

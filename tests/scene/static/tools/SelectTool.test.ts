@@ -1,21 +1,21 @@
 /**
- * Unit tests for SelectTool
+ * Unit tests for PositionTool
  * Test: T064
- * @module tests/scene/static/tools/SelectTool.test
+ * @module tests/scene/static/tools/PositionTool.test
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type * as THREE from 'three';
 
-// Placeholder for SelectTool - will be imported once implemented
-// import { SelectTool } from '../../../../src/scene/static/tools/SelectTool';
+// Placeholder for PositionTool - will be imported once implemented
+// import { PositionTool } from '../../../../src/scene/static/tools/PositionTool';
 
-describe('SelectTool (T064)', () => {
+describe('PositionTool (T064)', () => {
   // These tests will initially fail - that's expected for TDD
 
   describe.skip('Tool activation', () => {
-    it('should have type "select"', () => {
-      // Test will be implemented when SelectTool exists
+    it('should have type "position"', () => {
+      // Test will be implemented when PositionTool exists
       expect(true).toBe(false); // Intentional failure
     });
 
@@ -28,8 +28,8 @@ describe('SelectTool (T064)', () => {
     });
   });
 
-  describe.skip('Click to select', () => {
-    it('should select component when clicked', () => {
+  describe.skip('Click to position', () => {
+    it('should position component when clicked', () => {
       expect(true).toBe(false); // Intentional failure
     });
 

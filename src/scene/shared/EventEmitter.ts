@@ -67,6 +67,7 @@ export class EventEmitter<EventMap extends Record<string, any>> {
 
   /**
    * Emit an event to all registered listeners
+   * This method is public so that tools may emit events directly on behalf of the EventEmitter owner (SceneManager).
    *
    * @param event - Event name to emit
    * @param payload - Event-specific payload
@@ -75,7 +76,7 @@ export class EventEmitter<EventMap extends Record<string, any>> {
    * Listeners are called in registration order.
    * Errors in callbacks are caught and logged but do not stop other callbacks.
    */
-  protected emit<K extends keyof EventMap>(event: K, payload: EventMap[K]): void {
+  emit<K extends keyof EventMap>(event: K, payload: EventMap[K]): void {
     const callbacks = this.listeners.get(event);
     if (callbacks) {
       for (const callback of callbacks) {

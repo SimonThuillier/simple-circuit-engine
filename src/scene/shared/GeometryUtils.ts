@@ -59,6 +59,15 @@ export function createGridHelper(
 }
 
 /**
+ * Components, branching points and wires intermediate points snap to the nearest integer grid point.
+ * @param position
+ * @constructor
+ */
+export function nearestGridMagnetPosition(position: THREE.Vector3): THREE.Vector3 {
+  return new THREE.Vector3(Math.round(position.x), 0, Math.round(position.z));
+}
+
+/**
  * Create geometry for an electrical node (enode/branching point)
  *
  * @param radius - Radius of the sphere

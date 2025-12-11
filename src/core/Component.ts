@@ -151,6 +151,46 @@ export class Component {
   }
 
   /**
+   * Update the component's position.
+   *
+   * @param newPosition - The new position for the component
+   *
+   * @example
+   * ```typescript
+   * const component = circuit.getComponent(componentId);
+   * component.setPosition(new Position(15, 25));
+   * ```
+   */
+  setPosition(newPosition: Position): void {
+    Object.defineProperty(this, 'position', {
+      value: newPosition,
+      writable: false,
+      enumerable: true,
+      configurable: true,
+    });
+  }
+
+  /**
+   * Update the component's rotation.
+   *
+   * @param newRotation - The new rotation for the component
+   *
+   * @example
+   * ```typescript
+   * const component = circuit.getComponent(componentId);
+   * component.setRotation(new Rotation(90));
+   * ```
+   */
+  setRotation(newRotation: Rotation): void {
+    Object.defineProperty(this, 'rotation', {
+      value: newRotation,
+      writable: false,
+      enumerable: true,
+      configurable: true,
+    });
+  }
+
+  /**
    * Serialize component to JSON.
    *
    * @returns Plain object representation

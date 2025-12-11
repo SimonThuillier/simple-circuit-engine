@@ -4,6 +4,9 @@ Auto-generated from all feature plans. Last updated: 2025-11-28
 
 ## Active Technologies
 
+- TypeScript (strict mode), targeting ES2022 + Three.js 0.181+ (already installed) (006-position-tool-wires)
+- N/A (in-memory circuit model, no persistence changes) (006-position-tool-wires)
+
 - N/A (visual factories are stateless; state resides in Circuit/CircuitRunner instances) (005-visual-factory-classes)
 
 - TypeScript (strict mode), targeting ES2022 + Three.js 0.181+ (already in project) (003-threejs-rendering)
@@ -34,13 +37,46 @@ npm test && npm run lint
 ## Code Style
 
 TypeScript (strict mode), targeting ES2022: Follow standard conventions
+When possible level of nested conditional structures should be minimized by using guard clauses and early returns. Example below:
+
+```typescript
+/**
+ * Example of GOOD practice for minimizing nested conditionals
+ * DO that
+ * @param input
+ */
+function goodExample(input: number | null): string {
+  if (input === null) {
+    return 'No input provided';
+  }
+  // process securized input
+  // Main logic (possibily big) continues here without additional nesting : more readable, clearer
+  let output = input * 2;
+
+  return `Output is ${output}`;
+}
+/**
+ * Example of BAD practice that increases nested conditionals
+ * DONT DO that !
+ * @param input
+ */
+function badExample(input: number | null): string {
+  if (input !== null) {
+    // Main logic (possibily big) embedded under an if : less readable, less clear
+    let output = input * 2;
+    return `Output is ${output}`;
+  }
+  return 'No input provided';
+}
+```
 
 ## Recent Changes
+
+- 006-position-tool-wires: Added TypeScript (strict mode), targeting ES2022 + Three.js 0.181+ (already installed)
 
 - 005-visual-factory-classes: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (already installed)
 
 - 004-map-controls-hovering: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (already installed), three/addons/controls/MapControls.js (already installed)
-- 003-threejs-rendering: Added TypeScript (strict mode), targeting ES2022 + Three.js 0.181+ (already in project)
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

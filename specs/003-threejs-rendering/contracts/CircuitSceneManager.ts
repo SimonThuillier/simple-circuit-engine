@@ -9,8 +9,8 @@
 import type { Circuit } from '@/core/Circuit';
 import type { IFactoryRegistry } from './ComponentVisualFactory';
 import type {
-  RenderEvent,
-  RenderCallback,
+  SceneManagerEvent,
+  SceneManagerCallback,
   ChangedData,
   SceneManagerOptions,
   ToolType,
@@ -34,7 +34,7 @@ import type * as THREE from 'three';
  * **Event System**:
  * Register callbacks via on() for interaction events:
  * - 'hover'/'unhover': User hovers over circuit elements
- * - 'select'/'deselect': User selects circuit elements
+ * - 'position'/'deselect': User selects circuit elements
  * - 'error': scene management errors occurred
  * - 'ready': SceneManager initialization complete
  * - Tool system events: 'toolActivated', 'toolDeactivated', 'toolOperationCompleted', etc.
@@ -59,7 +59,7 @@ import type * as THREE from 'three';
  * const sceneManager = new CircuitSceneManager(registry);
  *
  * sceneManager.on('ready', () => console.log('SceneManager ready'));
- * sceneManager.on('select', ({ objectId, objectType }) => {
+ * sceneManager.on('position', ({ objectId, objectType }) => {
  *   console.log(`Selected ${objectType}: ${objectId}`);
  * });
  *
@@ -72,7 +72,7 @@ import type * as THREE from 'three';
  *
  * // Enable editing
  * sceneManager.setEditMode(true);
- * sceneManager.setActiveTool('placeComponent');
+ * sceneManager.setActiveTool('addComponent');
  *
  * // Consumer handles DOM events
  * canvas.addEventListener('click', (e) => {
@@ -237,7 +237,7 @@ export interface ICircuitSceneManager {
    * });
    * ```
    */
-  on<E extends RenderEvent>(event: E, callback: RenderCallback): void;
+  on<E extends SceneManagerEvent>(event: E, callback: SceneManagerCallback): void;
 
   /**
    * Unregister an event callback
@@ -248,7 +248,7 @@ export interface ICircuitSceneManager {
    * @remarks
    * If callback was registered multiple times, only removes one registration.
    */
-  off<E extends RenderEvent>(event: E, callback: RenderCallback): void;
+  off<E extends SceneManagerEvent>(event: E, callback: SceneManagerCallback): void;
 
   /**
    * Get the Three.js scene for rendering
@@ -335,7 +335,7 @@ export interface ICircuitSceneManager {
    *
    * @example
    * ```typescript
-   * renderer.setActiveTool('placeComponent');
+   * renderer.setActiveTool('addComponent');
    * renderer.on('toolActivated', ({ toolType }) => {
    *   console.log(`Tool activated: ${toolType}`);
    * });

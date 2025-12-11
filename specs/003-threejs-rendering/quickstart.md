@@ -97,7 +97,7 @@ renderer.on('error', ({ message, error }) => {
   console.error('Rendering error:', message, error);
 });
 
-renderer.on('select', ({ objectId, objectType }) => {
+renderer.on('position', ({ objectId, objectType }) => {
   console.log(`Selected ${objectType}: ${objectId}`);
 });
 
@@ -299,7 +299,7 @@ renderer.on('unhover', ({ objectId }) => {
   hideTooltip();
 });
 
-renderer.on('select', ({ objectId, objectType }) => {
+renderer.on('position', ({ objectId, objectType }) => {
   if (objectType === 'wire') {
     const wire = circuit.getWire(objectId);
     highlightWire(wire);

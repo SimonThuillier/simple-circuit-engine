@@ -16,30 +16,39 @@ import { ENodeType } from '../../core/types/ENodeType';
 import { EventEmitter } from '../shared/EventEmitter';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
 import type {
-  RenderEvent,
-  RenderEventMap,
-  RenderCallback,
+  SceneManagerEvent,
+  SceneManagerEventMap,
+  SceneManagerCallback,
   ChangedData,
-  RendererOptions,
+  SceneManagerOptions,
   MapControlsOptions,
   ToolType,
   HitboxUserData,
+  HoveredElement,
+  CircuitSceneObjectType,
+  EnodeHitboxUserData,
+  ComponentHitboxUserData,
+  SelectionData,
+  HoverableType,
+  MultiSelectionData,
 } from '../shared/types';
 import { createPerspectiveCamera, setupCameraFromMetadata } from '../shared/CameraUtils';
 import { setupSceneLights } from '../shared/LightingUtils';
 import { createGridHelper } from '../shared/GeometryUtils';
-import { createWireGeometry } from '../shared/GeometryUtils';
-import { createLineMaterial } from '../shared/MaterialUtils';
 import { createEnodeGeometry } from '../shared/GeometryUtils';
 import { createStandardMaterial } from '../shared/MaterialUtils';
-import { SelectTool } from './tools/SelectTool';
-import { PlaceComponentTool } from './tools/PlaceComponentTool';
+import { PositionTool } from './tools/PositionTool';
+import { AddComponentTool } from './tools/AddComponentTool';
 import { WireTool } from './tools/WireTool';
 import { BranchingPointTool } from './tools/BranchingPointTool';
 import { DeleteTool } from './tools/DeleteTool';
 import type { IEditingTool } from '../shared/types';
 import { HoverManager } from '../shared/HoverManager';
 import { applyENodeHover, removeENodeHover } from '../shared/ENodesUtils';
+import { SelectionManager } from '../shared/SelectionManager';
+import { WireVisualManager } from '../shared/WireVisualManager';
+import type { ComponentType } from '@/core/types/ComponentType';
+import { CircuitEditionManager } from './CircuitEditionManager';
 
 /**
  * Static Circuit Scene Manager Implementation
@@ -48,11 +57,12 @@ import { applyENodeHover, removeENodeHover } from '../shared/ENodesUtils';
  * Supports view manipulation and editing via integrated tool system.
  * Provides event hooks for error handling and state changes.
  */
-export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
+export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
   public readonly factoryRegistry: IFactoryRegistry;
 
   private circuit?: Circuit | null = null;
   private scene: THREE.Scene | null = null;
+  // private readonly groundPlane: THREE.Plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   private camera: THREE.PerspectiveCamera | null = null;
   private container: HTMLElement | null = null;
   private initialized: boolean = false;
@@ -81,6 +91,15 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
   private mouseLeaveHandler: ((event: MouseEvent) => void) | null = null;
   private mapControlsChangeHandler: (() => void) | null = null;
 
+  // SelectionManager (Phase 6)
+  private selectionManager: SelectionManager | null = null;
+
+  // WireVisualManager (Phase 3 - User Story 3)
+  private wireVisualManager: WireVisualManager = new WireVisualManager();
+
+  // CircuitEditionManager handles saving edits to the core model
+  private circuitEditionManager: CircuitEditionManager = new CircuitEditionManager(this);
+
   /**
    * Create a new Static Circuit Renderer
    *
@@ -95,6 +114,7 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
     }
 
     this.factoryRegistry = factoryRegistry;
+    this.handlePointerDown = this.handlePointerDown.bind(this);
   }
 
   /**
@@ -103,7 +123,7 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
    * @param container - HTMLElement to attach scene to
    * @param options - Optional renderer configuration
    */
-  initialize(container: HTMLElement, options?: RendererOptions): void {
+  initialize(container: HTMLElement, options?: SceneManagerOptions): void {
     if (this.initialized) {
       throw new Error('Renderer already initialized');
     }
@@ -143,6 +163,9 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
 
       // Initialize HoverManager (Phase 3)
       this._initializeHoverManager();
+
+      // Initialize SelectionManager (Phase 6)
+      this._initializeSelectionManager();
 
       this.initialized = true;
 
@@ -204,6 +227,17 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
     }
   }
 
+  cursorGroundPlanePosition(): THREE.Vector3 {
+    const gridHalfSize = this.circuit ? Math.ceil(this.circuit.metadata.size / 2) : 10;
+    const vector = this.hoverManager!.getGroundPlanePosition().clone();
+    vector.set(
+      Math.min(Math.max(vector.x, -gridHalfSize), gridHalfSize),
+      0,
+      Math.min(Math.max(vector.z, -gridHalfSize), gridHalfSize)
+    );
+    return vector;
+  }
+
   /**
    * Initialize HoverManager for hover detection (Phase 3)
    *
@@ -213,148 +247,135 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
     if (!this.scene || !this.camera || !this.container) {
       throw new Error('Scene, camera, and container must be initialized before HoverManager');
     }
-
     // Create HoverManager instance
     this.hoverManager = new HoverManager(this.scene, this.camera);
-
     // Track previous hover state for unhover events
     let previousElement: {
-      id: UUID;
+      objectId: UUID;
       objectType: any;
-      userData?: HitboxUserData | undefined;
+      userData: HitboxUserData;
     } | null = null;
+
+    const unhoverPreviousElement = (element: {
+      objectId: string;
+      objectType: CircuitSceneObjectType;
+      userData: HitboxUserData;
+    }) => {
+      if (element.objectType === 'enodeHitbox') {
+        const userData = element.userData as EnodeHitboxUserData;
+        const enodeId = userData.enodeId;
+        if (!enodeId) {
+          console.warn('Failed to apply unhover effect (missing enodeId)');
+          return;
+        }
+        const enodeGroup = this.enodeGroups.get(enodeId);
+        if (!enodeGroup) {
+          console.warn('Failed to apply unhover effect (enodeGroup not found)');
+          return;
+        }
+        try {
+          removeENodeHover(enodeGroup);
+        } catch (error) {
+          console.warn('Failed to apply unhover effect:', error);
+        }
+        return;
+      } else if (element.objectType === 'componentHitbox') {
+        const userData = element.userData as ComponentHitboxUserData;
+        const componentId = userData.componentId;
+        if (!componentId) {
+          console.warn('Failed to apply unhover effect (missing componentId)');
+          return;
+        }
+        const componentGroup = this.componentGroups.get(componentId);
+        if (!componentGroup) {
+          console.warn('Failed to apply unhover effect (componentGroup not found)');
+          return;
+        }
+        try {
+          const factory = this.factoryRegistry.get(userData.componentType);
+          factory.removeHover(componentGroup);
+        } catch (error) {
+          console.warn('Failed to remove hover effect:', error);
+        }
+        return;
+      }
+    };
+
+    const hoverElement = (element: HoveredElement) => {
+      if (element.objectType === 'enodeHitbox') {
+        const userData = element.object3D.userData as EnodeHitboxUserData;
+        const enodeId = userData.enodeId;
+        if (!enodeId) {
+          console.warn('Failed to apply hover effect (missing enodeId)');
+          return;
+        }
+        const enodeGroup = this.enodeGroups.get(enodeId);
+        if (!enodeGroup) {
+          console.warn('Failed to apply hover effect (enodeGroup not found)');
+          return;
+        }
+        try {
+          applyENodeHover(enodeGroup);
+        } catch (error) {
+          console.warn('Failed to apply hover effect:', error);
+        }
+        return;
+      } else if (element.objectType === 'componentHitbox') {
+        const userData = element.object3D.userData as ComponentHitboxUserData;
+        const componentId = userData.componentId;
+        if (!componentId) {
+          console.warn('Failed to apply hover effect (missing componentId)');
+          return;
+        }
+        const componentGroup = this.componentGroups.get(componentId);
+        if (!componentGroup) {
+          console.warn('Failed to apply hover effect (componentGroup not found)');
+          return;
+        }
+        try {
+          const factory = this.factoryRegistry.get(userData.componentType);
+          factory.applyHover(componentGroup);
+        } catch (error) {
+          console.warn('Failed to apply hover effect:', error);
+        }
+        return;
+      }
+    };
 
     // Register callback to emit hover/unhover events
     this.hoverManager.onHoverChange((element) => {
       // Emit unhover for previous element if it exists
-      if (previousElement && (!element || element.id !== previousElement.id)) {
-        this.emit('unhover', {
-          objectId: previousElement.id,
-          objectType: previousElement.objectType,
-          userData: previousElement.userData,
-        });
-
-        // Handle unhover for different object types
-        if (previousElement.objectType === 'enodeHitbox') {
-          // Enode hover callback (pin hover)
-          const enodeId = previousElement.userData?.enodeId;
-          if (!enodeId) {
-            return;
-          }
-          const enodeGroup = this.enodeGroups.get(enodeId);
-          if (!enodeGroup) {
-            return;
-          }
-          try {
-            removeENodeHover(enodeGroup);
-          } catch (error) {
-            console.warn('Failed to apply unhover effect:', error);
-          }
-        } else if (previousElement.objectType === 'componentHitbox') {
-          // Component hover - call factory.removeHover if available (US2)
-          const componentId = previousElement.userData?.componentId;
-          if (componentId) {
-            const componentGroup = this.componentGroups.get(componentId);
-            if (componentGroup && componentGroup.userData.factory) {
-              try {
-                componentGroup.userData.factory.removeHover(componentGroup);
-              } catch (error) {
-                console.warn('Failed to remove hover effect:', error);
-              }
-            }
-          }
-        }
+      if (previousElement && (!element || element.id !== previousElement.objectId)) {
+        unhoverPreviousElement(previousElement);
+        this.emit('unhover', { ...previousElement });
+        previousElement = null;
       }
 
       // Emit hover for new element
       if (element) {
-        this.emit('hover', {
+        hoverElement(element);
+        previousElement = {
           objectId: element.id,
           objectType: element.objectType,
           userData: element.object3D.userData as HitboxUserData,
-        });
-
-        previousElement = {
-          id: element.id,
-          objectType: element.objectType,
-          userData: element.object3D.userData as HitboxUserData,
         };
-
-        // Handle hover for different object types
-        if (previousElement.objectType === 'enodeHitbox') {
-          // Enode hover callback (pin hover)
-          //previousElement.userData?.hoverCallback?.(true);
-          const enodeId = previousElement.userData?.enodeId;
-          if (!enodeId) {
-            return;
-          }
-          const enodeGroup = this.enodeGroups.get(enodeId);
-          if (!enodeGroup) {
-            return;
-          }
-          try {
-            applyENodeHover(enodeGroup);
-          } catch (error) {
-            console.warn('Failed to apply hover effect:', error);
-          }
-        } else if (previousElement.objectType === 'componentHitbox') {
-          // Component hover - call factory.applyHover if available (US2)
-          const componentId = previousElement.userData?.componentId;
-          if (!componentId) {
-            return;
-          }
-          const componentGroup = this.componentGroups.get(componentId);
-          if (componentGroup && componentGroup.userData.factory) {
-            try {
-              componentGroup.userData.factory.applyHover(componentGroup);
-            } catch (error) {
-              console.warn('Failed to apply hover effect:', error);
-            }
-          }
-        }
-      } else {
-        // Clear hover state
-        if (!!previousElement && previousElement.objectType === 'enodeHitbox') {
-          const enodeId = previousElement.userData?.enodeId;
-          if (!enodeId) {
-            return;
-          }
-          const enodeGroup = this.enodeGroups.get(enodeId);
-          if (!enodeGroup) {
-            return;
-          }
-          try {
-            removeENodeHover(enodeGroup);
-          } catch (error) {
-            console.warn('Failed to apply unhover effect:', error);
-          }
-        } else if (!!previousElement && previousElement.objectType === 'componentHitbox') {
-          // Component unhover - call factory.removeHover if available (US2)
-          const componentId = previousElement.userData?.componentId;
-          if (componentId) {
-            const componentGroup = this.componentGroups.get(componentId);
-            if (componentGroup && componentGroup.userData.factory) {
-              try {
-                componentGroup.userData.factory.removeHover(componentGroup);
-              } catch (error) {
-                console.warn('Failed to remove hover effect:', error);
-              }
-            }
-          }
-        }
-        previousElement = null;
+        this.emit('hover', { ...previousElement });
       }
     });
 
-    // Setup mousemove event listener
+    // Setup mousemove event listener : must always be active so that current world position can be queried
     this.mouseMoveHandler = (event: MouseEvent) => {
       if (!this.container || !this.hoverManager) return;
-
       const rect = this.container.getBoundingClientRect();
       const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
+      const oldPosition = this.cursorGroundPlanePosition();
       this.hoverManager.updateFromMouse(x, y);
+      const newPosition = this.cursorGroundPlanePosition();
+      if (!newPosition.equals(oldPosition)) {
+        // this important event will be used by tools such as PositionTool to update preview positions
+        this.emit('gridPositionMove', newPosition);
+      }
     };
 
     this.container.addEventListener('mousemove', this.mouseMoveHandler);
@@ -377,6 +398,118 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
       };
       this.mapControls.addEventListener('change', this.mapControlsChangeHandler);
     }
+  }
+
+  private handlePointerDown(event: MouseEvent): void {
+    // discard if right click or middle click
+    if (event.button !== 0) {
+      return;
+    }
+    // common behavior regardless of the tool: select on pointer down
+
+    console.log('pointer down handler called', this.hoverManager?.getHoveredElement());
+    if (this.hoverManager?.getHoveredElement()) {
+      // always: emit position event when hovered element
+      const element = this.hoverManager.getHoveredElement()!;
+      const alreadySelected = this.selectionManager!.isSelected(element.type, element.id);
+      if (!alreadySelected) {
+        this.selectionManager?.selectOne(element.type, element.id);
+        this.emit('select', this.selectionManager!.getSelection()!);
+      }
+    } else {
+      // always: emit deselect event when not hovered element
+      const hasSelection = this.selectionManager?.hasSelection();
+      if (hasSelection) {
+        const selection = this.selectionManager!.getSelection()!;
+        this.selectionManager?.deselect();
+        this.emit('deselect', selection);
+      }
+    }
+  }
+
+  private _applySelectionVisual(selection: SelectionData, selected: boolean): void {
+    let components: Map<UUID, string | null> | null = null;
+    let enodes: Map<UUID, string | null> | null = null;
+    let wires: Map<UUID, string | null> | null = null;
+    if (selection.kind === 'mono') {
+      switch (selection.type) {
+        case 'component':
+          components = new Map<UUID, string | null>();
+          components.set(selection.id, selection.data ?? null);
+          break;
+        case 'enode':
+          enodes = new Map<UUID, string | null>();
+          enodes.set(selection.id, selection.data ?? null);
+          break;
+        case 'wire':
+          wires = new Map<UUID, string | null>();
+          wires.set(selection.id, selection.data ?? null);
+          break;
+        default:
+          break;
+      }
+    } else {
+      components = selection.components || null;
+      enodes = selection.enodes || null;
+      wires = selection.wires || null;
+    }
+
+    if (components) {
+      for (const [id, _data] of components) {
+        console.log(`Applying selection visual to component ${id}, selected=${selected}`);
+        const group = this.componentGroups.get(id);
+        console.log(group);
+        if (!group) {
+          continue;
+        }
+        try {
+          const componentType = group.userData.componentType as ComponentType;
+          const factory = this.factoryRegistry.get(componentType);
+          if (selected) {
+            console.log('apply selection visual');
+            factory.applySelection(group);
+          } else {
+            console.log('remove selection visual');
+            factory.removeSelection(group);
+          }
+        } catch (error) {
+          console.warn(
+            `Failed to ${selected ? 'apply' : 'remove'} component selection visual:`,
+            error
+          );
+        }
+      }
+      // TODO Wires and enodes selection visual handling can be added here in the future
+    }
+  }
+
+  private _initializeSelectionManager(): void {
+    if (!this.scene || !this.camera || !this.container) {
+      throw new Error('Scene, camera, and container must be initialized before SelectionManager');
+    }
+
+    // Create SelectionManager instance
+    this.selectionManager = new SelectionManager();
+
+    // Register callback to handle selection visual changes (T025)
+    this.selectionManager.onSelectionChange((newSelection, previousSelection) => {
+      // Remove selection visual from previous selection
+      if (previousSelection) {
+        this._applySelectionVisual(previousSelection, false);
+      }
+      // Apply selection visual to new selection
+      if (newSelection) {
+        this._applySelectionVisual(newSelection, true);
+      }
+
+      // Emit selectionChange event (T026)
+      this.emit('selectionChange', {
+        newSelection: previousSelection,
+        previousSelection: newSelection,
+      });
+    });
+
+    this.container.addEventListener('pointerdown', this.handlePointerDown);
   }
 
   getCircuit(): Circuit | null | undefined {
@@ -480,12 +613,97 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
   }
 
   /**
+   * Get the HTML Element container, if not throws error
+   * @returns HTMLElement
+   */
+  getContainer(): HTMLElement {
+    this._checkInitialized();
+    if (!this.container) {
+      throw new Error('Container not initialized');
+    }
+    return this.container!;
+  }
+
+  /**
+   * Get the SelectionManager instance for direct manipulation
+   * @returns SelectionManager
+   */
+  getSelectionManager(): SelectionManager {
+    this._checkInitialized();
+    if (!this.selectionManager) {
+      throw new Error('SelectionManager not initialized');
+    }
+    return this.selectionManager!;
+  }
+
+  /**
+   * Get the CircuitEditionManager instance for calls by tools
+   */
+  getCircuitEditionManager(): CircuitEditionManager {
+    this._checkInitialized();
+    return this.circuitEditionManager;
+  }
+
+  /**
    * Get the MapControls instance for direct manipulation
    *
    * @returns MapControls instance or null if not initialized
    */
   getControls(): MapControls | null {
     return this.mapControls;
+  }
+
+  getSelection(id: string): THREE.Group | undefined {
+    return this.componentGroups.get(id);
+  }
+
+  /**
+   * get the group mesh of a component, enode or wire by hoverable type and id
+   * @param type
+   * @param id
+   */
+  getGroup(type: HoverableType, id: UUID): THREE.Group | undefined {
+    switch (type) {
+      case 'component':
+        return this.componentGroups.get(id);
+      case 'enode':
+        return this.enodeGroups.get(id);
+      case 'wire':
+        return this.wireGroups.get(id) as THREE.Group;
+      default:
+        return undefined;
+    }
+  }
+
+  /**
+   * Get current positions of selected objects
+   * @param selection
+   */
+  getSelectionPositions(
+    selection: SelectionData
+  ): Map<UUID, { type: HoverableType; position: THREE.Vector3 }> {
+    const selectionPositions = new Map<UUID, { type: HoverableType; position: THREE.Vector3 }>();
+    if (selection.kind === 'mono') {
+      const object = this.getGroup(selection.type, selection.id);
+      if (object) {
+        selectionPositions.set(selection.id as UUID, {
+          type: selection.type,
+          position: object.position.clone(),
+        });
+      }
+    } else {
+      const multiSelection = selection as MultiSelectionData;
+      if (multiSelection.components) {
+        for (const id of multiSelection.components.keys()) {
+          const object = this.getGroup('component', id);
+          if (object) {
+            selectionPositions.set(id, { type: 'component', position: object.position.clone() });
+          }
+        }
+      }
+      // TODO: implement for wires and enodes later
+    }
+    return selectionPositions;
   }
 
   /**
@@ -707,6 +925,9 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
         this.hoverManager = null;
       }
 
+      // Dispose WireVisualManager (Phase 3 - User Story 3)
+      this.wireVisualManager.dispose();
+
       // Remove DOM event listeners (Phase 3)
       if (this.container) {
         if (this.mouseMoveHandler) {
@@ -771,6 +992,43 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
   }
 
   /**
+   * Convenience method that toggle a tool on if it is off (possibly deactivating previous tool), or off if it is on
+   * @param toolType
+   */
+  toggleTool(toolType: ToolType): void {
+    const previousTool = this.activeTool;
+
+    if (previousTool !== null) {
+      this.deactivateTool(toolType);
+    }
+    if (previousTool === toolType) {
+      return;
+    }
+    this.setActiveTool(toolType);
+  }
+
+  deactivateTool(toolType: ToolType): void {
+    if (this.activeTool === null) {
+      return;
+    }
+    if (this.activeTool !== toolType) {
+      return; // only deactivate if the specified tool is active
+    }
+
+    const previousTool = this.activeTool;
+    const tool = this.tools.get(previousTool);
+
+    if (tool) {
+      tool.onDeactivate();
+    }
+
+    this._clearPreviewObjects();
+    this.activeTool = null;
+    // Emit toolDeactivated event
+    this.emit('toolDeactivated', { toolType: previousTool });
+  }
+
+  /**
    * Set the active editing tool (FR-026, FR-028, FR-034)
    * Only one tool can be active at a time
    * Switching tools will deactivate the previous tool
@@ -784,25 +1042,12 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
     if (!this.editMode) {
       throw new Error('Edit mode must be enabled to activate tools');
     }
-
     // Check if tool is already active
     if (this.activeTool === toolType) {
       return;
-    }
-
-    // Deactivate previous tool if any
-    if (this.activeTool !== null) {
-      const previousTool = this.activeTool;
-      const tool = this.tools.get(previousTool);
-
-      if (tool) {
-        tool.onDeactivate();
-      }
-
-      this._clearPreviewObjects();
-
-      // Emit toolDeactivated event
-      this.emit('toolDeactivated', { toolType: previousTool });
+    } else if (this.activeTool !== null) {
+      // Deactivate previous tool
+      this.deactivateTool(this.activeTool);
     }
 
     // Activate new tool
@@ -975,13 +1220,12 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
    * @private
    */
   private _initializeTools(): void {
-    // Create tool instances (circuit will be null initially, updated when setCircuit is called)
-    const circuit = this.circuit ?? null;
-    this.tools.set('select', new SelectTool(circuit, this));
-    this.tools.set('placeComponent', new PlaceComponentTool(circuit, this));
-    this.tools.set('wire', new WireTool(circuit, this));
-    this.tools.set('branchingPoint', new BranchingPointTool(circuit, this));
-    this.tools.set('delete', new DeleteTool(circuit, this));
+    // Create tool instances
+    this.tools.set('position', new PositionTool(this));
+    this.tools.set('addComponent', new AddComponentTool(this));
+    this.tools.set('wire', new WireTool(this));
+    this.tools.set('branchingPoint', new BranchingPointTool(this));
+    this.tools.set('delete', new DeleteTool(this));
   }
 
   private _checkInitialized(): void {
@@ -1101,12 +1345,6 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
       mesh.userData.componentId = component.id;
       mesh.userData.componentType = component.type;
 
-      // Store factory reference for hover/selection/animation (US2)
-      // Only store if factory is class-based (has applyHover method)
-      if (typeof factory !== 'function' && 'applyHover' in factory) {
-        mesh.userData.factory = factory;
-      }
-
       this.scene!.add(mesh);
       this._indexComponentGroup(component.id, mesh);
     } catch (error) {
@@ -1148,25 +1386,20 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
 
   private _createWireMesh(wire: Wire): void {
     try {
-      const fromENode = this.circuit.getENode(wire.node1);
-      const toENode = this.circuit.getENode(wire.node2);
-
-      if (!fromENode || !toENode) {
-        console.warn(`Wire ${wire.id} missing endpoint enodes`);
+      if (!this.scene || !this.circuit) {
+        console.warn(`Cannot create wire ${wire.id}: scene or circuit not initialized`);
         return;
       }
 
-      // Use getPosition() to handle both pin and branching point enodes
-      const fromPos = fromENode.getPosition(this.circuit);
-      const toPos = toENode.getPosition(this.circuit);
+      // Use WireVisualManager to create wire with pin-accurate endpoints
+      const line = this.wireVisualManager.createOrUpdateWire(
+        wire,
+        this.circuit,
+        this.scene,
+        this.componentGroups
+      );
 
-      const geometry = createWireGeometry(fromPos, toPos);
-      const material = createLineMaterial(0xffffff, 2);
-
-      const line = new THREE.Line(geometry, material);
-      line.userData.wireId = wire.id;
-
-      this.scene!.add(line);
+      // Track in wireGroups for backward compatibility
       this.wireGroups.set(wire.id, line);
     } catch (error) {
       const err = error as Error;
@@ -1264,15 +1497,9 @@ export class CircuitSceneManager extends EventEmitter<RenderEventMap> {
   }
 
   private _removeWireGroup(id: string): void {
-    const line = this.wireGroups.get(id);
-    if (line) {
-      this.scene!.remove(line);
-      line.geometry.dispose();
-      if (Array.isArray(line.material)) {
-        line.material.forEach((mat) => mat.dispose());
-      } else {
-        line.material.dispose();
-      }
+    if (this.wireGroups.has(id)) {
+      // Use WireVisualManager to remove wire (handles disposal)
+      this.wireVisualManager.removeWire(id);
       this.wireGroups.delete(id);
     }
   }

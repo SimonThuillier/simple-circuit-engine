@@ -5,7 +5,7 @@
 
 import type { CircuitRunner } from '@/core/simulation/CircuitRunner';
 import type { IFactoryRegistry } from './ComponentVisualFactory';
-import type { RenderEvent, RenderCallback, ChangedData, SceneManagerOptions } from './types';
+import type { SceneManagerEvent, SceneManagerCallback, ChangedData, SceneManagerOptions } from './types';
 import type * as THREE from 'three';
 
 /**
@@ -172,7 +172,7 @@ export interface ICircuitRunnerSceneManager {
    * });
    * ```
    */
-  on<E extends RenderEvent>(event: E, callback: RenderCallback): void;
+  on<E extends SceneManagerEvent>(event: E, callback: SceneManagerCallback): void;
 
   /**
    * Unregister an event callback
@@ -183,7 +183,7 @@ export interface ICircuitRunnerSceneManager {
    * @remarks
    * If callback was registered multiple times, only removes one registration.
    */
-  off<E extends RenderEvent>(event: E, callback: RenderCallback): void;
+  off<E extends SceneManagerEvent>(event: E, callback: SceneManagerCallback): void;
 
   /**
    * Get the Three.js scene for rendering

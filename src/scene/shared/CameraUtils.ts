@@ -6,7 +6,7 @@
  */
 
 import * as THREE from 'three';
-import type { RendererOptions } from './types';
+import type { SceneManagerOptions } from './types';
 
 /**
  * Create a perspective camera with default or custom parameters
@@ -16,7 +16,7 @@ import type { RendererOptions } from './types';
  * @returns Configured PerspectiveCamera
  */
 export function createPerspectiveCamera(
-  options: RendererOptions = {},
+  options: SceneManagerOptions = {},
   aspect: number = 1
 ): THREE.PerspectiveCamera {
   const fov = options.cameraFov ?? 75;

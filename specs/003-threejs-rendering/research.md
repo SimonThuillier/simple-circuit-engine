@@ -97,6 +97,6 @@ Based on this research, the following patterns will be used in implementation:
 
 3. **Interpolation Module**: Create `InterpolationController` class in shared utilities with methods for tracking state transitions and computing interpolated values with easing.
 
-4. **Event System**: Create `EventEmitter<RenderEventMap>` base class in shared utilities, extended by both renderer classes.
+4. **Event System**: Create `EventEmitter<SceneManagerEventMap>` base class in shared utilities, extended by both renderer classes.
 
 5. **Test Utilities**: Create `tests/scene/__mocks__/three.ts` with mock factory functions and `tests/unit/scene/helpers.ts` with test setup utilities.

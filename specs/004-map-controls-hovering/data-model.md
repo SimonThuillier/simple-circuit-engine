@@ -19,7 +19,7 @@ Represents the currently hovered circuit element.
 |-------|------|-------------|
 | `id` | `UUID` | Unique identifier of the hovered element |
 | `type` | `HoverableType` | Discriminated type: 'enode', 'component', or 'wire' |
-| `objectType` | `RenderObjectType` | Three.js object classification (from existing types.ts) |
+| `objectType` | `CircuitSceneObjectType` | Three.js object classification (from existing types.ts) |
 | `object3D` | `THREE.Object3D` | Reference to the actual Three.js hitbox mesh |
 
 **Relationships**:
@@ -149,14 +149,14 @@ Layer assignments for Three.js raycasting.
 The following types are already defined in `types.ts` and will be reused:
 
 ```typescript
-// Already exists in RenderEventMap
-hover: { objectId: UUID; objectType: RenderObjectType };
-unhover: { objectId: UUID; objectType: RenderObjectType };
+// Already exists in SceneManagerEventMap
+hover: { objectId: UUID; objectType: CircuitSceneObjectType };
+unhover: { objectId: UUID; objectType: CircuitSceneObjectType };
 ```
 
-**RenderObjectType** (existing, includes hitbox types):
+**CircuitSceneObjectType** (existing, includes hitbox types):
 ```typescript
-type RenderObjectType =
+type CircuitSceneObjectType =
   | 'componentGroup' | 'component' | 'componentHitbox'
   | 'wireGroup' | 'wire' | 'wireHitbox'
   | 'enodeGroup' | 'enode' | 'enodeHitbox';

@@ -5,11 +5,33 @@
 
 import type { UUID } from '../../core/types/Identifier';
 import type * as THREE from 'three';
+import type { ComponentType } from '@/core/types/ComponentType';
 
 /**
- * Supported renderer event types (includes tool system events)
+ * Object types that can be interacted within the scene manager to render
  */
-export type RenderEvent =
+export type CircuitSceneObjectType =
+  | 'componentGroup'
+  | 'component'
+  | 'componentHitbox'
+  | 'wireGroup'
+  | 'wire'
+  | 'wireHitbox'
+  | 'enodeGroup'
+  | 'enode'
+  | 'enodeHitbox';
+
+/**
+ * Types of circuit elements that can be hovered / selected
+ */
+export type HoverableType = 'enode' | 'component' | 'wire';
+
+export type ModelEditAction = 'edit' | 'add' | 'delete';
+
+/**
+ * Supported scene manager event types (includes tool system events)
+ */
+export type SceneManagerEvent =
   | 'hover'
   | 'unhover'
   | 'select'
@@ -22,30 +44,32 @@ export type RenderEvent =
   | 'toolOperationCompleted'
   | 'toolOperationCancelled'
   | 'toolValidationError'
-  | 'cursorChangeRequested';
-
-/**
- * Object types that can be interacted with in the renderer
- */
-export type RenderObjectType =
-  | 'componentGroup'
-  | 'component'
-  | 'componentHitbox'
-  | 'wireGroup'
-  | 'wire'
-  | 'wireHitbox'
-  | 'enodeGroup'
-  | 'enode'
-  | 'enodeHitbox';
+  | 'cursorChangeRequested'
+  | 'circuitElementAction';
 
 /**
  * Event payload map for type-safe event emission
  */
-export interface RenderEventMap {
-  hover: { objectId: UUID; objectType: RenderObjectType; userData?: HitboxUserData | undefined };
-  unhover: { objectId: UUID; objectType: RenderObjectType; userData?: HitboxUserData | undefined };
-  select: { objectId: UUID; objectType: RenderObjectType };
-  deselect: { objectId: UUID; objectType: RenderObjectType };
+export interface SceneManagerEventMap {
+  gridPositionMove: THREE.Vector3;
+  hover: {
+    objectId: UUID;
+    objectType: CircuitSceneObjectType;
+    userData?: HitboxUserData | undefined;
+  };
+  unhover: {
+    objectId: UUID;
+    objectType: CircuitSceneObjectType;
+    userData?: HitboxUserData | undefined;
+  };
+  select: SelectionData;
+  deselect: SelectionData;
+  selectionChange: { newSelection: SelectionData | null; previousSelection: SelectionData | null };
+  dragStart: { selection: SelectionData; startPosition: THREE.Vector3 };
+  dragMove: { selection: SelectionData; currentPosition: THREE.Vector3; delta: THREE.Vector3 };
+  dragEnd: { selection: SelectionData; finalPosition: THREE.Vector3 };
+  dragCancel: { selection: SelectionData };
+  componentRotated: { componentId: UUID; newRotation: number };
   error: { message: string; error?: Error };
   ready: { renderer: 'static' | 'simulation' };
   // Tool system events
@@ -56,15 +80,23 @@ export interface RenderEventMap {
   toolOperationCancelled: { toolType: ToolType };
   toolValidationError: { toolType: ToolType; errorMessage: string };
   cursorChangeRequested: { cursorType: CursorType };
+  // Model circuit events (add, edit, delete)
+  circuitElementAction: {
+    type: HoverableType;
+    id: UUID;
+    action: ModelEditAction;
+    error?: Error | null;
+    data?: object | null;
+  };
 }
 
 /**
- * Callback function type for renderer events
+ * Callback function type for scene manager events
  */
-export type RenderCallback<T = any> = (payload: T) => void;
+export type SceneManagerCallback<T = any> = (payload: T) => void;
 
 /**
- * Optional parameter for incremental renderer updates
+ * Optional parameter for incremental scene manager updates
  * If provided, only specified elements are updated
  * If omitted or empty, full update is performed
  */
@@ -90,9 +122,9 @@ export interface ChangedData {
 }
 
 /**
- * Optional configuration for renderer initialization
+ * Optional configuration for scene manager initialization
  */
-export interface RendererOptions {
+export interface SceneManagerOptions {
   /** Background color for the scene (default: 0x000000) */
   backgroundColor?: number;
   /** Enable anti-aliasing (default: true) */
@@ -150,11 +182,6 @@ export interface MapControlsOptions {
 }
 
 /**
- * Types of circuit elements that can be hovered
- */
-export type HoverableType = 'enode' | 'component' | 'wire';
-
-/**
  * Represents the currently hovered circuit element
  *
  * @example
@@ -166,12 +193,12 @@ export type HoverableType = 'enode' | 'component' | 'wire';
  * ```
  */
 export interface HoveredElement {
-  /** UUID of the hovered circuit element */
-  id: UUID;
   /** Discriminated type for priority and handling */
   type: HoverableType;
-  /** Three.js object type (matches existing RenderObjectType) */
-  objectType: RenderObjectType;
+  /** UUID of the hovered circuit element */
+  id: UUID;
+  /** Three.js object type (matches existing CircuitSceneObjectType) */
+  objectType: CircuitSceneObjectType;
   /** Reference to the Three.js hitbox mesh */
   object3D: THREE.Object3D;
 }
@@ -180,10 +207,10 @@ export interface HoveredElement {
  * UserData structure for enode hitbox meshes
  */
 export interface EnodeHitboxUserData {
-  enodeId: string;
   type: 'enodeHitbox';
-  componentId: string;
-  label: string;
+  enodeId: string;
+  componentId: string | null;
+  label: string | null;
 }
 
 /**
@@ -192,6 +219,7 @@ export interface EnodeHitboxUserData {
 export interface ComponentHitboxUserData {
   type: 'componentHitbox';
   componentId: string;
+  componentType: ComponentType;
 }
 
 /**
@@ -206,6 +234,24 @@ export interface WireHitboxUserData {
  * Union of all hitbox userData types
  */
 export type HitboxUserData = EnodeHitboxUserData | ComponentHitboxUserData | WireHitboxUserData;
+
+/** Represents the Selection of one Hoverable Element of the scene **/
+export interface MonoSelectionData {
+  kind: 'mono';
+  type: HoverableType;
+  id: UUID;
+  data?: string | null; // optional extra data
+}
+
+/** Represents the Selection of multiple Hoverable Elements of the scene **/
+export interface MultiSelectionData {
+  kind: 'multi';
+  components?: Map<UUID, string | null>;
+  enodes?: Map<UUID, string | null>;
+  wires?: Map<UUID, string | null>;
+}
+
+export type SelectionData = MonoSelectionData | MultiSelectionData;
 
 /**
  * UserData structure for component visual state management
@@ -233,7 +279,7 @@ export interface ComponentVisualUserData {
 /**
  * Available editing tool types
  */
-export type ToolType = 'select' | 'placeComponent' | 'wire' | 'branchingPoint' | 'delete';
+export type ToolType = 'position' | 'addComponent' | 'wire' | 'branchingPoint' | 'delete';
 
 /**
  * Cursor types for tool operations
@@ -255,8 +301,8 @@ export type CursorType =
  *
  * @example
  * ```typescript
- * class SelectTool implements IEditingTool {
- *   readonly type = 'select';
+ * class PositionTool implements IEditingTool {
+ *   readonly type = 'position';
  *
  *   onActivate() {
  *     // Setup selection mode

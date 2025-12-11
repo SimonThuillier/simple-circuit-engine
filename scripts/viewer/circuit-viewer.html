@@ -160,13 +160,23 @@
       }
 
       /* Ensure viewer adapts smoothly */
+      /* viewer fixed to viewport edges (10px each side). top is computed in JS so the viewer sits
+         just below the top UI (.container). */
       #viewer-container {
+        box-sizing: border-box;
+        position: fixed; /* horizontal anchored to viewport */
+        left: 10px;
+        right: 10px;
+        /* top is set dynamically in JS (so it follows .container height) */
         border: 1px solid #ddd;
         border-radius: 4px;
         background: white;
-        overflow: auto;
-        transition: height 0.25s ease;
+        overflow: hidden;
+        transition:
+          height 0.25s ease,
+          top 0.25s ease;
         min-height: 120px; /* fallback */
+        z-index: 4;
       }
 
       .instructions {
@@ -329,20 +339,20 @@
   "wires": [
     {
       "id": "63ac676e-bc4f-4522-a286-a4b46e5fda53",
-      "node1": "75360089-6b35-4c9a-a08e-4257a2d34968",
+      "node1": "5e87fd9e-d08b-4dae-bf9e-f9fd4f95d569",
       "node2": "97b91b70-caa6-4a91-bfc0-6f290f33661c",
       "intermediatePositions": []
     },
     {
       "id": "f8d4e220-6376-4002-be89-e8190d19607b",
       "node1": "db83437e-efba-419a-8b8e-cdf3b1b25745",
-      "node2": "295298ee-5ecc-4474-9acb-9be1feee059f",
+      "node2": "ddf99ca2-8426-4a02-8b13-b05560806564",
       "intermediatePositions": []
     },
     {
       "id": "e4b1e554-2a6c-4615-a72b-2d4a1a90a3d4",
-      "node1": "ddf99ca2-8426-4a02-8b13-b05560806564",
-      "node2": "5e87fd9e-d08b-4dae-bf9e-f9fd4f95d569",
+      "node1": "295298ee-5ecc-4474-9acb-9be1feee059f",
+      "node2": "75360089-6b35-4c9a-a08e-4257a2d34968",
       "intermediatePositions": []
     }
   ]
@@ -361,9 +371,9 @@
         <span id="error-message"></span>
         <button id="clear-error-btn" title="Dismiss">&times;</button>
       </div>
-
-      <div id="viewer-container"></div>
     </div>
+
+    <div id="viewer-container"></div>
 
     <script src="circuit-viewer.js"></script>
     <script>
@@ -388,17 +398,23 @@
       // Redimensionner le renderer pour remplir la hauteur disponible jusqu'en bas de la page,
       // en tenant compte dynamiquement de l'état de l'accordion et de l'affichage d'erreur.
       function resizeRenderer() {
-        // top de l'élément viewerContainer par rapport à la fenêtre
-        const rect = viewerContainer.getBoundingClientRect();
-        const top = Math.max(rect.top, 0);
+        // compute top as the bottom of the page .container (so viewer always starts just under it)
+        const pageContainer = document.querySelector('.container');
+        const containerRect = pageContainer ? pageContainer.getBoundingClientRect() : { bottom: 0 };
+        const top = Math.max(Math.floor(containerRect.bottom) + 8, 0); // 8px gap
         const marginBottom = 16;
 
-        // espace disponible jusqu'en bas de la page
-        const availableHeight = Math.max(window.innerHeight - top - marginBottom, 120);
+        // ensure horizontal anchoring and vertical placement
+        viewerContainer.style.position = 'fixed';
+        viewerContainer.style.left = '10px';
+        viewerContainer.style.right = '10px';
+        viewerContainer.style.top = top + 'px';
 
+        // height available from top to viewport bottom
+        const availableHeight = Math.max(window.innerHeight - top - marginBottom, 120);
         viewerContainer.style.height = availableHeight + 'px';
 
-        const w = viewerContainer.clientWidth || 800;
+        const w = viewerContainer.clientWidth || window.innerWidth - 20;
         const h = availableHeight;
         if (typeof window.renderer === 'object' && typeof window.renderer.setSize === 'function') {
           window.renderer.setSize(w, h);
@@ -415,10 +431,16 @@
       window.addEventListener('resize', resizeRenderer);
 
       sceneManager.on('hover', (e) => {
-        console.log('hover', e);
+        //console.log('hover', e);
       });
       sceneManager.on('unhover', (e) => {
-        console.log('unhover', e);
+        //console.log('unhover', e);
+      });
+      sceneManager.on('select', (e) => {
+        console.log('select', e);
+      });
+      sceneManager.on('deselect', (e) => {
+        console.log('deselect', e);
       });
 
       sceneManager.getControls().update();

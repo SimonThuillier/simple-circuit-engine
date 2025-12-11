@@ -28,7 +28,7 @@
 - [x] T002 [P] Update ComponentVisuals.ts to import LAYERS from LayerConstants.ts instead of defining locally in `src/scene/shared/ComponentVisuals.ts`
 - [x] T003 [P] Add HoverableType, HoveredElement, and MapControlsOptions types to `src/scene/shared/types.ts` per contracts/types.ts specification
 - [x] T004 [P] Add HitboxUserData types (EnodeHitboxUserData, ComponentHitboxUserData, WireHitboxUserData) to `src/scene/shared/types.ts`
-- [x] T005 Add ExtendedRendererOptions interface extending RendererOptions with mapControls property in `src/scene/shared/types.ts`
+- [x] T005 Add ExtendedSceneManagerOptions interface extending SceneManagerOptions with mapControls property in `src/scene/shared/types.ts`
 - [x] T006 Export new types from scene module index in `src/scene/index.ts`
 
 **Checkpoint**: Shared types and constants ready - user story implementation can now begin
@@ -45,7 +45,7 @@
 
 - [x] T007 [US1] Import MapControls from 'three/addons/controls/MapControls.js' and add mapControls property to CircuitSceneManager class in `src/scene/static/CircuitSceneManager.ts`
 - [x] T008 [US1] Create private initializeMapControls() method in CircuitSceneManager that instantiates MapControls with camera and container, applies default options (enableDamping=true, dampingFactor=0.05, screenSpacePanning=true) in `src/scene/static/CircuitSceneManager.ts`
-- [x] T009 [US1] Modify CircuitSceneManager.initialize() to accept ExtendedRendererOptions and call initializeMapControls() with mapControls options in `src/scene/static/CircuitSceneManager.ts`
+- [x] T009 [US1] Modify CircuitSceneManager.initialize() to accept ExtendedSceneManagerOptions and call initializeMapControls() with mapControls options in `src/scene/static/CircuitSceneManager.ts`
 - [x] T010 [US1] Add mapControls.update() call to CircuitSceneManager render loop (startRenderLoop method or equivalent) in `src/scene/static/CircuitSceneManager.ts`
 - [x] T011 [US1] Add getControls(), updateControlsOptions(), resetCamera(), focusOnElement() public methods to CircuitSceneManager per SceneManagerExtensions contract in `src/scene/static/CircuitSceneManager.ts`
 - [x] T012 [US1] Update CircuitSceneManager.dispose() to call mapControls.dispose() if initialized in `src/scene/static/CircuitSceneManager.ts`

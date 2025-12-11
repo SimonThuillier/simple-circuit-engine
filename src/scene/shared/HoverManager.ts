@@ -25,6 +25,8 @@ export class HoverManager {
   private scene: THREE.Scene;
   private camera: THREE.Camera;
   private raycaster: THREE.Raycaster;
+  private readonly groundPlane: THREE.Plane;
+  private readonly groundPlanePosition = new THREE.Vector3();
   private currentlyHovered: HoveredElement | null = null;
   private callbacks: Set<HoverCallback> = new Set();
   private enabled: boolean = true;
@@ -43,16 +45,27 @@ export class HoverManager {
     this.scene = scene;
     this.camera = camera;
     this.raycaster = new THREE.Raycaster();
+    this.groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0); // XZ plane at y=0
+  }
+
+  /**
+   * Get the last computed ground plane position under the mouse
+   *
+   * @returns THREE.Vector3 position on ground plane
+   */
+  getGroundPlanePosition(): THREE.Vector3 {
+    return this.groundPlanePosition;
   }
 
   /**
    * Update hover state based on normalized mouse coordinates
+   * Also update the VERY IMPORTANT ground plane position used for CircuitManager cursorGroundPlanePosition
    *
    * Performs priority-based raycasting against hitbox layers.
    * If hover state changes, triggers onHoverChange callback.
    *
-   * @param normalizedX - Mouse X in normalized device coordinates [-1, 1]
-   * @param normalizedY - Mouse Y in normalized device coordinates [-1, 1]
+   * @param normalizedX - Mouse X in normalized HTML container coordinates [-1, 1]
+   * @param normalizedY - Mouse Y in normalized HTML container coordinates [-1, 1]
    */
   updateFromMouse(normalizedX: number, normalizedY: number): void {
     if (!this.enabled) {
@@ -73,6 +86,9 @@ export class HoverManager {
     // Setup raycaster
     this.raycaster.setFromCamera(new THREE.Vector2(normalizedX, normalizedY), this.camera);
 
+    // VERY IMPORTANT: Update ground plane position so that sceneManager cursorGroundPlanePosition queries work correctly
+    this.raycaster.ray.intersectPlane(this.groundPlane, this.groundPlanePosition);
+
     // Try to find a hit in priority order: ENODE > COMPONENT > WIRE
     let hitElement: HoveredElement | null = null;
 
@@ -88,7 +104,6 @@ export class HoverManager {
     if (!hitElement) {
       hitElement = this._raycastLayer(HitboxLayers.WIRE, 'wire', 'wireHitbox');
     }
-
     // Compare with current state and trigger callbacks if changed
     this._updateHoverState(hitElement);
   }
@@ -192,7 +207,7 @@ export class HoverManager {
    *
    * @param layer - Hitbox layer number to raycast against
    * @param hoverableType - Type for HoveredElement
-   * @param objectType - RenderObjectType for event payload
+   * @param objectType - CircuitSceneObjectType for event payload
    * @returns HoveredElement if hit found, null otherwise
    */
   private _raycastLayer(

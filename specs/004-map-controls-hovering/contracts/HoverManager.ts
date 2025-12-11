@@ -7,7 +7,7 @@
 
 import type * as THREE from 'three';
 import type { UUID } from '../../../src/core/types/Identifier';
-import type { RenderObjectType } from '../../../src/scene/shared/types';
+import type { CircuitSceneObjectType } from '../../../src/scene/shared/types';
 import type { HoveredElement, HoverableType } from './types';
 
 /**
@@ -154,7 +154,7 @@ export interface RaycastHitInfo {
   /** Type of hovered element */
   elementType: HoverableType;
   /** Object type for event payload */
-  objectType: RenderObjectType;
+  objectType: CircuitSceneObjectType;
   /** Three.js intersection result */
   intersection: THREE.Intersection;
   /** The hitbox mesh that was hit */

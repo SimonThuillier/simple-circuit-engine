@@ -13,7 +13,7 @@
 - `camera: THREE.PerspectiveCamera` - Camera for viewing the scene (private)
 - `container: HTMLElement | null` - DOM container for rendering (private)
 - `initialized: boolean` - Initialization state flag (private)
-- `eventEmitter: EventEmitter<RenderEventMap>` - Event system (private)
+- `eventEmitter: EventEmitter<SceneManagerEventMap>` - Event system (private)
 - `componentMeshes: Map<UUID, THREE.Object3D>` - Component ID → visual mesh (private)
 - `wireMeshes: Map<UUID, THREE.Line>` - Wire ID → visual line (private)
 - `enodeMeshes: Map<UUID, THREE.Mesh>` - ENode ID → visual sphere (private)
@@ -37,8 +37,8 @@
 - `setActiveTool(toolType: ToolType): void`
 - `getActiveTool(): ToolType | null`
 - `cancelCurrentToolOperation(): void`
-- `handleToolClick(worldPosition: THREE.Vector3): void`
-- `handleToolHover(worldPosition: THREE.Vector3): void`
+- `handleToolClick(cursorGroundPlanePosition: THREE.Vector3): void`
+- `handleToolHover(cursorGroundPlanePosition: THREE.Vector3): void`
 - `handleToolScroll(delta: number): void`
 
 **State Transitions**:
@@ -76,7 +76,7 @@
 - `camera: THREE.PerspectiveCamera` - Camera for viewing the scene (private)
 - `container: HTMLElement | null` - DOM container for rendering (private)
 - `initialized: boolean` - Initialization state flag (private)
-- `eventEmitter: EventEmitter<RenderEventMap>` - Event system (private)
+- `eventEmitter: EventEmitter<SceneManagerEventMap>` - Event system (private)
 - `componentMeshes: Map<UUID, THREE.Object3D>` - Component ID → visual mesh (private)
 - `wireMeshes: Map<UUID, THREE.Line>` - Wire ID → animated line (private)
 - `enodeMeshes: Map<UUID, THREE.Mesh>` - ENode ID → visual sphere (private)
@@ -155,14 +155,14 @@ type ComponentVisualFactory = (component: Component) => THREE.Object3D;
 
 ---
 
-### 5. RenderEvent
+### 5. SceneManagerEvent
 
 **Purpose**: Union type of supported event types (includes tool system events)
 
 **Type Definition**:
 ```typescript
-type RenderEvent =
-  | 'hover' | 'unhover' | 'select' | 'deselect' | 'error' | 'ready'
+type SceneManagerEvent =
+  | 'hover' | 'unhover' | 'position' | 'deselect' | 'error' | 'ready'
   | 'toolActivated' | 'toolDeactivated' | 'toolOperationStarted'
   | 'toolOperationCompleted' | 'toolOperationCancelled'
   | 'toolValidationError' | 'cursorChangeRequested';
@@ -171,7 +171,7 @@ type RenderEvent =
 **Event Payloads**:
 - `hover`: `{ objectId: UUID, objectType: 'component' | 'wire' | 'enode' }`
 - `unhover`: `{ objectId: UUID, objectType: 'component' | 'wire' | 'enode' }`
-- `select`: `{ objectId: UUID, objectType: 'component' | 'wire' | 'enode' }`
+- `position`: `{ objectId: UUID, objectType: 'component' | 'wire' | 'enode' }`
 - `deselect`: `{ objectId: UUID, objectType: 'component' | 'wire' | 'enode' }`
 - `error`: `{ message: string, error?: Error }`
 - `ready`: `{ renderer: 'static' | 'simulation' }`
@@ -186,13 +186,13 @@ type RenderEvent =
 
 ---
 
-### 6. RenderCallback
+### 6. SceneManagerCallback
 
 **Purpose**: Function signature for event callbacks
 
 **Type Definition**:
 ```typescript
-type RenderCallback<T = any> = (payload: T) => void;
+type SceneManagerCallback<T = any> = (payload: T) => void;
 ```
 
 **Contract**:
@@ -242,10 +242,10 @@ interface ChangedData {
 
 **Generic Parameter**:
 ```typescript
-interface RenderEventMap {
+interface SceneManagerEventMap {
   hover: { objectId: UUID; objectType: 'component' | 'wire' | 'enode' };
   unhover: { objectId: UUID; objectType: 'component' | 'wire' | 'enode' };
-  select: { objectId: UUID; objectType: 'component' | 'wire' | 'enode' };
+  position: { objectId: UUID; objectType: 'component' | 'wire' | 'enode' };
   deselect: { objectId: UUID; objectType: 'component' | 'wire' | 'enode' };
   error: { message: string; error?: Error };
   ready: { renderer: 'static' | 'simulation' };
@@ -294,15 +294,15 @@ interface IEditingTool {
 ```
 
 **Contract**:
-- `type`: Unique identifier for the tool ('select', 'placeComponent', 'wire', 'branchingPoint', 'delete')
+- `type`: Unique identifier for the tool ('position', 'addComponent', 'wire', 'branchingPoint', 'delete')
 - `onActivate()`: Called when tool becomes active (setup state, show previews)
 - `onDeactivate()`: Called when tool is deactivated (cleanup state, hide previews)
 - `getCursorType()`: Returns current cursor style for this tool
 - `getPreviewObjects()`: Returns array of Three.js objects to render as previews
 
 **Implementations**:
-- **SelectTool**: Click to select, drag to move, double-click to rotate
-- **PlaceComponentTool**: Palette choose type, click to place, scroll to rotate before placement
+- **PositionTool**: Click to position, drag to move, double-click to rotate
+- **AddComponentTool**: Palette choose type, click to place, scroll to rotate before placement
 - **WireTool**: Click source pin/branching point, click target, Escape to cancel
 - **BranchingPointTool**: Click on wire to split and insert branching point
 - **DeleteTool**: Click component/wire/branching point to delete
@@ -315,12 +315,12 @@ interface IEditingTool {
 
 **Type Definition**:
 ```typescript
-type ToolType = 'select' | 'placeComponent' | 'wire' | 'branchingPoint' | 'delete';
+type ToolType = 'position' | 'addComponent' | 'wire' | 'branchingPoint' | 'delete';
 ```
 
 **Values**:
-- `select`: Select/move/rotate components
-- `placeComponent`: Place new components with preview
+- `position`: Select/move/rotate components
+- `addComponent`: Place new components with preview
 - `wire`: Create wires between pins/branching points
 - `branchingPoint`: Insert branching points on wires
 - `delete`: Delete components/wires/branching points
@@ -355,11 +355,11 @@ type CursorType = 'default' | 'pointer' | 'crosshair' | 'move' | 'not-allowed' |
 - **Common**:
   - `operationInProgress: boolean` - Multi-step operation active
   - `previewObjects: THREE.Object3D[]` - Visual previews
-- **SelectTool**:
+- **PositionTool**:
   - `selectedComponent: UUID | null` - Currently selected component
   - `dragStart: THREE.Vector3 | null` - Drag operation start position
   - `rotationAngle: number` - Current rotation angle
-- **PlaceComponentTool**:
+- **AddComponentTool**:
   - `componentType: ComponentType | null` - Type to place
   - `previewPosition: THREE.Vector3` - Ghost preview position
   - `previewRotation: number` - Preview rotation angle
@@ -371,7 +371,7 @@ type CursorType = 'default' | 'pointer' | 'crosshair' | 'move' | 'not-allowed' |
   - `targetWire: UUID | null` - Wire to split
   - `insertionPosition: THREE.Vector3 | null` - Where to insert
 - **DeleteTool**:
-  - `targetObject: { id: UUID, type: RenderObjectType } | null` - Object to delete
+  - `targetObject: { id: UUID, type: CircuitSceneObjectType } | null` - Object to delete
 
 **Lifecycle**:
 - Created when tool activated
@@ -401,8 +401,8 @@ SimulationCircuitSceneManager
   └─ uses → THREE.Scene, THREE.Camera (Three.js)
 
 IEditingTool (implementations)
-  ├─ SelectTool → depends on Circuit (for modification)
-  ├─ PlaceComponentTool → depends on Circuit, ComponentType
+  ├─ PositionTool → depends on Circuit (for modification)
+  ├─ AddComponentTool → depends on Circuit, ComponentType
   ├─ WireTool → depends on Circuit
   ├─ BranchingPointTool → depends on Circuit
   └─ DeleteTool → depends on Circuit
@@ -419,10 +419,10 @@ EventEmitter<T>
 
 ### Composition Relationships
 
-- **CircuitSceneManager** *contains* EventEmitter<RenderEventMap>
+- **CircuitSceneManager** *contains* EventEmitter<SceneManagerEventMap>
 - **CircuitSceneManager** *contains* Map<ToolType, IEditingTool> (tool registry)
 - **CircuitSceneManager** *contains* ToolState | null (active tool state)
-- **SimulationCircuitSceneManager** *contains* EventEmitter<RenderEventMap>
+- **SimulationCircuitSceneManager** *contains* EventEmitter<SceneManagerEventMap>
 - **SimulationCircuitSceneManager** *contains* InterpolationController
 - **Both renderers** *contain* THREE.Scene, THREE.Camera
 - **Both renderers** *reference* FactoryRegistry (injected dependency)
@@ -504,7 +504,7 @@ EventEmitter<T>
 
 2. **Consumer activates a tool**
    ```typescript
-   renderer.setActiveTool('placeComponent');
+   renderer.setActiveTool('addComponent');
    // Emits 'toolActivated' with toolType
    // Emits 'cursorChangeRequested' with cursorType
    ```

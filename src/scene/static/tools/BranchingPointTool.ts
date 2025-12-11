@@ -20,14 +20,12 @@ import type { CircuitSceneManager } from '../CircuitSceneManager';
 export class BranchingPointTool implements IEditingTool {
   readonly type: ToolType = 'branchingPoint';
 
-  private _circuit: Circuit | null = null;
   private _sceneManager: CircuitSceneManager;
   private targetWireId: string | null = null;
   private _insertionPosition: THREE.Vector3 | null = null;
   private isValidPlacement: boolean = true;
 
-  constructor(circuit: Circuit | null, sceneManager: CircuitSceneManager) {
-    this._circuit = circuit;
+  constructor(sceneManager: CircuitSceneManager) {
     this._sceneManager = sceneManager;
   }
 
