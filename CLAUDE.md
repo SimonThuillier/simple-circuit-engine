@@ -3,6 +3,8 @@
 Auto-generated from all feature plans. Last updated: 2025-11-28
 
 ## Active Technologies
+- TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (already installed), three/addons/lines/Line2.js, three/addons/lines/LineGeometry.js, three/addons/lines/LineMaterial.js (007-line2-wire-refactor)
+- N/A (in-memory scene state only) (007-line2-wire-refactor)
 
 - TypeScript (strict mode), targeting ES2022 + Three.js 0.181+ (already installed) (006-position-tool-wires)
 - N/A (in-memory circuit model, no persistence changes) (006-position-tool-wires)
@@ -71,12 +73,12 @@ function badExample(input: number | null): string {
 ```
 
 ## Recent Changes
+- 007-line2-wire-refactor: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (already installed), three/addons/lines/Line2.js, three/addons/lines/LineGeometry.js, three/addons/lines/LineMaterial.js
 
 - 006-position-tool-wires: Added TypeScript (strict mode), targeting ES2022 + Three.js 0.181+ (already installed)
 
 - 005-visual-factory-classes: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (already installed)
 
-- 004-map-controls-hovering: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (already installed), three/addons/controls/MapControls.js (already installed)
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
