@@ -6,6 +6,9 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as THREE from 'three';
+import { Line2 } from 'three/examples/jsm/lines/Line2.js';
+import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { WireVisualManager } from '../../../src/scene/shared/WireVisualManager';
 import { Circuit } from '../../../src/core/Circuit';
 import { ComponentType } from '../../../src/core/types/ComponentType';
@@ -58,6 +61,8 @@ describe('WireVisualManager', () => {
 
   beforeEach(() => {
     wireManager = new WireVisualManager();
+    // Set resolution for Line2 rendering (required for LineMaterial)
+    wireManager.setResolution(800, 600);
     scene = new THREE.Scene();
     circuit = new Circuit('Test Circuit');
     componentGroups = new Map();
@@ -69,7 +74,7 @@ describe('WireVisualManager', () => {
   });
 
   describe('createOrUpdateWire()', () => {
-    it('should create a new THREE.Line for a wire', () => {
+    it('should create a new Line2 for a wire', () => {
       // Add two components with positions
       const comp1 = circuit.addComponent(ComponentType.Battery, { x: 0, y: 0 }, 0);
       const comp2 = circuit.addComponent(ComponentType.Battery, { x: 10, y: 0 }, 0);
@@ -92,7 +97,8 @@ describe('WireVisualManager', () => {
       // Create wire visual
       const line = wireManager.createOrUpdateWire(wire, circuit, scene, componentGroups);
 
-      expect(line).toBeInstanceOf(THREE.Line);
+      expect(line).toBeInstanceOf(Line2);
+      expect(line.geometry).toBeInstanceOf(LineGeometry);
       expect(line.userData.type).toBe('wire');
       expect(line.userData.wireId).toBe(wire.id);
     });
@@ -116,7 +122,7 @@ describe('WireVisualManager', () => {
       // Find the wire line in scene
       let wireLineFound = false;
       scene.traverse((child) => {
-        if (child instanceof THREE.Line && child.userData.wireId === wire.id) {
+        if (child instanceof Line2 && child.userData.wireId === wire.id) {
           wireLineFound = true;
         }
       });
@@ -173,7 +179,7 @@ describe('WireVisualManager', () => {
       // Count wire lines in scene
       let wireCount = 0;
       scene.traverse((child) => {
-        if (child instanceof THREE.Line && child.userData.wireId === wire.id) {
+        if (child instanceof Line2 && child.userData.wireId === wire.id) {
           wireCount++;
         }
       });
@@ -471,7 +477,7 @@ describe('WireVisualManager', () => {
       // Wire should be removed from scene
       let wireFound = false;
       scene.traverse((child) => {
-        if (child instanceof THREE.Line && child.userData.wireId === wire.id) {
+        if (child instanceof Line2 && child.userData.wireId === wire.id) {
           wireFound = true;
         }
       });
@@ -486,7 +492,7 @@ describe('WireVisualManager', () => {
   });
 
   describe('getWireLine()', () => {
-    it('should return the THREE.Line for a wire', () => {
+    it('should return the Line2 for a wire', () => {
       const comp1 = circuit.addComponent(ComponentType.Battery, { x: 0, y: 0 }, 0);
       const comp2 = circuit.addComponent(ComponentType.Battery, { x: 10, y: 0 }, 0);
       const wire = circuit.addWire(comp1.pins[0], comp2.pins[0]);

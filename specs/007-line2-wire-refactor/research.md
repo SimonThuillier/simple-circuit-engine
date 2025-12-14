@@ -211,7 +211,7 @@ expect(line).toBeInstanceOf(Line2);
 | B | Set resolution via dedicated method | Clean API | Extra method call |
 | C | Share LineMaterial across all wires | Memory efficient | Coupling |
 
-**Selected**: Option C - Share a single LineMaterial instance across all Line2 objects
+**Selected**: Option A - Each wire must have its own LineMaterial instance to handle hovering and selection effects (e.g., color change).
 
 **Rationale**:
 - All wires use same visual style (white, 2px)

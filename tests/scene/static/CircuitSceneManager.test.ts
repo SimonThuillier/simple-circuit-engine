@@ -6,6 +6,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as THREE from 'three';
+import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { CircuitSceneManager } from '../../../src/scene/static/CircuitSceneManager';
 import { FactoryRegistry } from '../../../src/scene/shared/FactoryRegistry';
 import { ComponentType } from '../../../src/core/types/ComponentType';
@@ -125,13 +126,13 @@ describe('CircuitSceneManager', () => {
       expect(componentMeshes.length).toBe(components.length);
     });
 
-    it('should create lines for all wires', () => {
+    it('should create Line2 objects for all wires', () => {
       manager.update();
       const scene = manager.getScene();
 
       const wires = circuit.getAllWires();
       const wireLines = scene.children.filter(
-        (obj) => obj instanceof THREE.Line && obj.userData.wireId !== undefined
+        (obj) => obj instanceof Line2 && obj.userData.wireId !== undefined
       );
 
       expect(wireLines.length).toBe(wires.length);

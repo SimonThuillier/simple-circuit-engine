@@ -9,11 +9,14 @@
  */
 
 import * as THREE from 'three';
+import { Line2 } from 'three/examples/jsm/lines/Line2.js';
+import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import type { UUID } from '../../core/types/Identifier';
 import type { Circuit } from '../../core/Circuit';
 import type { Wire } from '../../core/Wire';
 import { ENodeType } from '../../core/types/ENodeType';
-import { createLineMaterial } from './MaterialUtils';
+import { createLine2Material } from './MaterialUtils';
 
 /**
  * Wire path representation for rendering
@@ -46,14 +49,44 @@ export interface WirePath {
  * ```
  */
 export class WireVisualManager {
-  /** Map of wire ID to THREE.Line objects */
-  private wireLines: Map<UUID, THREE.Line> = new Map();
+  /** Map of wire ID to Line2 objects */
+  private wireLines: Map<UUID, Line2> = new Map();
+
+  /** Shared LineMaterial for all wires (memory efficient, consistent styling) */
+  private wireMaterial: LineMaterial;
 
   /** Reference to the scene for adding/removing wires */
   private scene: THREE.Scene | null = null;
 
   /** Reference to component groups for pin position lookup */
   private componentGroups: Map<UUID, THREE.Object3D> = new Map();
+
+  constructor() {
+    // Create shared LineMaterial with default white color and 2px width
+    this.wireMaterial = createLine2Material(0xffffff, 2);
+  }
+
+  /**
+   * Set the resolution for LineMaterial rendering
+   *
+   * MUST be called after initialization and on window/container resize
+   * for Line2 to render correctly.
+   *
+   * @param width - Viewport width in pixels
+   * @param height - Viewport height in pixels
+   *
+   * @example
+   * ```typescript
+   * wireManager.setResolution(window.innerWidth, window.innerHeight);
+   *
+   * window.addEventListener('resize', () => {
+   *   wireManager.setResolution(window.innerWidth, window.innerHeight);
+   * });
+   * ```
+   */
+  setResolution(width: number, height: number): void {
+    this.wireMaterial.resolution.set(width, height);
+  }
 
   /**
    * Create or update the visual for a wire
@@ -62,14 +95,14 @@ export class WireVisualManager {
    * @param circuit - Circuit containing the wire (for ENode lookup)
    * @param scene - Three.js scene to add wire to
    * @param componentGroups - Map of component ID to Three.js objects
-   * @returns The created/updated Line object
+   * @returns The created/updated Line2 object
    */
   createOrUpdateWire(
     wire: Wire,
     circuit: Circuit,
     scene: THREE.Scene,
     componentGroups: Map<UUID, THREE.Object3D>
-  ): THREE.Line {
+  ): Line2 {
     this.scene = scene;
     this.componentGroups = componentGroups;
 
@@ -79,14 +112,15 @@ export class WireVisualManager {
 
     if (line) {
       // Update existing line geometry
-      const geometry = new THREE.BufferGeometry().setFromPoints(wirePath.points);
+      const geometry = new LineGeometry();
+      geometry.setFromPoints(wirePath.points);
       line.geometry.dispose();
       line.geometry = geometry;
     } else {
-      // Create new line
-      const geometry = new THREE.BufferGeometry().setFromPoints(wirePath.points);
-      const material = createLineMaterial(0xffffff, 2);
-      line = new THREE.Line(geometry, material);
+      // Create new Line2
+      const geometry = new LineGeometry();
+      geometry.setFromPoints(wirePath.points);
+      line = new Line2(geometry, this.wireMaterial);
       line.userData = {
         type: 'wire',
         wireId: wire.id,
@@ -292,20 +326,18 @@ export class WireVisualManager {
         this.scene.remove(line);
       }
       line.geometry.dispose();
-      if (line.material instanceof THREE.Material) {
-        line.material.dispose();
-      }
+      // Do NOT dispose material - it's shared across all wires
       this.wireLines.delete(wireId);
     }
   }
 
   /**
-   * Get the Line object for a wire
+   * Get the Line2 object for a wire
    *
    * @param wireId - Wire ID
-   * @returns THREE.Line or undefined if not found
+   * @returns Line2 or undefined if not found
    */
-  getWireLine(wireId: UUID): THREE.Line | undefined {
+  getWireLine(wireId: UUID): Line2 | undefined {
     return this.wireLines.get(wireId);
   }
 
@@ -337,11 +369,13 @@ export class WireVisualManager {
         this.scene.remove(line);
       }
       line.geometry.dispose();
-      if (line.material instanceof THREE.Material) {
-        line.material.dispose();
-      }
+      // Individual wire materials are NOT disposed here - only geometries
     }
     this.wireLines.clear();
+
+    // Dispose shared material once during full cleanup
+    this.wireMaterial.dispose();
+
     this.scene = null;
     this.componentGroups.clear();
   }

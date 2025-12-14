@@ -7,6 +7,7 @@
 
 import * as THREE from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
+import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import type { Circuit } from '../../core/Circuit';
 import type { Component } from '../../core/components/Component';
 import type { Wire } from '../../core/Wire';
@@ -71,7 +72,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
   // Visual object tracking
   private grid: THREE.GridHelper | null = null;
   private componentGroups: Map<string, THREE.Group> = new Map();
-  private wireGroups: Map<string, THREE.Line> = new Map();
+  private wireGroups: Map<string, Line2> = new Map();
   private enodeGroups: Map<string, THREE.Group> = new Map();
 
   // Edit mode and tool system (Phase 5)
@@ -166,6 +167,9 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
 
       // Initialize SelectionManager (Phase 6)
       this._initializeSelectionManager();
+
+      // Initialize WireVisualManager resolution (Line2 rendering)
+      this.wireVisualManager.setResolution(container.clientWidth, container.clientHeight);
 
       this.initialized = true;
 
@@ -517,6 +521,19 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
   }
 
   /**
+   * Update viewport size for Line2 material resolution
+   *
+   * Should be called when the container size changes (e.g., window resize)
+   * to ensure Line2 wires render correctly.
+   *
+   * @param width - New viewport width in pixels
+   * @param height - New viewport height in pixels
+   */
+  updateViewportSize(width: number, height: number): void {
+    this.wireVisualManager.setResolution(width, height);
+  }
+
+  /**
    * Update the circuit to visualize or indicate no circuit loaded
    * @param circuit
    */
@@ -662,14 +679,14 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
    * @param type
    * @param id
    */
-  getGroup(type: HoverableType, id: UUID): THREE.Group | undefined {
+  getGroup(type: HoverableType, id: UUID): THREE.Object3D | undefined {
     switch (type) {
       case 'component':
         return this.componentGroups.get(id);
       case 'enode':
         return this.enodeGroups.get(id);
       case 'wire':
-        return this.wireGroups.get(id) as THREE.Group;
+        return this.wireGroups.get(id);
       default:
         return undefined;
     }

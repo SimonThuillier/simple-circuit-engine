@@ -6,6 +6,12 @@
 import type { UUID } from '../../core/types/Identifier';
 import type * as THREE from 'three';
 import type { ComponentType } from '@/core/types/ComponentType';
+import type { Line2 } from 'three/examples/jsm/lines/Line2.js';
+import type { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
+import type { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
+
+// Re-export Line2 types for convenience
+export type { Line2, LineGeometry, LineMaterial };
 
 /**
  * Object types that can be interacted within the scene manager to render
