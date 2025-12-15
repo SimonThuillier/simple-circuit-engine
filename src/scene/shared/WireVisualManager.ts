@@ -88,7 +88,6 @@ export class WireVisualManager {
    * ```
    */
   setResolution(width: number, height: number): void {
-    console.log(`Resolution: ${width}, height: ${height}`);
     for(const material of this.wireMaterials.values()) {
       material.resolution.set(width, height);
     }
@@ -312,7 +311,6 @@ export class WireVisualManager {
     const line = this._sceneManager.getWireObject3Ds().get(wireId);
     if (!line) return;
     if (line.material === this.wireMaterials.get('selected')) return;
-    if (line.material === this.wireMaterials.get('hovered')) return;
 
     line.material = this.wireMaterials.get('hovered')!;
   }
@@ -328,8 +326,6 @@ export class WireVisualManager {
   applySelectedVisual(wireId: UUID): void {
     const line = this._sceneManager.getWireObject3Ds().get(wireId);
     if (!line) return;
-    if (line.material === this.wireMaterials.get('selected')) return;
-
     line.material = this.wireMaterials.get('selected')!;
   }
 

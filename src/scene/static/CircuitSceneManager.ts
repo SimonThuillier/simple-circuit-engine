@@ -143,7 +143,6 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
       this.scene = new THREE.Scene();
       this.scene.background = new THREE.Color(0x222230);
 
-      console.log(container.clientWidth, container.clientHeight);
       // Create camera
       const aspect = container.clientWidth / container.clientHeight || 1;
       this.camera = createPerspectiveCamera(options, aspect);
@@ -437,9 +436,8 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     if (event.button !== 0) {
       return;
     }
-    // common behavior regardless of the tool: select on pointer down
 
-    console.log('pointer down handler called', this.hoverManager?.getHoveredElement());
+    // common behavior regardless of the tool: select on pointer down
     if (this.hoverManager?.getHoveredElement()) {
       // always: emit position event when hovered element
       const element = this.hoverManager.getHoveredElement()!;
@@ -488,7 +486,6 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
 
     if (components) {
       for (const [id, _data] of components) {
-        console.log(`Applying selection visual to component ${id}, selected=${selected}`);
         const object3D = this.componentObject3Ds.get(id);
         if (!object3D) {
           continue;
@@ -497,10 +494,8 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
           const componentType = object3D.userData.componentType as ComponentType;
           const factory = this.factoryRegistry.get(componentType);
           if (selected) {
-            console.log('apply selection visual');
             factory.applySelection(object3D);
           } else {
-            console.log('remove selection visual');
             factory.removeSelection(object3D);
           }
         } catch (error) {
@@ -575,7 +570,6 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
       width = rect.width;
       height = rect.height;
     }
-    console.log('Container resize triggered', width, height);
     if (this.camera && typeof this.camera.updateProjectionMatrix === 'function') {
       if (this.camera.aspect !== undefined) this.camera.aspect = width / height;
       this.camera.updateProjectionMatrix();
@@ -708,10 +702,6 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
    * @returns WireVisualManager
    */
   getWireVisualManager(): WireVisualManager {
-    this._checkInitialized();
-    if (!this.wireVisualManager) {
-      throw new Error('WireVisualManager not initialized');
-    }
     return this.wireVisualManager!;
   }
 
@@ -719,7 +709,6 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
    * Get the CircuitEditionManager instance for calls by tools
    */
   getCircuitEditionManager(): CircuitEditionManager {
-    this._checkInitialized();
     return this.circuitEditionManager;
   }
 

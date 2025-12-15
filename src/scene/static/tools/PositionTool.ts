@@ -322,21 +322,17 @@ export class PositionTool implements IEditingTool {
     const currentAngle = component.rotation.y;
     const newAngle = (currentAngle - Math.PI / 2) % (Math.PI * 2);
     component.rotation.set(0, newAngle, 0);
-    const modelRotation = -Math.round((component.rotation.y * 180) / Math.PI);
 
     this._sceneManager.getWireVisualManager().updateWiresForComponent(componentId);
 
     // Emit componentRotated event
     this._sceneManager.emit('componentRotated', {
       componentId: componentId,
-      newRotation: newAngle,
-      modelRotation: modelRotation,
+      newRotation: newAngle
     });
     // Save new component state into the circuit model
     this._sceneManager
       .getCircuitEditionManager()
       .saveComponentAction(componentId, 'edit', component);
-
-    // TODO: Update wires connected to this component (T049 - reported for future spec)
   }
 }
