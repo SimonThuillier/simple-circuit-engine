@@ -20,17 +20,15 @@ export type CircuitSceneObjectType =
   | 'componentGroup'
   | 'component'
   | 'componentHitbox'
-  | 'wireGroup'
-  | 'wire'
-  | 'wireHitbox'
   | 'enodeGroup'
   | 'enode'
-  | 'enodeHitbox';
+  | 'enodeHitbox'
+  | 'wire';
 
 /**
  * Types of circuit elements that can be hovered / selected
  */
-export type HoverableType = 'enode' | 'component' | 'wire';
+export type HoverableType = 'component' | 'enode' | 'wire';
 
 export type ModelEditAction = 'edit' | 'add' | 'delete';
 
@@ -232,7 +230,7 @@ export interface ComponentHitboxUserData {
  * UserData structure for wire hitbox meshes
  */
 export interface WireHitboxUserData {
-  type: 'wireHitbox';
+  type: 'wire';
   wireId: string;
 }
 

@@ -19,6 +19,7 @@ import { ENodeType } from '../../core/types/ENodeType';
 import { createLine2Material } from './MaterialUtils';
 import type {CircuitSceneManager} from "../static/CircuitSceneManager";
 import type {WireMaterialState} from "./types";
+import {HitboxLayers} from "./LayerConstants";
 
 /**
  * Wire path representation for rendering
@@ -38,6 +39,7 @@ export interface WirePath {
  * - Create wire visuals with endpoints at actual pin positions
  * - Support multi-segment wires via intermediatePositions
  * - Update wires dynamically when components move/rotate
+ * - Update wire materials for hover/selection states
  * - may add and remove wire and branching point object3Ds in the scene directly
  *
  * @example
@@ -61,7 +63,9 @@ export class WireVisualManager {
     this._sceneManager = sceneManager;
     // Create shared LineMaterial with default white color and 2px width
     this.wireMaterials = new Map([
-        ['idle', createLine2Material(0xffffff, 2)]
+        ['idle', createLine2Material(0xffffff, 2)],
+        ['hovered', createLine2Material(0x40dfff, 4)],
+        ['selected', createLine2Material(0xffaa00, 3)]
     ]);
   }
 
@@ -84,6 +88,7 @@ export class WireVisualManager {
    * ```
    */
   setResolution(width: number, height: number): void {
+    console.log(`Resolution: ${width}, height: ${height}`);
     for(const material of this.wireMaterials.values()) {
       material.resolution.set(width, height);
     }
@@ -118,6 +123,8 @@ export class WireVisualManager {
         type: 'wire',
         wireId: wire.id,
       };
+      // Enable wire hitbox layer
+      line.layers.enable(HitboxLayers.WIRE);
       this._sceneManager.getWireObject3Ds().set(wire.id, line);
       // Adding to scene is directly done here
       this._sceneManager.getScene().add(line);
@@ -299,6 +306,39 @@ export class WireVisualManager {
     if (wire) {
       this.createOrUpdateWire(wire);
     }
+  }
+
+  applyHoveredVisual(wireId: UUID): void {
+    const line = this._sceneManager.getWireObject3Ds().get(wireId);
+    if (!line) return;
+    if (line.material === this.wireMaterials.get('selected')) return;
+    if (line.material === this.wireMaterials.get('hovered')) return;
+
+    line.material = this.wireMaterials.get('hovered')!;
+  }
+
+  removeHoveredVisual(wireId: UUID): void {
+    const line = this._sceneManager.getWireObject3Ds().get(wireId);
+    if (!line) return;
+    if (line.material !== this.wireMaterials.get('hovered')) return;
+
+    line.material = this.wireMaterials.get('idle')!;
+  }
+
+  applySelectedVisual(wireId: UUID): void {
+    const line = this._sceneManager.getWireObject3Ds().get(wireId);
+    if (!line) return;
+    if (line.material === this.wireMaterials.get('selected')) return;
+
+    line.material = this.wireMaterials.get('selected')!;
+  }
+
+  removeSelectedVisual(wireId: UUID): void {
+    const line = this._sceneManager.getWireObject3Ds().get(wireId);
+    if (!line) return;
+    if (line.material !== this.wireMaterials.get('selected')) return;
+
+    line.material = this.wireMaterials.get('idle')!;
   }
 
   /**

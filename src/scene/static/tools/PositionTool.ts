@@ -186,6 +186,11 @@ export class PositionTool implements IEditingTool {
         new THREE.Vector3().addVectors(data.position, dragDelta)
       );
       object.position.set(objectDraggedPosition.x, 0, objectDraggedPosition.z);
+      if (data.type === 'component') {
+        // moving wires connected to component in real-time during drag
+        this._sceneManager.getWireVisualManager().updateWiresForComponent(id);
+      }
+
     }
 
     // Update current position and emit dragMove event (T039)
@@ -195,8 +200,6 @@ export class PositionTool implements IEditingTool {
       currentPosition: cursorGridPosition,
       delta: dragDelta,
     });
-
-    // TODO Update wires connected to components (T035-T036)
   }
 
   /**
@@ -233,6 +236,7 @@ export class PositionTool implements IEditingTool {
         continue;
       }
       if (data.type === 'component') {
+        this._sceneManager.getWireVisualManager().updateWiresForComponent(id);
         this._sceneManager.getCircuitEditionManager().saveComponentAction(id, 'edit', object);
       }
       // TODO: handle enodes and wires later
@@ -272,6 +276,10 @@ export class PositionTool implements IEditingTool {
         }
         const originalPosition = nearestGridMagnetPosition(data.position);
         object.position.set(originalPosition.x, 0, originalPosition.z);
+        if (data.type === 'component') {
+          // moving wires connected to component in real-time during drag
+          this._sceneManager.getWireVisualManager().updateWiresForComponent(id);
+        }
       }
 
       // Clear drag state
@@ -315,6 +323,8 @@ export class PositionTool implements IEditingTool {
     const newAngle = (currentAngle - Math.PI / 2) % (Math.PI * 2);
     component.rotation.set(0, newAngle, 0);
     const modelRotation = -Math.round((component.rotation.y * 180) / Math.PI);
+
+    this._sceneManager.getWireVisualManager().updateWiresForComponent(componentId);
 
     // Emit componentRotated event
     this._sceneManager.emit('componentRotated', {

@@ -45,6 +45,9 @@ export class HoverManager {
     this.scene = scene;
     this.camera = camera;
     this.raycaster = new THREE.Raycaster();
+    // Set up raycaster with Line2 threshold (in screen pixels)
+    this.raycaster.params.Line2 = { threshold: 10 }; // 10px hover zone around line
+
     this.groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0); // XZ plane at y=0
   }
 
@@ -102,7 +105,7 @@ export class HoverManager {
 
     // Priority 3: Check WIRE layer if no component hit
     if (!hitElement) {
-      hitElement = this._raycastLayer(HitboxLayers.WIRE, 'wire', 'wireHitbox');
+      hitElement = this._raycastLayer(HitboxLayers.WIRE, 'wire', 'wire');
     }
     // Compare with current state and trigger callbacks if changed
     this._updateHoverState(hitElement);
@@ -213,7 +216,7 @@ export class HoverManager {
   private _raycastLayer(
     layer: number,
     hoverableType: 'enode' | 'component' | 'wire',
-    objectType: 'enodeHitbox' | 'componentHitbox' | 'wireHitbox'
+    objectType: 'enodeHitbox' | 'componentHitbox' | 'wire'
   ): HoveredElement | null {
     // Configure raycaster to only check the specified layer
     this.raycaster.layers.set(layer);
@@ -235,7 +238,7 @@ export class HoverManager {
           elementId = userData.enodeId;
         } else if (userData.type === 'componentHitbox') {
           elementId = userData.componentId;
-        } else if (userData.type === 'wireHitbox') {
+        } else if (userData.type === 'wire') {
           elementId = userData.wireId;
         } else {
           continue;

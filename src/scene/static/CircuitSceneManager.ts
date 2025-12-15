@@ -31,7 +31,7 @@ import type {
   ComponentHitboxUserData,
   SelectionData,
   HoverableType,
-  MultiSelectionData,
+  MultiSelectionData, WireHitboxUserData,
 } from '../shared/types';
 import { createPerspectiveCamera, setupCameraFromMetadata } from '../shared/CameraUtils';
 import { setupSceneLights } from '../shared/LightingUtils';
@@ -116,6 +116,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
 
     this.factoryRegistry = factoryRegistry;
     this.handlePointerDown = this.handlePointerDown.bind(this);
+    this.onContainerResize = this.onContainerResize.bind(this);
   }
 
   /**
@@ -235,9 +236,9 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     const gridHalfSize = this.circuit ? Math.ceil(this.circuit.metadata.size / 2) : 10;
     const vector = this.hoverManager!.getGroundPlanePosition().clone();
     vector.set(
-      Math.min(Math.max(vector.x, -gridHalfSize), gridHalfSize),
-      0,
-      Math.min(Math.max(vector.z, -gridHalfSize), gridHalfSize)
+        Math.min(Math.max(vector.x, -gridHalfSize), gridHalfSize),
+        0,
+        Math.min(Math.max(vector.z, -gridHalfSize), gridHalfSize)
     );
     return vector;
   }
@@ -302,6 +303,19 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
           console.warn('Failed to remove hover effect:', error);
         }
         return;
+      } else if (element.objectType === 'wire') {
+        const userData = element.userData as WireHitboxUserData;
+        const wireId = userData.wireId;
+        if (!wireId) {
+          console.warn('Failed to apply unhover effect (missing wireId)');
+          return;
+        }
+        const wire = this.wireObject3Ds.get(wireId);
+        if (!wire) {
+          console.warn('Failed to apply unhover effect (wire not found)');
+          return;
+        }
+        this.wireVisualManager.removeHoveredVisual(wireId);
       }
     };
 
@@ -343,6 +357,20 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
           console.warn('Failed to apply hover effect:', error);
         }
         return;
+      }
+      else if (element.objectType === 'wire') {
+        const userData = element.object3D.userData as WireHitboxUserData;
+        const wireId = userData.wireId;
+        if (!wireId) {
+          console.warn('Failed to apply hover effect (missing wireId)');
+          return;
+        }
+        const wire = this.wireObject3Ds.get(wireId);
+        if (!wire) {
+          console.warn('Failed to apply hover effect (wire not found)');
+          return;
+        }
+        this.wireVisualManager.applyHoveredVisual(wireId);
       }
     };
 
@@ -461,29 +489,41 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     if (components) {
       for (const [id, _data] of components) {
         console.log(`Applying selection visual to component ${id}, selected=${selected}`);
-        const group = this.componentObject3Ds.get(id);
-        console.log(group);
-        if (!group) {
+        const object3D = this.componentObject3Ds.get(id);
+        if (!object3D) {
           continue;
         }
         try {
-          const componentType = group.userData.componentType as ComponentType;
+          const componentType = object3D.userData.componentType as ComponentType;
           const factory = this.factoryRegistry.get(componentType);
           if (selected) {
             console.log('apply selection visual');
-            factory.applySelection(group);
+            factory.applySelection(object3D);
           } else {
             console.log('remove selection visual');
-            factory.removeSelection(group);
+            factory.removeSelection(object3D);
           }
         } catch (error) {
           console.warn(
-            `Failed to ${selected ? 'apply' : 'remove'} component selection visual:`,
-            error
+              `Failed to ${selected ? 'apply' : 'remove'} component selection visual:`,
+              error
           );
         }
       }
-      // TODO Wires and enodes selection visual handling can be added here in the future
+    }
+    else if (enodes){
+      // enodes selection visual handling can be added here in the future
+    }
+    else if (wires) {
+      for (const [id, _data] of wires) {
+        console.log(`Applying selection visual to wire ${id}, selected=${selected}`);
+        if (selected) {
+          this.wireVisualManager.applySelectedVisual(id);
+        }
+        else {
+          this.wireVisualManager.removeSelectedVisual(id);
+        }
+      }
     }
   }
 
@@ -521,15 +561,25 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
   }
 
   /**
-   * Update viewport size for Line2 material resolution
+   * event handler when the container size changes
+   * Can override the container boundingClientRect size by providing width and height
+   * - Update camera projection matrix
+   * - Update viewport size for Line2 material resolution
    *
    * Should be called when the container size changes (e.g., window resize)
-   * to ensure Line2 wires render correctly.
-   *
-   * @param width - New viewport width in pixels
-   * @param height - New viewport height in pixels
    */
-  updateViewportSize(width: number, height: number): void {
+  onContainerResize(width?: number | undefined, height?: number | undefined): void {
+    if (!this.container) return;
+    if(width === undefined || height === undefined){
+      const rect = this.container?.getBoundingClientRect()!;
+      width = rect.width;
+      height = rect.height;
+    }
+    console.log('Container resize triggered', width, height);
+    if (this.camera && typeof this.camera.updateProjectionMatrix === 'function') {
+      if (this.camera.aspect !== undefined) this.camera.aspect = width / height;
+      this.camera.updateProjectionMatrix();
+    }
     this.wireVisualManager.setResolution(width, height);
   }
 
@@ -654,6 +704,18 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
   }
 
   /**
+   * Get the WireVisualManager instance for direct manipulation
+   * @returns WireVisualManager
+   */
+  getWireVisualManager(): WireVisualManager {
+    this._checkInitialized();
+    if (!this.wireVisualManager) {
+      throw new Error('WireVisualManager not initialized');
+    }
+    return this.wireVisualManager!;
+  }
+
+  /**
    * Get the CircuitEditionManager instance for calls by tools
    */
   getCircuitEditionManager(): CircuitEditionManager {
@@ -709,7 +771,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
    * @param selection
    */
   getSelectionPositions(
-    selection: SelectionData
+      selection: SelectionData
   ): Map<UUID, { type: HoverableType; position: THREE.Vector3 }> {
     const selectionPositions = new Map<UUID, { type: HoverableType; position: THREE.Vector3 }>();
     if (selection.kind === 'mono') {
@@ -908,6 +970,8 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     }
 
     try {
+      this.container?.removeEventListener('resize', this.onContainerResize);
+
       // Dispose all geometries and materials
       this.scene!.traverse((obj) => {
         if (obj instanceof THREE.Mesh) {
@@ -1365,7 +1429,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
       const factory = this.factoryRegistry.get(component.type);
       // Support both function-based (legacy) and class-based (new) factories
       const mesh =
-        typeof factory === 'function' ? factory(component) : factory.createVisual(component);
+          typeof factory === 'function' ? factory(component) : factory.createVisual(component);
 
       // Position mesh at component location (2D circuit -> 3D world)
       mesh.position.set(component.position.x, 0, -component.position.y);
