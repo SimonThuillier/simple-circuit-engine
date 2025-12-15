@@ -269,7 +269,7 @@ saveBranchingPointAction(
 /**
  * Save wire split operation to circuit model.
  */
-saveWireSplitAction(
+saveSplitWire(
   wireId: UUID,
   position: Position
 ): { branchingPoint: ENode; wire1: Wire; wire2: Wire };
@@ -277,7 +277,7 @@ saveWireSplitAction(
 /**
  * Save wire intermediate positions update.
  */
-saveWireIntermediatePositionsAction(
+saveWireIntermediatePositions(
   wireId: UUID,
   positions: Position[]
 ): Wire;

@@ -55,9 +55,9 @@ export class CircuitEditionManager {
    * @private
    */
   private _saveComponentAddOrEdit(
-    componentId: string,
-    action: ModelEditAction,
-    component: Object3D
+      componentId: string,
+      action: ModelEditAction,
+      component: Object3D
   ): SceneManagerEventMap['circuitElementAction'] {
     // Logic to save the current state of the scene component into the core model
     const circuit = this._sceneManager.getCircuit();
@@ -70,8 +70,8 @@ export class CircuitEditionManager {
     }
     const modelRotation = new Rotation(-Math.round((component.rotation.y * 180) / Math.PI));
     const modelPosition = new Position(
-      Math.round(component.position.x),
-      Math.round(-component.position.z)
+        Math.round(component.position.x),
+        Math.round(-component.position.z)
     );
     circuitComponent.setRotation(modelRotation);
     circuitComponent.setPosition(modelPosition);
@@ -89,47 +89,179 @@ export class CircuitEditionManager {
   }
 
   /**
-   * Given an action on an enode (add, edit, delete), updates the core circuit model
-   * and emits the appropriate event.
-   * @param enodeId
-   * @param action
-   * @param enode
+   * add branching point to the core circuit model and emits the appropriate event.
+   * @param branchingPoint - the branching point Object3D
+   * @throws Error
+   * @return The circuit enode
    */
-  saveEnodeAction(enodeId: string, action: ModelEditAction, enode: Object3D): void {
-    // TODO implement enode action saving logic
-  }
-
-  /**
-   * Given an action on a wire (add, edit, delete), updates the core circuit model
-   * and emits the appropriate event.
-   * @param wireId
-   * @param action
-   * @param wire
-   */
-  saveWireAction(wireId: string, action: ModelEditAction, wire: Object3D): void {
-    // TODO implement wire action saving logic
-  }
-
-  /**
-   * Save branching point creation to circuit model.
-   * @param position - Grid position for the branching point
-   * @param sourceType - Optional source type (voltage/current)
-   * @returns The created ENode
-   */
-  saveBranchingPointAction(position: Position, sourceType?: ENodeSourceType): ENode {
+  saveAddBranchingPoint(branchingPoint: Object3D){
     const circuit = this._sceneManager.getCircuit();
-    if (!circuit) {
-      throw new Error('No circuit available in the scene manager.');
+    try {
+      if (!circuit) {
+        throw new Error('No circuit available in the scene manager.');
+      }
+      const modelPosition = new Position(
+          Math.round(branchingPoint.position.x),
+          Math.round(-branchingPoint.position.z)
+      );
+      const sourceType = branchingPoint.userData.sourceType as ENodeSourceType | undefined;
+      const circuitEnode = circuit.addBranchingPoint(modelPosition, sourceType);
+
+      const event: SceneManagerEventMap['circuitElementAction'] = {
+        type: 'enode',
+        action: 'add',
+        id: circuitEnode.id,
+        error: null,
+        data: {
+          position: modelPosition,
+          sourceType: sourceType,
+        }
+      };
+      this._sceneManager.emit('circuitElementAction', event);
+      return circuitEnode;
+    } catch (error) {
+      const event: SceneManagerEventMap['circuitElementAction'] = {
+        type: 'enode',
+        action: 'add',
+        id: undefined,
+        error: error as Error,
+        data: null,
+      };
+      this._sceneManager.emit('circuitElementAction', event);
+      throw new Error((error as Error).message);
     }
+  }
 
-    const branchingPoint = circuit.addBranchingPoint(position, sourceType);
+  /**
+   * edit branching point to the core circuit model and emits the appropriate event.
+   * @param branchingPoint - the branching point Object3D
+   * @throws Error
+   * @return The circuit enode
+   */
+  saveEditBranchingPoint(branchingPoint: Object3D){
+    const circuit = this._sceneManager.getCircuit();
+    try {
+      if (!circuit) {
+        throw new Error('No circuit available in the scene manager.');
+      }
+      const circuitEnode = circuit.getENode(branchingPoint.userData.id);
+      if (!circuitEnode) {
+        throw new Error(`No enode with id ${branchingPoint.userData.id} found in the circuit.`);
+      }
 
-    this._sceneManager.emit('branchingPointCreated', {
-      enodeId: branchingPoint.id,
-      position,
-    });
+      const modelPosition = new Position(
+          Math.round(branchingPoint.position.x),
+          Math.round(-branchingPoint.position.z)
+      );
+      const sourceType = branchingPoint.userData.sourceType as ENodeSourceType | undefined;
+      circuitEnode.setPosition(modelPosition);
+      circuitEnode.setSourceType(sourceType);
 
-    return branchingPoint;
+      const event: SceneManagerEventMap['circuitElementAction'] = {
+        type: 'enode',
+        action: 'edit',
+        id: circuitEnode.id,
+        error: null,
+        data: {
+          position: modelPosition,
+          sourceType: sourceType,
+        }
+      };
+      this._sceneManager.emit('circuitElementAction', event);
+      return circuitEnode;
+    } catch (error) {
+      const event: SceneManagerEventMap['circuitElementAction'] = {
+        type: 'enode',
+        action: 'edit',
+        id: branchingPoint.userData.id,
+        error: error as Error,
+        data: null,
+      };
+      this._sceneManager.emit('circuitElementAction', event);
+      throw new Error((error as Error).message);
+    }
+  }
+
+  /**
+   * delete branching point in the core circuit model and emits the appropriate event.
+   * @param branchingPoint - the branching point Object3D
+   * @throws Error
+   * @return The circuit enode
+   */
+  saveDeleteBranchingPoint(branchingPoint: Object3D) :
+      {deletedWires?: UUID[] | undefined, mergedWires?: UUID[] | undefined}{
+    const circuit = this._sceneManager.getCircuit();
+    try {
+      if (!circuit) {
+        throw new Error('No circuit available in the scene manager.');
+      }
+      const result = circuit.removeBranchingPoint(branchingPoint.userData.id);
+
+      const event: SceneManagerEventMap['circuitElementAction'] = {
+        type: 'enode',
+        action: 'delete',
+        id: branchingPoint.userData.id,
+        error: null,
+        data: {
+          ...result
+        }
+      };
+      this._sceneManager.emit('circuitElementAction', event);
+      return result;
+    } catch (error) {
+      const event: SceneManagerEventMap['circuitElementAction'] = {
+        type: 'enode',
+        action: 'edit',
+        id: branchingPoint.userData.id,
+        error: error as Error,
+        data: null,
+      };
+      this._sceneManager.emit('circuitElementAction', event);
+      throw new Error((error as Error).message);
+    }
+  }
+
+  /**
+   * add wire to the core circuit model and emits the appropriate event.
+   * @param sourceEnodeId - the source enode ID
+   * @param targetEnodeId - the target enode ID
+   * @throws Error
+   * @return The circuit wire
+   */
+  saveAddWire(sourceEnodeId : UUID, targetEnodeId : UUID){
+    const circuit = this._sceneManager.getCircuit();
+    try {
+      if (!circuit) {
+        throw new Error('No circuit available in the scene manager.');
+      }
+      const addResult = circuit.addWire(sourceEnodeId, targetEnodeId);
+      if (addResult instanceof Error) {
+        throw new Error(addResult.message);
+      }
+      const wire = addResult as Wire;
+      const event: SceneManagerEventMap['circuitElementAction'] = {
+        type: 'wire',
+        action: 'add',
+        id: wire.id,
+        error: null,
+        data: {
+          node1: wire.node1,
+          node2: wire.node2,
+        }
+      };
+      this._sceneManager.emit('circuitElementAction', event);
+      return wire;
+    } catch (error) {
+      const event: SceneManagerEventMap['circuitElementAction'] = {
+        type: 'wire',
+        action: 'add',
+        id: undefined,
+        error: error as Error,
+        data: null,
+      };
+      this._sceneManager.emit('circuitElementAction', event);
+      throw new Error((error as Error).message);
+    }
   }
 
   /**
@@ -138,9 +270,9 @@ export class CircuitEditionManager {
    * @param position - Position for the new branching point
    * @returns Object containing the new branching point and two wires
    */
-  saveWireSplitAction(
-    wireId: UUID,
-    position: Position
+  saveSplitWire(
+      wireId: UUID,
+      position: Position
   ): { branchingPoint: ENode; wire1: Wire; wire2: Wire } {
     const circuit = this._sceneManager.getCircuit();
     if (!circuit) {
@@ -165,7 +297,7 @@ export class CircuitEditionManager {
    * @param positions - New intermediate positions
    * @returns The updated Wire
    */
-  saveWireIntermediatePositionsAction(wireId: UUID, positions: Position[]): Wire {
+  saveWireIntermediatePositions(wireId: UUID, positions: Position[]): Wire {
     const circuit = this._sceneManager.getCircuit();
     if (!circuit) {
       throw new Error('No circuit available in the scene manager.');
@@ -181,22 +313,4 @@ export class CircuitEditionManager {
     return updatedWire;
   }
 
-  /**
-   * Save ENode source type update.
-   * @param enodeId - ENode to update
-   * @param sourceType - New source type (null to clear)
-   */
-  saveENodeSourceTypeAction(enodeId: UUID, sourceType: ENodeSourceType | null): void {
-    const circuit = this._sceneManager.getCircuit();
-    if (!circuit) {
-      throw new Error('No circuit available in the scene manager.');
-    }
-
-    circuit.updateENodeSourceType(enodeId, sourceType);
-
-    this._sceneManager.emit('enodeSourceTypeChanged', {
-      enodeId,
-      sourceType,
-    });
-  }
 }

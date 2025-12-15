@@ -396,30 +396,48 @@ export class WireVisualManager {
     // Remove any existing preview
     this.removePreviewWire();
 
+    console.log(startPosition);
+
     // Create preview line geometry with two points (start and end at same position initially)
     const geometry = new LineGeometry();
-    geometry.setPositions([
-      startPosition.x,
-      startPosition.y,
-      startPosition.z,
-      startPosition.x,
-      startPosition.y,
-      startPosition.z,
+    geometry.setFromPoints([
+      startPosition.clone(),
+      startPosition.clone()
+      //startPosition.clone().add(new THREE.Vector3(5, 5, 5))
     ]);
 
     // Use a slightly different material for preview (dashed or lower opacity)
-    const material = createLine2Material(0x888888, 2);
-    material.opacity = 0.6;
-    material.transparent = true;
+    const material = createLine2Material(0xcccccc, 3);
+    material.opacity = 0.7;
+    material.dashed = true;
+    material.dashSize = 1;
+    material.gapSize = 0.3;
+    material.transparent = false;
 
     const previewLine = new Line2(geometry, material);
-    previewLine.layers.set(HitboxLayers.VISUAL);
     previewLine.renderOrder = 100; // Render on top
 
     this.previewWire = previewLine;
+    this.previewWire.userData = {
+      startPosition: startPosition.clone()
+    }
+
     this._sceneManager.getScene().add(previewLine);
 
     return previewLine;
+  }
+
+  /**
+   * Utility: read the first point from a LineGeometry instance.
+   * Returns a Vector3 in the geometry's local space, or null if unavailable.
+   */
+  private _getFirstPositionFromLineGeometry(geometry: LineGeometry): THREE.Vector3 | null {
+    // LineGeometry (examples) stores flattened positions in the 'position' attribute
+    const attr = (geometry as any).attributes?.position ?? (geometry as any).getAttribute?.('position');
+    if (!attr || !attr.array) return null;
+    const arr = attr.array as Float32Array | number[];
+    if (arr.length < 3) return null;
+    return new THREE.Vector3(arr[0], arr[1], arr[2]);
   }
 
   /**
@@ -432,14 +450,13 @@ export class WireVisualManager {
     }
 
     const geometry = this.previewWire.geometry as LineGeometry;
-    const positions = geometry.getAttribute('position').array as Float32Array;
 
-    // Update end position (keep start position unchanged)
-    positions[3] = endPosition.x;
-    positions[4] = endPosition.y;
-    positions[5] = endPosition.z;
+    const startPosition = this.previewWire.userData.startPosition;
 
-    geometry.setPositions(Array.from(positions));
+    geometry.setFromPoints([
+      startPosition.clone(),
+      endPosition.clone()
+    ]);
   }
 
   /**

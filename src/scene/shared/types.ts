@@ -98,8 +98,8 @@ export interface SceneManagerEventMap {
   // Model circuit events (add, edit, delete)
   circuitElementAction: {
     type: HoverableType;
-    id: UUID;
     action: ModelEditAction;
+    id?: UUID | undefined;
     error?: Error | null;
     data?: object | null;
   };

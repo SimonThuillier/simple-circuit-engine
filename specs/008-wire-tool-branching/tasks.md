@@ -39,8 +39,8 @@
 ### CircuitEditionManager Extensions
 
 - [X] T008 Implement `saveBranchingPointAction(position, sourceType?)` in src/scene/static/CircuitEditionManager.ts
-- [X] T009 Implement `saveWireSplitAction(wireId, position)` in src/scene/static/CircuitEditionManager.ts
-- [X] T010 Implement `saveWireIntermediatePositionsAction(wireId, positions)` in src/scene/static/CircuitEditionManager.ts
+- [X] T009 Implement `saveSplitWire(wireId, position)` in src/scene/static/CircuitEditionManager.ts
+- [X] T010 Implement `saveWireIntermediatePositions(wireId, positions)` in src/scene/static/CircuitEditionManager.ts
 - [X] T011 Implement `saveENodeSourceTypeAction(enodeId, sourceType)` in src/scene/static/CircuitEditionManager.ts
 
 ### WireVisualManager Extensions
@@ -84,20 +84,20 @@
 
 ### Implementation for User Story 1
 
-- [ ] T025 [US1] Define WireToolMode type ('idle' | 'wire_creating' | 'dragging') in src/scene/static/tools/WireTool.ts
-- [ ] T026 [US1] Define WireCreatingState and DraggingState interfaces in src/scene/static/tools/WireTool.ts
-- [ ] T027 [US1] Implement `onActivate()` with event listener setup in src/scene/static/tools/WireTool.ts
-- [ ] T028 [US1] Implement `onDeactivate()` with event listener cleanup in src/scene/static/tools/WireTool.ts
-- [ ] T029 [US1] Implement `handlePointerDown(event)` for single-click on enode to start wire creation in src/scene/static/tools/WireTool.ts
-- [ ] T030 [US1] Implement `startWireCreation(sourceEnodeId)` to enter wire_creating state in src/scene/static/tools/WireTool.ts
-- [ ] T031 [US1] Implement `handleGridPositionMove(position)` to update preview wire during creation in src/scene/static/tools/WireTool.ts
-- [ ] T032 [US1] Implement `completeWireCreation(targetEnodeId)` to create wire between two enodes in src/scene/static/tools/WireTool.ts
-- [ ] T033 [US1] Implement `handleKeyDown(event)` for Escape cancellation during wire creation in src/scene/static/tools/WireTool.ts
-- [ ] T034 [US1] Implement `cancelWireCreation()` to reset state and remove preview in src/scene/static/tools/WireTool.ts
-- [ ] T035 [US1] Implement `getCursorType()` returning crosshair/pointer/not-allowed based on context in src/scene/static/tools/WireTool.ts
-- [ ] T036 [US1] Add wire duplicate prevention check (FR-011) in src/scene/static/tools/WireTool.ts
-- [ ] T037 [US1] Add self-connection prevention check (FR-010) in src/scene/static/tools/WireTool.ts
-- [ ] T038 [US1] Implement wire visual creation via CircuitEditionManager in src/scene/static/tools/WireTool.ts
+- [X] T025 [US1] Define WireToolMode type ('idle' | 'wire_creating' | 'dragging') in src/scene/static/tools/WireTool.ts
+- [X] T026 [US1] Define WireCreatingState and DraggingState interfaces in src/scene/static/tools/WireTool.ts
+- [X] T027 [US1] Implement `onActivate()` with event listener setup in src/scene/static/tools/WireTool.ts
+- [X] T028 [US1] Implement `onDeactivate()` with event listener cleanup in src/scene/static/tools/WireTool.ts
+- [X] T029 [US1] Implement `handlePointerDown(event)` for single-click on enode to start wire creation in src/scene/static/tools/WireTool.ts
+- [X] T030 [US1] Implement `startWireCreation(sourceEnodeId)` to enter wire_creating state in src/scene/static/tools/WireTool.ts
+- [X] T031 [US1] Implement `handleGridPositionMove(position)` to update preview wire during creation in src/scene/static/tools/WireTool.ts
+- [X] T032 [US1] Implement `completeWireCreation(targetEnodeId)` to create wire between two enodes in src/scene/static/tools/WireTool.ts
+- [X] T033 [US1] Implement `handleKeyDown(event)` for Escape cancellation during wire creation in src/scene/static/tools/WireTool.ts
+- [X] T034 [US1] Implement `cancelWireCreation()` to reset state and remove preview in src/scene/static/tools/WireTool.ts
+- [X] T035 [US1] Implement `getCursorType()` returning crosshair/pointer/not-allowed based on context in src/scene/static/tools/WireTool.ts
+- [X] T036 [US1] Add wire duplicate prevention check (FR-011) in src/scene/static/tools/WireTool.ts
+- [X] T037 [US1] Add self-connection prevention check (FR-010) in src/scene/static/tools/WireTool.ts
+- [X] T038 [US1] Implement wire visual creation via CircuitEditionManager in src/scene/static/tools/WireTool.ts
 
 **Checkpoint**: Users can create wires between pins with preview and cancellation support
 
@@ -130,7 +130,7 @@
 - [ ] T042 [US3] Implement double-click vs single-click disambiguation (200ms timeout) in src/scene/static/tools/WireTool.ts
 - [ ] T043 [US3] Implement `handleDblClick(event)` for double-click detection in src/scene/static/tools/WireTool.ts
 - [ ] T044 [US3] Implement `createBranchingPointOnWire(wireId, position)` to split wire in src/scene/static/tools/WireTool.ts
-- [ ] T045 [US3] Call CircuitEditionManager.saveWireSplitAction for wire split in src/scene/static/tools/WireTool.ts
+- [ ] T045 [US3] Call CircuitEditionManager.saveSplitWire for wire split in src/scene/static/tools/WireTool.ts
 - [ ] T046 [US3] Update scene to remove old wire visual and add new wire visuals in src/scene/static/tools/WireTool.ts
 - [ ] T047 [US3] Add branching point visual to scene after creation in src/scene/static/tools/WireTool.ts
 

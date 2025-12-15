@@ -410,6 +410,7 @@
     <div id="editor-container">
       <div id="editor-menu">
         <div id="tool-position" class="tool-button">Position</div>
+        <div id="tool-wire" class="tool-button">Wiring</div>
       </div>
       <div id="viewer-container"></div>
     </div>
@@ -486,6 +487,9 @@
       });
       sceneManager.on('circuitElementAction', (e) => {
         console.log('circuitElementAction', e);
+      });
+      sceneManager.on('toolValidationError', (e) => {
+        console.warn('toolValidationError', e);
       });
 
       sceneManager.getControls().update();
@@ -576,6 +580,9 @@
 
       document.getElementById('tool-position').addEventListener('click', (e) => {
         sceneManager.toggleTool('position');
+      });
+      document.getElementById('tool-wire').addEventListener('click', (e) => {
+        sceneManager.toggleTool('wire');
       });
     </script>
   </body>

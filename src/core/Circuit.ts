@@ -406,6 +406,67 @@ export class Circuit {
   }
 
   /**
+   * Remove a branching point electrical node from the circuit.
+   * Also removes all wires connected to this branching point if there are more than 2.
+   * In the case there are exactly two wires, they will be merged before removing the branching point.
+   *
+   * @param id - Branching point ENode UUID
+   * @throws {Error} If ENode does not exist or is not a branching point
+   */
+  removeBranchingPoint(id: UUID):
+      {deletedWires?: UUID[] | undefined, mergedWires?: UUID[] | undefined} {
+    const enode = this.enodes.get(id);
+
+    if (!enode) {
+      throw new Error(`Enode ${id} does not exist`);
+    }
+    if (enode.type !== ENodeType.BranchingPoint) {
+      throw new Error(`Enode ${id} is not a branching point, it must be removed with its component.`);
+    }
+
+    const result = {};
+
+    // Remove all wires connected to this branching point
+    const wires = this.getWiresByNode(id);
+
+    if (wires.length === 1 || wires.length > 2) {
+        const deletedWires: UUID[] = [];
+        for (const wire of wires) {
+            this.removeWire(wire.id);
+            deletedWires.push(wire.id);
+        }
+        Object.assign(result, {deletedWires});
+    }
+    else if (wires.length === 2) {
+        // Merge the two wires into one
+        const wire1 = wires[0]!;
+        const wire2 = wires[1]!;
+
+        // Determine the two nodes to connect
+        const otherNode1 = wire1.node1 === id ? wire1.node2 : wire1.node1;
+        const otherNode2 = wire2.node1 === id ? wire2.node2 : wire2.node1;
+
+        // Remove the old wires
+        this.removeWire(wire1.id);
+        this.removeWire(wire2.id);
+
+        // Create new wire connecting the two other nodes
+        const newWire = this.addWire(otherNode1, otherNode2);
+        if (newWire instanceof Error) {
+            throw new Error(`Failed to merge wires at branching point ${id}: ${newWire.message}`);
+        }
+        Object.assign(result, {mergedWires: [wire1.id, wire2.id]});
+    }
+
+
+
+    // Remove the branching point ENode
+    this.enodes.delete(id);
+    return result;
+  }
+
+
+  /**
    * Add a wire connecting two electrical nodes.
    *
    * Validates that both nodes exist, not a self-connection, and no duplicate.
@@ -462,16 +523,13 @@ export class Circuit {
   /**
    * Remove a wire from the circuit.
    *
-   * Automatically removes orphaned branching ENodes (nodes with no
-   * remaining wire connections).
-   *
    * @param id - Wire UUID
    * @throws {Error} If wire does not exist
    *
    * @example
    * ```typescript
    * circuit.removeWire(wireId);
-   * // Wire and any orphaned branching points are removed
+   * // Wire is removed
    * ```
    */
   removeWire(id: UUID): void {
@@ -497,12 +555,13 @@ export class Circuit {
     this.wires.delete(id);
 
     // Clean up orphaned branching points
-    if (enode1 && enode1.type === ENodeType.BranchingPoint && enode1.wires.size === 0) {
-      this.enodes.delete(enode1.id);
-    }
-    if (enode2 && enode2.type === ENodeType.BranchingPoint && enode2.wires.size === 0) {
-      this.enodes.delete(enode2.id);
-    }
+    // Deprecated : branching Points can now exist without wires
+    // if (enode1 && enode1.type === ENodeType.BranchingPoint && enode1.wires.size === 0) {
+    //   this.enodes.delete(enode1.id);
+    // }
+    // if (enode2 && enode2.type === ENodeType.BranchingPoint && enode2.wires.size === 0) {
+    //   this.enodes.delete(enode2.id);
+    // }
   }
 
   /**
@@ -571,6 +630,23 @@ export class Circuit {
       wire2: newWire2,
     };
   }
+
+  getWireBetweenNodes(node1: UUID, node2: UUID): Wire | undefined {
+    const enode1 = this.enodes.get(node1);
+    if (!enode1) {
+      return undefined;
+    }
+    // Check if any wire from node1 connects to node2
+    for (const wireId of enode1.wires) {
+      const wire = this.wires.get(wireId);
+      if (wire && (wire.node2 === node2 || wire.node1 === node2)) {
+        return wire;
+      }
+    }
+    return undefined;
+  }
+
+
 
   /**
    * Get a wire by ID.

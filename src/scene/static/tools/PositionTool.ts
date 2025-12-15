@@ -42,6 +42,12 @@ export class PositionTool implements IEditingTool {
 
   constructor(sceneManager: CircuitSceneManager) {
     this._sceneManager = sceneManager;
+
+    this.handlePointerDown = this.handlePointerDown.bind(this);
+    this.handlePointerUp = this.handlePointerUp.bind(this);
+    this.handleGridPositionMove = this.handleGridPositionMove.bind(this);
+    this.handleKeyDown = this.handleKeyDown.bind(this);
+    this.handleDblClick = this.handleDblClick.bind(this);
   }
 
   /**
@@ -53,12 +59,6 @@ export class PositionTool implements IEditingTool {
     this.dragState = null;
 
     const container = this._sceneManager.getContainer();
-
-    this.handlePointerDown = this.handlePointerDown.bind(this);
-    this.handlePointerUp = this.handlePointerUp.bind(this);
-    this.handleGridPositionMove = this.handleGridPositionMove.bind(this);
-    this.handleKeyDown = this.handleKeyDown.bind(this);
-    this.handleDblClick = this.handleDblClick.bind(this);
 
     container.addEventListener('pointerdown', this.handlePointerDown);
     container.addEventListener('pointerup', this.handlePointerUp);
