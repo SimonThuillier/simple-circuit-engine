@@ -163,10 +163,10 @@
 
 ### Implementation for User Story 5
 
-- [ ] T052 [US5] Implement `cycleBranchingPointSourceType(enodeId)` in src/scene/static/tools/WireTool.ts
-- [ ] T053 [US5] Add branching point detection to handleDblClick (prioritize over wire/empty) in src/scene/static/tools/WireTool.ts
-- [ ] T054 [US5] Call CircuitEditionManager.saveENodeSourceTypeAction for sourceType update in src/scene/static/tools/WireTool.ts
-- [ ] T055 [US5] Update branching point visual color after sourceType change in src/scene/static/tools/WireTool.ts
+- [X] T052 [US5] Implement `cycleBranchingPointSourceType(enodeId)` in src/scene/static/tools/WireTool.ts
+- [X] T053 [US5] Add branching point detection to handleDblClick (prioritize over wire/empty) in src/scene/static/tools/WireTool.ts
+- [X] T054 [US5] Call CircuitEditionManager.saveENodeSourceTypeAction for sourceType update in src/scene/static/tools/WireTool.ts
+- [X] T055 [US5] Update branching point visual color after sourceType change in src/scene/static/tools/WireTool.ts
 
 **Checkpoint**: Double-click on branching point cycles sourceType with visual feedback
 
@@ -180,19 +180,19 @@
 
 ### Implementation for User Story 3b
 
-- [ ] T056 [US3b] Implement screen-space proximity detection (10px threshold) utility in src/scene/static/tools/WireTool.ts
-- [ ] T057 [US3b] Implement `findNearestIntermediatePoint(wireId, screenPos)` in src/scene/static/tools/WireTool.ts
-- [ ] T058 [US3b] Implement `getInsertIndexForPosition(wireId, position)` for new point insertion in src/scene/static/tools/WireTool.ts
-- [ ] T059 [US3b] Implement `startDrag(wireId, target, position)` to enter dragging state in src/scene/static/tools/WireTool.ts
-- [ ] T060 [US3b] Add single-click on wire detection to handlePointerDown in src/scene/static/tools/WireTool.ts
-- [ ] T061 [US3b] Implement drag target resolution: branching point > existing intermediate > new intermediate in src/scene/static/tools/WireTool.ts
-- [ ] T062 [US3b] Implement `updateDrag(position)` to move drag target with grid snapping in src/scene/static/tools/WireTool.ts
-- [ ] T063 [US3b] Implement real-time wire geometry update during drag in src/scene/static/tools/WireTool.ts
-- [ ] T064 [US3b] Implement `commitDrag()` to persist intermediate positions to model in src/scene/static/tools/WireTool.ts
-- [ ] T065 [US3b] Implement `cancelDrag()` to revert to original positions on Escape in src/scene/static/tools/WireTool.ts
-- [ ] T066 [US3b] Add handlePointerUp for drag commit in src/scene/static/tools/WireTool.ts
-- [ ] T067 [US3b] Implement intermediate point merge/delete when dropped on endpoint or other intermediate in src/scene/static/tools/WireTool.ts
-- [ ] T068 [US3b] Implement branching point drag (moves connected wires) in src/scene/static/tools/WireTool.ts
+- [X] T056 [US3b] Implement screen-space proximity detection (10px threshold) utility in src/scene/static/tools/WireTool.ts
+- [X] T057 [US3b] Implement `findNearestIntermediatePoint(wireId, screenPos)` in src/scene/static/tools/WireTool.ts
+- [X] T058 [US3b] Implement `getInsertIndexForPosition(wireId, position)` for new point insertion in src/scene/static/tools/WireTool.ts
+- [X] T059 [US3b] Implement `startDrag(wireId, target, position)` to enter dragging state in src/scene/static/tools/WireTool.ts
+- [X] T060 [US3b] Add single-click on wire detection to handlePointerDown in src/scene/static/tools/WireTool.ts
+- [X] T061 [US3b] Implement drag target resolution: branching point > existing intermediate > new intermediate in src/scene/static/tools/WireTool.ts
+- [X] T062 [US3b] Implement `updateDrag(position)` to move drag target with grid snapping in src/scene/static/tools/WireTool.ts
+- [X] T063 [US3b] Implement real-time wire geometry update during drag in src/scene/static/tools/WireTool.ts
+- [X] T064 [US3b] Implement `commitDrag()` to persist intermediate positions to model in src/scene/static/tools/WireTool.ts
+- [X] T065 [US3b] Implement `cancelDrag()` to revert to original positions on Escape in src/scene/static/tools/WireTool.ts
+- [X] T066 [US3b] Add handlePointerUp for drag commit in src/scene/static/tools/WireTool.ts
+- [X] T067 [US3b] Implement intermediate point merge/delete when dropped on endpoint or other intermediate in src/scene/static/tools/WireTool.ts
+- [X] T068 [US3b] Implement branching point drag (moves connected wires) in src/scene/static/tools/WireTool.ts
 
 **Checkpoint**: Single-click drag on wire manipulates intermediate points with grid snapping
 
@@ -202,14 +202,14 @@
 
 **Purpose**: Final integration and cleanup
 
-- [ ] T069 Add JSDoc documentation to BranchingPointVisualFactory in src/scene/shared/components/BranchingPointVisualFactory.ts
-- [ ] T070 Add JSDoc documentation to new WireTool methods in src/scene/static/tools/WireTool.ts
-- [ ] T071 Add JSDoc documentation to Circuit extensions in src/core/Circuit.ts
-- [ ] T072 [P] Add JSDoc documentation to WireVisualManager extensions in src/scene/shared/WireVisualManager.ts
-- [ ] T073 [P] Add JSDoc documentation to CircuitEditionManager extensions in src/scene/static/CircuitEditionManager.ts
-- [ ] T074 Verify all event emissions (wireCreated, branchingPointCreated, etc.) in src/scene/static/tools/WireTool.ts
-- [ ] T075 Run `npm test && npm run lint` to verify all tests pass and no lint errors
-- [ ] T076 Manual integration test: Create circuit with wires, branching points, intermediate points
+- [X] T069 Add JSDoc documentation to BranchingPointVisualFactory in src/scene/shared/components/BranchingPointVisualFactory.ts
+- [X] T070 Add JSDoc documentation to new WireTool methods in src/scene/static/tools/WireTool.ts
+- [X] T071 Add JSDoc documentation to Circuit extensions in src/core/Circuit.ts
+- [X] T072 [P] Add JSDoc documentation to WireVisualManager extensions in src/scene/shared/WireVisualManager.ts
+- [X] T073 [P] Add JSDoc documentation to CircuitEditionManager extensions in src/scene/static/CircuitEditionManager.ts
+- [X] T074 Verify all event emissions (wireCreated, branchingPointCreated, etc.) in src/scene/static/tools/WireTool.ts
+- [X] T075 Run `npm test && npm run lint` to verify all tests pass and no lint errors
+- [X] T076 Manual integration test: Create circuit with wires, branching points, intermediate points
 
 ---
 
