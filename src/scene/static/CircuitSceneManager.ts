@@ -96,7 +96,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
   private selectionManager: SelectionManager | null = null;
 
   // WireVisualManager (Phase 3 - User Story 3)
-  private wireVisualManager: WireVisualManager = new WireVisualManager();
+  private wireVisualManager: WireVisualManager = new WireVisualManager(this);
 
   // CircuitEditionManager handles saving edits to the core model
   private circuitEditionManager: CircuitEditionManager = new CircuitEditionManager(this);
@@ -1505,33 +1505,23 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
   }
 
   private _createWireObject3D(wire: Wire): void {
+    if (!this.scene || !this.circuit) {
+      console.warn(`Cannot create wire ${wire.id}: scene or circuit not initialized`);
+      return;
+    }
     try {
-      if (!this.scene || !this.circuit) {
-        console.warn(`Cannot create wire ${wire.id}: scene or circuit not initialized`);
-        return;
-      }
-
       // Use WireVisualManager to create wire with pin-accurate endpoints
-      const line = this.wireVisualManager.createOrUpdateWire(
-          wire,
-          this.circuit,
-          this.scene,
-          this.componentObject3Ds
-      );
-
-      // Track in wireObject3Ds for backward compatibility
-      this.wireObject3Ds.set(wire.id, line);
+      this.wireVisualManager.createOrUpdateWire(wire);
     } catch (error) {
       const err = error as Error;
-      console.warn(`Failed to create mesh for wire ${wire.id}:`, err.message);
+      console.warn(`Failed to create Line2 for wire ${wire.id}:`, err.message);
     }
   }
 
   private _removeWireObject3D(id: string): void {
     if (this.wireObject3Ds.has(id)) {
-      // Use WireVisualManager to remove wire (handles disposal)
+      // Use WireVisualManager to remove wire (handles all disposal)
       this.wireVisualManager.removeWire(id);
-      this.wireObject3Ds.delete(id);
     }
   }
 

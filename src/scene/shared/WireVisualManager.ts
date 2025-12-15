@@ -17,6 +17,8 @@ import type { Circuit } from '../../core/Circuit';
 import type { Wire } from '../../core/Wire';
 import { ENodeType } from '../../core/types/ENodeType';
 import { createLine2Material } from './MaterialUtils';
+import type {CircuitSceneManager} from "../static/CircuitSceneManager";
+import type {WireMaterialState} from "./types";
 
 /**
  * Wire path representation for rendering
@@ -36,6 +38,7 @@ export interface WirePath {
  * - Create wire visuals with endpoints at actual pin positions
  * - Support multi-segment wires via intermediatePositions
  * - Update wires dynamically when components move/rotate
+ * - may add and remove wire and branching point object3Ds in the scene directly
  *
  * @example
  * ```typescript
@@ -49,21 +52,17 @@ export interface WirePath {
  * ```
  */
 export class WireVisualManager {
-  /** Map of wire ID to Line2 objects */
-  private wireLines: Map<UUID, Line2> = new Map();
+  private _sceneManager: CircuitSceneManager;
 
-  /** Shared LineMaterial for all wires (memory efficient, consistent styling) */
-  private wireMaterial: LineMaterial;
+  /** Shared LineMaterials for all wires (memory efficient, consistent styling) */
+  private wireMaterials: Map<WireMaterialState, LineMaterial> = new Map();
 
-  /** Reference to the scene for adding/removing wires */
-  private scene: THREE.Scene | null = null;
-
-  /** Reference to component groups for pin position lookup */
-  private componentGroups: Map<UUID, THREE.Object3D> = new Map();
-
-  constructor() {
+  constructor(sceneManager: CircuitSceneManager) {
+    this._sceneManager = sceneManager;
     // Create shared LineMaterial with default white color and 2px width
-    this.wireMaterial = createLine2Material(0xffffff, 2);
+    this.wireMaterials = new Map([
+        ['idle', createLine2Material(0xffffff, 2)]
+    ]);
   }
 
   /**
@@ -85,30 +84,24 @@ export class WireVisualManager {
    * ```
    */
   setResolution(width: number, height: number): void {
-    this.wireMaterial.resolution.set(width, height);
+    for(const material of this.wireMaterials.values()) {
+      material.resolution.set(width, height);
+    }
   }
 
   /**
    * Create or update the visual for a wire
    *
    * @param wire - Wire to render
-   * @param circuit - Circuit containing the wire (for ENode lookup)
-   * @param scene - Three.js scene to add wire to
-   * @param componentGroups - Map of component ID to Three.js objects
    * @returns The created/updated Line2 object
    */
   createOrUpdateWire(
-    wire: Wire,
-    circuit: Circuit,
-    scene: THREE.Scene,
-    componentGroups: Map<UUID, THREE.Object3D>
+    wire: Wire
   ): Line2 {
-    this.scene = scene;
-    this.componentGroups = componentGroups;
 
-    const wirePath = this.computeWirePath(wire, circuit, componentGroups);
+    const wirePath = this.computeWirePath(wire);
 
-    let line = this.wireLines.get(wire.id);
+    let line = this._sceneManager.getWireObject3Ds().get(wire.id);
 
     if (line) {
       // Update existing line geometry
@@ -120,15 +113,15 @@ export class WireVisualManager {
       // Create new Line2
       const geometry = new LineGeometry();
       geometry.setFromPoints(wirePath.points);
-      line = new Line2(geometry, this.wireMaterial);
+      line = new Line2(geometry, this.wireMaterials.get('idle'));
       line.userData = {
         type: 'wire',
         wireId: wire.id,
       };
-      this.wireLines.set(wire.id, line);
-      scene.add(line);
+      this._sceneManager.getWireObject3Ds().set(wire.id, line);
+      // Adding to scene is directly done here
+      this._sceneManager.getScene().add(line);
     }
-
     return line;
   }
 
@@ -136,15 +129,14 @@ export class WireVisualManager {
    * Compute the full path for a wire including intermediate positions
    *
    * @param wire - Wire to compute path for
-   * @param circuit - Circuit for ENode position lookup
-   * @param componentGroups - Map of component ID to Three.js objects
    * @returns WirePath with array of Vector3 points from start to end
    */
   computeWirePath(
-    wire: Wire,
-    circuit: Circuit,
-    componentGroups: Map<UUID, THREE.Object3D>
+    wire: Wire
   ): WirePath {
+    const circuit = this._sceneManager.getCircuit()!; // TODO handle null circuit
+    const componentObject3Ds = this._sceneManager.getComponentObject3Ds();
+
     const node1 = circuit.getENode(wire.node1);
     const node2 = circuit.getENode(wire.node2);
 
@@ -153,21 +145,21 @@ export class WireVisualManager {
     }
 
     // Get start position
-    const startPos = this.getENodeWorldPosition(
+    const startPos = this._getENodeWorldPosition(
       node1.id,
       node1.type,
       node1.component,
       circuit,
-      componentGroups
+      componentObject3Ds
     );
 
     // Get end position
-    const endPos = this.getENodeWorldPosition(
+    const endPos = this._getENodeWorldPosition(
       node2.id,
       node2.type,
       node2.component,
       circuit,
-      componentGroups
+      componentObject3Ds
     );
 
     // Build full path: start -> intermediate positions -> end
@@ -196,7 +188,7 @@ export class WireVisualManager {
    * @param componentGroups - Map of component ID to Three.js objects
    * @returns World position as Vector3
    */
-  getENodeWorldPosition(
+  private _getENodeWorldPosition(
     enodeId: UUID,
     enodeType: ENodeType,
     componentId: UUID | undefined,
@@ -212,6 +204,7 @@ export class WireVisualManager {
         }
       }
       // Fallback to component center if pin not found in visual hierarchy
+      // TODO: handles regularly when branching points are renderered as scene objects
       const enode = circuit.getENode(enodeId);
       if (enode) {
         const pos = enode.getPosition(circuit);
@@ -264,15 +257,11 @@ export class WireVisualManager {
    * Called when a component is moved or rotated to update wire endpoints.
    *
    * @param componentId - Component that moved
-   * @param circuit - Circuit for wire/ENode lookup
-   * @param componentGroups - Map of component ID to Three.js objects
    */
   updateWiresForComponent(
-    componentId: UUID,
-    circuit: Circuit,
-    componentGroups: Map<UUID, THREE.Object3D>
+    componentId: UUID
   ): void {
-    if (!this.scene) return;
+    const circuit = this._sceneManager.getCircuit()!; // TODO handle null circuit
 
     const component = circuit.getComponent(componentId);
     if (!component) return;
@@ -293,7 +282,7 @@ export class WireVisualManager {
     for (const wireId of wireIdsToUpdate) {
       const wire = circuit.getWire(wireId);
       if (wire) {
-        this.createOrUpdateWire(wire, circuit, this.scene, componentGroups);
+        this.createOrUpdateWire(wire);
       }
     }
   }
@@ -302,15 +291,13 @@ export class WireVisualManager {
    * Update a specific wire's geometry
    *
    * @param wireId - Wire ID to update
-   * @param circuit - Circuit for wire/ENode lookup
-   * @param componentGroups - Map of component ID to Three.js objects
    */
-  updateWire(wireId: UUID, circuit: Circuit, componentGroups: Map<UUID, THREE.Object3D>): void {
-    if (!this.scene) return;
+  updateWire(wireId: UUID): void {
+    const circuit = this._sceneManager.getCircuit()!; // TODO handle null circuit
 
     const wire = circuit.getWire(wireId);
     if (wire) {
-      this.createOrUpdateWire(wire, circuit, this.scene, componentGroups);
+      this.createOrUpdateWire(wire);
     }
   }
 
@@ -320,14 +307,15 @@ export class WireVisualManager {
    * @param wireId - Wire ID to remove
    */
   removeWire(wireId: UUID): void {
-    const line = this.wireLines.get(wireId);
+    const wireLines = this._sceneManager.getWireObject3Ds();
+    const scene = this._sceneManager.getScene();
+
+    const line = wireLines.get(wireId);
     if (line) {
-      if (this.scene) {
-        this.scene.remove(line);
-      }
+      scene.remove(line);
       line.geometry.dispose();
       // Do NOT dispose material - it's shared across all wires
-      this.wireLines.delete(wireId);
+      wireLines.delete(wireId);
     }
   }
 
@@ -338,7 +326,7 @@ export class WireVisualManager {
    * @returns Line2 or undefined if not found
    */
   getWireLine(wireId: UUID): Line2 | undefined {
-    return this.wireLines.get(wireId);
+    return this._sceneManager.getWireObject3Ds().get(wireId);
   }
 
   /**
@@ -348,7 +336,7 @@ export class WireVisualManager {
    * @returns true if wire visual exists
    */
   hasWire(wireId: UUID): boolean {
-    return this.wireLines.has(wireId);
+    return this._sceneManager.getWireObject3Ds().has(wireId);
   }
 
   /**
@@ -357,26 +345,26 @@ export class WireVisualManager {
    * @returns Array of wire UUIDs
    */
   getWireIds(): UUID[] {
-    return Array.from(this.wireLines.keys());
+    return Array.from(this._sceneManager.getWireObject3Ds().keys());
   }
 
   /**
    * Clean up all managed wire visuals
    */
   dispose(): void {
-    for (const [_wireId, line] of this.wireLines) {
-      if (this.scene) {
-        this.scene.remove(line);
-      }
+    const wireLines = this._sceneManager.getWireObject3Ds();
+    const scene = this._sceneManager.getScene();
+    for (const [_wireId, line] of wireLines) {
+      scene.remove(line);
       line.geometry.dispose();
       // Individual wire materials are NOT disposed here - only geometries
     }
-    this.wireLines.clear();
+    wireLines.clear();
 
     // Dispose shared material once during full cleanup
-    this.wireMaterial.dispose();
-
-    this.scene = null;
-    this.componentGroups.clear();
+    for(const material of this.wireMaterials.values()) {
+      material.dispose();
+    }
+    this.wireMaterials.clear();
   }
 }

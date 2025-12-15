@@ -41,7 +41,7 @@ interface WirePath {
 ```typescript
 class WireVisualManager {
   private wireLines: Map<UUID, THREE.Line>;  // One Line per wire
-  private scene: THREE.Scene | null;
+  private scene: THREE.Scene | null; // 
   private componentGroups: Map<UUID, THREE.Object3D>;
 }
 ```
@@ -49,12 +49,11 @@ class WireVisualManager {
 **After (Refactored)**:
 ```typescript
 class WireVisualManager {
-  private wireLines: Map<UUID, Line2>;       // One Line2 per wire
-  private wireMaterial: LineMaterial;        // Shared material for all wires
-  private scene: THREE.Scene | null;
-  private componentGroups: Map<UUID, THREE.Object3D>;
+  private _sceneManager: Map<UUID, Line2>;       // One Line2 per wire
+  private wireMaterials: Map<WireVisualState, LineMaterial>; // Shared material for all wires in the same state
 }
 ```
+NB : the WireVisualManager references its parent SceneManager to get access to the THREE.Scene and component groups avoiding duplication of references to the same objects.
 
 ### Key Differences
 
@@ -65,6 +64,19 @@ class WireVisualManager {
 | Material | `THREE.LineBasicMaterial` (per wire) | `LineMaterial` (shared) |
 | Line Width | Ignored by WebGL (always 1px) | Configurable, consistent width |
 | Resolution | N/A | Required on LineMaterial |
+
+---
+
+## New Public Types
+```typescript
+/**
+ * Supported wires material states for visual feedback
+ */
+export type WireMaterialState =
+    | 'idle'
+    | 'hovered'
+    | 'selected';
+```
 
 ---
 

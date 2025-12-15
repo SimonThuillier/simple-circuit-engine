@@ -211,28 +211,30 @@ expect(line).toBeInstanceOf(Line2);
 | B | Set resolution via dedicated method | Clean API | Extra method call |
 | C | Share LineMaterial across all wires | Memory efficient | Coupling |
 
-**Selected**: Option A - Each wire must have its own LineMaterial instance to handle hovering and selection effects (e.g., color change).
+**Selected**: Option C - Each wire has a shared LineMaterial accross few variants (idle, hovered, selected ...) to handle user actions visual feedbacks.
 
 **Rationale**:
 - All wires use same visual style (white, 2px)
 - Reduces memory footprint
-- Single place to update resolution on resize
-- LineMaterial resolution update only needed once
+- Single place to update resolution ony once on resize
+- Allows easy future extension for different visual states
 
 **Implementation**:
 ```typescript
 class WireVisualManager {
-  private wireMaterial: LineMaterial;
+  private wireMaterials: Map<WireVisualState, LineMaterial>
 
   constructor() {
-    this.wireMaterial = new LineMaterial({
-      color: 0xffffff,
-      linewidth: 2,
-    });
+      // Create shared LineMaterial with default white color and 2px width
+      this.wireMaterials = new Map([
+          ['idle', createLine2Material(0xffffff, 2)]
+      ]);
   }
 
   setResolution(width: number, height: number): void {
-    this.wireMaterial.resolution.set(width, height);
+      for(const material of this.wireMaterials.values()) {
+          material.resolution.set(width, height);
+      }
   }
 }
 ```

@@ -241,6 +241,14 @@ export interface WireHitboxUserData {
  */
 export type HitboxUserData = EnodeHitboxUserData | ComponentHitboxUserData | WireHitboxUserData;
 
+/**
+ * Supported wires material states for visual feedback
+ */
+export type WireMaterialState =
+    | 'idle'
+    | 'hovered'
+    | 'selected';
+
 /** Represents the Selection of one Hoverable Element of the scene **/
 export interface MonoSelectionData {
   kind: 'mono';
