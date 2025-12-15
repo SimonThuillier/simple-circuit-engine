@@ -6,6 +6,8 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as THREE from 'three';
+import { Line2 } from 'three/examples/jsm/lines/Line2.js';
+import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { WireVisualManager } from '../../../src/scene/shared/WireVisualManager';
 import { Circuit } from '../../../src/core/Circuit';
 import { ComponentType } from '../../../src/core/types/ComponentType';
@@ -50,17 +52,40 @@ function createMockComponentGroup(
   return group;
 }
 
+/**
+ * Create a mock CircuitSceneManager for testing
+ */
+function createMockSceneManager(
+  circuit: Circuit,
+  scene: THREE.Scene,
+  componentGroups: Map<UUID, THREE.Object3D>,
+  wireLines: Map<UUID, Line2>
+) {
+  return {
+    getCircuit: () => circuit,
+    getScene: () => scene,
+    getComponentObject3Ds: () => componentGroups,
+    getWireObject3Ds: () => wireLines,
+  };
+}
+
 describe('WireVisualManager', () => {
   let wireManager: WireVisualManager;
   let scene: THREE.Scene;
   let circuit: Circuit;
   let componentGroups: Map<UUID, THREE.Object3D>;
+  let wireLines: Map<UUID, Line2>;
+  let mockSceneManager: any;
 
   beforeEach(() => {
-    wireManager = new WireVisualManager();
     scene = new THREE.Scene();
     circuit = new Circuit('Test Circuit');
     componentGroups = new Map();
+    wireLines = new Map();
+    mockSceneManager = createMockSceneManager(circuit, scene, componentGroups, wireLines);
+    wireManager = new WireVisualManager(mockSceneManager);
+    // Set resolution for Line2 rendering (required for LineMaterial)
+    wireManager.setResolution(800, 600);
   });
 
   afterEach(() => {
@@ -69,7 +94,7 @@ describe('WireVisualManager', () => {
   });
 
   describe('createOrUpdateWire()', () => {
-    it('should create a new THREE.Line for a wire', () => {
+    it('should create a new Line2 for a wire', () => {
       // Add two components with positions
       const comp1 = circuit.addComponent(ComponentType.Battery, { x: 0, y: 0 }, 0);
       const comp2 = circuit.addComponent(ComponentType.Battery, { x: 10, y: 0 }, 0);
@@ -90,9 +115,10 @@ describe('WireVisualManager', () => {
       );
 
       // Create wire visual
-      const line = wireManager.createOrUpdateWire(wire, circuit, scene, componentGroups);
+      const line = wireManager.createOrUpdateWire(wire);
 
-      expect(line).toBeInstanceOf(THREE.Line);
+      expect(line).toBeInstanceOf(Line2);
+      expect(line.geometry).toBeInstanceOf(LineGeometry);
       expect(line.userData.type).toBe('wire');
       expect(line.userData.wireId).toBe(wire.id);
     });
@@ -111,12 +137,12 @@ describe('WireVisualManager', () => {
         createMockComponentGroup(comp2.id, [...comp2.pins], { x: 10, y: 0 })
       );
 
-      wireManager.createOrUpdateWire(wire, circuit, scene, componentGroups);
+      wireManager.createOrUpdateWire(wire);
 
       // Find the wire line in scene
       let wireLineFound = false;
       scene.traverse((child) => {
-        if (child instanceof THREE.Line && child.userData.wireId === wire.id) {
+        if (child instanceof Line2 && child.userData.wireId === wire.id) {
           wireLineFound = true;
         }
       });
@@ -139,12 +165,12 @@ describe('WireVisualManager', () => {
       );
 
       // Create initial wire
-      const line1 = wireManager.createOrUpdateWire(wire, circuit, scene, componentGroups);
+      const line1 = wireManager.createOrUpdateWire(wire);
       const geometry1 = line1.geometry;
 
       // Move component group and update
       componentGroups.get(comp2.id)!.position.set(20, 0, 0);
-      const line2 = wireManager.createOrUpdateWire(wire, circuit, scene, componentGroups);
+      const line2 = wireManager.createOrUpdateWire(wire);
 
       // Should return the same line object
       expect(line2).toBe(line1);
@@ -167,13 +193,13 @@ describe('WireVisualManager', () => {
       );
 
       // Create wire twice
-      wireManager.createOrUpdateWire(wire, circuit, scene, componentGroups);
-      wireManager.createOrUpdateWire(wire, circuit, scene, componentGroups);
+      wireManager.createOrUpdateWire(wire);
+      wireManager.createOrUpdateWire(wire);
 
       // Count wire lines in scene
       let wireCount = 0;
       scene.traverse((child) => {
-        if (child instanceof THREE.Line && child.userData.wireId === wire.id) {
+        if (child instanceof Line2 && child.userData.wireId === wire.id) {
           wireCount++;
         }
       });
@@ -197,7 +223,7 @@ describe('WireVisualManager', () => {
         createMockComponentGroup(comp2.id, [...comp2.pins], { x: 10, y: 0 })
       );
 
-      const wirePath = wireManager.computeWirePath(wire, circuit, componentGroups);
+      const wirePath = wireManager.computeWirePath(wire);
 
       expect(wirePath.wireId).toBe(wire.id);
       expect(wirePath.points).toHaveLength(2);
@@ -224,7 +250,7 @@ describe('WireVisualManager', () => {
         createMockComponentGroup(comp2.id, [...comp2.pins], { x: 10, y: 0 })
       );
 
-      const wirePath = wireManager.computeWirePath(wire, circuit, componentGroups);
+      const wirePath = wireManager.computeWirePath(wire);
 
       // Should have: start + 2 intermediate + end = 4 points
       expect(wirePath.points).toHaveLength(4);
@@ -255,7 +281,7 @@ describe('WireVisualManager', () => {
         createMockComponentGroup(comp2.id, [...comp2.pins], { x: 10, y: 0 })
       );
 
-      const wirePath = wireManager.computeWirePath(wire, circuit, componentGroups);
+      const wirePath = wireManager.computeWirePath(wire);
 
       // Should have: start + 1 intermediate + end = 3 points
       expect(wirePath.points).toHaveLength(3);
@@ -283,7 +309,7 @@ describe('WireVisualManager', () => {
         createMockComponentGroup(comp2.id, [...comp2.pins], { x: 10, y: 0 })
       );
 
-      const wirePath = wireManager.computeWirePath(wire, circuit, componentGroups);
+      const wirePath = wireManager.computeWirePath(wire);
 
       // Should have: start + 5 intermediate + end = 7 points
       expect(wirePath.points).toHaveLength(7);
@@ -310,55 +336,10 @@ describe('WireVisualManager', () => {
         createMockComponentGroup(comp2.id, [...comp2.pins], { x: 10, y: 0 })
       );
 
-      const wirePath = wireManager.computeWirePath(wire, circuit, componentGroups);
+      const wirePath = wireManager.computeWirePath(wire);
 
       // Should have: start + 10 intermediate + end = 12 points
       expect(wirePath.points).toHaveLength(12);
-    });
-  });
-
-  describe('getENodeWorldPosition()', () => {
-    it('should return pin world position from component group', () => {
-      const comp = circuit.addComponent(ComponentType.Battery, { x: 5, y: 3 }, 0);
-      const pinId = comp.pins[0];
-      const enode = circuit.getENode(pinId)!;
-
-      const group = createMockComponentGroup(comp.id, [...comp.pins], { x: 5, y: 3 });
-      componentGroups.set(comp.id, group);
-
-      const position = wireManager.getENodeWorldPosition(
-        pinId,
-        enode.type,
-        comp.id,
-        circuit,
-        componentGroups
-      );
-
-      expect(position).toBeInstanceOf(THREE.Vector3);
-      // Y should be 0 (ground plane)
-      expect(position.y).toBe(0);
-    });
-
-    it('should return fallback position when pin not found in group', () => {
-      const comp = circuit.addComponent(ComponentType.Battery, { x: 5, y: 3 }, 0);
-      const pinId = comp.pins[0];
-      const enode = circuit.getENode(pinId)!;
-
-      // Create empty group without pins
-      const emptyGroup = new THREE.Group();
-      emptyGroup.userData = { componentId: comp.id };
-      componentGroups.set(comp.id, emptyGroup);
-
-      const position = wireManager.getENodeWorldPosition(
-        pinId,
-        enode.type,
-        comp.id,
-        circuit,
-        componentGroups
-      );
-
-      // Should fall back to ENode.getPosition()
-      expect(position).toBeInstanceOf(THREE.Vector3);
     });
   });
 
@@ -434,12 +415,12 @@ describe('WireVisualManager', () => {
       );
 
       // Create initial wires
-      wireManager.createOrUpdateWire(wire1, circuit, scene, componentGroups);
-      wireManager.createOrUpdateWire(wire2, circuit, scene, componentGroups);
+      wireManager.createOrUpdateWire(wire1);
+      wireManager.createOrUpdateWire(wire2);
 
       // Move comp1 and update wires
       componentGroups.get(comp1.id)!.position.set(2, 0, 0);
-      wireManager.updateWiresForComponent(comp1.id, circuit, componentGroups);
+      wireManager.updateWiresForComponent(comp1.id);
 
       // Both wires should still exist
       expect(wireManager.hasWire(wire1.id)).toBe(true);
@@ -462,7 +443,7 @@ describe('WireVisualManager', () => {
         createMockComponentGroup(comp2.id, [...comp2.pins], { x: 10, y: 0 })
       );
 
-      wireManager.createOrUpdateWire(wire, circuit, scene, componentGroups);
+      wireManager.createOrUpdateWire(wire);
       wireManager.removeWire(wire.id);
 
       // Wire should no longer be tracked
@@ -471,7 +452,7 @@ describe('WireVisualManager', () => {
       // Wire should be removed from scene
       let wireFound = false;
       scene.traverse((child) => {
-        if (child instanceof THREE.Line && child.userData.wireId === wire.id) {
+        if (child instanceof Line2 && child.userData.wireId === wire.id) {
           wireFound = true;
         }
       });
@@ -486,7 +467,7 @@ describe('WireVisualManager', () => {
   });
 
   describe('getWireLine()', () => {
-    it('should return the THREE.Line for a wire', () => {
+    it('should return the Line2 for a wire', () => {
       const comp1 = circuit.addComponent(ComponentType.Battery, { x: 0, y: 0 }, 0);
       const comp2 = circuit.addComponent(ComponentType.Battery, { x: 10, y: 0 }, 0);
       const wire = circuit.addWire(comp1.pins[0], comp2.pins[0]);
@@ -500,7 +481,7 @@ describe('WireVisualManager', () => {
         createMockComponentGroup(comp2.id, [...comp2.pins], { x: 10, y: 0 })
       );
 
-      const createdLine = wireManager.createOrUpdateWire(wire, circuit, scene, componentGroups);
+      const createdLine = wireManager.createOrUpdateWire(wire);
       const retrievedLine = wireManager.getWireLine(wire.id);
 
       expect(retrievedLine).toBe(createdLine);
@@ -527,7 +508,7 @@ describe('WireVisualManager', () => {
         createMockComponentGroup(comp2.id, [...comp2.pins], { x: 10, y: 0 })
       );
 
-      wireManager.createOrUpdateWire(wire, circuit, scene, componentGroups);
+      wireManager.createOrUpdateWire(wire);
 
       expect(wireManager.hasWire(wire.id)).toBe(true);
     });
@@ -553,8 +534,8 @@ describe('WireVisualManager', () => {
         createMockComponentGroup(comp2.id, [...comp2.pins], { x: 10, y: 0 })
       );
 
-      wireManager.createOrUpdateWire(wire1, circuit, scene, componentGroups);
-      wireManager.createOrUpdateWire(wire2, circuit, scene, componentGroups);
+      wireManager.createOrUpdateWire(wire1);
+      wireManager.createOrUpdateWire(wire2);
 
       const wireIds = wireManager.getWireIds();
 
@@ -584,7 +565,7 @@ describe('WireVisualManager', () => {
         createMockComponentGroup(comp2.id, [...comp2.pins], { x: 10, y: 0 })
       );
 
-      wireManager.createOrUpdateWire(wire, circuit, scene, componentGroups);
+      wireManager.createOrUpdateWire(wire);
       wireManager.dispose();
 
       // All wires should be cleared

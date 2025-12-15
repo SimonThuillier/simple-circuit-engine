@@ -20,6 +20,10 @@ const createMockSceneManager = () => {
     saveComponentAction: vi.fn(),
   };
 
+  const wireVisualManager = {
+    updateWiresForComponent: vi.fn(),
+  };
+
   const mockGroup = new THREE.Group();
   mockGroup.position.set(5, 0, -5);
 
@@ -29,6 +33,7 @@ const createMockSceneManager = () => {
   return {
     getSelectionManager: vi.fn(() => selectionManager),
     getCircuitEditionManager: vi.fn(() => circuitEditionManager),
+    getWireVisualManager: vi.fn(() => wireVisualManager),
     getContainer: vi.fn(() => mockContainer),
     getControls: vi.fn(() => ({ enablePan: true })),
     cursorGroundPlanePosition: vi.fn(() => new THREE.Vector3(10, 0, -10)),
@@ -38,7 +43,7 @@ const createMockSceneManager = () => {
           ['component-id', { type: 'component' as const, position: new THREE.Vector3(5, 0, -5) }],
         ])
     ),
-    getGroup: vi.fn(() => mockGroup),
+    getObject3D: vi.fn(() => mockGroup),
     on: vi.fn(),
     off: vi.fn(),
     emit: vi.fn(),
@@ -54,8 +59,8 @@ describe('PositionTool (T040-T041, T052)', () => {
     sceneManager = createMockSceneManager();
     tool = new PositionTool(sceneManager as any);
 
-    // Use a mock component ID for testing
-    componentId = 'test-component-id';
+    // Use the same component ID as in the mock
+    componentId = 'component-id';
   });
 
   afterEach(() => {
@@ -163,6 +168,21 @@ describe('PositionTool (T040-T041, T052)', () => {
       );
     });
 
+    it('should update wires during drag', () => {
+      // Start drag
+      const downEvent = new MouseEvent('pointerdown', { button: 0 });
+      (tool as any).handlePointerDown(downEvent);
+
+      // Move
+      const newPosition = new THREE.Vector3(15, 0, -15);
+      (tool as any).handleGridPositionMove(newPosition);
+
+      // WireVisualManager.updateWiresForComponent should be called during drag
+      expect(sceneManager.getWireVisualManager().updateWiresForComponent).toHaveBeenCalledWith(
+        componentId
+      );
+    });
+
     it('should emit dragEnd on pointerup', () => {
       // Start drag
       const downEvent = new MouseEvent('pointerdown', { button: 0 });
@@ -182,6 +202,24 @@ describe('PositionTool (T040-T041, T052)', () => {
       expect((tool as any).dragState).toBeNull();
     });
 
+    it('should update wires on drag end', () => {
+      // Start drag
+      const downEvent = new MouseEvent('pointerdown', { button: 0 });
+      (tool as any).handlePointerDown(downEvent);
+
+      // Clear previous mock calls
+      vi.clearAllMocks();
+
+      // End drag
+      const upEvent = new MouseEvent('pointerup', { button: 0 });
+      (tool as any).handlePointerUp(upEvent);
+
+      // WireVisualManager.updateWiresForComponent should be called when drag ends
+      expect(sceneManager.getWireVisualManager().updateWiresForComponent).toHaveBeenCalledWith(
+        componentId
+      );
+    });
+
     it('should cancel drag on Escape key', () => {
       // Start drag
       const downEvent = new MouseEvent('pointerdown', { button: 0 });
@@ -199,6 +237,28 @@ describe('PositionTool (T040-T041, T052)', () => {
       );
       expect((tool as any).dragState).toBeNull();
     });
+
+    it('should update wires on drag cancel', () => {
+      // Start drag
+      const downEvent = new MouseEvent('pointerdown', { button: 0 });
+      (tool as any).handlePointerDown(downEvent);
+
+      // Move to a different position
+      const newPosition = new THREE.Vector3(15, 0, -15);
+      (tool as any).handleGridPositionMove(newPosition);
+
+      // Clear previous mock calls
+      vi.clearAllMocks();
+
+      // Press Escape to cancel
+      const escapeEvent = new KeyboardEvent('keydown', { key: 'Escape' });
+      (tool as any).handleKeyDown(escapeEvent);
+
+      // WireVisualManager.updateWiresForComponent should be called to restore wire positions
+      expect(sceneManager.getWireVisualManager().updateWiresForComponent).toHaveBeenCalledWith(
+        componentId
+      );
+    });
   });
 
   describe('Rotation operations (T052)', () => {
@@ -213,7 +273,7 @@ describe('PositionTool (T040-T041, T052)', () => {
     });
 
     it('should rotate component 90° clockwise on double-click', () => {
-      const componentGroup = sceneManager.getGroup('component', componentId);
+      const componentGroup = sceneManager.getObject3D('component', componentId);
       const initialRotation = componentGroup!.rotation.y;
 
       const dblClickEvent = new MouseEvent('dblclick');
@@ -238,8 +298,18 @@ describe('PositionTool (T040-T041, T052)', () => {
       );
     });
 
+    it('should update wires when rotating component on double-click', () => {
+      const dblClickEvent = new MouseEvent('dblclick');
+      (tool as any).handleDblClick(dblClickEvent);
+
+      // WireVisualManager.updateWiresForComponent should be called after rotation
+      expect(sceneManager.getWireVisualManager().updateWiresForComponent).toHaveBeenCalledWith(
+        componentId
+      );
+    });
+
     it('should rotate component 90° clockwise on R key', () => {
-      const componentGroup = sceneManager.getGroup('component', componentId);
+      const componentGroup = sceneManager.getObject3D('component', componentId);
       const initialRotation = componentGroup!.rotation.y;
 
       const rKeyEvent = new KeyboardEvent('keydown', { key: 'r' });
@@ -264,8 +334,18 @@ describe('PositionTool (T040-T041, T052)', () => {
       );
     });
 
+    it('should update wires when rotating component with R key', () => {
+      const rKeyEvent = new KeyboardEvent('keydown', { key: 'r' });
+      (tool as any).handleKeyDown(rKeyEvent);
+
+      // WireVisualManager.updateWiresForComponent should be called after rotation
+      expect(sceneManager.getWireVisualManager().updateWiresForComponent).toHaveBeenCalledWith(
+        componentId
+      );
+    });
+
     it('should handle multiple rotations correctly', () => {
-      const componentGroup = sceneManager.getGroup('component', componentId);
+      const componentGroup = sceneManager.getObject3D('component', componentId);
       const startRotation = componentGroup!.rotation.y;
 
       // Rotate 4 times (full circle - should return to approximately the same angle)
@@ -296,7 +376,7 @@ describe('PositionTool (T040-T041, T052)', () => {
       const downEvent = new MouseEvent('pointerdown', { button: 0 });
       (tool as any).handlePointerDown(downEvent);
 
-      const componentGroup = sceneManager.getGroup('component', componentId);
+      const componentGroup = sceneManager.getObject3D('component', componentId);
       const initialRotation = componentGroup!.rotation.y;
 
       // Try to rotate with R key during drag

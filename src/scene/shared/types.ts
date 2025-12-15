@@ -6,6 +6,12 @@
 import type { UUID } from '../../core/types/Identifier';
 import type * as THREE from 'three';
 import type { ComponentType } from '@/core/types/ComponentType';
+import type { Line2 } from 'three/examples/jsm/lines/Line2.js';
+import type { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
+import type { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
+
+// Re-export Line2 types for convenience
+export type { Line2, LineGeometry, LineMaterial };
 
 /**
  * Object types that can be interacted within the scene manager to render
@@ -14,17 +20,15 @@ export type CircuitSceneObjectType =
   | 'componentGroup'
   | 'component'
   | 'componentHitbox'
-  | 'wireGroup'
-  | 'wire'
-  | 'wireHitbox'
   | 'enodeGroup'
   | 'enode'
-  | 'enodeHitbox';
+  | 'enodeHitbox'
+  | 'wire';
 
 /**
  * Types of circuit elements that can be hovered / selected
  */
-export type HoverableType = 'enode' | 'component' | 'wire';
+export type HoverableType = 'component' | 'enode' | 'wire';
 
 export type ModelEditAction = 'edit' | 'add' | 'delete';
 
@@ -226,7 +230,7 @@ export interface ComponentHitboxUserData {
  * UserData structure for wire hitbox meshes
  */
 export interface WireHitboxUserData {
-  type: 'wireHitbox';
+  type: 'wire';
   wireId: string;
 }
 
@@ -234,6 +238,14 @@ export interface WireHitboxUserData {
  * Union of all hitbox userData types
  */
 export type HitboxUserData = EnodeHitboxUserData | ComponentHitboxUserData | WireHitboxUserData;
+
+/**
+ * Supported wires material states for visual feedback
+ */
+export type WireMaterialState =
+    | 'idle'
+    | 'hovered'
+    | 'selected';
 
 /** Represents the Selection of one Hoverable Element of the scene **/
 export interface MonoSelectionData {

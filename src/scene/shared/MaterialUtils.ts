@@ -6,6 +6,7 @@
  */
 
 import * as THREE from 'three';
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 
 /**
  * Create a standard material with common defaults
@@ -48,6 +49,31 @@ export function createLineMaterial(
   linewidth: number = 1
 ): THREE.LineBasicMaterial {
   return new THREE.LineBasicMaterial({
+    color,
+    linewidth,
+  });
+}
+
+/**
+ * Create a LineMaterial for Line2 rendering with consistent line width
+ *
+ * Note: Resolution must be set after creation using material.resolution.set(width, height)
+ *
+ * @param color - Line color (hex, default: 0xffffff/white)
+ * @param linewidth - Line width in pixels (default: 2)
+ * @returns LineMaterial for Line2 objects
+ *
+ * @example
+ * ```typescript
+ * const material = createLine2Material(0xffffff, 2);
+ * material.resolution.set(window.innerWidth, window.innerHeight);
+ * ```
+ */
+export function createLine2Material(
+  color: number = 0xffffff,
+  linewidth: number = 2
+): LineMaterial {
+  return new LineMaterial({
     color,
     linewidth,
   });

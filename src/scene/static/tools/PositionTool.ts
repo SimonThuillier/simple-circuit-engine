@@ -130,7 +130,7 @@ export class PositionTool implements IEditingTool {
     }
     // discriminate invalid selections for this tool
     if (selection.kind === 'mono' && selection.type === 'enode') {
-      const object = this._sceneManager.getGroup('enode', selection.id);
+      const object = this._sceneManager.getObject3D('enode', selection.id);
       if (!object) {
         return;
       }
@@ -178,7 +178,7 @@ export class PositionTool implements IEditingTool {
       this.dragState.startPosition
     );
     for (const [id, data] of this.dragState.positionsAtStart.entries()) {
-      const object = this._sceneManager.getGroup(data.type, id);
+      const object = this._sceneManager.getObject3D(data.type, id);
       if (!object) {
         continue;
       }
@@ -186,6 +186,11 @@ export class PositionTool implements IEditingTool {
         new THREE.Vector3().addVectors(data.position, dragDelta)
       );
       object.position.set(objectDraggedPosition.x, 0, objectDraggedPosition.z);
+      if (data.type === 'component') {
+        // moving wires connected to component in real-time during drag
+        this._sceneManager.getWireVisualManager().updateWiresForComponent(id);
+      }
+
     }
 
     // Update current position and emit dragMove event (T039)
@@ -195,8 +200,6 @@ export class PositionTool implements IEditingTool {
       currentPosition: cursorGridPosition,
       delta: dragDelta,
     });
-
-    // TODO Update wires connected to components (T035-T036)
   }
 
   /**
@@ -228,11 +231,12 @@ export class PositionTool implements IEditingTool {
     // Commit position to circuit model (T034)
     // Save new state into the circuit model
     for (const [id, data] of this.dragState.positionsAtStart.entries()) {
-      const object = this._sceneManager.getGroup(data.type, id);
+      const object = this._sceneManager.getObject3D(data.type, id);
       if (!object) {
         continue;
       }
       if (data.type === 'component') {
+        this._sceneManager.getWireVisualManager().updateWiresForComponent(id);
         this._sceneManager.getCircuitEditionManager().saveComponentAction(id, 'edit', object);
       }
       // TODO: handle enodes and wires later
@@ -266,12 +270,16 @@ export class PositionTool implements IEditingTool {
 
       // restore all elements to their original positions
       for (const [id, data] of this.dragState.positionsAtStart.entries()) {
-        const object = this._sceneManager.getGroup(data.type, id);
+        const object = this._sceneManager.getObject3D(data.type, id);
         if (!object) {
           continue;
         }
         const originalPosition = nearestGridMagnetPosition(data.position);
         object.position.set(originalPosition.x, 0, originalPosition.z);
+        if (data.type === 'component') {
+          // moving wires connected to component in real-time during drag
+          this._sceneManager.getWireVisualManager().updateWiresForComponent(id);
+        }
       }
 
       // Clear drag state
@@ -307,26 +315,24 @@ export class PositionTool implements IEditingTool {
       return;
     }
     const componentId = selection.id;
-    const component = this._sceneManager.getGroup('component', componentId);
+    const component = this._sceneManager.getObject3D('component', componentId);
     if (!component) {
       return;
     }
     const currentAngle = component.rotation.y;
     const newAngle = (currentAngle - Math.PI / 2) % (Math.PI * 2);
     component.rotation.set(0, newAngle, 0);
-    const modelRotation = -Math.round((component.rotation.y * 180) / Math.PI);
+
+    this._sceneManager.getWireVisualManager().updateWiresForComponent(componentId);
 
     // Emit componentRotated event
     this._sceneManager.emit('componentRotated', {
       componentId: componentId,
-      newRotation: newAngle,
-      modelRotation: modelRotation,
+      newRotation: newAngle
     });
     // Save new component state into the circuit model
     this._sceneManager
       .getCircuitEditionManager()
       .saveComponentAction(componentId, 'edit', component);
-
-    // TODO: Update wires connected to this component (T049 - reported for future spec)
   }
 }
