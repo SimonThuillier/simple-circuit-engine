@@ -3,6 +3,10 @@ import { Object3D } from 'three';
 import { Rotation } from '@/core/types/Rotation';
 import { Position } from '@/core/types/Position';
 import type { ModelEditAction, SceneManagerEventMap } from '../shared/types';
+import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
+import type { UUID } from '@/core/types/Identifier';
+import type { ENode } from '@/core/ENode';
+import type { Wire } from '@/core/Wire';
 
 /**
  * Manages editing operations of 3D models from the circuit scene into the core circuit model.
@@ -104,5 +108,95 @@ export class CircuitEditionManager {
    */
   saveWireAction(wireId: string, action: ModelEditAction, wire: Object3D): void {
     // TODO implement wire action saving logic
+  }
+
+  /**
+   * Save branching point creation to circuit model.
+   * @param position - Grid position for the branching point
+   * @param sourceType - Optional source type (voltage/current)
+   * @returns The created ENode
+   */
+  saveBranchingPointAction(position: Position, sourceType?: ENodeSourceType): ENode {
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) {
+      throw new Error('No circuit available in the scene manager.');
+    }
+
+    const branchingPoint = circuit.addBranchingPoint(position, sourceType);
+
+    this._sceneManager.emit('branchingPointCreated', {
+      enodeId: branchingPoint.id,
+      position,
+    });
+
+    return branchingPoint;
+  }
+
+  /**
+   * Save wire split operation to circuit model.
+   * @param wireId - Wire to split
+   * @param position - Position for the new branching point
+   * @returns Object containing the new branching point and two wires
+   */
+  saveWireSplitAction(
+    wireId: UUID,
+    position: Position
+  ): { branchingPoint: ENode; wire1: Wire; wire2: Wire } {
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) {
+      throw new Error('No circuit available in the scene manager.');
+    }
+
+    const result = circuit.splitWire(wireId, position);
+
+    this._sceneManager.emit('wireSplit', {
+      originalWireId: wireId,
+      branchingPointId: result.branchingPoint.id,
+      wire1Id: result.wire1.id,
+      wire2Id: result.wire2.id,
+    });
+
+    return result;
+  }
+
+  /**
+   * Save wire intermediate positions update.
+   * @param wireId - Wire to update
+   * @param positions - New intermediate positions
+   * @returns The updated Wire
+   */
+  saveWireIntermediatePositionsAction(wireId: UUID, positions: Position[]): Wire {
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) {
+      throw new Error('No circuit available in the scene manager.');
+    }
+
+    const updatedWire = circuit.updateWireIntermediatePositions(wireId, positions);
+
+    this._sceneManager.emit('wireIntermediatePositionsChanged', {
+      wireId,
+      positions,
+    });
+
+    return updatedWire;
+  }
+
+  /**
+   * Save ENode source type update.
+   * @param enodeId - ENode to update
+   * @param sourceType - New source type (null to clear)
+   */
+  saveENodeSourceTypeAction(enodeId: UUID, sourceType: ENodeSourceType | null): void {
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) {
+      throw new Error('No circuit available in the scene manager.');
+    }
+
+    circuit.updateENodeSourceType(enodeId, sourceType);
+
+    this._sceneManager.emit('enodeSourceTypeChanged', {
+      enodeId,
+      sourceType,
+    });
   }
 }

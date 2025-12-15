@@ -392,10 +392,12 @@ export class Circuit {
    * Add a branching point electrical node at a specific position.
    *
    * Branching points are used to split wires and create junctions.
-   * @param position
+   * @param position - Grid position for the branching point
+   * @param sourceType - Optional source type (voltage/current)
+   * @returns The created ENode
    */
-  addBranchingPoint(position: Position): ENode {
-    const branchingPoint = new ENode(ENodeType.BranchingPoint, undefined, undefined, position);
+  addBranchingPoint(position: Position, sourceType?: ENodeSourceType): ENode {
+    const branchingPoint = new ENode(ENodeType.BranchingPoint, undefined, undefined, position, sourceType);
 
     // Add ENode to circuit
     this.enodes.set(branchingPoint.id, branchingPoint);
@@ -519,11 +521,25 @@ export class Circuit {
    * // Wire and any orphaned branching points are removed
    * ```
    */
-  splitWire(id: UUID, position: Position): Wire[] {
-    const wire = this.wires.get(id);
+  /**
+   * Split an existing wire at a position, creating a branching point.
+   * The original wire is removed and replaced with two new wires
+   * connecting through the new branching point.
+   *
+   * @param wireId - Wire to split
+   * @param position - Position for the new branching point
+   * @returns Object containing the new branching point and two wires
+   * @throws Error if wireId not found
+   */
+  splitWire(wireId: UUID, position: Position): {
+    branchingPoint: ENode;
+    wire1: Wire;
+    wire2: Wire;
+  } {
+    const wire = this.wires.get(wireId);
 
     if (!wire) {
-      throw new Error(`Wire ${id} does not exist`);
+      throw new Error(`Wire ${wireId} does not exist`);
     }
 
     // Get connected nodes
@@ -531,13 +547,13 @@ export class Circuit {
     const enode2 = this.enodes.get(wire.node2);
 
     if (!enode1 || !enode2) {
-      throw new Error(`Wire ${id} is connected to non-existent ENodes`);
+      throw new Error(`Wire ${wireId} is connected to non-existent ENodes`);
     }
 
     // deleting and dereferencing the old wire
-    this.wires.delete(id);
-    enode1?.wires.delete(id);
-    enode2?.wires.delete(id);
+    this.wires.delete(wireId);
+    enode1.wires.delete(wireId);
+    enode2.wires.delete(wireId);
 
     // Create new branching point ENode at specified position
     const branchingPoint = this.addBranchingPoint(position);
@@ -545,7 +561,15 @@ export class Circuit {
     const newWire1 = this.addWire(enode1.id, branchingPoint.id);
     const newWire2 = this.addWire(branchingPoint.id, enode2.id);
 
-    return [newWire1 as Wire, newWire2 as Wire];
+    if (newWire1 instanceof Error || newWire2 instanceof Error) {
+      throw new Error('Failed to create wires after split');
+    }
+
+    return {
+      branchingPoint,
+      wire1: newWire1,
+      wire2: newWire2,
+    };
   }
 
   /**
@@ -656,6 +680,60 @@ export class Circuit {
       }
     }
     return componentIds;
+  }
+
+  /**
+   * Update the intermediate positions of a wire.
+   * Creates a new Wire instance (immutability) and updates references.
+   *
+   * @param wireId - Wire to update
+   * @param intermediatePositions - New intermediate positions
+   * @returns The updated Wire
+   * @throws Error if wireId not found
+   */
+  updateWireIntermediatePositions(wireId: UUID, intermediatePositions: Position[]): Wire {
+    const oldWire = this.wires.get(wireId);
+
+    if (!oldWire) {
+      throw new Error(`Wire ${wireId} does not exist`);
+    }
+
+    // Create new Wire with updated intermediate positions
+    const newWire = new Wire(oldWire.node1, oldWire.node2, intermediatePositions);
+
+    // Override the ID to maintain the same wire identity
+    Object.defineProperty(newWire, 'id', {
+      value: oldWire.id,
+      writable: false,
+      enumerable: true,
+      configurable: false,
+    });
+
+    // Update wire in map
+    this.wires.set(wireId, newWire);
+
+    return newWire;
+  }
+
+  /**
+   * Update the source type of an ENode (branching point).
+   * @param enodeId - ENode to update
+   * @param sourceType - New source type (null to clear)
+   * @throws Error if enodeId not found or not a BranchingPoint
+   */
+  updateENodeSourceType(enodeId: UUID, sourceType: ENodeSourceType | null): void {
+    const enode = this.enodes.get(enodeId);
+
+    if (!enode) {
+      throw new Error(`ENode ${enodeId} does not exist`);
+    }
+
+    if (enode.type !== ENodeType.BranchingPoint) {
+      throw new Error(`ENode ${enodeId} is not a branching point`);
+    }
+
+    // Update sourceType (ENode.source is mutable)
+    enode.source = sourceType || undefined;
   }
 
   /**

@@ -17,9 +17,9 @@
 
 **Purpose**: Verify existing infrastructure and project structure
 
-- [ ] T001 Verify existing tool infrastructure by reviewing src/scene/static/tools/PositionTool.ts
-- [ ] T002 [P] Verify existing ENode model has sourceType support in src/core/ENode.ts
-- [ ] T003 [P] Verify existing Wire model has intermediatePositions support in src/core/Wire.ts
+- [X] T001 Verify existing tool infrastructure by reviewing src/scene/static/tools/PositionTool.ts
+- [X] T002 [P] Verify existing ENode model has sourceType support in src/core/ENode.ts
+- [X] T003 [P] Verify existing Wire model has intermediatePositions support in src/core/Wire.ts
 
 ---
 
@@ -31,24 +31,24 @@
 
 ### Circuit Class Extensions
 
-- [ ] T004 Implement `addBranchingPoint(position, sourceType?)` method in src/core/Circuit.ts
-- [ ] T005 Implement `splitWire(wireId, position)` method in src/core/Circuit.ts
-- [ ] T006 Implement `updateWireIntermediatePositions(wireId, positions)` method in src/core/Circuit.ts
-- [ ] T007 Implement `updateENodeSourceType(enodeId, sourceType)` method in src/core/Circuit.ts
+- [X] T004 Implement `addBranchingPoint(position, sourceType?)` method in src/core/Circuit.ts
+- [X] T005 Implement `splitWire(wireId, position)` method in src/core/Circuit.ts
+- [X] T006 Implement `updateWireIntermediatePositions(wireId, positions)` method in src/core/Circuit.ts
+- [X] T007 Implement `updateENodeSourceType(enodeId, sourceType)` method in src/core/Circuit.ts
 
 ### CircuitEditionManager Extensions
 
-- [ ] T008 Implement `saveBranchingPointAction(position, sourceType?)` in src/scene/static/CircuitEditionManager.ts
-- [ ] T009 Implement `saveWireSplitAction(wireId, position)` in src/scene/static/CircuitEditionManager.ts
-- [ ] T010 Implement `saveWireIntermediatePositionsAction(wireId, positions)` in src/scene/static/CircuitEditionManager.ts
-- [ ] T011 Implement `saveENodeSourceTypeAction(enodeId, sourceType)` in src/scene/static/CircuitEditionManager.ts
+- [X] T008 Implement `saveBranchingPointAction(position, sourceType?)` in src/scene/static/CircuitEditionManager.ts
+- [X] T009 Implement `saveWireSplitAction(wireId, position)` in src/scene/static/CircuitEditionManager.ts
+- [X] T010 Implement `saveWireIntermediatePositionsAction(wireId, positions)` in src/scene/static/CircuitEditionManager.ts
+- [X] T011 Implement `saveENodeSourceTypeAction(enodeId, sourceType)` in src/scene/static/CircuitEditionManager.ts
 
 ### WireVisualManager Extensions
 
-- [ ] T012 Implement `createPreviewWire(startPosition)` method in src/scene/shared/WireVisualManager.ts
-- [ ] T013 Implement `updatePreviewWire(endPosition)` method in src/scene/shared/WireVisualManager.ts
-- [ ] T014 Implement `removePreviewWire()` method in src/scene/shared/WireVisualManager.ts
-- [ ] T015 Implement `refreshWireGeometry(wireId)` method in src/scene/shared/WireVisualManager.ts
+- [X] T012 Implement `createPreviewWire(startPosition)` method in src/scene/shared/WireVisualManager.ts
+- [X] T013 Implement `updatePreviewWire(endPosition)` method in src/scene/shared/WireVisualManager.ts
+- [X] T014 Implement `removePreviewWire()` method in src/scene/shared/WireVisualManager.ts
+- [X] T015 Implement `refreshWireGeometry(wireId)` method in src/scene/shared/WireVisualManager.ts
 
 **Checkpoint**: Foundation ready - user story implementation can now begin
 
@@ -62,15 +62,15 @@
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] Create BranchingPointVisualFactory class skeleton in src/scene/shared/components/BranchingPointVisualFactory.ts
-- [ ] T017 [US2] Implement `createVisual(enode)` method with cone geometry and hitbox in src/scene/shared/components/BranchingPointVisualFactory.ts
-- [ ] T018 [US2] Implement sourceType-based color mapping (white/red/blue) in src/scene/shared/components/BranchingPointVisualFactory.ts
-- [ ] T019 [US2] Implement `applyHover(visual)` and `removeHover(visual)` methods with brightness shift in src/scene/shared/components/BranchingPointVisualFactory.ts
-- [ ] T020 [US2] Implement `applySelection(visual)` and `removeSelection(visual)` methods with brightness shift in src/scene/shared/components/BranchingPointVisualFactory.ts
-- [ ] T021 [US2] Implement `updateSourceType(visual, sourceType)` method in src/scene/shared/components/BranchingPointVisualFactory.ts
-- [ ] T022 [US2] Register BranchingPointVisualFactory in src/scene/static/CircuitSceneManager.ts
-- [ ] T023 [US2] Implement branching point rendering in scene initialization in src/scene/static/CircuitSceneManager.ts
-- [ ] T024 [US2] Wire hover/selection events for branching points in src/scene/static/CircuitSceneManager.ts
+- [X] T016 [US2] Create BranchingPointVisualFactory class skeleton in src/scene/shared/components/BranchingPointVisualFactory.ts
+- [X] T017 [US2] Implement `createVisual(enode)` method with cone geometry and hitbox in src/scene/shared/components/BranchingPointVisualFactory.ts
+- [X] T018 [US2] Implement sourceType-based color mapping (white/red/blue) in src/scene/shared/components/BranchingPointVisualFactory.ts
+- [X] T019 [US2] Implement `applyHover(object3D)` and `removeHover(object3D)` methods with brightness shift in src/scene/shared/components/BranchingPointVisualFactory.ts
+- [X] T020 [US2] Implement `applySelection(object3D)` and `removeSelection(object3D)` methods with brightness shift in src/scene/shared/components/BranchingPointVisualFactory.ts
+- [X] T021 [US2] Implement `updateSourceType(object3D, sourceType)` method in src/scene/shared/components/BranchingPointVisualFactory.ts
+- [X] T022 [US2] Register BranchingPointVisualFactory in src/scene/static/CircuitSceneManager.ts
+- [X] T023 [US2] Implement branching point rendering in scene initialization in src/scene/static/CircuitSceneManager.ts
+- [X] T024 [US2] Wire hover/selection events for branching points in src/scene/static/CircuitSceneManager.ts
 
 **Checkpoint**: Branching points render as cones with correct colors and feedback
 

@@ -49,7 +49,18 @@ export type SceneManagerEvent =
   | 'toolOperationCancelled'
   | 'toolValidationError'
   | 'cursorChangeRequested'
-  | 'circuitElementAction';
+  | 'circuitElementAction'
+  | 'branchingPointCreated'
+  | 'wireSplit'
+  | 'wireIntermediatePositionsChanged'
+  | 'enodeSourceTypeChanged'
+  | 'gridPositionMove'
+  | 'dragStart'
+  | 'dragMove'
+  | 'dragEnd'
+  | 'dragCancel'
+  | 'componentRotated'
+  | 'selectionChange';
 
 /**
  * Event payload map for type-safe event emission
@@ -91,6 +102,25 @@ export interface SceneManagerEventMap {
     action: ModelEditAction;
     error?: Error | null;
     data?: object | null;
+  };
+  // Branching point events (T024)
+  branchingPointCreated: {
+    enodeId: UUID;
+    position: { x: number; y: number };
+  };
+  wireSplit: {
+    originalWireId: UUID;
+    branchingPointId: UUID;
+    wire1Id: UUID;
+    wire2Id: UUID;
+  };
+  wireIntermediatePositionsChanged: {
+    wireId: UUID;
+    positions: { x: number; y: number }[];
+  };
+  enodeSourceTypeChanged: {
+    enodeId: UUID;
+    sourceType: string | null;
   };
 }
 

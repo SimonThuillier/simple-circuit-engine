@@ -352,7 +352,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
       componentId: componentId,
       enodeId: pinId,
       label: label,
-      groupId: pinGroup.id,
+      //groupId: pinGroup.id,
     };
     hitbox.layers.set(HitboxLayers.ENODE);
     pinGroup.add(hitbox);

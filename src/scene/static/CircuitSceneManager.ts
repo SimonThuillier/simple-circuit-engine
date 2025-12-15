@@ -50,6 +50,7 @@ import { SelectionManager } from '../shared/SelectionManager';
 import { WireVisualManager } from '../shared/WireVisualManager';
 import type { ComponentType } from '@/core/types/ComponentType';
 import { CircuitEditionManager } from './CircuitEditionManager';
+import { BranchingPointVisualFactory } from '../shared/components/BranchingPointVisualFactory';
 
 /**
  * Static Circuit Scene Manager Implementation
@@ -100,6 +101,9 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
 
   // CircuitEditionManager handles saving edits to the core model
   private circuitEditionManager: CircuitEditionManager = new CircuitEditionManager(this);
+
+  // BranchingPointVisualFactory for creating branching point visuals (T022)
+  private branchingPointVisualFactory: BranchingPointVisualFactory = new BranchingPointVisualFactory();
 
   /**
    * Create a new Static Circuit Renderer
@@ -278,7 +282,12 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
           return;
         }
         try {
-          removeENodeHover(enodeGroup);
+          // Use BranchingPointVisualFactory for branching points (T024)
+          if (userData.enodeType === 'BranchingPoint') {
+            this.branchingPointVisualFactory.removeHover(enodeGroup);
+          } else {
+            removeENodeHover(enodeGroup);
+          }
         } catch (error) {
           console.warn('Failed to apply unhover effect:', error);
         }
@@ -332,7 +341,12 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
           return;
         }
         try {
-          applyENodeHover(enodeGroup);
+          // Use BranchingPointVisualFactory for branching points (T024)
+          if (userData.enodeType === 'BranchingPoint') {
+            this.branchingPointVisualFactory.applyHover(enodeGroup);
+          } else {
+            applyENodeHover(enodeGroup);
+          }
         } catch (error) {
           console.warn('Failed to apply hover effect:', error);
         }
@@ -713,6 +727,13 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
   }
 
   /**
+   * Get the BranchingPointVisualFactory for creating/Updating branching point visuals
+   */
+  getBranchingPointVisualFactory(): BranchingPointVisualFactory {
+    return this.branchingPointVisualFactory;
+  }
+
+  /**
    * Get the MapControls instance for direct manipulation
    *
    * @returns MapControls instance or null if not initialized
@@ -959,8 +980,6 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     }
 
     try {
-      this.container?.removeEventListener('resize', this.onContainerResize);
-
       // Dispose all geometries and materials
       this.scene!.traverse((obj) => {
         if (obj instanceof THREE.Mesh) {
@@ -1513,23 +1532,15 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
         return;
       }
 
-      const geometry = createEnodeGeometry(0.15);
-      const material = createStandardMaterial(0x00aaff, {
-        metalness: 0.5,
-        roughness: 0.3,
-      });
-
-      const mesh = new THREE.Mesh(geometry, material);
+      // Use BranchingPointVisualFactory to create the visual (T023)
+      const group = this.branchingPointVisualFactory.createVisual(enode);
 
       // Use getPosition() to properly handle position retrieval
       const pos = enode.getPosition(this.circuit);
-      mesh.position.set(pos.x, 0, -pos.y);
+      group.position.set(pos.x, 0, -pos.y);
 
-      mesh.userData.enodeId = enode.id;
-      mesh.userData.enodeType = enode.type;
-
-      this.scene!.add(mesh);
-      this.enodeObject3Ds.set(enode.id, mesh);
+      this.scene!.add(group);
+      this.enodeObject3Ds.set(enode.id, group);
     } catch (error) {
       const err = error as Error;
       console.warn(`Failed to create mesh for enode ${enode.id}:`, err.message);

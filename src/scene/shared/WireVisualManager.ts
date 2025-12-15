@@ -59,6 +59,9 @@ export class WireVisualManager {
   /** Shared LineMaterials for all wires (memory efficient, consistent styling) */
   private wireMaterials: Map<WireMaterialState, LineMaterial> = new Map();
 
+  /** Preview wire for wire creation mode */
+  private previewWire: Line2 | null = null;
+
   constructor(sceneManager: CircuitSceneManager) {
     this._sceneManager = sceneManager;
     // Create shared LineMaterial with default white color and 2px width
@@ -385,6 +388,82 @@ export class WireVisualManager {
   }
 
   /**
+   * Create a preview wire for wire creation mode.
+   * @param startPosition - World position of wire start
+   * @returns Line2 object for preview
+   */
+  createPreviewWire(startPosition: THREE.Vector3): Line2 {
+    // Remove any existing preview
+    this.removePreviewWire();
+
+    // Create preview line geometry with two points (start and end at same position initially)
+    const geometry = new LineGeometry();
+    geometry.setPositions([
+      startPosition.x,
+      startPosition.y,
+      startPosition.z,
+      startPosition.x,
+      startPosition.y,
+      startPosition.z,
+    ]);
+
+    // Use a slightly different material for preview (dashed or lower opacity)
+    const material = createLine2Material(0x888888, 2);
+    material.opacity = 0.6;
+    material.transparent = true;
+
+    const previewLine = new Line2(geometry, material);
+    previewLine.layers.set(HitboxLayers.VISUAL);
+    previewLine.renderOrder = 100; // Render on top
+
+    this.previewWire = previewLine;
+    this._sceneManager.getScene().add(previewLine);
+
+    return previewLine;
+  }
+
+  /**
+   * Update preview wire endpoint.
+   * @param endPosition - World position of wire end
+   */
+  updatePreviewWire(endPosition: THREE.Vector3): void {
+    if (!this.previewWire) {
+      return;
+    }
+
+    const geometry = this.previewWire.geometry as LineGeometry;
+    const positions = geometry.getAttribute('position').array as Float32Array;
+
+    // Update end position (keep start position unchanged)
+    positions[3] = endPosition.x;
+    positions[4] = endPosition.y;
+    positions[5] = endPosition.z;
+
+    geometry.setPositions(Array.from(positions));
+  }
+
+  /**
+   * Remove preview wire from scene.
+   */
+  removePreviewWire(): void {
+    if (this.previewWire) {
+      this._sceneManager.getScene().remove(this.previewWire);
+      this.previewWire.geometry.dispose();
+      (this.previewWire.material as LineMaterial).dispose();
+      this.previewWire = null;
+    }
+  }
+
+  /**
+   * Refresh wire geometry after intermediate positions changed.
+   * @param wireId - Wire to refresh
+   */
+  refreshWireGeometry(wireId: UUID): void {
+    // Simply re-create the wire using the existing method
+    this.updateWire(wireId);
+  }
+
+  /**
    * Clean up all managed wire visuals
    */
   dispose(): void {
@@ -396,6 +475,9 @@ export class WireVisualManager {
       // Individual wire materials are NOT disposed here - only geometries
     }
     wireLines.clear();
+
+    // Remove preview wire if it exists
+    this.removePreviewWire();
 
     // Dispose shared material once during full cleanup
     for(const material of this.wireMaterials.values()) {
