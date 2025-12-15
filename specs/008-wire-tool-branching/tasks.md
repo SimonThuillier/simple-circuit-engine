@@ -111,9 +111,9 @@
 
 ### Implementation for User Story 4
 
-- [ ] T039 [US4] Extend wire creation to accept branching point enodes as endpoints in src/scene/static/tools/WireTool.ts
-- [ ] T040 [US4] Add branching point hover highlight during wire creation in src/scene/static/tools/WireTool.ts
-- [ ] T041 [US4] Verify cursor changes to pointer when hovering branching point during wire creation in src/scene/static/tools/WireTool.ts
+- [X] T039 [US4] Extend wire creation to accept branching point enodes as endpoints in src/scene/static/tools/WireTool.ts
+- [X] T040 [US4] Add branching point hover highlight during wire creation in src/scene/static/tools/WireTool.ts
+- [X] T041 [US4] Verify cursor changes to pointer when hovering branching point during wire creation in src/scene/static/tools/WireTool.ts
 
 **Checkpoint**: Wires can be created to/from branching points
 
@@ -127,12 +127,12 @@
 
 ### Implementation for User Story 3
 
-- [ ] T042 [US3] Implement double-click vs single-click disambiguation (200ms timeout) in src/scene/static/tools/WireTool.ts
-- [ ] T043 [US3] Implement `handleDblClick(event)` for double-click detection in src/scene/static/tools/WireTool.ts
-- [ ] T044 [US3] Implement `createBranchingPointOnWire(wireId, position)` to split wire in src/scene/static/tools/WireTool.ts
-- [ ] T045 [US3] Call CircuitEditionManager.saveSplitWire for wire split in src/scene/static/tools/WireTool.ts
-- [ ] T046 [US3] Update scene to remove old wire visual and add new wire visuals in src/scene/static/tools/WireTool.ts
-- [ ] T047 [US3] Add branching point visual to scene after creation in src/scene/static/tools/WireTool.ts
+- [X] T042 [US3] Implement double-click vs single-click disambiguation (200ms timeout) in src/scene/static/tools/WireTool.ts
+- [X] T043 [US3] Implement `handleDblClick(event)` for double-click detection in src/scene/static/tools/WireTool.ts
+- [X] T044 [US3] Implement `createBranchingPointOnWire(wireId, position)` to split wire in src/scene/static/tools/WireTool.ts
+- [X] T045 [US3] Call CircuitEditionManager.saveSplitWire for wire split in src/scene/static/tools/WireTool.ts
+- [X] T046 [US3] Update scene to remove old wire visual and add new wire visuals in src/scene/static/tools/WireTool.ts
+- [X] T047 [US3] Add branching point visual to scene after creation in src/scene/static/tools/WireTool.ts
 
 **Checkpoint**: Double-click on wire creates branching point and splits wire
 
@@ -146,10 +146,10 @@
 
 ### Implementation for User Story 6
 
-- [ ] T048 [US6] Implement `createStandaloneBranchingPoint(position)` in src/scene/static/tools/WireTool.ts
-- [ ] T049 [US6] Add double-click on empty space detection to handleDblClick in src/scene/static/tools/WireTool.ts
-- [ ] T050 [US6] Implement grid snapping for standalone branching point position in src/scene/static/tools/WireTool.ts
-- [ ] T051 [US6] Add visual creation for standalone branching point in src/scene/static/tools/WireTool.ts
+- [X] T048 [US6] Implement `createStandaloneBranchingPoint(position)` in src/scene/static/tools/WireTool.ts
+- [X] T049 [US6] Add double-click on empty space detection to handleDblClick in src/scene/static/tools/WireTool.ts
+- [X] T050 [US6] Implement grid snapping for standalone branching point position in src/scene/static/tools/WireTool.ts
+- [X] T051 [US6] Add visual creation for standalone branching point in src/scene/static/tools/WireTool.ts
 
 **Checkpoint**: Double-click on empty space creates standalone branching point
 

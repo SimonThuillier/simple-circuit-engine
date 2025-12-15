@@ -110,14 +110,25 @@ export class WireTool implements IEditingTool {
   }
 
   getCursorType(): CursorType {
-    // if (!this.isValidTarget) {
-    //   return 'not-allowed';
-    // }
-    // if (this.isHoveringEndpoint) {
-    //   return 'pointer';
-    // }
-    // return 'crosshair';
-    return 'default';
+    // T041: Return appropriate cursor based on hover state
+    const hoveredElement = this._sceneManager.getHoveredElement();
+
+    // During wire creation, show not-allowed for invalid targets
+    if (this.mode === 'wire_creating' && !this.isValidTarget) {
+      return 'not-allowed';
+    }
+
+    // Show pointer when hovering an enode (pin or branching point)
+    if (hoveredElement && hoveredElement.type === 'enode') {
+      return 'pointer';
+    }
+
+    // Show crosshair during wire creation
+    if (this.mode === 'wire_creating') {
+      return 'crosshair';
+    }
+
+    return 'crosshair';
   }
 
   getPreviewObjects(): THREE.Object3D[] {
@@ -383,8 +394,121 @@ export class WireTool implements IEditingTool {
     // Handled by handlePointerDown
   }
 
-  handleDblClick(_event: MouseEvent): void {
-    // TODO implement double click operations
+  /**
+   * Handle double-click to create branching point (T042, T043, T049)
+   *
+   * T042: Double-click vs single-click disambiguation is handled by the browser's
+   * native dblclick event, which only fires after two clicks within ~300ms.
+   * Single clicks on enodes create wires (handlePointerDown/Up), while double
+   * clicks on wires create branching points (this method). The target type
+   * (enode vs wire) naturally separates the two actions.
+   *
+   * T049: Double-click on empty space creates standalone branching point
+   *
+   * @param event - Mouse event
+   */
+  handleDblClick(event: MouseEvent): void {
+    if (event.button !== 0) return;
+
+    const hoveredElement = this._sceneManager.getHoveredElement();
+
+    // Check if we're hovering a wire
+    if (hoveredElement && hoveredElement.type === 'wire') {
+      const wireId = hoveredElement.id;
+      const gridPosition = this._sceneManager.cursorGroundPlanePosition();
+
+      // Create branching point on the wire at the clicked position
+      this.createBranchingPointOnWire(wireId, gridPosition);
+    } else if (!hoveredElement) {
+      // T049: Double-click on empty space - create standalone branching point
+      const gridPosition = this._sceneManager.cursorGroundPlanePosition();
+      this.createStandaloneBranchingPoint(gridPosition);
+    }
+  }
+
+  /**
+   * Create a branching point on an existing wire, splitting it (T044)
+   * @param wireId - Wire to split
+   * @param worldPosition - 3D position in world space
+   */
+  private createBranchingPointOnWire(wireId: UUID, worldPosition: THREE.Vector3): void {
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return;
+
+
+
+    try {
+      // T045: Call CircuitEditionManager to split the wire and create branching point
+      const result = this._sceneManager.getCircuitEditionManager()
+        .saveSplitWire(wireId, worldPosition);
+
+      // T046: Remove old wire visual from scene
+      this._sceneManager.getWireVisualManager().removeWire(wireId);
+
+      // T046: Add new wire visuals to scene
+      this._sceneManager.getWireVisualManager().createOrUpdateWire(result.wire1);
+      this._sceneManager.getWireVisualManager().createOrUpdateWire(result.wire2);
+
+      // T047: Add branching point visual to scene
+      const branchingPointGroup = this._sceneManager.getBranchingPointVisualFactory()
+        .createVisual(result.branchingPoint);
+
+      const pos = result.branchingPoint.getPosition(circuit);
+      branchingPointGroup.position.set(pos.x, 0, -pos.y);
+
+      this._sceneManager.getScene().add(branchingPointGroup);
+      this._sceneManager.getEnodeObject3Ds().set(result.branchingPoint.id, branchingPointGroup);
+
+      // Emit success event
+      this._sceneManager.emit('toolOperationCompleted', {
+        toolType: this.type,
+        operationData: {
+          wireId,
+          branchingPointId: result.branchingPoint.id,
+          wire1Id: result.wire1.id,
+          wire2Id: result.wire2.id,
+        },
+        changedData: {
+          removedWires: [wireId],
+          addedWires: [result.wire1.id, result.wire2.id],
+          addedENodes: [result.branchingPoint.id],
+        },
+      });
+    } catch (error) {
+      this._sceneManager.emit('toolValidationError', {
+        toolType: this.type,
+        errorMessage: `Failed to create branching point: ${(error as Error).message}`,
+      });
+    }
+  }
+
+  /**
+   * Create a standalone branching point at empty grid position (T048)
+   * @param worldPosition - 3D position in world space
+   */
+  private createStandaloneBranchingPoint(worldPosition: THREE.Vector3): void {
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return;
+
+    try {
+      // Create branching point in circuit model (no sourceType initially)
+      const branchingPoint = this._sceneManager.getCircuitEditionManager()
+        .saveAddBranchingPoint(worldPosition);
+
+      // T051: Create and add visual to scene
+      const group = this._sceneManager.getBranchingPointVisualFactory()
+        .createVisual(branchingPoint);
+
+      const pos = branchingPoint.getPosition(circuit);
+      group.position.set(pos.x, 0, -pos.y);
+      this._sceneManager.getScene().add(group);
+      this._sceneManager.getEnodeObject3Ds().set(branchingPoint.id, group);
+    } catch (error) {
+      this._sceneManager.emit('toolValidationError', {
+        toolType: this.type,
+        errorMessage: `Failed to create branching point: ${(error as Error).message}`,
+      });
+    }
   }
 
   cancelOperation(): void {

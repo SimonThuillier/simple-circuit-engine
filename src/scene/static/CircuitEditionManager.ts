@@ -1,5 +1,5 @@
 import type { CircuitSceneManager } from './CircuitSceneManager';
-import { Object3D } from 'three';
+import {Object3D, Vector3} from 'three';
 import { Rotation } from '@/core/types/Rotation';
 import { Position } from '@/core/types/Position';
 import type { ModelEditAction, SceneManagerEventMap } from '../shared/types';
@@ -90,22 +90,22 @@ export class CircuitEditionManager {
 
   /**
    * add branching point to the core circuit model and emits the appropriate event.
-   * @param branchingPoint - the branching point Object3D
+   * @param gridPosition - the grid position to add the branching point at
    * @throws Error
    * @return The circuit enode
    */
-  saveAddBranchingPoint(branchingPoint: Object3D){
+  saveAddBranchingPoint(gridPosition: Vector3){
     const circuit = this._sceneManager.getCircuit();
     try {
       if (!circuit) {
         throw new Error('No circuit available in the scene manager.');
       }
+      // T050: Grid snapping - convert world position to grid position
       const modelPosition = new Position(
-          Math.round(branchingPoint.position.x),
-          Math.round(-branchingPoint.position.z)
+          Math.round(gridPosition.x),
+          Math.round(-gridPosition.z)
       );
-      const sourceType = branchingPoint.userData.sourceType as ENodeSourceType | undefined;
-      const circuitEnode = circuit.addBranchingPoint(modelPosition, sourceType);
+      const circuitEnode = circuit.addBranchingPoint(modelPosition);
 
       const event: SceneManagerEventMap['circuitElementAction'] = {
         type: 'enode',
@@ -113,8 +113,7 @@ export class CircuitEditionManager {
         id: circuitEnode.id,
         error: null,
         data: {
-          position: modelPosition,
-          sourceType: sourceType,
+          position: modelPosition
         }
       };
       this._sceneManager.emit('circuitElementAction', event);
@@ -267,19 +266,23 @@ export class CircuitEditionManager {
   /**
    * Save wire split operation to circuit model.
    * @param wireId - Wire to split
-   * @param position - Position for the new branching point
+   * @param worldPosition - world Position for the new branching point
    * @returns Object containing the new branching point and two wires
    */
   saveSplitWire(
       wireId: UUID,
-      position: Position
+      worldPosition: Vector3
   ): { branchingPoint: ENode; wire1: Wire; wire2: Wire } {
     const circuit = this._sceneManager.getCircuit();
     if (!circuit) {
       throw new Error('No circuit available in the scene manager.');
     }
-
-    const result = circuit.splitWire(wireId, position);
+    // Convert world position to grid position
+    const gridPosition = new Position(
+        Math.round(worldPosition.x),
+        Math.round(-worldPosition.z)
+    );
+    const result = circuit.splitWire(wireId, gridPosition);
 
     this._sceneManager.emit('wireSplit', {
       originalWireId: wireId,
