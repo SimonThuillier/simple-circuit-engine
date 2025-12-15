@@ -5,6 +5,8 @@ Auto-generated from all feature plans. Last updated: 2025-11-28
 ## Active Technologies
 - TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (already installed), three/addons/lines/Line2.js, three/addons/lines/LineGeometry.js, three/addons/lines/LineMaterial.js (007-line2-wire-refactor)
 - N/A (in-memory scene state only) (007-line2-wire-refactor)
+- TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (Line2, LineGeometry, LineMaterial from addons) (008-wire-tool-branching)
+- N/A (in-memory circuit model, Wire.intermediatePositions already exists) (008-wire-tool-branching)
 
 - TypeScript (strict mode), targeting ES2022 + Three.js 0.181+ (already installed) (006-position-tool-wires)
 - N/A (in-memory circuit model, no persistence changes) (006-position-tool-wires)
@@ -73,11 +75,11 @@ function badExample(input: number | null): string {
 ```
 
 ## Recent Changes
+- 008-wire-tool-branching: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (Line2, LineGeometry, LineMaterial from addons)
 - 007-line2-wire-refactor: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (already installed), three/addons/lines/Line2.js, three/addons/lines/LineGeometry.js, three/addons/lines/LineMaterial.js
 
 - 006-position-tool-wires: Added TypeScript (strict mode), targeting ES2022 + Three.js 0.181+ (already installed)
 
-- 005-visual-factory-classes: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (already installed)
 
 
 <!-- MANUAL ADDITIONS START -->
