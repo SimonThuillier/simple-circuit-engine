@@ -71,9 +71,9 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
 
   // Visual object tracking
   private grid: THREE.GridHelper | null = null;
-  private componentGroups: Map<string, THREE.Group> = new Map();
-  private wireGroups: Map<string, Line2> = new Map();
-  private enodeGroups: Map<string, THREE.Group> = new Map();
+  private componentObject3Ds: Map<UUID, THREE.Group> = new Map();
+  private enodeObject3Ds: Map<UUID, THREE.Group> = new Map();
+  private wireObject3Ds: Map<UUID, Line2> = new Map();
 
   // Edit mode and tool system (Phase 5)
   private editMode: boolean = false;
@@ -272,7 +272,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
           console.warn('Failed to apply unhover effect (missing enodeId)');
           return;
         }
-        const enodeGroup = this.enodeGroups.get(enodeId);
+        const enodeGroup = this.enodeObject3Ds.get(enodeId);
         if (!enodeGroup) {
           console.warn('Failed to apply unhover effect (enodeGroup not found)');
           return;
@@ -290,7 +290,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
           console.warn('Failed to apply unhover effect (missing componentId)');
           return;
         }
-        const componentGroup = this.componentGroups.get(componentId);
+        const componentGroup = this.componentObject3Ds.get(componentId);
         if (!componentGroup) {
           console.warn('Failed to apply unhover effect (componentGroup not found)');
           return;
@@ -313,7 +313,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
           console.warn('Failed to apply hover effect (missing enodeId)');
           return;
         }
-        const enodeGroup = this.enodeGroups.get(enodeId);
+        const enodeGroup = this.enodeObject3Ds.get(enodeId);
         if (!enodeGroup) {
           console.warn('Failed to apply hover effect (enodeGroup not found)');
           return;
@@ -331,7 +331,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
           console.warn('Failed to apply hover effect (missing componentId)');
           return;
         }
-        const componentGroup = this.componentGroups.get(componentId);
+        const componentGroup = this.componentObject3Ds.get(componentId);
         if (!componentGroup) {
           console.warn('Failed to apply hover effect (componentGroup not found)');
           return;
@@ -461,7 +461,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     if (components) {
       for (const [id, _data] of components) {
         console.log(`Applying selection visual to component ${id}, selected=${selected}`);
-        const group = this.componentGroups.get(id);
+        const group = this.componentObject3Ds.get(id);
         console.log(group);
         if (!group) {
           continue;
@@ -670,23 +670,35 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     return this.mapControls;
   }
 
-  getSelection(id: string): THREE.Group | undefined {
-    return this.componentGroups.get(id);
+  getSelection(id: string): THREE.Object3D | undefined {
+    return this.componentObject3Ds.get(id);
+  }
+
+  getComponentObject3Ds(): Map<string, THREE.Group> {
+    return this.componentObject3Ds;
+  }
+
+  getEnodeObject3Ds(): Map<string, THREE.Group> {
+    return this.enodeObject3Ds;
+  }
+
+  getWireObject3Ds(): Map<string, Line2> {
+    return this.wireObject3Ds;
   }
 
   /**
-   * get the group mesh of a component, enode or wire by hoverable type and id
+   * get the object3D (Group for components and enodes, Line2 for wires) by hoverable type and id
    * @param type
    * @param id
    */
-  getGroup(type: HoverableType, id: UUID): THREE.Object3D | undefined {
+  getObject3D(type: HoverableType, id: UUID): THREE.Object3D | undefined {
     switch (type) {
       case 'component':
-        return this.componentGroups.get(id);
+        return this.componentObject3Ds.get(id);
       case 'enode':
-        return this.enodeGroups.get(id);
+        return this.enodeObject3Ds.get(id);
       case 'wire':
-        return this.wireGroups.get(id);
+        return this.wireObject3Ds.get(id);
       default:
         return undefined;
     }
@@ -701,7 +713,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
   ): Map<UUID, { type: HoverableType; position: THREE.Vector3 }> {
     const selectionPositions = new Map<UUID, { type: HoverableType; position: THREE.Vector3 }>();
     if (selection.kind === 'mono') {
-      const object = this.getGroup(selection.type, selection.id);
+      const object = this.getObject3D(selection.type, selection.id);
       if (object) {
         selectionPositions.set(selection.id as UUID, {
           type: selection.type,
@@ -712,7 +724,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
       const multiSelection = selection as MultiSelectionData;
       if (multiSelection.components) {
         for (const id of multiSelection.components.keys()) {
-          const object = this.getGroup('component', id);
+          const object = this.getObject3D('component', id);
           if (object) {
             selectionPositions.set(id, { type: 'component', position: object.position.clone() });
           }
@@ -818,16 +830,16 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     let targetObject: THREE.Object3D | null = null;
 
     // Check components
-    if (this.componentGroups.has(elementId)) {
-      targetObject = this.componentGroups.get(elementId)!;
+    if (this.componentObject3Ds.has(elementId)) {
+      targetObject = this.componentObject3Ds.get(elementId)!;
     }
     // Check wires
-    else if (this.wireGroups.has(elementId)) {
-      targetObject = this.wireGroups.get(elementId)!;
+    else if (this.wireObject3Ds.has(elementId)) {
+      targetObject = this.wireObject3Ds.get(elementId)!;
     }
     // Check enodes
-    else if (this.enodeGroups.has(elementId)) {
-      targetObject = this.enodeGroups.get(elementId)!;
+    else if (this.enodeObject3Ds.has(elementId)) {
+      targetObject = this.enodeObject3Ds.get(elementId)!;
     }
 
     if (!targetObject) {
@@ -921,9 +933,9 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
       }
 
       // Clear tracking maps
-      this.componentGroups.clear();
-      this.wireGroups.clear();
-      this.enodeGroups.clear();
+      this.componentObject3Ds.clear();
+      this.wireObject3Ds.clear();
+      this.enodeObject3Ds.clear();
 
       // Dispose MapControls
       if (this.mapControls) {
@@ -1276,15 +1288,15 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     const enodes = this.circuit.getAllENodes();
 
     for (const component of components) {
-      this._createComponentGroup(component);
+      this._createComponentObject3D(component);
     }
 
     for (const wire of wires) {
-      this._createWireMesh(wire);
+      this._createWireObject3D(wire);
     }
 
     for (const enode of enodes) {
-      this._createEnodeMesh(enode);
+      this._createEnodeObject3D(enode);
     }
   }
 
@@ -1292,19 +1304,19 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     // Remove deleted objects
     if (changedData.removedComponents) {
       for (const id of changedData.removedComponents) {
-        this._removeComponentGroup(id);
+        this._removeComponentObject3D(id);
       }
     }
 
     if (changedData.removedWires) {
       for (const id of changedData.removedWires) {
-        this._removeWireGroup(id);
+        this._removeWireObject3D(id);
       }
     }
 
     if (changedData.removedENodes) {
       for (const id of changedData.removedENodes) {
-        this._removeEnodeGroup(id);
+        this._removeEnodeObject3D(id);
       }
     }
 
@@ -1313,7 +1325,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
       for (const id of changedData.addedComponents) {
         const component = this.circuit.getComponent(id);
         if (component) {
-          this._createComponentGroup(component);
+          this._createComponentObject3D(component);
         }
       }
     }
@@ -1322,7 +1334,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
       for (const id of changedData.addedWires) {
         const wire = this.circuit.getWire(id);
         if (wire) {
-          this._createWireMesh(wire);
+          this._createWireObject3D(wire);
         }
       }
     }
@@ -1331,7 +1343,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
       for (const id of changedData.addedENodes) {
         const enode = this.circuit.getENode(id);
         if (enode) {
-          this._createEnodeMesh(enode);
+          this._createEnodeObject3D(enode);
         }
       }
     }
@@ -1339,16 +1351,16 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     // Update modified objects
     if (changedData.modifiedComponents) {
       for (const id of changedData.modifiedComponents) {
-        this._removeComponentGroup(id);
+        this._removeComponentObject3D(id);
         const component = this.circuit.getComponent(id);
         if (component) {
-          this._createComponentGroup(component);
+          this._createComponentObject3D(component);
         }
       }
     }
   }
 
-  private _createComponentGroup(component: Component): void {
+  private _createComponentObject3D(component: Component): void {
     try {
       const factory = this.factoryRegistry.get(component.type);
       // Support both function-based (legacy) and class-based (new) factories
@@ -1363,7 +1375,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
       mesh.userData.componentType = component.type;
 
       this.scene!.add(mesh);
-      this._indexComponentGroup(component.id, mesh);
+      this._indexComponentObject3D(component.id, mesh);
     } catch (error) {
       const err = error as Error;
       console.warn(`Failed to create mesh for component ${component.id}:`, err.message);
@@ -1377,114 +1389,38 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
    * @param group
    * @private
    */
-  private _indexComponentGroup(componentId: string, group: THREE.Group): void {
-    this.componentGroups.set(componentId, group);
+  private _indexComponentObject3D(componentId: string, group: THREE.Group): void {
+    this.componentObject3Ds.set(componentId, group);
     group.traverse((obj) => {
       if (obj.userData && obj.userData.type === 'enodeGroup') {
         const enodeId = obj.userData.enodeId;
         if (enodeId) {
-          this.enodeGroups.set(enodeId, obj as THREE.Group);
+          this.enodeObject3Ds.set(enodeId, obj as THREE.Group);
         }
       }
     });
   }
 
-  private _unindexComponentGroup(componentId: string, group: THREE.Group): void {
-    this.componentGroups.delete(componentId);
+  private _unindexComponentObject3D(componentId: string, group: THREE.Group): void {
+    this.componentObject3Ds.delete(componentId);
     group.traverse((obj) => {
       if (obj.userData && obj.userData.type === 'enodeGroup') {
         const enodeId = obj.userData.enodeId;
         if (enodeId) {
-          this.enodeGroups.delete(enodeId);
+          this.enodeObject3Ds.delete(enodeId);
         }
       }
     });
   }
 
-  private _createWireMesh(wire: Wire): void {
-    try {
-      if (!this.scene || !this.circuit) {
-        console.warn(`Cannot create wire ${wire.id}: scene or circuit not initialized`);
-        return;
-      }
-
-      // Use WireVisualManager to create wire with pin-accurate endpoints
-      const line = this.wireVisualManager.createOrUpdateWire(
-        wire,
-        this.circuit,
-        this.scene,
-        this.componentGroups
-      );
-
-      // Track in wireGroups for backward compatibility
-      this.wireGroups.set(wire.id, line);
-    } catch (error) {
-      const err = error as Error;
-      console.warn(`Failed to create mesh for wire ${wire.id}:`, err.message);
-    }
-  }
-
-  private _createEnodeMesh(enode: ENode): void {
-    try {
-      // Only visualize branching point enodes, not component pin enodes
-      // Pin enodes are connection points on components and don't need separate visualization
-      if (enode.type === ENodeType.Pin) {
-        // Skip pin enodes - they're visualized as part of their components
-        return;
-      }
-
-      const geometry = createEnodeGeometry(0.15);
-      const material = createStandardMaterial(0x00aaff, {
-        metalness: 0.5,
-        roughness: 0.3,
-      });
-
-      const mesh = new THREE.Mesh(geometry, material);
-
-      // Use getPosition() to properly handle position retrieval
-      const pos = enode.getPosition(this.circuit);
-      mesh.position.set(pos.x, 0, -pos.y);
-
-      mesh.userData.enodeId = enode.id;
-      mesh.userData.enodeType = enode.type;
-
-      this.scene!.add(mesh);
-      this.enodeGroups.set(enode.id, mesh);
-    } catch (error) {
-      const err = error as Error;
-      console.warn(`Failed to create mesh for enode ${enode.id}:`, err.message);
-    }
-  }
-
-  private _removeEnodeGroup(id: string): void {
-    const group = this.enodeGroups.get(id);
-    if (!group) return;
-    group?.traverse((obj) => {
-      if (obj instanceof THREE.Mesh) {
-        if (obj.geometry) {
-          obj.geometry.dispose();
-        }
-        if (obj.material) {
-          if (Array.isArray(obj.material)) {
-            obj.material.forEach((mat) => mat.dispose());
-          } else {
-            obj.material.dispose();
-          }
-        }
-      }
-    });
-    this.scene!.remove(group);
-    this.enodeGroups.delete(id);
-  }
-
-  private _removeComponentGroup(id: string): void {
-    const group = this.componentGroups.get(id);
+  private _removeComponentObject3D(id: string): void {
+    const group = this.componentObject3Ds.get(id);
     if (group) {
       this.scene!.remove(group);
       // Parcours complet pour disposer toutes les géométries / matériaux des enfants
       group.traverse((obj) => {
         if (obj.userData && obj.userData.type === 'enode') {
-          this._removeEnodeGroup(obj.userData.enodeId);
+          this._removeEnodeObject3D(obj.userData.enodeId);
         } else if (obj instanceof THREE.Mesh) {
           if (obj.geometry) {
             obj.geometry.dispose();
@@ -1509,32 +1445,110 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
           }
         }
       });
-      this._unindexComponentGroup(id, group as THREE.Group);
+      this._unindexComponentObject3D(id, group as THREE.Group);
     }
   }
 
-  private _removeWireGroup(id: string): void {
-    if (this.wireGroups.has(id)) {
+
+
+  private _createEnodeObject3D(enode: ENode): void {
+    try {
+      // Only visualize branching point enodes, not component pin enodes
+      // Pin enodes are connection points on components and don't need separate visualization
+      if (enode.type === ENodeType.Pin) {
+        // Skip pin enodes - they're visualized as part of their components
+        return;
+      }
+
+      const geometry = createEnodeGeometry(0.15);
+      const material = createStandardMaterial(0x00aaff, {
+        metalness: 0.5,
+        roughness: 0.3,
+      });
+
+      const mesh = new THREE.Mesh(geometry, material);
+
+      // Use getPosition() to properly handle position retrieval
+      const pos = enode.getPosition(this.circuit);
+      mesh.position.set(pos.x, 0, -pos.y);
+
+      mesh.userData.enodeId = enode.id;
+      mesh.userData.enodeType = enode.type;
+
+      this.scene!.add(mesh);
+      this.enodeObject3Ds.set(enode.id, mesh);
+    } catch (error) {
+      const err = error as Error;
+      console.warn(`Failed to create mesh for enode ${enode.id}:`, err.message);
+    }
+  }
+
+  private _removeEnodeObject3D(id: string): void {
+    const group = this.enodeObject3Ds.get(id);
+    if (!group) return;
+    group?.traverse((obj) => {
+      if (obj instanceof THREE.Mesh) {
+        if (obj.geometry) {
+          obj.geometry.dispose();
+        }
+        if (obj.material) {
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach((mat) => mat.dispose());
+          } else {
+            obj.material.dispose();
+          }
+        }
+      }
+    });
+    this.scene!.remove(group);
+    this.enodeObject3Ds.delete(id);
+  }
+
+  private _createWireObject3D(wire: Wire): void {
+    try {
+      if (!this.scene || !this.circuit) {
+        console.warn(`Cannot create wire ${wire.id}: scene or circuit not initialized`);
+        return;
+      }
+
+      // Use WireVisualManager to create wire with pin-accurate endpoints
+      const line = this.wireVisualManager.createOrUpdateWire(
+          wire,
+          this.circuit,
+          this.scene,
+          this.componentObject3Ds
+      );
+
+      // Track in wireObject3Ds for backward compatibility
+      this.wireObject3Ds.set(wire.id, line);
+    } catch (error) {
+      const err = error as Error;
+      console.warn(`Failed to create mesh for wire ${wire.id}:`, err.message);
+    }
+  }
+
+  private _removeWireObject3D(id: string): void {
+    if (this.wireObject3Ds.has(id)) {
       // Use WireVisualManager to remove wire (handles disposal)
       this.wireVisualManager.removeWire(id);
-      this.wireGroups.delete(id);
+      this.wireObject3Ds.delete(id);
     }
   }
 
   private _removeAllVisuals(): void {
     // Remove all component meshes
-    for (const id of Array.from(this.componentGroups.keys())) {
-      this._removeComponentGroup(id);
+    for (const id of Array.from(this.componentObject3Ds.keys())) {
+      this._removeComponentObject3D(id);
     }
 
     // Remove all wire meshes
-    for (const id of Array.from(this.wireGroups.keys())) {
-      this._removeWireGroup(id);
+    for (const id of Array.from(this.wireObject3Ds.keys())) {
+      this._removeWireObject3D(id);
     }
 
     // Remove all enode meshes
-    for (const id of Array.from(this.enodeGroups.keys())) {
-      this._removeEnodeGroup(id);
+    for (const id of Array.from(this.enodeObject3Ds.keys())) {
+      this._removeEnodeObject3D(id);
     }
 
     // remove grid

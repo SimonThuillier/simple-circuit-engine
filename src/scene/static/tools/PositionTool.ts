@@ -130,7 +130,7 @@ export class PositionTool implements IEditingTool {
     }
     // discriminate invalid selections for this tool
     if (selection.kind === 'mono' && selection.type === 'enode') {
-      const object = this._sceneManager.getGroup('enode', selection.id);
+      const object = this._sceneManager.getObject3D('enode', selection.id);
       if (!object) {
         return;
       }
@@ -178,7 +178,7 @@ export class PositionTool implements IEditingTool {
       this.dragState.startPosition
     );
     for (const [id, data] of this.dragState.positionsAtStart.entries()) {
-      const object = this._sceneManager.getGroup(data.type, id);
+      const object = this._sceneManager.getObject3D(data.type, id);
       if (!object) {
         continue;
       }
@@ -228,7 +228,7 @@ export class PositionTool implements IEditingTool {
     // Commit position to circuit model (T034)
     // Save new state into the circuit model
     for (const [id, data] of this.dragState.positionsAtStart.entries()) {
-      const object = this._sceneManager.getGroup(data.type, id);
+      const object = this._sceneManager.getObject3D(data.type, id);
       if (!object) {
         continue;
       }
@@ -266,7 +266,7 @@ export class PositionTool implements IEditingTool {
 
       // restore all elements to their original positions
       for (const [id, data] of this.dragState.positionsAtStart.entries()) {
-        const object = this._sceneManager.getGroup(data.type, id);
+        const object = this._sceneManager.getObject3D(data.type, id);
         if (!object) {
           continue;
         }
@@ -307,7 +307,7 @@ export class PositionTool implements IEditingTool {
       return;
     }
     const componentId = selection.id;
-    const component = this._sceneManager.getGroup('component', componentId);
+    const component = this._sceneManager.getObject3D('component', componentId);
     if (!component) {
       return;
     }

@@ -30,7 +30,7 @@ export interface WirePath {
 }
 
 /**
- * Manages wire visual rendering with proper pin targeting and dynamic updates.
+ * Delegation of CircuitSceneManager which handles wire visual rendering with proper pin targeting and dynamic updates.
  *
  * Key responsibilities:
  * - Create wire visuals with endpoints at actual pin positions

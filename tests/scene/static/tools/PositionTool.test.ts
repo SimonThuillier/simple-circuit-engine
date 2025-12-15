@@ -38,7 +38,7 @@ const createMockSceneManager = () => {
           ['component-id', { type: 'component' as const, position: new THREE.Vector3(5, 0, -5) }],
         ])
     ),
-    getGroup: vi.fn(() => mockGroup),
+    getObject3D: vi.fn(() => mockGroup),
     on: vi.fn(),
     off: vi.fn(),
     emit: vi.fn(),
@@ -213,7 +213,7 @@ describe('PositionTool (T040-T041, T052)', () => {
     });
 
     it('should rotate component 90° clockwise on double-click', () => {
-      const componentGroup = sceneManager.getGroup('component', componentId);
+      const componentGroup = sceneManager.getObject3D('component', componentId);
       const initialRotation = componentGroup!.rotation.y;
 
       const dblClickEvent = new MouseEvent('dblclick');
@@ -239,7 +239,7 @@ describe('PositionTool (T040-T041, T052)', () => {
     });
 
     it('should rotate component 90° clockwise on R key', () => {
-      const componentGroup = sceneManager.getGroup('component', componentId);
+      const componentGroup = sceneManager.getObject3D('component', componentId);
       const initialRotation = componentGroup!.rotation.y;
 
       const rKeyEvent = new KeyboardEvent('keydown', { key: 'r' });
@@ -265,7 +265,7 @@ describe('PositionTool (T040-T041, T052)', () => {
     });
 
     it('should handle multiple rotations correctly', () => {
-      const componentGroup = sceneManager.getGroup('component', componentId);
+      const componentGroup = sceneManager.getObject3D('component', componentId);
       const startRotation = componentGroup!.rotation.y;
 
       // Rotate 4 times (full circle - should return to approximately the same angle)
@@ -296,7 +296,7 @@ describe('PositionTool (T040-T041, T052)', () => {
       const downEvent = new MouseEvent('pointerdown', { button: 0 });
       (tool as any).handlePointerDown(downEvent);
 
-      const componentGroup = sceneManager.getGroup('component', componentId);
+      const componentGroup = sceneManager.getObject3D('component', componentId);
       const initialRotation = componentGroup!.rotation.y;
 
       // Try to rotate with R key during drag
