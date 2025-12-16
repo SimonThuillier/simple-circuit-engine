@@ -86,7 +86,7 @@ export interface SceneManagerEventMap {
   dragCancel: { selection: SelectionData };
   componentRotated: { componentId: UUID; newRotation: number };
   error: { message: string; error?: Error };
-  ready: { renderer: 'static' | 'simulation' };
+  ready: { manager: 'static' | 'simulation' };
   // Tool system events
   toolActivated: { toolType: ToolType };
   toolDeactivated: { toolType: ToolType };

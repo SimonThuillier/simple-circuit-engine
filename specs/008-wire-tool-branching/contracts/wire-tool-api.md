@@ -41,36 +41,40 @@ constructor(sceneManager: CircuitSceneManager)
 ### State Types
 
 ```typescript
-type WireToolMode = 'idle' | 'wire_creating' | 'dragging';
+type WireToolMode = 'idle' | 'wire_creating' | 'wire_dragging' | 'bp_dragging';
 
 interface WireCreatingState {
   sourceEnodeId: UUID;
+  sourcePosition: THREE.Vector3;
+  previewWire: Line2 | null;
+  ts: number; // Timestamp for double-click detection
 }
 
-interface DraggingState {
+interface WireDragState {
   wireId: UUID;
-  dragTarget: DragTarget;
-  originalPosition: Position;
-  isNewIntermediatePoint: boolean;
+  pointIndex: number; // Index in intermediatePositions array
+  initialPosition: THREE.Vector3;
+  originalPositions: { x: number; y: number }[]; // For cancellation
+  targetType: 'intermediate' | 'new_intermediate';
 }
 
-type DragTarget =
-  | { type: 'branchingPoint'; enodeId: UUID }
-  | { type: 'intermediatePoint'; index: number };
+interface BPDragState {
+  enodeId: UUID; // Branching point being dragged
+  initialPosition: THREE.Vector3; // For cancellation
+}
 ```
 
 ### Event Handlers
 
 ```typescript
 // DOM Event Handlers
-handlePointerDown(event: MouseEvent): void;
-handlePointerUp(event: MouseEvent): void;
-handleDblClick(event: MouseEvent): void;
-handleKeyDown(event: KeyboardEvent): void;
+handlePointerDown(event: MouseEvent): void;   // Wire creation start, wire drag start, BP drag start
+handlePointerUp(event: MouseEvent): void;     // Wire creation complete, drag commit
+handleDblClick(event: MouseEvent): void;      // Create branching point, cycle source type
+handleKeyDown(event: KeyboardEvent): void;    // Escape (cancel), Delete/Backspace (remove)
 
 // Scene Manager Event Handlers
-handleGridPositionMove(position: THREE.Vector3): void;
-handleHoverChange(hovered: HoveredElement | null): void;
+handleGridPositionMove(position: THREE.Vector3): void; // Update preview/drag position
 ```
 
 ### Internal Methods
@@ -78,24 +82,35 @@ handleHoverChange(hovered: HoveredElement | null): void;
 ```typescript
 // Wire Creation
 private startWireCreation(sourceEnodeId: UUID): void;
-private completeWireCreation(targetEnodeId: UUID): void;
-private createWireToNewBranchingPoint(position: Position): void;
+private completeWireCreation(targetEnodeId: UUID): UUID | undefined;
 private cancelWireCreation(): void;
 
 // Branching Point Operations
-private createBranchingPointOnWire(wireId: UUID, position: Position): void;
-private createStandaloneBranchingPoint(position: Position): void;
-private cycleBranchingPointSourceType(enodeId: UUID): void;
+private createBranchingPointOnWire(wireId: UUID, worldPosition: THREE.Vector3): UUID | undefined;
+private createStandaloneBranchingPoint(worldPosition: THREE.Vector3): UUID | undefined;
 
-// Drag Operations
-private startDrag(wireId: UUID, target: DragTarget, position: Position): void;
-private updateDrag(position: Position): void;
-private commitDrag(): void;
-private cancelDrag(): void;
+// Wire Dragging (Intermediate Points)
+private startWireDrag(
+  wireId: UUID,
+  targetType: 'intermediate' | 'new_intermediate',
+  pointIndex: number,
+  worldPosition: THREE.Vector3
+): void;
+private updateWireDrag(worldPosition: THREE.Vector3): void;
+private commitWireDrag(): void;
+private cancelWireDrag(): void;
+
+// Branching Point Dragging
+private startBPDrag(enodeId: UUID, worldPosition: THREE.Vector3): void;
+private updateBPDrag(worldPosition: THREE.Vector3): void;
+private commitBPDrag(): void;
+private cancelBPDrag(): void;
 
 // Utility
-private findNearestIntermediatePoint(wireId: UUID, screenPos: THREE.Vector2): { index: number } | null;
-private getInsertIndexForPosition(wireId: UUID, position: Position): number;
+private checkMergeDelete(wire: Wire): { x: number; y: number }[];
+
+// Public
+cancelOperation(): void; // Cancel any active operation
 ```
 
 ---
@@ -124,15 +139,28 @@ splitWire(wireId: UUID, position: Position): {
 
 /**
  * Update wire intermediate positions.
+ * @param persist - Whether to persist the change (default: false for real-time updates)
  * @throws Error if wireId not found
  */
-updateWireIntermediatePositions(wireId: UUID, positions: Position[]): Wire;
+updateWireIntermediatePositions(wireId: UUID, positions: Position[], persist?: boolean): Wire;
 
 /**
- * Update ENode source type.
+ * Simplify wire intermediate positions by removing collinear points.
+ * @throws Error if wireId not found
+ */
+simplifyWireIntermediatePositions(wireId: UUID): void;
+
+/**
+ * Remove a branching point and its connected wires.
  * @throws Error if enodeId not found or not a BranchingPoint
  */
-updateENodeSourceType(enodeId: UUID, sourceType: ENodeSourceType | null): void;
+removeBranchingPoint(enodeId: UUID): void;
+
+/**
+ * Remove a wire from the circuit.
+ * @throws Error if wireId not found
+ */
+removeWire(wireId: UUID): void;
 ```
 
 ---
@@ -243,52 +271,76 @@ updatePreviewWire(endPosition: THREE.Vector3): void;
 removePreviewWire(): void;
 
 /**
+ * Update wire visual to reflect current model state.
+ * Used during real-time drag operations.
+ * @param wireId - Wire to update
+ */
+updateWire(wireId: UUID): void;
+
+/**
  * Refresh wire geometry after intermediate positions changed.
  * @param wireId - Wire to refresh
  */
 refreshWireGeometry(wireId: UUID): void;
+
+/**
+ * Get insertion index for a new intermediate point on a wire
+ * @param wireId - Wire ID
+ * @param worldPosition - Position where user clicked
+ * @returns Index where new point should be inserted
+ */
+getInsertIndexForPosition(wireId: UUID, worldPosition: THREE.Vector3): number;
+
+/**
+ * Find nearest intermediate point to screen position.
+ * @param wireId - Wire to check
+ * @param screenPos - Screen position (pixels)
+ * @returns Point index and distance, or null if none found within threshold
+ */
+findNearestIntermediatePoint(wireId: UUID, screenPos: THREE.Vector2): { pointIndex: number } | null;
+
+/**
+ * Compute the complete wire path including endpoints and intermediate positions.
+ * @param wire - Wire instance
+ * @returns Object with points array representing the complete path
+ */
+computeWirePath(wire: Wire): { points: THREE.Vector3[] };
 ```
 
 ---
 
-## CircuitEditionManager Extensions
+## CircuitSceneManager Extensions
 
-**Location**: `src/scene/static/CircuitEditionManager.ts`
+**Location**: `src/scene/static/CircuitSceneManager.ts`
+
+These methods are called by WireTool to modify the circuit model and update visuals.
 
 ### New Methods
 
 ```typescript
 /**
- * Save branching point creation to circuit model.
+ * Create a branching point at world position.
  */
-saveBranchingPointAction(
-  position: Position,
-  sourceType?: ENodeSourceType
-): ENode;
+addBranchingPoint(worldPosition: THREE.Vector3, sourceType?: ENodeSourceType): ENode;
 
 /**
- * Save wire split operation to circuit model.
+ * Split a wire at world position, creating a branching point.
  */
-saveSplitWire(
-  wireId: UUID,
-  position: Position
-): { branchingPoint: ENode; wire1: Wire; wire2: Wire };
+splitWire(wireId: UUID, worldPosition: THREE.Vector3): {
+  branchingPoint: ENode;
+  wire1: Wire;
+  wire2: Wire;
+};
 
 /**
- * Save wire intermediate positions update.
+ * Remove a wire from circuit and scene.
  */
-saveWireIntermediatePositions(
-  wireId: UUID,
-  positions: Position[]
-): Wire;
+removeWire(wireId: UUID): void;
 
 /**
- * Save ENode source type update.
+ * Remove a branching point and its connected wires from circuit and scene.
  */
-saveENodeSourceTypeAction(
-  enodeId: UUID,
-  sourceType: ENodeSourceType | null
-): void;
+removeBranchingPoint(enodeId: UUID): void;
 ```
 
 ---
@@ -301,12 +353,32 @@ saveENodeSourceTypeAction(
 interface SceneManagerEventMap {
   // Existing events...
 
-  // New events for wire tool
-  wireCreated: { wireId: UUID; node1: UUID; node2: UUID };
-  branchingPointCreated: { enodeId: UUID; position: Position };
-  wireSplit: { originalWireId: UUID; branchingPointId: UUID; wire1Id: UUID; wire2Id: UUID };
-  wireIntermediatePositionsChanged: { wireId: UUID; positions: Position[] };
-  enodeSourceTypeChanged: { enodeId: UUID; sourceType: ENodeSourceType | null };
+  // Tool lifecycle events (shared by all tools)
+  toolOperationStarted: {
+    toolType: ToolType;
+    operationData: Record<string, any>;
+  };
+
+  toolOperationCompleted: {
+    toolType: ToolType;
+    operationData: Record<string, any>;
+    changedData: {
+      addedWires?: UUID[];
+      removedWires?: UUID[];
+      updatedWires?: UUID[];
+      addedENodes?: UUID[];
+      removedENodes?: UUID[];
+    };
+  };
+
+  toolOperationCancelled: {
+    toolType: ToolType;
+  };
+
+  toolValidationError: {
+    toolType: ToolType;
+    errorMessage: string;
+  };
 }
 ```
 
@@ -318,12 +390,34 @@ interface SceneManagerEventMap {
 
 | Operation | Error Condition | Handling |
 |-----------|----------------|----------|
-| Wire creation | Same source and target | Reject with not-allowed cursor |
-| Wire creation | Duplicate wire | Reject with not-allowed cursor |
-| Wire split | Wire not found | Log error, no-op |
-| Drag | Wire deleted during drag | Cancel drag, log warning |
-| Source type cycle | ENode not a BranchingPoint | Log error, no-op |
+| Wire creation | Same source and target | Cancel wire creation |
+| Wire creation | Duplicate wire | Emit toolValidationError, cancel |
+| Wire split | Wire not found | Emit toolValidationError, no-op |
+| Wire drag | Wire deleted during drag | Cancel drag |
+| BP drag | Branching point deleted during drag | Cancel drag |
+| Deletion | Wire not found | Silent no-op |
+| Deletion | Branching point not found | Silent no-op |
 
 ### Validation
 
 All position inputs are validated and snapped to grid before use.
+
+### Wire Creation on Wire
+
+When completing wire creation by clicking on an existing wire:
+1. Creates a new branching point at the click position
+2. Splits the target wire into two wires connecting through the branching point
+3. Creates the new wire from the source enode to the new branching point
+
+### Drag Target Resolution Priority
+
+When clicking on a wire in idle mode (to start dragging):
+1. **Existing intermediate point** - If click is near an existing intermediate point (within threshold)
+2. **New intermediate point** - Otherwise, create new intermediate point at click position
+
+### Branching Point Drag Activation
+
+Double-click-hold gesture:
+1. First click on branching point starts wire creation
+2. Quick second click (<500ms) on same branching point cancels wire creation
+3. Subsequent click-hold within 500ms starts branching point drag

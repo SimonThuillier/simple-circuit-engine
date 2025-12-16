@@ -193,7 +193,9 @@ export class WireTool implements IEditingTool {
       }
 
       // Priority 2: Create new intermediate point at click position
-      const insertIndex = this.getInsertIndexForPosition(wireId, worldPosition);
+      const insertIndex = this._sceneManager
+        .getWireVisualManager()
+        .getInsertIndexForPosition(wireId, worldPosition);
       this.startWireDrag(wireId, 'new_intermediate', insertIndex, worldPosition);
       this._sceneManager.getControls()!.enablePan = false;
       this._sceneManager.on('gridPositionMove', this.handleGridPositionMove);
@@ -522,56 +524,6 @@ export class WireTool implements IEditingTool {
       });
     }
     return;
-  }
-
-  /**
-   * Get insertion index for a new intermediate point on a wire (T058)
-   * @param wireId - Wire ID
-   * @param worldPosition - Position where user clicked
-   * @returns Index where new point should be inserted
-   */
-  private getInsertIndexForPosition(wireId: UUID, worldPosition: THREE.Vector3): number {
-    const circuit = this._sceneManager.getCircuit();
-    if (!circuit) return 0;
-
-    const wire = circuit.getWire(wireId);
-    if (!wire) return 0;
-
-    // Get wire path
-    const wirePath = this._sceneManager.getWireVisualManager().computeWirePath(wire);
-    const points = wirePath.points;
-
-    // Find the segment closest to the click position
-    let minDistance = Infinity;
-    let insertIndex = 0;
-
-    for (let i = 0; i < points.length - 1; i++) {
-      const segmentStart = points[i];
-      const segmentEnd = points[i + 1];
-
-      if (!segmentStart || !segmentEnd) continue;
-
-      // Project click position onto segment
-      const segmentDir = new THREE.Vector3().subVectors(segmentEnd, segmentStart);
-      const segmentLength = segmentDir.length();
-
-      if (segmentLength === 0) continue;
-
-      segmentDir.normalize();
-      const toClick = new THREE.Vector3().subVectors(worldPosition, segmentStart);
-      const projection = toClick.dot(segmentDir);
-      const clampedProjection = Math.max(0, Math.min(segmentLength, projection));
-
-      const closestPoint = segmentStart.clone().addScaledVector(segmentDir, clampedProjection);
-      const distance = worldPosition.distanceTo(closestPoint);
-
-      if (distance < minDistance) {
-        minDistance = distance;
-        insertIndex = i;
-      }
-    }
-
-    return insertIndex;
   }
 
   /**

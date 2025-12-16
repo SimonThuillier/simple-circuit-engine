@@ -180,7 +180,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
       this.initialized = true;
 
       // Emit ready event
-      this.emit('ready', {});
+      this.emit('ready', { manager: 'static' });
     } catch (error) {
       const err = error as Error;
       this.emit('error', { message: err.message, error: err });

@@ -194,21 +194,59 @@ These are runtime-only states, not persisted in the model.
 ### WireTool State
 
 ```typescript
-type WireToolState = 'idle' | 'wire_creating' | 'dragging';
+type WireToolMode = 'idle' | 'wire_creating' | 'wire_dragging' | 'bp_dragging';
 
 interface WireCreatingState {
   sourceEnodeId: UUID;
-  previewEndpoint: THREE.Vector3;
+  sourcePosition: THREE.Vector3;
+  previewWire: Line2 | null;
+  ts: number; // Timestamp for double-click detection
 }
 
-interface DraggingState {
+interface WireDragState {
   wireId: UUID;
-  dragTarget:
-    | { type: 'branchingPoint'; enodeId: UUID; originalPosition: Position }
-    | { type: 'intermediatePoint'; index: number; originalPosition: Position; isNew: boolean };
-  startMousePosition: THREE.Vector3;
+  pointIndex: number; // Index in intermediatePositions array
+  initialPosition: THREE.Vector3;
+  originalPositions: { x: number; y: number }[]; // For cancellation
+  targetType: 'intermediate' | 'new_intermediate'; // Drag target type
+}
+
+interface BPDragState {
+  enodeId: UUID; // Branching point being dragged
+  initialPosition: THREE.Vector3; // For cancellation
 }
 ```
+
+### WireTool Operations
+
+The WireTool supports three main categories of operations:
+
+#### 1. Wire Creation
+- **Single-click on enode**: Start wire creation from source enode
+- **Single-click on another enode**: Complete wire to target enode
+- **Single-click on wire**: Create branching point on wire and complete wire connection
+- **Single-click on empty space**: Create standalone branching point and complete wire
+- **Escape key**: Cancel wire creation
+
+#### 2. Wire Dragging (Intermediate Points)
+- **Single-click on wire**: Start dragging (creates new intermediate point or drags existing)
+- **Drag to new position**: Update intermediate positions in real-time
+- **Release**: Commit changes (with auto-merge/delete if point is near endpoint/other point)
+- **Escape key**: Cancel drag and revert to original positions
+
+#### 3. Branching Point Dragging
+- **Double-click-hold on branching point**: Start dragging branching point
+- **Drag to new position**: Move branching point and all connected wires
+- **Release**: Commit changes (simplifies connected wire paths)
+- **Escape key**: Cancel drag and revert to original position
+
+#### 4. Creation Operations
+- **Double-click on wire**: Create branching point, splitting wire into two
+- **Double-click on empty space**: Create standalone branching point
+
+#### 5. Deletion Operations
+- **Delete/Backspace key with wire selected**: Remove wire from circuit
+- **Delete/Backspace key with branching point selected**: Remove branching point and connected wires
 
 ### Visual Factory State
 

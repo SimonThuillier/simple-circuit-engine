@@ -459,6 +459,56 @@ export class WireVisualManager {
   }
 
   /**
+   * Get insertion index for a new intermediate point on a wire (T058)
+   * @param wireId - Wire ID
+   * @param worldPosition - Position where user clicked
+   * @returns Index where new point should be inserted
+   */
+  getInsertIndexForPosition(wireId: UUID, worldPosition: THREE.Vector3): number {
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return 0;
+
+    const wire = circuit.getWire(wireId);
+    if (!wire) return 0;
+
+    // Get wire path
+    const wirePath = this.computeWirePath(wire);
+    const points = wirePath.points;
+
+    // Find the segment closest to the click position
+    let minDistance = Infinity;
+    let insertIndex = 0;
+
+    for (let i = 0; i < points.length - 1; i++) {
+      const segmentStart = points[i];
+      const segmentEnd = points[i + 1];
+
+      if (!segmentStart || !segmentEnd) continue;
+
+      // Project click position onto segment
+      const segmentDir = new THREE.Vector3().subVectors(segmentEnd, segmentStart);
+      const segmentLength = segmentDir.length();
+
+      if (segmentLength === 0) continue;
+
+      segmentDir.normalize();
+      const toClick = new THREE.Vector3().subVectors(worldPosition, segmentStart);
+      const projection = toClick.dot(segmentDir);
+      const clampedProjection = Math.max(0, Math.min(segmentLength, projection));
+
+      const closestPoint = segmentStart.clone().addScaledVector(segmentDir, clampedProjection);
+      const distance = worldPosition.distanceTo(closestPoint);
+
+      if (distance < minDistance) {
+        minDistance = distance;
+        insertIndex = i;
+      }
+    }
+
+    return insertIndex;
+  }
+
+  /**
    * Convert 3D world position to 2D screen position (T056)
    * @param worldPosition - World position as Vector3
    * @returns Screen position as Vector2
