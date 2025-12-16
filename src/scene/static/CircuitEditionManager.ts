@@ -183,23 +183,23 @@ export class CircuitEditionManager {
 
   /**
    * delete branching point in the core circuit model and emits the appropriate event.
-   * @param branchingPoint - the branching point Object3D
+   * @param enodeId - the branching point id
    * @throws Error
    * @return The circuit enode
    */
-  saveDeleteBranchingPoint(branchingPoint: Object3D) :
-      {deletedWires?: UUID[] | undefined, mergedWires?: UUID[] | undefined}{
+  saveDeleteBranchingPoint(enodeId: UUID) :
+      {deletedWires?: UUID[] | undefined, mergedWires?: UUID[] | undefined, newWire?: Wire | undefined}{
     const circuit = this._sceneManager.getCircuit();
     try {
       if (!circuit) {
         throw new Error('No circuit available in the scene manager.');
       }
-      const result = circuit.removeBranchingPoint(branchingPoint.userData.id);
+      const result = circuit.removeBranchingPoint(enodeId);
 
       const event: SceneManagerEventMap['circuitElementAction'] = {
         type: 'enode',
         action: 'delete',
-        id: branchingPoint.userData.id,
+        id: enodeId,
         error: null,
         data: {
           ...result
@@ -210,8 +210,8 @@ export class CircuitEditionManager {
     } catch (error) {
       const event: SceneManagerEventMap['circuitElementAction'] = {
         type: 'enode',
-        action: 'edit',
-        id: branchingPoint.userData.id,
+        action: 'delete',
+        id: enodeId,
         error: error as Error,
         data: null,
       };
@@ -295,25 +295,37 @@ export class CircuitEditionManager {
   }
 
   /**
-   * Save wire intermediate positions update.
-   * @param wireId - Wire to update
-   * @param positions - New intermediate positions
-   * @returns The updated Wire
+   * delete wire to the core circuit model and emits the appropriate event.
+   * @param wireId - the wire ID
+   * @throws Error
+   * @return The circuit wire
    */
-  saveWireIntermediatePositions(wireId: UUID, positions: Position[]): Wire {
+  saveDeleteWire(wireId : UUID): void {
     const circuit = this._sceneManager.getCircuit();
-    if (!circuit) {
-      throw new Error('No circuit available in the scene manager.');
+    try {
+      if (!circuit) {
+        throw new Error('No circuit available in the scene manager.');
+      }
+      circuit.removeWire(wireId);
+      const event: SceneManagerEventMap['circuitElementAction'] = {
+        type: 'wire',
+        action: 'delete',
+        id: wireId,
+        error: null,
+        data: null
+      };
+      this._sceneManager.emit('circuitElementAction', event);
+      return;
+    } catch (error) {
+      const event: SceneManagerEventMap['circuitElementAction'] = {
+        type: 'wire',
+        action: 'delete',
+        id: wireId,
+        error: error as Error,
+        data: null,
+      };
+      this._sceneManager.emit('circuitElementAction', event);
     }
-
-    const updatedWire = circuit.updateWireIntermediatePositions(wireId, positions);
-
-    this._sceneManager.emit('wireIntermediatePositionsChanged', {
-      wireId,
-      positions,
-    });
-
-    return updatedWire;
   }
 
   /**

@@ -8,7 +8,7 @@
  */
 
 import type { UUID } from './types/Identifier.js';
-import { Position } from './types/Position.js';
+import {findPositionBestIndex, Position, simplifyPositions} from './types/Position.js';
 import { Rotation } from './types/Rotation.js';
 import { Component } from './Component.js';
 import { ENode } from './ENode.js';
@@ -407,14 +407,14 @@ export class Circuit {
 
   /**
    * Remove a branching point electrical node from the circuit.
-   * Also removes all wires connected to this branching point if there are more than 2.
+   * Also removes all wires connected to this branching point if there are ony one or more than 2.
    * In the case there are exactly two wires, they will be merged before removing the branching point.
    *
    * @param id - Branching point ENode UUID
    * @throws {Error} If ENode does not exist or is not a branching point
    */
   removeBranchingPoint(id: UUID):
-      {deletedWires?: UUID[] | undefined, mergedWires?: UUID[] | undefined} {
+      {deletedWires?: UUID[] | undefined, mergedWires?: UUID[] | undefined, newWire?: Wire | undefined} {
     const enode = this.enodes.get(id);
 
     if (!enode) {
@@ -446,16 +446,33 @@ export class Circuit {
         const otherNode1 = wire1.node1 === id ? wire1.node2 : wire1.node1;
         const otherNode2 = wire2.node1 === id ? wire2.node2 : wire2.node1;
 
+        // compute intermediate positions for the new wire
+        const intermediatePositions: Position[] = [];
+        if(otherNode1 === wire1.node1) {
+            intermediatePositions.push(...wire1.intermediatePositions);
+        }
+        else if(otherNode1 === wire1.node2) {
+          intermediatePositions.push(...([...wire1.intermediatePositions].reverse()));
+        }
+        intermediatePositions.push(enode.getPosition(this));
+        if(otherNode2 === wire2.node1) {
+          intermediatePositions.push(...([...wire2.intermediatePositions].reverse()));
+        }
+        else if(otherNode2 === wire2.node2) {
+          intermediatePositions.push(...wire2.intermediatePositions);
+        }
+
         // Remove the old wires
         this.removeWire(wire1.id);
         this.removeWire(wire2.id);
 
         // Create new wire connecting the two other nodes
-        const newWire = this.addWire(otherNode1, otherNode2);
+        const newWire = this.addWire(otherNode1, otherNode2, intermediatePositions);
         if (newWire instanceof Error) {
             throw new Error(`Failed to merge wires at branching point ${id}: ${newWire.message}`);
         }
         Object.assign(result, {mergedWires: [wire1.id, wire2.id]});
+        Object.assign(result, {newWire: newWire});
     }
 
 
@@ -609,6 +626,16 @@ export class Circuit {
       throw new Error(`Wire ${wireId} is connected to non-existent ENodes`);
     }
 
+    // computing best intermediate positions for the two new wires
+    const fullPositions = [
+        enode1.getPosition(this),
+        ...wire.intermediatePositions,
+        enode2.getPosition(this)
+    ];
+    const index = findPositionBestIndex(fullPositions, position);
+    const positionsWire1 = fullPositions.slice(1, index);
+    const positionsWire2 = fullPositions.slice(index, fullPositions.length - 1);
+
     // deleting and dereferencing the old wire
     this.wires.delete(wireId);
     enode1.wires.delete(wireId);
@@ -617,8 +644,8 @@ export class Circuit {
     // Create new branching point ENode at specified position
     const branchingPoint = this.addBranchingPoint(position);
 
-    const newWire1 = this.addWire(enode1.id, branchingPoint.id);
-    const newWire2 = this.addWire(branchingPoint.id, enode2.id);
+    const newWire1 = this.addWire(enode1.id, branchingPoint.id, [...positionsWire1]);
+    const newWire2 = this.addWire(branchingPoint.id, enode2.id, [...positionsWire2]);
 
     if (newWire1 instanceof Error || newWire2 instanceof Error) {
       throw new Error('Failed to create wires after split');
@@ -760,35 +787,52 @@ export class Circuit {
 
   /**
    * Update the intermediate positions of a wire.
-   * Creates a new Wire instance (immutability) and updates references.
+   * Update the wire in place.
    *
    * @param wireId - Wire to update
    * @param intermediatePositions - New intermediate positions
+   * @param simplify - Whether to simplify positions by removing collinear points : useful when finalizing wire routing
    * @returns The updated Wire
    * @throws Error if wireId not found
    */
-  updateWireIntermediatePositions(wireId: UUID, intermediatePositions: Position[]): Wire {
-    const oldWire = this.wires.get(wireId);
+  updateWireIntermediatePositions(wireId: UUID, intermediatePositions: Position[], simplify: boolean = false): Wire {
+    const wire = this.wires.get(wireId);
 
-    if (!oldWire) {
+    if (!wire) {
       throw new Error(`Wire ${wireId} does not exist`);
     }
+    if (simplify) {
+      // remove collinear positions if simplify
+      const fullPositions = [
+        this.enodes.get(wire.node1)!.getPosition(this),
+        ...intermediatePositions,
+        this.enodes.get(wire.node2)!.getPosition(this)
+      ];
+      const simplifiedFullPositions = simplifyPositions(fullPositions, 10);
+      // remove first and last positions (they are the positions of the nodes)
+      wire.intermediatePositions = simplifiedFullPositions.slice(1, simplifiedFullPositions.length - 1);
+    }
+    else {
+      wire.intermediatePositions = intermediatePositions;
+    }
 
-    // Create new Wire with updated intermediate positions
-    const newWire = new Wire(oldWire.node1, oldWire.node2, intermediatePositions);
+    return wire;
+  }
 
-    // Override the ID to maintain the same wire identity
-    Object.defineProperty(newWire, 'id', {
-      value: oldWire.id,
-      writable: false,
-      enumerable: true,
-      configurable: false,
-    });
-
-    // Update wire in map
-    this.wires.set(wireId, newWire);
-
-    return newWire;
+  /**
+   * Simplify intermediate positions of a wire.
+   * Update the wire in place.
+   * @param wireId - Wire to simplify
+   * @returns The updated Wire
+   * @throws Error if wireId not found
+   */
+  simplifyWireIntermediatePositions(wireId: UUID): Wire {
+    const wire = this.wires.get(wireId);
+    if (!wire) {
+      throw new Error(`Wire ${wireId} does not exist`);
+    }
+    wire.intermediatePositions = simplifyPositions(wire.intermediatePositions);
+    return wire;
   }
 
   /**

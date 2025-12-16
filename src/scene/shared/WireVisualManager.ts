@@ -54,11 +54,13 @@ export interface WirePath {
  * ```
  */
 export class WireVisualManager {
-  private _sceneManager: CircuitSceneManager;
+  private containerWidth: number = 500;
+  private containerHeight: number = 500;
 
+
+  private _sceneManager: CircuitSceneManager;
   /** Shared LineMaterials for all wires (memory efficient, consistent styling) */
   private wireMaterials: Map<WireMaterialState, LineMaterial> = new Map();
-
   /** Preview wire for wire creation mode */
   private previewWire: Line2 | null = null;
 
@@ -91,6 +93,8 @@ export class WireVisualManager {
    * ```
    */
   setResolution(width: number, height: number): void {
+    this.containerWidth = width;
+    this.containerHeight = height;
     for(const material of this.wireMaterials.values()) {
       material.resolution.set(width, height);
     }
@@ -396,8 +400,6 @@ export class WireVisualManager {
     // Remove any existing preview
     this.removePreviewWire();
 
-    console.log(startPosition);
-
     // Create preview line geometry with two points (start and end at same position initially)
     const geometry = new LineGeometry();
     geometry.setFromPoints([
@@ -425,19 +427,6 @@ export class WireVisualManager {
     this._sceneManager.getScene().add(previewLine);
 
     return previewLine;
-  }
-
-  /**
-   * Utility: read the first point from a LineGeometry instance.
-   * Returns a Vector3 in the geometry's local space, or null if unavailable.
-   */
-  private _getFirstPositionFromLineGeometry(geometry: LineGeometry): THREE.Vector3 | null {
-    // LineGeometry (examples) stores flattened positions in the 'position' attribute
-    const attr = (geometry as any).attributes?.position ?? (geometry as any).getAttribute?.('position');
-    if (!attr || !attr.array) return null;
-    const arr = attr.array as Float32Array | number[];
-    if (arr.length < 3) return null;
-    return new THREE.Vector3(arr[0], arr[1], arr[2]);
   }
 
   /**
@@ -478,6 +467,97 @@ export class WireVisualManager {
   refreshWireGeometry(wireId: UUID): void {
     // Simply re-create the wire using the existing method
     this.updateWire(wireId);
+  }
+
+  /**
+   * Convert 3D world position to 2D screen position (T056)
+   * @param worldPosition - World position as Vector3
+   * @returns Screen position as Vector2
+   */
+  private worldToScreen(worldPosition: THREE.Vector3): THREE.Vector2 {
+    const camera = this._sceneManager.getCamera();
+
+    const vector = worldPosition.clone();
+    vector.project(camera);
+
+    const widthHalf = this.containerWidth / 2;
+    const heightHalf = this.containerHeight / 2;
+
+    return new THREE.Vector2(
+        (vector.x * widthHalf) + widthHalf,
+        -(vector.y * heightHalf) + heightHalf
+    );
+  }
+
+  /**
+   * Calculate distance between two 2D screen positions (T056)
+   * @param screenPos1 - First screen position
+   * @param screenPos2 - Second screen position
+   * @returns Distance in pixels
+   */
+  private screenDistance(screenPos1: THREE.Vector2, screenPos2: THREE.Vector2): number {
+    return screenPos1.distanceTo(screenPos2);
+  }
+
+  /**
+   * Find nearest intermediate point on a wire within proximity threshold (T057)
+   * @param wireId - Wire ID to search
+   * @param clientPos - Client position (event.clientX/Y) to test - will be converted to container-relative
+   * @param thresholdPx - Proximity threshold in pixels (default: 10)
+   * @returns Object with pointIndex and distance, or null if none found
+   */
+  findNearestIntermediatePoint(
+      wireId: UUID,
+      clientPos: THREE.Vector2,
+      thresholdPx: number = 10
+  ): { pointIndex: number; distance: number } | null {
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return null;
+
+    const wire = circuit.getWire(wireId);
+    if (!wire) return null;
+
+    // Convert client coordinates to container-relative coordinates
+    const containerRelativePos = this.clientToContainerCoords(clientPos);
+
+    let nearestIndex = -1;
+    let nearestDistance = Infinity;
+
+    // Check each intermediate position
+    for (let i = 0; i < wire.intermediatePositions.length; i++) {
+      const pos = wire.intermediatePositions[i];
+      if (!pos) continue;
+
+      const worldPos = new THREE.Vector3(pos.x, 0, -pos.y);
+      const pointScreenPos = this.worldToScreen(worldPos);
+      const distance = this.screenDistance(containerRelativePos, pointScreenPos);
+
+      if (distance < thresholdPx && distance < nearestDistance) {
+        nearestIndex = i;
+        nearestDistance = distance;
+      }
+    }
+
+    if (nearestIndex >= 0) {
+      return { pointIndex: nearestIndex, distance: nearestDistance };
+    }
+
+    return null;
+  }
+
+  /**
+   * Convert client coordinates (event.clientX/Y) to container-relative coordinates
+   * @param clientPos - Position in client/viewport coordinates
+   * @returns Position relative to the container's top-left corner
+   */
+  private clientToContainerCoords(clientPos: THREE.Vector2): THREE.Vector2 {
+    const container = this._sceneManager.getContainer();
+    const rect = container.getBoundingClientRect();
+
+    return new THREE.Vector2(
+      clientPos.x - rect.left,
+      clientPos.y - rect.top
+    );
   }
 
   /**

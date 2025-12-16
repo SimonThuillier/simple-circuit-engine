@@ -12,6 +12,7 @@ import * as THREE from 'three';
 import type { ENode } from '@/core/ENode';
 import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
 import { HitboxLayers } from '../LayerConstants';
+import {ENodeType} from "@/core/types/ENodeType";
 
 /**
  * Factory for creating branching point visuals.
@@ -31,9 +32,9 @@ export class BranchingPointVisualFactory {
     Current: 0x0000ff,   // blue - current source
   };
 
-  private static readonly DEFAULT_HOVER_COLOR = 0xffff00; // Yellow for hitbox hover feedback
-  private static readonly HOVER_EMISSIVE = 0x222222;     // Slight brightening on hover
-  private static readonly SELECTED_EMISSIVE = 0x444444;  // More brightening on selection
+  private static readonly DEFAULT_HOVER_COLOR = 0x4488ff; // Yellow for hitbox hover feedback
+  private static readonly HOVER_EMISSIVE = 0x4488ff;     // Slight brightening on hover
+  private static readonly SELECTED_EMISSIVE = 0xff8800;  // More brightening on selection
 
   // Cone geometry dimensions
   private static readonly CONE_RADIUS = 0.3;
@@ -50,13 +51,13 @@ export class BranchingPointVisualFactory {
    */
   createVisual(enode: ENode): THREE.Group {
     const group = new THREE.Group();
-    group.name = 'branchingPoint';
+    group.name = ENodeType.BranchingPoint;
     // Set userData for raycasting identification
     group.userData = {
       type: 'enodeGroup',
       componentId: null,
       enodeId: enode.id,
-      label: 'branchingPoint'
+      label: ENodeType.BranchingPoint,
     };
 
     // Hitbox (box, raycastable)
@@ -76,7 +77,7 @@ export class BranchingPointVisualFactory {
       type: 'enodeHitbox',
       componentId: null,
       enodeId: enode.id,
-      label: 'branchingPoint'
+      label: ENodeType.BranchingPoint
     };
     hitbox.layers.set(HitboxLayers.ENODE);
     group.add(hitbox);
@@ -104,7 +105,7 @@ export class BranchingPointVisualFactory {
       type: 'enode',
       componentId: null,
       enodeId: enode.id,
-      label: 'branchingPoint',
+      label: ENodeType.BranchingPoint,
     };
     group.add(visual);
 
@@ -132,6 +133,11 @@ export class BranchingPointVisualFactory {
    * @param object3D - The branching point basis object3D (group)
    */
   applyHover(object3D: THREE.Object3D): void {
+    if (object3D.userData.isSelected) {
+      // object is selected; skip hover visual
+      return;
+    }
+
     const visual = object3D.children.find(
       (child) => child.userData.type === 'enode'
     ) as THREE.Mesh | undefined;
@@ -146,6 +152,11 @@ export class BranchingPointVisualFactory {
    * @param object3D - The branching point basis object3D (group)
    */
   removeHover(object3D: THREE.Object3D): void {
+    if (object3D.userData.isSelected) {
+      // object is selected; skip hover visual
+      return;
+    }
+
     const visual = object3D.children.find(
       (child) => child.userData.type === 'enode'
     ) as THREE.Mesh | undefined;
@@ -167,6 +178,7 @@ export class BranchingPointVisualFactory {
     if (visual && visual.material instanceof THREE.MeshStandardMaterial) {
       visual.material.emissive.setHex(BranchingPointVisualFactory.SELECTED_EMISSIVE);
     }
+    object3D.userData.isSelected = true;
   }
 
   /**
@@ -181,6 +193,7 @@ export class BranchingPointVisualFactory {
     if (visual && visual.material instanceof THREE.MeshStandardMaterial) {
       visual.material.emissive.setHex(0x000000);
     }
+    object3D.userData.isSelected = false;
   }
 
   /**

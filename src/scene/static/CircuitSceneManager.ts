@@ -283,7 +283,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
         }
         try {
           // Use BranchingPointVisualFactory for branching points (T024)
-          if (userData.enodeType === 'BranchingPoint') {
+          if (!userData.componentId) {
             this.branchingPointVisualFactory.removeHover(enodeGroup);
           } else {
             removeENodeHover(enodeGroup);
@@ -342,7 +342,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
         }
         try {
           // Use BranchingPointVisualFactory for branching points (T024)
-          if (userData.enodeType === 'BranchingPoint') {
+          if (!userData.componentId) {
             this.branchingPointVisualFactory.applyHover(enodeGroup);
           } else {
             applyENodeHover(enodeGroup);
@@ -457,7 +457,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
       const element = this.hoverManager.getHoveredElement()!;
       const alreadySelected = this.selectionManager!.isSelected(element.type, element.id);
       if (!alreadySelected) {
-        this.selectionManager?.selectOne(element.type, element.id);
+        this.selectionManager?.selectOne(element.type, element.id, element.object3D);
         this.emit('select', this.selectionManager!.getSelection()!);
       }
     } else {
@@ -521,11 +521,22 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
       }
     }
     else if (enodes){
+      for (const [id, _data] of enodes) {
+        const object3D = this.enodeObject3Ds.get(id);
+        if (!object3D) {
+          continue;
+        }
+        if(!!object3D.userData.componentId) continue; // pins cannot be selected individually
+        if (selected) {
+          this.branchingPointVisualFactory.applySelection(object3D);
+        } else {
+          this.branchingPointVisualFactory.removeSelection(object3D);
+        }
+      }
       // enodes selection visual handling can be added here in the future
     }
     else if (wires) {
       for (const [id, _data] of wires) {
-        console.log(`Applying selection visual to wire ${id}, selected=${selected}`);
         if (selected) {
           this.wireVisualManager.applySelectedVisual(id);
         }
@@ -740,10 +751,6 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
    */
   getControls(): MapControls | null {
     return this.mapControls;
-  }
-
-  getSelection(id: string): THREE.Object3D | undefined {
-    return this.componentObject3Ds.get(id);
   }
 
   getComponentObject3Ds(): Map<string, THREE.Group> {
@@ -1568,6 +1575,75 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     this.enodeObject3Ds.delete(id);
   }
 
+  addBranchingPoint(worldPosition: THREE.Vector3): ENode {
+    const branchingPoint = this.circuitEditionManager
+        .saveAddBranchingPoint(worldPosition);
+
+    // T051: Create and add visual to scene
+    const group = this.branchingPointVisualFactory
+        .createVisual(branchingPoint);
+
+    const pos = branchingPoint.getPosition(this.circuit!);
+    group.position.set(pos.x, 0, -pos.y);
+    this.scene!.add(group);
+    this.enodeObject3Ds.set(branchingPoint.id, group);
+
+    return branchingPoint;
+  }
+
+  /**
+   * Split wire at a position, inserting a new branching point and two new wires replacing the deleted ones
+   * @param wireId
+   */
+  splitWire(wireId: UUID, worldPosition: THREE.Vector3): { branchingPoint: ENode; wire1: Wire; wire2: Wire }{
+    // T045: Call CircuitEditionManager to split the wire and create branching point
+    const result = this.circuitEditionManager
+        .saveSplitWire(wireId, worldPosition);
+
+    // T046: Remove old wire visual from scene
+    this.wireVisualManager.removeWire(wireId);
+
+    // T046: Add new wire visuals to scene
+    this.wireVisualManager.createOrUpdateWire(result.wire1);
+    this.wireVisualManager.createOrUpdateWire(result.wire2);
+
+    // T047: Add branching point visual to scene
+    const branchingPointGroup = this.branchingPointVisualFactory.createVisual(result.branchingPoint);
+
+    const pos = result.branchingPoint.getPosition(this.circuit!);
+    branchingPointGroup.position.set(pos.x, 0, -pos.y);
+
+    this.scene!.add(branchingPointGroup);
+    this.enodeObject3Ds.set(result.branchingPoint.id, branchingPointGroup);
+
+    return result;
+  }
+
+  /**
+   * Remove branching point enode visual and update the circuit and visuals
+   * @param enodeId
+   */
+  removeBranchingPoint(enodeId: UUID){
+    const result = this.getCircuitEditionManager().saveDeleteBranchingPoint(enodeId);
+    if (!result) return;
+    this._removeEnodeObject3D(enodeId);
+    this.enodeObject3Ds.delete(enodeId);
+    if(result.deletedWires){
+        for(const wireId of result.deletedWires){
+            this._removeWireObject3D(wireId);
+        }
+    }
+    if(result.mergedWires){
+        for(const wireId of result.mergedWires){
+          this._removeWireObject3D(wireId);
+        }
+    }
+    if(result.newWire){
+        this._createWireObject3D(result.newWire);
+    }
+  }
+
+
   private _createWireObject3D(wire: Wire): void {
     if (!this.scene || !this.circuit) {
       console.warn(`Cannot create wire ${wire.id}: scene or circuit not initialized`);
@@ -1582,9 +1658,29 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     }
   }
 
+  /**
+   * add a wire between two enodes : update the circuit and add visuals
+   * @param sourceEnodeId
+   * @param targetEnodeId
+   */
+  addWire(sourceEnodeId: UUID, targetEnodeId: UUID): Wire {
+    const wire = this.circuitEditionManager.saveAddWire(sourceEnodeId, targetEnodeId);
+    this.wireVisualManager.createOrUpdateWire(wire);
+    return wire;
+  }
+
+  /**
+   * Remove wire visual and update the circuit
+   * @param wireId
+   */
+  removeWire(wireId: UUID){
+    this.getCircuitEditionManager().saveDeleteWire(wireId);
+    this._removeWireObject3D(wireId);
+  }
+
   private _removeWireObject3D(id: string): void {
     if (this.wireObject3Ds.has(id)) {
-      // Use WireVisualManager to remove wire (handles all disposal)
+      // Use WireVisualManager to remove wire (handles all disposal and delete from map)
       this.wireVisualManager.removeWire(id);
     }
   }

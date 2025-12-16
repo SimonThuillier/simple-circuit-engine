@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { Position } from '@/core/types/Position';
+import { Position, findPositionBestIndex, simplifyPositions } from '@/core/types/Position';
 
 describe('Position', () => {
   describe('constructor', () => {
@@ -146,6 +146,285 @@ describe('Position', () => {
     it('should have readonly y coordinate', () => {
       const pos = new Position(10, 20);
       expect(pos.y).toBe(20);
+    });
+  });
+});
+
+describe('findPositionBestIndex', () => {
+  describe('edge cases', () => {
+    it('should return 0 for empty positions array', () => {
+      const target = new Position(5, 5);
+      expect(findPositionBestIndex([], target)).toBe(0);
+    });
+
+    it('should return 1 for single position array', () => {
+      const positions = [new Position(0, 0)];
+      const target = new Position(5, 5);
+      expect(findPositionBestIndex(positions, target)).toBe(1);
+    });
+  });
+
+  describe('horizontal path', () => {
+    it('should find correct index on first segment', () => {
+      // Path: (0,0) -> (10,0) -> (20,0)
+      const positions = [
+        new Position(0, 0),
+        new Position(10, 0),
+        new Position(20, 0)
+      ];
+      // Target at (5, 0) - on first segment
+      expect(findPositionBestIndex(positions, new Position(5, 0))).toBe(1);
+    });
+
+    it('should find correct index on second segment', () => {
+      // Path: (0,0) -> (10,0) -> (20,0)
+      const positions = [
+        new Position(0, 0),
+        new Position(10, 0),
+        new Position(20, 0)
+      ];
+      // Target at (15, 0) - on second segment
+      expect(findPositionBestIndex(positions, new Position(15, 0))).toBe(2);
+    });
+  });
+
+  describe('L-shaped path', () => {
+    it('should find correct index on horizontal segment', () => {
+      // Path: (0,0) -> (10,0) -> (10,10)
+      const positions = [
+        new Position(0, 0),
+        new Position(10, 0),
+        new Position(10, 10)
+      ];
+      // Target at (5, 0) - on horizontal segment
+      expect(findPositionBestIndex(positions, new Position(5, 0))).toBe(1);
+    });
+
+    it('should find correct index on vertical segment', () => {
+      // Path: (0,0) -> (10,0) -> (10,10)
+      const positions = [
+        new Position(0, 0),
+        new Position(10, 0),
+        new Position(10, 10)
+      ];
+      // Target at (10, 5) - on vertical segment
+      expect(findPositionBestIndex(positions, new Position(10, 5))).toBe(2);
+    });
+  });
+
+  describe('complex path', () => {
+    it('should find closest segment for off-path target', () => {
+      // Path: (0,0) -> (10,0) -> (10,10) -> (20,10)
+      const positions = [
+        new Position(0, 0),
+        new Position(10, 0),
+        new Position(10, 10),
+        new Position(20, 10)
+      ];
+      // Target at (5, 1) - closest to first horizontal segment
+      expect(findPositionBestIndex(positions, new Position(5, 1))).toBe(1);
+    });
+
+    it('should find correct segment at corner', () => {
+      // Path: (0,0) -> (10,0) -> (10,10) -> (20,10)
+      const positions = [
+        new Position(0, 0),
+        new Position(10, 0),
+        new Position(10, 10),
+        new Position(20, 10)
+      ];
+      // Target at (11, 5) - closest to vertical segment (index 2)
+      expect(findPositionBestIndex(positions, new Position(11, 5))).toBe(2);
+    });
+
+    it('should find correct segment for last segment', () => {
+      // Path: (0,0) -> (10,0) -> (10,10) -> (20,10)
+      const positions = [
+        new Position(0, 0),
+        new Position(10, 0),
+        new Position(10, 10),
+        new Position(20, 10)
+      ];
+      // Target at (15, 10) - on last horizontal segment
+      expect(findPositionBestIndex(positions, new Position(15, 10))).toBe(3);
+    });
+  });
+
+  describe('target exactly on positions', () => {
+    it('should handle target at segment endpoint', () => {
+      const positions = [
+        new Position(0, 0),
+        new Position(10, 0),
+        new Position(20, 0)
+      ];
+      // Target exactly at middle position - should be on either segment
+      const index = findPositionBestIndex(positions, new Position(10, 0));
+      expect(index).toBeGreaterThanOrEqual(1);
+      expect(index).toBeLessThanOrEqual(2);
+    });
+  });
+});
+
+describe('simplifyPositions', () => {
+  describe('edge cases', () => {
+    it('should return empty array for empty input', () => {
+      expect(simplifyPositions([])).toEqual([]);
+    });
+
+    it('should return single position unchanged', () => {
+      const positions = [new Position(5, 5)];
+      const result = simplifyPositions(positions);
+      expect(result).toHaveLength(1);
+      expect(result[0]!.equals(new Position(5, 5))).toBe(true);
+    });
+
+    it('should return two positions unchanged', () => {
+      const positions = [new Position(0, 0), new Position(10, 10)];
+      const result = simplifyPositions(positions);
+      expect(result).toHaveLength(2);
+      expect(result[0]!.equals(new Position(0, 0))).toBe(true);
+      expect(result[1]!.equals(new Position(10, 10))).toBe(true);
+    });
+  });
+
+  describe('horizontal collinear points', () => {
+    it('should remove middle collinear point on horizontal line', () => {
+      const positions = [
+        new Position(0, 0),
+        new Position(5, 0),  // collinear - should be removed
+        new Position(10, 0)
+      ];
+      const result = simplifyPositions(positions);
+      expect(result).toHaveLength(2);
+      expect(result[0]!.equals(new Position(0, 0))).toBe(true);
+      expect(result[1]!.equals(new Position(10, 0))).toBe(true);
+    });
+
+    it('should remove all middle collinear points on horizontal line', () => {
+      const positions = [
+        new Position(0, 0),
+        new Position(3, 0),   // collinear
+        new Position(7, 0),   // collinear
+        new Position(12, 0),  // collinear
+        new Position(20, 0)
+      ];
+      const result = simplifyPositions(positions);
+      expect(result).toHaveLength(2);
+      expect(result[0]!.equals(new Position(0, 0))).toBe(true);
+      expect(result[1]!.equals(new Position(20, 0))).toBe(true);
+    });
+  });
+
+  describe('vertical collinear points', () => {
+    it('should remove middle collinear point on vertical line', () => {
+      const positions = [
+        new Position(5, 0),
+        new Position(5, 5),  // collinear - should be removed
+        new Position(5, 10)
+      ];
+      const result = simplifyPositions(positions);
+      expect(result).toHaveLength(2);
+      expect(result[0]!.equals(new Position(5, 0))).toBe(true);
+      expect(result[1]!.equals(new Position(5, 10))).toBe(true);
+    });
+  });
+
+  describe('diagonal collinear points', () => {
+    it('should remove middle collinear point on diagonal line', () => {
+      const positions = [
+        new Position(0, 0),
+        new Position(5, 5),  // collinear - should be removed
+        new Position(10, 10)
+      ];
+      const result = simplifyPositions(positions);
+      expect(result).toHaveLength(2);
+      expect(result[0]!.equals(new Position(0, 0))).toBe(true);
+      expect(result[1]!.equals(new Position(10, 10))).toBe(true);
+    });
+
+    it('should remove collinear points on steep diagonal', () => {
+      const positions = [
+        new Position(0, 0),
+        new Position(2, 4),  // collinear (slope 2)
+        new Position(4, 8),  // collinear
+        new Position(6, 12)
+      ];
+      const result = simplifyPositions(positions);
+      expect(result).toHaveLength(2);
+      expect(result[0]!.equals(new Position(0, 0))).toBe(true);
+      expect(result[1]!.equals(new Position(6, 12))).toBe(true);
+    });
+  });
+
+  describe('L-shaped path (non-collinear)', () => {
+    it('should keep corner point in L-shaped path', () => {
+      const positions = [
+        new Position(0, 0),
+        new Position(10, 0),  // corner - NOT collinear
+        new Position(10, 10)
+      ];
+      const result = simplifyPositions(positions);
+      expect(result).toHaveLength(3);
+      expect(result[0]!.equals(new Position(0, 0))).toBe(true);
+      expect(result[1]!.equals(new Position(10, 0))).toBe(true);
+      expect(result[2]!.equals(new Position(10, 10))).toBe(true);
+    });
+  });
+
+  describe('complex paths', () => {
+    it('should simplify path with mixed collinear and non-collinear segments', () => {
+      // Path: horizontal -> corner -> vertical with redundant points
+      const positions = [
+        new Position(0, 0),
+        new Position(5, 0),   // collinear with prev and next horizontal
+        new Position(10, 0),  // corner - keep
+        new Position(10, 5),  // collinear with prev and next vertical
+        new Position(10, 10)
+      ];
+      const result = simplifyPositions(positions);
+      expect(result).toHaveLength(3);
+      expect(result[0]!.equals(new Position(0, 0))).toBe(true);
+      expect(result[1]!.equals(new Position(10, 0))).toBe(true);
+      expect(result[2]!.equals(new Position(10, 10))).toBe(true);
+    });
+
+    it('should preserve zigzag path with no collinear points', () => {
+      const positions = [
+        new Position(0, 0),
+        new Position(5, 5),
+        new Position(10, 0),
+        new Position(15, 5)
+      ];
+      const result = simplifyPositions(positions);
+      expect(result).toHaveLength(4);
+    });
+
+    it('should handle staircase pattern', () => {
+      // Staircase: each segment is either horizontal or vertical, no collinear
+      const positions = [
+        new Position(0, 0),
+        new Position(5, 0),   // horizontal end, vertical start
+        new Position(5, 5),   // vertical end, horizontal start
+        new Position(10, 5),  // horizontal end, vertical start
+        new Position(10, 10)
+      ];
+      const result = simplifyPositions(positions);
+      // All corners should be kept
+      expect(result).toHaveLength(5);
+    });
+  });
+
+  describe('duplicate adjacent positions', () => {
+    it('should handle duplicate positions (collinear with themselves)', () => {
+      const positions = [
+        new Position(0, 0),
+        new Position(0, 0),  // duplicate - collinear
+        new Position(10, 0)
+      ];
+      const result = simplifyPositions(positions);
+      expect(result).toHaveLength(2);
+      expect(result[0]!.equals(new Position(0, 0))).toBe(true);
+      expect(result[1]!.equals(new Position(10, 0))).toBe(true);
     });
   });
 });

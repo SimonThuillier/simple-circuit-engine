@@ -474,10 +474,10 @@
         //console.log('unhover', e);
       });
       sceneManager.on('select', (e) => {
-        console.log('select', e);
+        //console.log('select', e);
       });
       sceneManager.on('deselect', (e) => {
-        console.log('deselect', e);
+        //console.log('deselect', e);
       });
       sceneManager.on('toolActivated', (e) => {
         console.log('toolActivated', e);
@@ -488,8 +488,14 @@
       sceneManager.on('circuitElementAction', (e) => {
         console.log('circuitElementAction', e);
       });
+      sceneManager.on('toolOperationStarted', (e) => {
+        console.log('toolOperationStarted', e);
+      });
+      sceneManager.on('toolOperationCancelled', (e) => {
+        console.warn('toolOperationCancelled', e);
+      });
       sceneManager.on('toolValidationError', (e) => {
-        console.warn('toolValidationError', e);
+        console.error('toolValidationError', e);
       });
 
       sceneManager.getControls().update();

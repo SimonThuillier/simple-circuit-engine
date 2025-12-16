@@ -10,17 +10,16 @@
  */
 
 import * as THREE from 'three';
-import type { IEditingTool, ToolType, CursorType } from '../../shared/types';
+import type {IEditingTool, ToolType, CursorType, MonoSelectionData} from '../../shared/types';
 import type { CircuitSceneManager } from '../CircuitSceneManager';
 import type { UUID } from '../../../core/types/Identifier';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
-import { ENodeSourceType } from '../../../core/types/ENodeSourceType';
 import { Position } from '../../../core/types/Position';
 
 /**
  * Wire tool operating modes (T025)
  */
-type WireToolMode = 'idle' | 'wire_creating' | 'dragging';
+type WireToolMode = 'idle' | 'wire_creating' | 'wire_dragging' | 'bp_dragging';
 
 /**
  * State during wire creation (T026)
@@ -29,12 +28,13 @@ interface WireCreatingState {
   sourceEnodeId: UUID;
   sourcePosition: THREE.Vector3;
   previewWire: Line2 | null;
+  ts: number;
 }
 
 /**
- * State during intermediate position dragging (T026)
+ * State during wire intermediate position dragging (T026)
  */
-interface DragState {
+interface WireDragState {
   wireId: UUID;
   /** Index in intermediatePositions array, or -1 for branching point drag */
   pointIndex: number;
@@ -43,8 +43,14 @@ interface DragState {
   originalPositions: { x: number; y: number }[];
   /** Target type: 'intermediate' | 'branching_point' | 'new_intermediate' */
   targetType: 'intermediate' | 'branching_point' | 'new_intermediate';
-  /** Branching point ID if dragging a branching point */
-  branchingPointId?: UUID;
+}
+
+/**
+ * State during Branching Point intermediate position dragging (SPEC CHANGE
+ */
+interface BPDragState {
+  enodeId: UUID;
+  initialPosition: THREE.Vector3;
 }
 
 /**
@@ -58,8 +64,10 @@ export class WireTool implements IEditingTool {
 
   // Tool state (T025-T026)
   private mode: WireToolMode = 'idle';
+  private lastCancelledOpTs: number = 0;
   private wireCreatingState: WireCreatingState | null = null;
-  private dragState: DragState | null = null;
+  private wireDragState: WireDragState | null = null;
+  private bpDragState: BPDragState | null = null;
 
   // Hover state for cursor management
   private isValidTarget: boolean = true;
@@ -81,7 +89,7 @@ export class WireTool implements IEditingTool {
     // Reset state
     this.mode = 'idle';
     this.wireCreatingState = null;
-    this.dragState = null;
+    this.wireDragState = null;
     this.isValidTarget = true;
 
     // Set up event listeners
@@ -100,8 +108,8 @@ export class WireTool implements IEditingTool {
     // Clean up any active operation
     if (this.mode === 'wire_creating') {
       this.cancelWireCreation();
-    } else if (this.mode === 'dragging') {
-      this.cancelDrag();
+    } else if (this.mode === 'wire_dragging') {
+      this.cancelWireDrag();
     }
 
     const container = this._sceneManager.getContainer();
@@ -116,7 +124,7 @@ export class WireTool implements IEditingTool {
     // Reset state
     this.mode = 'idle';
     this.wireCreatingState = null;
-    this.dragState = null;
+    this.wireDragState = null;
     this.isValidTarget = true;
   }
 
@@ -160,64 +168,33 @@ export class WireTool implements IEditingTool {
     if (!circuit) return;
 
     // T060: Single-click on wire - check for drag target
-    if (hoveredElement && hoveredElement.type === 'wire' && this.mode === 'idle') {
+    if (this.mode === 'idle' && hoveredElement && hoveredElement.type === 'wire') {
       const wireId = hoveredElement.id;
       const screenPos = new THREE.Vector2(event.clientX, event.clientY);
       const worldPosition = this._sceneManager.cursorGroundPlanePosition();
 
       // T061: Drag target resolution: branching point > existing intermediate > new intermediate
-
-      // Priority 1: Check if clicking near a branching point on this wire
       const wire = circuit.getWire(wireId);
-      if (wire) {
-        const node1 = circuit.getENode(wire.node1);
-        const node2 = circuit.getENode(wire.node2);
+      if (!wire) return;
 
-        // Check if either endpoint is a branching point and close to click
-        if (node1 && node1.type === 'BranchingPoint') {
-          const pos1 = node1.getPosition(circuit);
-          const worldPos1 = new THREE.Vector3(pos1.x, 0, -pos1.y);
-          const screenPos1 = this.worldToScreen(worldPos1);
-          if (this.screenDistance(screenPos, screenPos1) < 10) {
-            // Start dragging branching point
-            this.startDrag(wireId, 'branching_point', -1, worldPos1, node1.id);
-            this._sceneManager.getControls()!.enablePan = false;
-            this._sceneManager.on('gridPositionMove', this.handleGridPositionMove);
-            return;
-          }
-        }
-
-        if (node2 && node2.type === 'BranchingPoint') {
-          const pos2 = node2.getPosition(circuit);
-          const worldPos2 = new THREE.Vector3(pos2.x, 0, -pos2.y);
-          const screenPos2 = this.worldToScreen(worldPos2);
-          if (this.screenDistance(screenPos, screenPos2) < 10) {
-            // Start dragging branching point
-            this.startDrag(wireId, 'branching_point', -1, worldPos2, node2.id);
-            this._sceneManager.getControls()!.enablePan = false;
-            this._sceneManager.on('gridPositionMove', this.handleGridPositionMove);
-            return;
-          }
-        }
-      }
-
-      // Priority 2: Check for existing intermediate point
-      const nearestPoint = this.findNearestIntermediatePoint(wireId, screenPos);
-      if (nearestPoint && wire) {
+      // Priority 1: Check for existing intermediate point
+      const nearestPoint = this._sceneManager.getWireVisualManager()
+          .findNearestIntermediatePoint(wireId, screenPos);
+      if (nearestPoint) {
         // Start dragging existing intermediate point
         const pos = wire.intermediatePositions[nearestPoint.pointIndex];
         if (pos) {
           const worldPos = new THREE.Vector3(pos.x, 0, -pos.y);
-          this.startDrag(wireId, 'intermediate', nearestPoint.pointIndex, worldPos);
+          this.startWireDrag(wireId, 'intermediate', nearestPoint.pointIndex, worldPos);
           this._sceneManager.getControls()!.enablePan = false;
           this._sceneManager.on('gridPositionMove', this.handleGridPositionMove);
           return;
         }
       }
 
-      // Priority 3: Create new intermediate point at click position
+      // Priority 2: Create new intermediate point at click position
       const insertIndex = this.getInsertIndexForPosition(wireId, worldPosition);
-      this.startDrag(wireId, 'new_intermediate', insertIndex, worldPosition);
+      this.startWireDrag(wireId, 'new_intermediate', insertIndex, worldPosition);
       this._sceneManager.getControls()!.enablePan = false;
       this._sceneManager.on('gridPositionMove', this.handleGridPositionMove);
       return;
@@ -226,28 +203,20 @@ export class WireTool implements IEditingTool {
     // Check if we're hovering an enode (pin or branching point)
     if (hoveredElement && hoveredElement.type === 'enode') {
       const enodeId = hoveredElement.id;
-      const enode = circuit.getENode(enodeId);
+      const isBranchingPoint = !hoveredElement.object3D.userData.componentId;
 
       if (this.mode === 'idle') {
-        // Check if it's a branching point with wires - allow drag
-        if (enode && enode.type === 'BranchingPoint' && enode.wires.size > 0) {
-          // T068: Start dragging branching point
-          const pos = enode.getPosition(circuit);
-          const worldPos = new THREE.Vector3(pos.x, 0, -pos.y);
-          // Use first connected wire for drag state (needed for interface)
-          const firstWireId = Array.from(enode.wires)[0];
-          if (firstWireId) {
-            this.startDrag(firstWireId, 'branching_point', -1, worldPos, enodeId);
-            this._sceneManager.getControls()!.enablePan = false;
-            this._sceneManager.on('gridPositionMove', this.handleGridPositionMove);
-          }
-        } else {
-          // First click - start wire creation
-          console.log('Starting wire creation from enode:', enodeId);
-          this.startWireCreation(enodeId);
+        // this is considered a double click/hold on branching point which starts drag
+        if(isBranchingPoint && Date.now() - this.lastCancelledOpTs < 500) {
+          this.startBPDrag(enodeId, this._sceneManager.cursorGroundPlanePosition());
           this._sceneManager.getControls()!.enablePan = false;
           this._sceneManager.on('gridPositionMove', this.handleGridPositionMove);
+          return;
         }
+        // normal case start wire creation
+        this.startWireCreation(enodeId);
+        this._sceneManager.getControls()!.enablePan = false;
+        this._sceneManager.on('gridPositionMove', this.handleGridPositionMove);
       }
     } else if (this.mode === 'wire_creating') {
       // Clicked on empty space during wire creation - cancel
@@ -263,9 +232,12 @@ export class WireTool implements IEditingTool {
     if (this.mode === 'wire_creating' && this.wireCreatingState) {
       // Update preview wire endpoint
       this._sceneManager.getWireVisualManager().updatePreviewWire(position);
-    } else if (this.mode === 'dragging') {
-      // T062: Update drag target position
-      this.updateDrag(position);
+    } else if (this.mode === 'wire_dragging') {
+      // T062: Update wire drag target position
+      this.updateWireDrag(position);
+    } else if (this.mode === 'bp_dragging') {
+      // T062: Update branching point drag position
+      this.updateBPDrag(position);
     }
   }
 
@@ -286,16 +258,60 @@ export class WireTool implements IEditingTool {
 
     if (this.mode === 'wire_creating') {
       if (!hoveredElement) {
-        // TODO handle that case (create branching point instead of cancelling)
-        this.cancelWireCreation();
+        // finishing on empty space : create end branching point
+        const worldPosition = this._sceneManager.cursorGroundPlanePosition();
+        const newBpId = this.createStandaloneBranchingPoint(worldPosition);
+        if (!newBpId) {
+          this.cancelWireCreation();
+          return;
+        }
+        this.completeWireCreation(newBpId);
+        this._sceneManager.getSelectionManager()
+            .selectOne('enode', newBpId, this._sceneManager
+                .getObject3D('enode', newBpId)!);
+        return;
       }
       if (hoveredElement && hoveredElement.type === 'enode') {
         const enodeId = hoveredElement.id;
-        this.completeWireCreation(enodeId);
+        if(enodeId === this.wireCreatingState?.sourceEnodeId) {
+          // clicking on the same enode : cancel the wire creation
+          const now = Date.now();
+          if (now - this.wireCreatingState?.ts < 500) {
+            this.lastCancelledOpTs = now; // flag used to activate drag of branching point on next pointerdown
+          }
+          this.cancelWireCreation();
+        }
+        const wireId = this.completeWireCreation(enodeId);
+        if(wireId){
+          this._sceneManager.getSelectionManager()
+              .selectOne('wire', wireId, this._sceneManager
+                  .getObject3D('wire', wireId)!);
+        }
       }
-    } else if (this.mode === 'dragging') {
+      if (hoveredElement && hoveredElement.type === 'wire') {
+        // this interesting case create a new branching point on the wire and connect to it
+        const targetWireId = hoveredElement.id;
+        const gridPosition = this._sceneManager.cursorGroundPlanePosition();
+        const newBpId= this.createBranchingPointOnWire(targetWireId, gridPosition);
+        if (!newBpId) {
+            this.cancelWireCreation();
+            return;
+        }
+        const wireId = this.completeWireCreation(newBpId);
+        if(wireId){
+          this._sceneManager.getSelectionManager()
+              .selectOne('wire', wireId, this._sceneManager
+                  .getObject3D('wire', wireId)!);
+        }
+      }
+
+
+    } else if (this.mode === 'wire_dragging') {
       // T066: Commit drag operation
-      this.commitDrag();
+      this.commitWireDrag();
+    } else if (this.mode === 'bp_dragging') {
+      // Commit branching point drag operation
+      this.commitBPDrag();
     }
 
     // stop listening to gridPositionMove events
@@ -324,8 +340,6 @@ export class WireTool implements IEditingTool {
       // we need to get the world position
       enodeGroup.getWorldPosition(sourcePosition);
     }
-    console.log(enodeGroup.userData);
-    console.log(sourcePosition);
 
     // Create preview wire
     const previewWire = this._sceneManager.getWireVisualManager().createPreviewWire(sourcePosition);
@@ -336,6 +350,7 @@ export class WireTool implements IEditingTool {
       sourceEnodeId,
       sourcePosition: sourcePosition.clone(),
       previewWire,
+      ts: Date.now()
     };
     console.log('Wire creating state initialized:', this.wireCreatingState);
 
@@ -366,7 +381,7 @@ export class WireTool implements IEditingTool {
    * Complete wire creation between source and target enodes (T032)
    * @param targetEnodeId - Target enode ID
    */
-  private completeWireCreation(targetEnodeId: UUID): void {
+  private completeWireCreation(targetEnodeId: UUID): UUID | undefined {
     if (!this.wireCreatingState) return;
 
     const circuit = this._sceneManager.getCircuit();
@@ -376,10 +391,8 @@ export class WireTool implements IEditingTool {
 
     // Saving to model, Validation checks are done in the process (T036, T037)
     try {
-      const wire = this._sceneManager.getCircuitEditionManager().
-      saveAddWire(sourceEnodeId, targetEnodeId);
       // Create definitive wire visual (T038)
-      this._sceneManager.getWireVisualManager().createOrUpdateWire(wire);
+      const wire = this._sceneManager.addWire(sourceEnodeId, targetEnodeId)
       // Emit success event
       this._sceneManager.emit('toolOperationCompleted', {
         toolType: this.type,
@@ -388,6 +401,7 @@ export class WireTool implements IEditingTool {
       });
       // Reset state (end preview)
       this.cancelWireCreation();
+      return wire.id;
     }
     catch(error){
       this.cancelWireCreation();
@@ -407,15 +421,32 @@ export class WireTool implements IEditingTool {
     if (event.key === 'Escape') {
       if (this.mode === 'wire_creating') {
         this.cancelWireCreation();
-      } else if (this.mode === 'dragging') {
+      } else if (this.mode === 'wire_dragging') {
         // T065: Cancel drag on Escape
-        this.cancelDrag();
+        this.cancelWireDrag();
+      } else if (this.mode === 'bp_dragging') {
+        // T065: Cancel drag on Escape
+        this.cancelBPDrag();
+      }
+    } else if (event.key === 'Delete' || event.key === 'Backspace') {
+      // Handle deletion of wires or branching points
+      const selection = this._sceneManager.getSelectionManager().getSelection();
+      if (!selection) return;
+      if (selection.kind === 'multi'){
+        // TODO handle multi selection later
+        return;
+      }
+      const monoSelection = selection as MonoSelectionData;
+
+      if(monoSelection.type === 'wire'){
+        const wireId = monoSelection.id;
+        this._sceneManager.removeWire(wireId);
+      }
+      else if (monoSelection.type === 'enode' && monoSelection.data === 'BranchingPoint') {
+        const enodeId = monoSelection.id;
+        this._sceneManager.removeBranchingPoint(enodeId);
       }
     }
-  }
-
-  handleClick(_worldPosition: THREE.Vector3): void {
-    // Handled by handlePointerDown
   }
 
   /**
@@ -434,31 +465,15 @@ export class WireTool implements IEditingTool {
    */
   handleDblClick(event: MouseEvent): void {
     if (event.button !== 0) return;
-
     const hoveredElement = this._sceneManager.getHoveredElement();
 
-    // T053: Priority 1 - Check if we're hovering a branching point enode
-    if (hoveredElement && hoveredElement.type === 'enode') {
-      const circuit = this._sceneManager.getCircuit();
-      if (!circuit) return;
-
-      const enode = circuit.getENode(hoveredElement.id);
-      if (enode && enode.type === 'BranchingPoint') {
-        // Cycle sourceType on branching point
-        this.cycleBranchingPointSourceType(hoveredElement.id);
-        return;
-      }
-    }
-
-    // Priority 2 - Check if we're hovering a wire
+    // Priority 1 - Check if we're hovering a wire => split it with new branchingPoint
     if (hoveredElement && hoveredElement.type === 'wire') {
       const wireId = hoveredElement.id;
       const gridPosition = this._sceneManager.cursorGroundPlanePosition();
-
-      // Create branching point on the wire at the clicked position
       this.createBranchingPointOnWire(wireId, gridPosition);
     } else if (!hoveredElement) {
-      // Priority 3 - Double-click on empty space - create standalone branching point
+      // Priority 2 - Double-click on empty space - create standalone branching point
       const gridPosition = this._sceneManager.cursorGroundPlanePosition();
       this.createStandaloneBranchingPoint(gridPosition);
     }
@@ -469,34 +484,12 @@ export class WireTool implements IEditingTool {
    * @param wireId - Wire to split
    * @param worldPosition - 3D position in world space
    */
-  private createBranchingPointOnWire(wireId: UUID, worldPosition: THREE.Vector3): void {
+  private createBranchingPointOnWire(wireId: UUID, worldPosition: THREE.Vector3): UUID | undefined {
     const circuit = this._sceneManager.getCircuit();
     if (!circuit) return;
 
-
-
     try {
-      // T045: Call CircuitEditionManager to split the wire and create branching point
-      const result = this._sceneManager.getCircuitEditionManager()
-        .saveSplitWire(wireId, worldPosition);
-
-      // T046: Remove old wire visual from scene
-      this._sceneManager.getWireVisualManager().removeWire(wireId);
-
-      // T046: Add new wire visuals to scene
-      this._sceneManager.getWireVisualManager().createOrUpdateWire(result.wire1);
-      this._sceneManager.getWireVisualManager().createOrUpdateWire(result.wire2);
-
-      // T047: Add branching point visual to scene
-      const branchingPointGroup = this._sceneManager.getBranchingPointVisualFactory()
-        .createVisual(result.branchingPoint);
-
-      const pos = result.branchingPoint.getPosition(circuit);
-      branchingPointGroup.position.set(pos.x, 0, -pos.y);
-
-      this._sceneManager.getScene().add(branchingPointGroup);
-      this._sceneManager.getEnodeObject3Ds().set(result.branchingPoint.id, branchingPointGroup);
-
+      const result = this._sceneManager.splitWire(wireId, worldPosition);
       // Emit success event
       this._sceneManager.emit('toolOperationCompleted', {
         toolType: this.type,
@@ -512,6 +505,7 @@ export class WireTool implements IEditingTool {
           addedENodes: [result.branchingPoint.id],
         },
       });
+      return result.branchingPoint.id;
     } catch (error) {
       this._sceneManager.emit('toolValidationError', {
         toolType: this.type,
@@ -524,153 +518,20 @@ export class WireTool implements IEditingTool {
    * Create a standalone branching point at empty grid position (T048)
    * @param worldPosition - 3D position in world space
    */
-  private createStandaloneBranchingPoint(worldPosition: THREE.Vector3): void {
+  private createStandaloneBranchingPoint(worldPosition: THREE.Vector3): UUID | undefined {
     const circuit = this._sceneManager.getCircuit();
     if (!circuit) return;
-
     try {
       // Create branching point in circuit model (no sourceType initially)
-      const branchingPoint = this._sceneManager.getCircuitEditionManager()
-        .saveAddBranchingPoint(worldPosition);
-
-      // T051: Create and add visual to scene
-      const group = this._sceneManager.getBranchingPointVisualFactory()
-        .createVisual(branchingPoint);
-
-      const pos = branchingPoint.getPosition(circuit);
-      group.position.set(pos.x, 0, -pos.y);
-      this._sceneManager.getScene().add(group);
-      this._sceneManager.getEnodeObject3Ds().set(branchingPoint.id, group);
+      const branchingPoint = this._sceneManager.addBranchingPoint(worldPosition);
+      return branchingPoint.id;
     } catch (error) {
       this._sceneManager.emit('toolValidationError', {
         toolType: this.type,
         errorMessage: `Failed to create branching point: ${(error as Error).message}`,
       });
     }
-  }
-
-  /**
-   * Cycle branching point sourceType: null → Voltage → Current → null (T052)
-   * @param enodeId - Branching point ENode ID
-   */
-  private cycleBranchingPointSourceType(enodeId: UUID): void {
-    const circuit = this._sceneManager.getCircuit();
-    if (!circuit) return;
-
-    const enode = circuit.getENode(enodeId);
-    if (!enode || enode.type !== 'BranchingPoint') return;
-
-    // Cycle through: null → Voltage → Current → null
-    let newSourceType: ENodeSourceType | null;
-    if (!enode.source) {
-      newSourceType = ENodeSourceType.Voltage;
-    } else if (enode.source === ENodeSourceType.Voltage) {
-      newSourceType = ENodeSourceType.Current;
-    } else {
-      newSourceType = null;
-    }
-
-    try {
-      // T054: Update circuit model via CircuitEditionManager
-      this._sceneManager.getCircuitEditionManager()
-        .saveENodeSourceTypeAction(enodeId, newSourceType);
-
-      // T055: Update visual color
-      const enodeGroup = this._sceneManager.getEnodeObject3Ds().get(enodeId);
-      if (enodeGroup) {
-        this._sceneManager.getBranchingPointVisualFactory()
-          .updateSourceType(enodeGroup, newSourceType);
-      }
-
-      // Emit success event
-      this._sceneManager.emit('toolOperationCompleted', {
-        toolType: this.type,
-        operationData: {
-          enodeId,
-          sourceType: newSourceType,
-        },
-        changedData: {},
-      });
-    } catch (error) {
-      this._sceneManager.emit('toolValidationError', {
-        toolType: this.type,
-        errorMessage: `Failed to update source type: ${(error as Error).message}`,
-      });
-    }
-  }
-
-  /**
-   * Convert 3D world position to 2D screen position (T056)
-   * @param worldPosition - World position as Vector3
-   * @returns Screen position as Vector2
-   */
-  private worldToScreen(worldPosition: THREE.Vector3): THREE.Vector2 {
-    const camera = this._sceneManager.getCamera();
-    const container = this._sceneManager.getContainer();
-
-    const vector = worldPosition.clone();
-    vector.project(camera);
-
-    const widthHalf = container.clientWidth / 2;
-    const heightHalf = container.clientHeight / 2;
-
-    return new THREE.Vector2(
-      (vector.x * widthHalf) + widthHalf,
-      -(vector.y * heightHalf) + heightHalf
-    );
-  }
-
-  /**
-   * Calculate distance between two 2D screen positions (T056)
-   * @param screenPos1 - First screen position
-   * @param screenPos2 - Second screen position
-   * @returns Distance in pixels
-   */
-  private screenDistance(screenPos1: THREE.Vector2, screenPos2: THREE.Vector2): number {
-    return screenPos1.distanceTo(screenPos2);
-  }
-
-  /**
-   * Find nearest intermediate point on a wire within proximity threshold (T057)
-   * @param wireId - Wire ID to search
-   * @param screenPos - Screen position to test
-   * @param thresholdPx - Proximity threshold in pixels (default: 10)
-   * @returns Object with pointIndex and distance, or null if none found
-   */
-  private findNearestIntermediatePoint(
-    wireId: UUID,
-    screenPos: THREE.Vector2,
-    thresholdPx: number = 10
-  ): { pointIndex: number; distance: number } | null {
-    const circuit = this._sceneManager.getCircuit();
-    if (!circuit) return null;
-
-    const wire = circuit.getWire(wireId);
-    if (!wire) return null;
-
-    let nearestIndex = -1;
-    let nearestDistance = Infinity;
-
-    // Check each intermediate position
-    for (let i = 0; i < wire.intermediatePositions.length; i++) {
-      const pos = wire.intermediatePositions[i];
-      if (!pos) continue;
-
-      const worldPos = new THREE.Vector3(pos.x, 0, -pos.y);
-      const pointScreenPos = this.worldToScreen(worldPos);
-      const distance = this.screenDistance(screenPos, pointScreenPos);
-
-      if (distance < thresholdPx && distance < nearestDistance) {
-        nearestIndex = i;
-        nearestDistance = distance;
-      }
-    }
-
-    if (nearestIndex >= 0) {
-      return { pointIndex: nearestIndex, distance: nearestDistance };
-    }
-
-    return null;
+    return;
   }
 
   /**
@@ -724,19 +585,17 @@ export class WireTool implements IEditingTool {
   }
 
   /**
-   * Start dragging operation (T059)
+   * Start wire dragging operation (T059)
    * @param wireId - Wire being dragged
    * @param targetType - Type of drag target
    * @param pointIndex - Index of intermediate point, or -1 for new/branching
    * @param worldPosition - Initial position
-   * @param branchingPointId - Optional branching point ID if dragging one
    */
-  private startDrag(
-    wireId: UUID,
-    targetType: 'intermediate' | 'branching_point' | 'new_intermediate',
-    pointIndex: number,
-    worldPosition: THREE.Vector3,
-    branchingPointId?: UUID
+  private startWireDrag(
+      wireId: UUID,
+      targetType: 'intermediate' | 'new_intermediate',
+      pointIndex: number,
+      worldPosition: THREE.Vector3
   ): void {
     const circuit = this._sceneManager.getCircuit();
     if (!circuit) return;
@@ -758,18 +617,14 @@ export class WireTool implements IEditingTool {
       pointIndex = insertIndex;
     }
 
-    this.mode = 'dragging';
-    const dragState: DragState = {
+    this.mode = 'wire_dragging';
+    this.wireDragState = {
       wireId,
       pointIndex,
       initialPosition: worldPosition.clone(),
       originalPositions,
       targetType
     };
-    if (branchingPointId) {
-      dragState.branchingPointId = branchingPointId;
-    }
-    this.dragState = dragState;
 
     this._sceneManager.emit('toolOperationStarted', {
       toolType: this.type,
@@ -781,8 +636,8 @@ export class WireTool implements IEditingTool {
    * Update drag target position during drag (T062)
    * @param worldPosition - Current cursor position in world space
    */
-  private updateDrag(worldPosition: THREE.Vector3): void {
-    if (!this.dragState) return;
+  private updateWireDrag(worldPosition: THREE.Vector3): void {
+    if (!this.wireDragState) return;
 
     const circuit = this._sceneManager.getCircuit();
     if (!circuit) return;
@@ -793,142 +648,211 @@ export class WireTool implements IEditingTool {
       y: Math.round(-worldPosition.z)
     };
 
-    if (this.dragState.targetType === 'branching_point' && this.dragState.branchingPointId) {
-      // T068: Dragging branching point - move all connected wires
-      const branchingPoint = circuit.getENode(this.dragState.branchingPointId);
-      if (!branchingPoint) return;
+    // Dragging intermediate point
+    const wire = circuit.getWire(this.wireDragState.wireId);
+    if (!wire) return;
 
-      // Update branching point position via setPosition method
-      const position = new Position(gridPos.x, gridPos.y);
-      branchingPoint.setPosition(position);
+    // Update intermediate positions array
+    const newPositions = [...this.wireDragState.originalPositions];
+    newPositions[this.wireDragState.pointIndex] = gridPos;
 
-      // Update branching point visual
-      const enodeGroup = this._sceneManager.getEnodeObject3Ds().get(this.dragState.branchingPointId);
-      if (enodeGroup) {
-        enodeGroup.position.set(gridPos.x, 0, -gridPos.y);
-      }
-
-      // Update all wires connected to this branching point
-      for (const connectedWireId of branchingPoint.wires) {
-        this._sceneManager.getWireVisualManager().updateWire(connectedWireId);
-      }
-    } else {
-      // Dragging intermediate point
-      const wire = circuit.getWire(this.dragState.wireId);
-      if (!wire) return;
-
-      // Update intermediate positions array
-      const newPositions = [...this.dragState.originalPositions];
-      newPositions[this.dragState.pointIndex] = gridPos;
-
-      // T063: Real-time geometry update with temporary positions
-      // Use circuit's update method to set intermediate positions
-      const positionObjects = newPositions.map(p => new Position(p.x, p.y));
-      circuit.updateWireIntermediatePositions(this.dragState.wireId, positionObjects);
-      this._sceneManager.getWireVisualManager().updateWire(this.dragState.wireId);
-    }
+    // T063: Real-time geometry update with temporary positions
+    // Use circuit's update method to set intermediate positions
+    const positionObjects = newPositions.map(p => new Position(p.x, p.y));
+    circuit.updateWireIntermediatePositions(this.wireDragState.wireId, positionObjects);
+    this._sceneManager.getWireVisualManager().updateWire(this.wireDragState.wireId);
   }
 
   /**
    * Commit drag operation and persist changes (T064)
    */
-  private commitDrag(): void {
-    if (!this.dragState) return;
+  private commitWireDrag(): void {
+    if (!this.wireDragState) return;
 
     const circuit = this._sceneManager.getCircuit();
     if (!circuit) return;
 
     try {
-      if (this.dragState.targetType === 'branching_point' && this.dragState.branchingPointId) {
-        // Branching point drag - position already updated, just emit events
-        const branchingPoint = circuit.getENode(this.dragState.branchingPointId);
-        if (branchingPoint) {
-          this._sceneManager.emit('toolOperationCompleted', {
-            toolType: this.type,
-            operationData: {
-              branchingPointId: this.dragState.branchingPointId,
-              newPosition: branchingPoint.position
-            },
-            changedData: {}
-          });
+      // Intermediate point drag
+      const wire = circuit.getWire(this.wireDragState.wireId);
+      if (!wire) return;
+      // T067: Check for merge/delete conditions
+      const finalPositions = this.checkMergeDelete(wire);
+      // Convert to Position objects
+      const positionObjects = finalPositions.map(p => new Position(p.x, p.y));
+      // Persist to model via CircuitEditionManager
+      circuit.updateWireIntermediatePositions(this.wireDragState.wireId, positionObjects, true);
+      // Update visual
+      this._sceneManager.getWireVisualManager().refreshWireGeometry(this.wireDragState.wireId);
+      this._sceneManager.emit('toolOperationCompleted', {
+        toolType: this.type,
+        operationData: {
+          wireId: this.wireDragState.wireId,
+          intermediatePositions: positionObjects
+        },
+        changedData: {
+          updatedWires: [this.wireDragState.wireId]
         }
-      } else {
-        // Intermediate point drag
-        const wire = circuit.getWire(this.dragState.wireId);
-        if (!wire) return;
-
-        // T067: Check for merge/delete conditions
-        const finalPositions = this.checkMergeDelete(wire);
-
-        // Convert to Position objects
-        const positionObjects = finalPositions.map(p => new Position(p.x, p.y));
-
-        // Persist to model via CircuitEditionManager
-        this._sceneManager.getCircuitEditionManager()
-          .saveWireIntermediatePositions(this.dragState.wireId, positionObjects);
-
-        // Update visual
-        this._sceneManager.getWireVisualManager().refreshWireGeometry(this.dragState.wireId);
-
-        this._sceneManager.emit('toolOperationCompleted', {
-          toolType: this.type,
-          operationData: {
-            wireId: this.dragState.wireId,
-            intermediatePositions: positionObjects
-          },
-          changedData: {
-            updatedWires: [this.dragState.wireId]
-          }
-        });
-      }
+      });
     } catch (error) {
       this._sceneManager.emit('toolValidationError', {
         toolType: this.type,
-        errorMessage: `Failed to commit drag: ${(error as Error).message}`
+        errorMessage: `Failed to commit wire drag: ${(error as Error).message}`
       });
     }
 
     // Reset state
     this.mode = 'idle';
-    this.dragState = null;
+    this.wireDragState = null;
   }
 
   /**
-   * Cancel drag operation and revert to original positions (T065)
+   * Cancel wire drag operation and revert to original positions (T065)
    */
-  private cancelDrag(): void {
-    if (!this.dragState) return;
+  private cancelWireDrag(): void {
+    if (!this.wireDragState) return;
 
     const circuit = this._sceneManager.getCircuit();
     if (!circuit) return;
 
-    if (this.dragState.targetType === 'branching_point' && this.dragState.branchingPointId) {
-      // Revert branching point to original position
-      const branchingPoint = circuit.getENode(this.dragState.branchingPointId);
-      if (branchingPoint) {
-        const gridPos = {
-          x: Math.round(this.dragState.initialPosition.x),
-          y: Math.round(-this.dragState.initialPosition.z)
-        };
-        const position = new Position(gridPos.x, gridPos.y);
-        branchingPoint.setPosition(position);
+    // Revert intermediate positions
+    const positionObjects = this.wireDragState.originalPositions.map(p => new Position(p.x, p.y));
+    circuit.updateWireIntermediatePositions(this.wireDragState.wireId, positionObjects, true);
+    this._sceneManager.getWireVisualManager().updateWire(this.wireDragState.wireId);
 
-        // Update visual
-        const enodeGroup = this._sceneManager.getEnodeObject3Ds().get(this.dragState.branchingPointId);
-        if (enodeGroup) {
-          enodeGroup.position.set(gridPos.x, 0, -gridPos.y);
-        }
+    this._sceneManager.emit('toolOperationCancelled', {
+      toolType: this.type
+    });
 
-        // Update all connected wires
-        for (const connectedWireId of branchingPoint.wires) {
-          this._sceneManager.getWireVisualManager().updateWire(connectedWireId);
-        }
+    // Reset state
+    this.mode = 'idle';
+    this.wireDragState = null;
+  }
+
+  /**
+   * Start branching point dragging operation (T059)
+   * @param enodeId - UUID of the branching point being dragged
+   * @param worldPosition - Initial position
+   */
+  private startBPDrag(
+      enodeId: UUID,
+      worldPosition: THREE.Vector3
+  ): void {
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return;
+
+    const branchingPoint = circuit.getENode(enodeId);
+    if (!branchingPoint) return;
+
+    this.mode = 'bp_dragging';
+    const dragState: BPDragState = {
+      enodeId,
+      initialPosition: worldPosition.clone(),
+    };
+    this.bpDragState = dragState;
+
+    this._sceneManager.emit('toolOperationStarted', {
+      toolType: this.type,
+      operationData: { enodeId }
+    });
+  }
+
+  /**
+   * Update branching point position during drag (T062)
+   * @param worldPosition - Current cursor position in world space
+   */
+  private updateBPDrag(worldPosition: THREE.Vector3): void {
+    if (!this.bpDragState) return;
+
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return;
+
+    // Apply grid snapping
+    const gridPos = {
+      x: Math.round(worldPosition.x),
+      y: Math.round(-worldPosition.z)
+    };
+
+    // T068: Dragging branching point - move all connected wires
+    const branchingPoint = circuit.getENode(this.bpDragState.enodeId);
+    if (!branchingPoint) return;
+
+    // Update branching point position via setPosition method
+    const position = new Position(gridPos.x, gridPos.y);
+    branchingPoint.setPosition(position);
+
+    // Update branching point visual
+    const enodeGroup = this._sceneManager.getEnodeObject3Ds().get(this.bpDragState.enodeId);
+    if (enodeGroup) {
+      enodeGroup.position.set(gridPos.x, 0, -gridPos.y);
+    }
+    // Update all wires connected to this branching point
+    for (const connectedWireId of branchingPoint.wires) {
+      this._sceneManager.getWireVisualManager().updateWire(connectedWireId);
+    }
+  }
+
+  /**
+   * Commit branching point drag operation and persist changes (SPEC CHANGE)
+   */
+  private commitBPDrag(): void {
+    if (!this.bpDragState) return;
+
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return;
+
+    // Branching point drag position is already updated, but it's a good place to simplify wire path if necessary
+    const branchingPoint = circuit.getENode(this.bpDragState.enodeId);
+    if (branchingPoint) {
+      // Update all wires connected to this branching point
+      for (const connectedWireId of branchingPoint.wires) {
+        circuit.simplifyWireIntermediatePositions(connectedWireId);
+        this._sceneManager.getWireVisualManager().updateWire(connectedWireId);
       }
-    } else {
-      // Revert intermediate positions
-      const positionObjects = this.dragState.originalPositions.map(p => new Position(p.x, p.y));
-      circuit.updateWireIntermediatePositions(this.dragState.wireId, positionObjects);
-      this._sceneManager.getWireVisualManager().updateWire(this.dragState.wireId);
+
+      this._sceneManager.emit('toolOperationCompleted', {
+        toolType: this.type,
+        operationData: {
+          branchingPointId: this.bpDragState.enodeId,
+          newPosition: branchingPoint.position
+        },
+        changedData: {}
+      });
+    }
+
+    // Reset state
+    this.mode = 'idle';
+    this.bpDragState = null;
+  }
+
+  /**
+   * Cancel branching point drag operation and revert to original positions (SPEC CHANGE)
+   */
+  private cancelBPDrag(): void {
+    if (!this.bpDragState) return;
+
+    const initialPosition = this.bpDragState.initialPosition;
+    // Update bp visual
+    const enodeGroup = this._sceneManager.getEnodeObject3Ds().get(this.bpDragState.enodeId);
+    if (!enodeGroup) {
+      return;
+    }
+    enodeGroup.position.set(initialPosition.x, 0, initialPosition.z);
+
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return;
+    const branchingPoint = circuit.getENode(this.bpDragState.enodeId);
+    if (!branchingPoint) return;
+    const gridPos = {
+      x: Math.round(initialPosition.x),
+      y: Math.round(-initialPosition.z)
+    };
+    branchingPoint.setPosition(gridPos as Position);
+
+    // Update all connected wires
+    for (const connectedWireId of branchingPoint.wires) {
+      circuit.simplifyWireIntermediatePositions(connectedWireId);
+      this._sceneManager.getWireVisualManager().updateWire(connectedWireId);
     }
 
     this._sceneManager.emit('toolOperationCancelled', {
@@ -937,7 +861,7 @@ export class WireTool implements IEditingTool {
 
     // Reset state
     this.mode = 'idle';
-    this.dragState = null;
+    this.bpDragState = null;
   }
 
   /**
@@ -946,10 +870,12 @@ export class WireTool implements IEditingTool {
    * @returns Final intermediate positions array
    */
   private checkMergeDelete(wire: any): { x: number; y: number }[] {
-    if (!this.dragState) return wire.intermediatePositions;
+    if (!this.wireDragState) return wire.intermediatePositions;
 
     const positions = [...wire.intermediatePositions];
-    const draggedIndex = this.dragState.pointIndex;
+    // handle no intermediate positions
+    if (positions.length === 0) return positions;
+    const draggedIndex = this.wireDragState.pointIndex;
     const draggedPos = positions[draggedIndex];
 
     // Check if dragged point is very close to wire endpoints or other intermediate points
@@ -967,8 +893,8 @@ export class WireTool implements IEditingTool {
 
     // Check if close to endpoint1
     const distToEndpoint1 = Math.sqrt(
-      Math.pow(draggedPos.x - endpoint1.x, 2) +
-      Math.pow(draggedPos.y - endpoint1.y, 2)
+        Math.pow(draggedPos.x - endpoint1.x, 2) +
+        Math.pow(draggedPos.y - endpoint1.y, 2)
     );
     if (distToEndpoint1 < threshold) {
       // Remove this point
@@ -978,8 +904,8 @@ export class WireTool implements IEditingTool {
 
     // Check if close to endpoint2
     const distToEndpoint2 = Math.sqrt(
-      Math.pow(draggedPos.x - endpoint2.x, 2) +
-      Math.pow(draggedPos.y - endpoint2.y, 2)
+        Math.pow(draggedPos.x - endpoint2.x, 2) +
+        Math.pow(draggedPos.y - endpoint2.y, 2)
     );
     if (distToEndpoint2 < threshold) {
       // Remove this point
@@ -993,8 +919,8 @@ export class WireTool implements IEditingTool {
 
       const otherPos = positions[i];
       const dist = Math.sqrt(
-        Math.pow(draggedPos.x - otherPos.x, 2) +
-        Math.pow(draggedPos.y - otherPos.y, 2)
+          Math.pow(draggedPos.x - otherPos.x, 2) +
+          Math.pow(draggedPos.y - otherPos.y, 2)
       );
 
       if (dist < threshold) {
@@ -1010,8 +936,10 @@ export class WireTool implements IEditingTool {
   cancelOperation(): void {
     if (this.mode === 'wire_creating') {
       this.cancelWireCreation();
-    } else if (this.mode === 'dragging') {
-      this.cancelDrag();
+    } else if (this.mode === 'wire_dragging') {
+      this.cancelWireDrag();
+    } else if (this.mode === 'bp_dragging') {
+      this.cancelBPDrag();
     }
   }
 }

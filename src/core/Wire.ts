@@ -63,7 +63,7 @@ export class Wire {
    * Empty array indicates straight-line connection.
    * @readonly
    */
-  public readonly intermediatePositions: ReadonlyArray<Position>;
+  public intermediatePositions: Array<Position>;
 
   /**
    * Create a new wire.
@@ -89,7 +89,7 @@ export class Wire {
    * );
    * ```
    */
-  constructor(node1: UUID, node2: UUID, intermediatePositions: ReadonlyArray<Position> = []) {
+  constructor(node1: UUID, node2: UUID, intermediatePositions: Array<Position> = []) {
     this.id = generateUUID();
     this.node1 = node1;
     this.node2 = node2;
