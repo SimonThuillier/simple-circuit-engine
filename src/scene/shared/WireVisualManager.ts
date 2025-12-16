@@ -17,9 +17,9 @@ import type { Circuit } from '../../core/Circuit';
 import type { Wire } from '../../core/Wire';
 import { ENodeType } from '../../core/types/ENodeType';
 import { createLine2Material } from './MaterialUtils';
-import type {CircuitSceneManager} from "../static/CircuitSceneManager";
-import type {WireMaterialState} from "./types";
-import {HitboxLayers} from "./LayerConstants";
+import type { CircuitSceneManager } from '../static/CircuitSceneManager';
+import type { WireMaterialState } from './types';
+import { HitboxLayers } from './LayerConstants';
 
 /**
  * Wire path representation for rendering
@@ -54,18 +54,22 @@ export interface WirePath {
  * ```
  */
 export class WireVisualManager {
-  private _sceneManager: CircuitSceneManager;
+  private containerWidth: number = 500;
+  private containerHeight: number = 500;
 
+  private _sceneManager: CircuitSceneManager;
   /** Shared LineMaterials for all wires (memory efficient, consistent styling) */
   private wireMaterials: Map<WireMaterialState, LineMaterial> = new Map();
+  /** Preview wire for wire creation mode */
+  private previewWire: Line2 | null = null;
 
   constructor(sceneManager: CircuitSceneManager) {
     this._sceneManager = sceneManager;
     // Create shared LineMaterial with default white color and 2px width
     this.wireMaterials = new Map([
-        ['idle', createLine2Material(0xffffff, 2)],
-        ['hovered', createLine2Material(0x40dfff, 4)],
-        ['selected', createLine2Material(0xffaa00, 3)]
+      ['idle', createLine2Material(0xffffff, 2)],
+      ['hovered', createLine2Material(0x40dfff, 4)],
+      ['selected', createLine2Material(0xffaa00, 3)],
     ]);
   }
 
@@ -88,7 +92,9 @@ export class WireVisualManager {
    * ```
    */
   setResolution(width: number, height: number): void {
-    for(const material of this.wireMaterials.values()) {
+    this.containerWidth = width;
+    this.containerHeight = height;
+    for (const material of this.wireMaterials.values()) {
       material.resolution.set(width, height);
     }
   }
@@ -99,10 +105,7 @@ export class WireVisualManager {
    * @param wire - Wire to render
    * @returns The created/updated Line2 object
    */
-  createOrUpdateWire(
-    wire: Wire
-  ): Line2 {
-
+  createOrUpdateWire(wire: Wire): Line2 {
     const wirePath = this.computeWirePath(wire);
 
     let line = this._sceneManager.getWireObject3Ds().get(wire.id);
@@ -137,9 +140,7 @@ export class WireVisualManager {
    * @param wire - Wire to compute path for
    * @returns WirePath with array of Vector3 points from start to end
    */
-  computeWirePath(
-    wire: Wire
-  ): WirePath {
+  computeWirePath(wire: Wire): WirePath {
     const circuit = this._sceneManager.getCircuit()!; // TODO handle null circuit
     const componentObject3Ds = this._sceneManager.getComponentObject3Ds();
 
@@ -264,9 +265,7 @@ export class WireVisualManager {
    *
    * @param componentId - Component that moved
    */
-  updateWiresForComponent(
-    componentId: UUID
-  ): void {
+  updateWiresForComponent(componentId: UUID): void {
     const circuit = this._sceneManager.getCircuit()!; // TODO handle null circuit
 
     const component = circuit.getComponent(componentId);
@@ -385,6 +384,219 @@ export class WireVisualManager {
   }
 
   /**
+   * Create a preview wire for wire creation mode.
+   * @param startPosition - World position of wire start
+   * @returns Line2 object for preview
+   */
+  createPreviewWire(startPosition: THREE.Vector3): Line2 {
+    // Remove any existing preview
+    this.removePreviewWire();
+
+    // Create preview line geometry with two points (start and end at same position initially)
+    const geometry = new LineGeometry();
+    geometry.setFromPoints([
+      startPosition.clone(),
+      startPosition.clone(),
+      //startPosition.clone().add(new THREE.Vector3(5, 5, 5))
+    ]);
+
+    // Use a slightly different material for preview (dashed or lower opacity)
+    const material = createLine2Material(0xcccccc, 3);
+    material.opacity = 0.7;
+    material.dashed = true;
+    material.dashSize = 1;
+    material.gapSize = 0.3;
+    material.transparent = false;
+
+    const previewLine = new Line2(geometry, material);
+    previewLine.renderOrder = 100; // Render on top
+
+    this.previewWire = previewLine;
+    this.previewWire.userData = {
+      startPosition: startPosition.clone(),
+    };
+
+    this._sceneManager.getScene().add(previewLine);
+
+    return previewLine;
+  }
+
+  /**
+   * Update preview wire endpoint.
+   * @param endPosition - World position of wire end
+   */
+  updatePreviewWire(endPosition: THREE.Vector3): void {
+    if (!this.previewWire) {
+      return;
+    }
+
+    const geometry = this.previewWire.geometry as LineGeometry;
+
+    const startPosition = this.previewWire.userData.startPosition;
+
+    geometry.setFromPoints([startPosition.clone(), endPosition.clone()]);
+  }
+
+  /**
+   * Remove preview wire from scene.
+   */
+  removePreviewWire(): void {
+    if (this.previewWire) {
+      this._sceneManager.getScene().remove(this.previewWire);
+      this.previewWire.geometry.dispose();
+      (this.previewWire.material as LineMaterial).dispose();
+      this.previewWire = null;
+    }
+  }
+
+  /**
+   * Refresh wire geometry after intermediate positions changed.
+   * @param wireId - Wire to refresh
+   */
+  refreshWireGeometry(wireId: UUID): void {
+    // Simply re-create the wire using the existing method
+    this.updateWire(wireId);
+  }
+
+  /**
+   * Get insertion index for a new intermediate point on a wire (T058)
+   * @param wireId - Wire ID
+   * @param worldPosition - Position where user clicked
+   * @returns Index where new point should be inserted
+   */
+  getInsertIndexForPosition(wireId: UUID, worldPosition: THREE.Vector3): number {
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return 0;
+
+    const wire = circuit.getWire(wireId);
+    if (!wire) return 0;
+
+    // Get wire path
+    const wirePath = this.computeWirePath(wire);
+    const points = wirePath.points;
+
+    // Find the segment closest to the click position
+    let minDistance = Infinity;
+    let insertIndex = 0;
+
+    for (let i = 0; i < points.length - 1; i++) {
+      const segmentStart = points[i];
+      const segmentEnd = points[i + 1];
+
+      if (!segmentStart || !segmentEnd) continue;
+
+      // Project click position onto segment
+      const segmentDir = new THREE.Vector3().subVectors(segmentEnd, segmentStart);
+      const segmentLength = segmentDir.length();
+
+      if (segmentLength === 0) continue;
+
+      segmentDir.normalize();
+      const toClick = new THREE.Vector3().subVectors(worldPosition, segmentStart);
+      const projection = toClick.dot(segmentDir);
+      const clampedProjection = Math.max(0, Math.min(segmentLength, projection));
+
+      const closestPoint = segmentStart.clone().addScaledVector(segmentDir, clampedProjection);
+      const distance = worldPosition.distanceTo(closestPoint);
+
+      if (distance < minDistance) {
+        minDistance = distance;
+        insertIndex = i;
+      }
+    }
+
+    return insertIndex;
+  }
+
+  /**
+   * Convert 3D world position to 2D screen position (T056)
+   * @param worldPosition - World position as Vector3
+   * @returns Screen position as Vector2
+   */
+  private worldToScreen(worldPosition: THREE.Vector3): THREE.Vector2 {
+    const camera = this._sceneManager.getCamera();
+
+    const vector = worldPosition.clone();
+    vector.project(camera);
+
+    const widthHalf = this.containerWidth / 2;
+    const heightHalf = this.containerHeight / 2;
+
+    return new THREE.Vector2(
+      vector.x * widthHalf + widthHalf,
+      -(vector.y * heightHalf) + heightHalf
+    );
+  }
+
+  /**
+   * Calculate distance between two 2D screen positions (T056)
+   * @param screenPos1 - First screen position
+   * @param screenPos2 - Second screen position
+   * @returns Distance in pixels
+   */
+  private screenDistance(screenPos1: THREE.Vector2, screenPos2: THREE.Vector2): number {
+    return screenPos1.distanceTo(screenPos2);
+  }
+
+  /**
+   * Find nearest intermediate point on a wire within proximity threshold (T057)
+   * @param wireId - Wire ID to search
+   * @param clientPos - Client position (event.clientX/Y) to test - will be converted to container-relative
+   * @param thresholdPx - Proximity threshold in pixels (default: 10)
+   * @returns Object with pointIndex and distance, or null if none found
+   */
+  findNearestIntermediatePoint(
+    wireId: UUID,
+    clientPos: THREE.Vector2,
+    thresholdPx: number = 10
+  ): { pointIndex: number; distance: number } | null {
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return null;
+
+    const wire = circuit.getWire(wireId);
+    if (!wire) return null;
+
+    // Convert client coordinates to container-relative coordinates
+    const containerRelativePos = this.clientToContainerCoords(clientPos);
+
+    let nearestIndex = -1;
+    let nearestDistance = Infinity;
+
+    // Check each intermediate position
+    for (let i = 0; i < wire.intermediatePositions.length; i++) {
+      const pos = wire.intermediatePositions[i];
+      if (!pos) continue;
+
+      const worldPos = new THREE.Vector3(pos.x, 0, -pos.y);
+      const pointScreenPos = this.worldToScreen(worldPos);
+      const distance = this.screenDistance(containerRelativePos, pointScreenPos);
+
+      if (distance < thresholdPx && distance < nearestDistance) {
+        nearestIndex = i;
+        nearestDistance = distance;
+      }
+    }
+
+    if (nearestIndex >= 0) {
+      return { pointIndex: nearestIndex, distance: nearestDistance };
+    }
+
+    return null;
+  }
+
+  /**
+   * Convert client coordinates (event.clientX/Y) to container-relative coordinates
+   * @param clientPos - Position in client/viewport coordinates
+   * @returns Position relative to the container's top-left corner
+   */
+  private clientToContainerCoords(clientPos: THREE.Vector2): THREE.Vector2 {
+    const container = this._sceneManager.getContainer();
+    const rect = container.getBoundingClientRect();
+
+    return new THREE.Vector2(clientPos.x - rect.left, clientPos.y - rect.top);
+  }
+
+  /**
    * Clean up all managed wire visuals
    */
   dispose(): void {
@@ -397,8 +609,11 @@ export class WireVisualManager {
     }
     wireLines.clear();
 
+    // Remove preview wire if it exists
+    this.removePreviewWire();
+
     // Dispose shared material once during full cleanup
-    for(const material of this.wireMaterials.values()) {
+    for (const material of this.wireMaterials.values()) {
       material.dispose();
     }
     this.wireMaterials.clear();

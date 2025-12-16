@@ -8,7 +8,7 @@
  */
 
 import type { UUID } from './types/Identifier.js';
-import { Position } from './types/Position.js';
+import { findPositionBestIndex, Position, simplifyPositions } from './types/Position.js';
 import { Rotation } from './types/Rotation.js';
 import { Component } from './Component.js';
 import { ENode } from './ENode.js';
@@ -392,15 +392,100 @@ export class Circuit {
    * Add a branching point electrical node at a specific position.
    *
    * Branching points are used to split wires and create junctions.
-   * @param position
+   * @param position - Grid position for the branching point
+   * @param sourceType - Optional source type (voltage/current)
+   * @returns The created ENode
    */
-  addBranchingPoint(position: Position): ENode {
-    const branchingPoint = new ENode(ENodeType.BranchingPoint, undefined, undefined, position);
+  addBranchingPoint(position: Position, sourceType?: ENodeSourceType): ENode {
+    const branchingPoint = new ENode(
+      ENodeType.BranchingPoint,
+      undefined,
+      undefined,
+      position,
+      sourceType
+    );
 
     // Add ENode to circuit
     this.enodes.set(branchingPoint.id, branchingPoint);
 
     return branchingPoint;
+  }
+
+  /**
+   * Remove a branching point electrical node from the circuit.
+   * Also removes all wires connected to this branching point if there are ony one or more than 2.
+   * In the case there are exactly two wires, they will be merged before removing the branching point.
+   *
+   * @param id - Branching point ENode UUID
+   * @throws {Error} If ENode does not exist or is not a branching point
+   */
+  removeBranchingPoint(id: UUID): {
+    deletedWires?: UUID[] | undefined;
+    mergedWires?: UUID[] | undefined;
+    newWire?: Wire | undefined;
+  } {
+    const enode = this.enodes.get(id);
+
+    if (!enode) {
+      throw new Error(`Enode ${id} does not exist`);
+    }
+    if (enode.type !== ENodeType.BranchingPoint) {
+      throw new Error(
+        `Enode ${id} is not a branching point, it must be removed with its component.`
+      );
+    }
+
+    const result = {};
+
+    // Remove all wires connected to this branching point
+    const wires = this.getWiresByNode(id);
+
+    if (wires.length === 1 || wires.length > 2) {
+      const deletedWires: UUID[] = [];
+      for (const wire of wires) {
+        this.removeWire(wire.id);
+        deletedWires.push(wire.id);
+      }
+      Object.assign(result, { deletedWires });
+    } else if (wires.length === 2) {
+      // Merge the two wires into one
+      const wire1 = wires[0]!;
+      const wire2 = wires[1]!;
+
+      // Determine the two nodes to connect
+      const otherNode1 = wire1.node1 === id ? wire1.node2 : wire1.node1;
+      const otherNode2 = wire2.node1 === id ? wire2.node2 : wire2.node1;
+
+      // compute intermediate positions for the new wire
+      const intermediatePositions: Position[] = [];
+      if (otherNode1 === wire1.node1) {
+        intermediatePositions.push(...wire1.intermediatePositions);
+      } else if (otherNode1 === wire1.node2) {
+        intermediatePositions.push(...[...wire1.intermediatePositions].reverse());
+      }
+      intermediatePositions.push(enode.getPosition(this));
+      if (otherNode2 === wire2.node1) {
+        intermediatePositions.push(...[...wire2.intermediatePositions].reverse());
+      } else if (otherNode2 === wire2.node2) {
+        intermediatePositions.push(...wire2.intermediatePositions);
+      }
+
+      // Remove the old wires
+      this.removeWire(wire1.id);
+      this.removeWire(wire2.id);
+
+      // Create new wire connecting the two other nodes
+      const newWire = this.addWire(otherNode1, otherNode2, intermediatePositions);
+      if (newWire instanceof Error) {
+        throw new Error(`Failed to merge wires at branching point ${id}: ${newWire.message}`);
+      }
+      Object.assign(result, { mergedWires: [wire1.id, wire2.id] });
+      Object.assign(result, { newWire: newWire });
+    }
+
+    // Remove the branching point ENode
+    this.enodes.delete(id);
+    return result;
   }
 
   /**
@@ -460,16 +545,13 @@ export class Circuit {
   /**
    * Remove a wire from the circuit.
    *
-   * Automatically removes orphaned branching ENodes (nodes with no
-   * remaining wire connections).
-   *
    * @param id - Wire UUID
    * @throws {Error} If wire does not exist
    *
    * @example
    * ```typescript
    * circuit.removeWire(wireId);
-   * // Wire and any orphaned branching points are removed
+   * // Wire is removed
    * ```
    */
   removeWire(id: UUID): void {
@@ -495,12 +577,13 @@ export class Circuit {
     this.wires.delete(id);
 
     // Clean up orphaned branching points
-    if (enode1 && enode1.type === ENodeType.BranchingPoint && enode1.wires.size === 0) {
-      this.enodes.delete(enode1.id);
-    }
-    if (enode2 && enode2.type === ENodeType.BranchingPoint && enode2.wires.size === 0) {
-      this.enodes.delete(enode2.id);
-    }
+    // Deprecated : branching Points can now exist without wires
+    // if (enode1 && enode1.type === ENodeType.BranchingPoint && enode1.wires.size === 0) {
+    //   this.enodes.delete(enode1.id);
+    // }
+    // if (enode2 && enode2.type === ENodeType.BranchingPoint && enode2.wires.size === 0) {
+    //   this.enodes.delete(enode2.id);
+    // }
   }
 
   /**
@@ -519,11 +602,28 @@ export class Circuit {
    * // Wire and any orphaned branching points are removed
    * ```
    */
-  splitWire(id: UUID, position: Position): Wire[] {
-    const wire = this.wires.get(id);
+  /**
+   * Split an existing wire at a position, creating a branching point.
+   * The original wire is removed and replaced with two new wires
+   * connecting through the new branching point.
+   *
+   * @param wireId - Wire to split
+   * @param position - Position for the new branching point
+   * @returns Object containing the new branching point and two wires
+   * @throws Error if wireId not found
+   */
+  splitWire(
+    wireId: UUID,
+    position: Position
+  ): {
+    branchingPoint: ENode;
+    wire1: Wire;
+    wire2: Wire;
+  } {
+    const wire = this.wires.get(wireId);
 
     if (!wire) {
-      throw new Error(`Wire ${id} does not exist`);
+      throw new Error(`Wire ${wireId} does not exist`);
     }
 
     // Get connected nodes
@@ -531,21 +631,54 @@ export class Circuit {
     const enode2 = this.enodes.get(wire.node2);
 
     if (!enode1 || !enode2) {
-      throw new Error(`Wire ${id} is connected to non-existent ENodes`);
+      throw new Error(`Wire ${wireId} is connected to non-existent ENodes`);
     }
 
+    // computing best intermediate positions for the two new wires
+    const fullPositions = [
+      enode1.getPosition(this),
+      ...wire.intermediatePositions,
+      enode2.getPosition(this),
+    ];
+    const index = findPositionBestIndex(fullPositions, position);
+    const positionsWire1 = fullPositions.slice(1, index);
+    const positionsWire2 = fullPositions.slice(index, fullPositions.length - 1);
+
     // deleting and dereferencing the old wire
-    this.wires.delete(id);
-    enode1?.wires.delete(id);
-    enode2?.wires.delete(id);
+    this.wires.delete(wireId);
+    enode1.wires.delete(wireId);
+    enode2.wires.delete(wireId);
 
     // Create new branching point ENode at specified position
     const branchingPoint = this.addBranchingPoint(position);
 
-    const newWire1 = this.addWire(enode1.id, branchingPoint.id);
-    const newWire2 = this.addWire(branchingPoint.id, enode2.id);
+    const newWire1 = this.addWire(enode1.id, branchingPoint.id, [...positionsWire1]);
+    const newWire2 = this.addWire(branchingPoint.id, enode2.id, [...positionsWire2]);
 
-    return [newWire1 as Wire, newWire2 as Wire];
+    if (newWire1 instanceof Error || newWire2 instanceof Error) {
+      throw new Error('Failed to create wires after split');
+    }
+
+    return {
+      branchingPoint,
+      wire1: newWire1,
+      wire2: newWire2,
+    };
+  }
+
+  getWireBetweenNodes(node1: UUID, node2: UUID): Wire | undefined {
+    const enode1 = this.enodes.get(node1);
+    if (!enode1) {
+      return undefined;
+    }
+    // Check if any wire from node1 connects to node2
+    for (const wireId of enode1.wires) {
+      const wire = this.wires.get(wireId);
+      if (wire && (wire.node2 === node2 || wire.node1 === node2)) {
+        return wire;
+      }
+    }
+    return undefined;
   }
 
   /**
@@ -656,6 +789,83 @@ export class Circuit {
       }
     }
     return componentIds;
+  }
+
+  /**
+   * Update the intermediate positions of a wire.
+   * Update the wire in place.
+   *
+   * @param wireId - Wire to update
+   * @param intermediatePositions - New intermediate positions
+   * @param simplify - Whether to simplify positions by removing collinear points : useful when finalizing wire routing
+   * @returns The updated Wire
+   * @throws Error if wireId not found
+   */
+  updateWireIntermediatePositions(
+    wireId: UUID,
+    intermediatePositions: Position[],
+    simplify: boolean = false
+  ): Wire {
+    const wire = this.wires.get(wireId);
+
+    if (!wire) {
+      throw new Error(`Wire ${wireId} does not exist`);
+    }
+    if (simplify) {
+      // remove collinear positions if simplify
+      const fullPositions = [
+        this.enodes.get(wire.node1)!.getPosition(this),
+        ...intermediatePositions,
+        this.enodes.get(wire.node2)!.getPosition(this),
+      ];
+      const simplifiedFullPositions = simplifyPositions(fullPositions, 10);
+      // remove first and last positions (they are the positions of the nodes)
+      wire.intermediatePositions = simplifiedFullPositions.slice(
+        1,
+        simplifiedFullPositions.length - 1
+      );
+    } else {
+      wire.intermediatePositions = intermediatePositions;
+    }
+
+    return wire;
+  }
+
+  /**
+   * Simplify intermediate positions of a wire.
+   * Update the wire in place.
+   * @param wireId - Wire to simplify
+   * @returns The updated Wire
+   * @throws Error if wireId not found
+   */
+  simplifyWireIntermediatePositions(wireId: UUID): Wire {
+    const wire = this.wires.get(wireId);
+    if (!wire) {
+      throw new Error(`Wire ${wireId} does not exist`);
+    }
+    wire.intermediatePositions = simplifyPositions(wire.intermediatePositions);
+    return wire;
+  }
+
+  /**
+   * Update the source type of an ENode (branching point).
+   * @param enodeId - ENode to update
+   * @param sourceType - New source type (null to clear)
+   * @throws Error if enodeId not found or not a BranchingPoint
+   */
+  updateENodeSourceType(enodeId: UUID, sourceType: ENodeSourceType | null): void {
+    const enode = this.enodes.get(enodeId);
+
+    if (!enode) {
+      throw new Error(`ENode ${enodeId} does not exist`);
+    }
+
+    if (enode.type !== ENodeType.BranchingPoint) {
+      throw new Error(`ENode ${enodeId} is not a branching point`);
+    }
+
+    // Update sourceType (ENode.source is mutable)
+    enode.source = sourceType || undefined;
   }
 
   /**

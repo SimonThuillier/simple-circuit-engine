@@ -1,4 +1,4 @@
-import { type ComponentVisualFactory, ComponentVisualFactoryBase } from './ComponentVisualFactory';
+import { ComponentVisualFactoryBase } from './ComponentVisualFactory';
 import type { Component } from '@/core/Component';
 import type { ComponentState } from '@/core/simulation/states/ComponentState';
 import type { SwitchState } from '@/core/simulation/states/SwitchState';
@@ -168,10 +168,3 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
 
   // Uses default hover implementation
 }
-
-/**
- * @deprecated Use SwitchVisualFactory class instance instead
- */
-export const switchFactory: ComponentVisualFactory = (component: Component) => {
-  return new SwitchVisualFactory().createVisual(component);
-};

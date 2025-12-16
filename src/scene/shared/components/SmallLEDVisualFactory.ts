@@ -1,4 +1,4 @@
-import { type ComponentVisualFactory, ComponentVisualFactoryBase } from './ComponentVisualFactory';
+import { ComponentVisualFactoryBase } from './ComponentVisualFactory';
 import type { Component } from '@/core/Component';
 import type { ComponentState } from '@/core/simulation/states/ComponentState';
 import type { SmallLEDState } from '@/core/simulation/states/SmallLEDState';
@@ -121,10 +121,3 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
 
   // Uses default hover implementation
 }
-
-/**
- * @deprecated Use SmallLEDVisualFactory class instance instead
- */
-export const smallLedFactory: ComponentVisualFactory = (component: Component) => {
-  return new SmallLEDVisualFactory().createVisual(component);
-};

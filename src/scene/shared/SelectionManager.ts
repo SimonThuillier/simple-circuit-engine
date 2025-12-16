@@ -9,6 +9,8 @@
 
 import type { UUID } from '../../core/types/Identifier';
 import type { HoverableType, SelectionData } from './types';
+import type { Object3D } from 'three';
+import { ENodeType } from '@/core/types/ENodeType';
 
 /**
  * Callback invoked when selection changes
@@ -168,15 +170,20 @@ export class SelectionManager {
    *
    * @param type - The type of hoverable object to select
    * @param objectId - The object ID to select
-   * @param data - Optional extra data
+   * @param userData - Optional userData of the 3D object being selected
    */
-  selectOne(type: HoverableType, objectId: UUID, data: string | null = null): void {
+  selectOne(type: HoverableType, objectId: UUID, userData?: object | undefined): void {
     const previousSelection = this.selection;
-    const newSelection: SelectionData = { kind: 'mono', type: type, id: objectId, data: data };
+    const newSelection: SelectionData = { kind: 'mono', type: type, id: objectId, data: null };
 
     // No change if selections are equal
     if (this._selectionsEqual(newSelection, previousSelection)) {
       return;
+    }
+
+    if (type === 'enode' && !!userData) {
+      // @ts-ignore
+      newSelection.data = !userData['componentId'] ? ENodeType.BranchingPoint : ENodeType.Pin;
     }
 
     // Update state

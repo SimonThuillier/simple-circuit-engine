@@ -42,6 +42,12 @@ export class PositionTool implements IEditingTool {
 
   constructor(sceneManager: CircuitSceneManager) {
     this._sceneManager = sceneManager;
+
+    this.handlePointerDown = this.handlePointerDown.bind(this);
+    this.handlePointerUp = this.handlePointerUp.bind(this);
+    this.handleGridPositionMove = this.handleGridPositionMove.bind(this);
+    this.handleKeyDown = this.handleKeyDown.bind(this);
+    this.handleDblClick = this.handleDblClick.bind(this);
   }
 
   /**
@@ -53,12 +59,6 @@ export class PositionTool implements IEditingTool {
     this.dragState = null;
 
     const container = this._sceneManager.getContainer();
-
-    this.handlePointerDown = this.handlePointerDown.bind(this);
-    this.handlePointerUp = this.handlePointerUp.bind(this);
-    this.handleGridPositionMove = this.handleGridPositionMove.bind(this);
-    this.handleKeyDown = this.handleKeyDown.bind(this);
-    this.handleDblClick = this.handleDblClick.bind(this);
 
     container.addEventListener('pointerdown', this.handlePointerDown);
     container.addEventListener('pointerup', this.handlePointerUp);
@@ -190,7 +190,6 @@ export class PositionTool implements IEditingTool {
         // moving wires connected to component in real-time during drag
         this._sceneManager.getWireVisualManager().updateWiresForComponent(id);
       }
-
     }
 
     // Update current position and emit dragMove event (T039)
@@ -328,7 +327,7 @@ export class PositionTool implements IEditingTool {
     // Emit componentRotated event
     this._sceneManager.emit('componentRotated', {
       componentId: componentId,
-      newRotation: newAngle
+      newRotation: newAngle,
     });
     // Save new component state into the circuit model
     this._sceneManager

@@ -69,10 +69,7 @@ export function createLineMaterial(
  * material.resolution.set(window.innerWidth, window.innerHeight);
  * ```
  */
-export function createLine2Material(
-  color: number = 0xffffff,
-  linewidth: number = 2
-): LineMaterial {
+export function createLine2Material(color: number = 0xffffff, linewidth: number = 2): LineMaterial {
   return new LineMaterial({
     color,
     linewidth,

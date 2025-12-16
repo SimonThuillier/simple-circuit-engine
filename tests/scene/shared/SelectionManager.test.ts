@@ -68,16 +68,6 @@ describe('SelectionManager', () => {
       expect((selection as MonoSelectionData).id).toBe(wireId);
     });
 
-    it('should store optional data', () => {
-      const componentId = 'comp-123' as UUID;
-      const extraData = 'some-extra-data';
-
-      selectionManager.selectOne('component', componentId, extraData);
-
-      const selection = selectionManager.getSelection() as MonoSelectionData;
-      expect(selection.data).toBe(extraData);
-    });
-
     it('should set selectedAt timestamp', () => {
       const componentId = 'comp-123' as UUID;
       const beforeTime = Date.now();

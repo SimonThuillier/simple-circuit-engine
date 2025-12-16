@@ -189,6 +189,39 @@ export class ENode {
   }
 
   /**
+   * Update the enode (branching point only)'s position.
+   *
+   * @param newPosition - The new position for the enode
+   *
+   * @example
+   * ```typescript
+   * const component = circuit.getComponent(componentId);
+   * component.setPosition(new Position(15, 25));
+   * ```
+   */
+  setPosition(newPosition: Position): void {
+    Object.defineProperty(this, 'position', {
+      value: newPosition,
+      writable: false,
+      enumerable: true,
+      configurable: true,
+    });
+  }
+
+  /**
+   * Update the enode's source type.
+   * @param sourceType
+   */
+  setSourceType(sourceType?: ENodeSourceType | undefined): void {
+    Object.defineProperty(this, 'source', {
+      value: sourceType,
+      writable: true,
+      enumerable: true,
+      configurable: true,
+    });
+  }
+
+  /**
    * Serialize ENode to JSON.
    *
    * @returns Plain object representation

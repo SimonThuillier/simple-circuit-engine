@@ -1,4 +1,4 @@
-import { type ComponentVisualFactory, ComponentVisualFactoryBase } from './ComponentVisualFactory';
+import { ComponentVisualFactoryBase } from './ComponentVisualFactory';
 import type { Component } from '@/core/Component';
 import * as THREE from 'three';
 
@@ -55,10 +55,3 @@ export class BatteryVisualFactory extends ComponentVisualFactoryBase {
   // Uses default hover implementation
   // No animation (battery is static)
 }
-
-/**
- * @deprecated Use BatteryVisualFactory class instance instead
- */
-export const batteryFactory: ComponentVisualFactory = (component: Component) => {
-  return new BatteryVisualFactory().createVisual(component);
-};
