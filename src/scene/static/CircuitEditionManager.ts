@@ -1,5 +1,5 @@
 import type { CircuitSceneManager } from './CircuitSceneManager';
-import { Object3D, Vector3 } from 'three';
+import {Euler, Object3D, Vector3} from 'three';
 import { Rotation } from '@/core/types/Rotation';
 import { Position } from '@/core/types/Position';
 import type { ModelEditAction, SceneManagerEventMap } from '../shared/types';
@@ -7,6 +7,8 @@ import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
 import type { UUID } from '@/core/types/Identifier';
 import type { ENode } from '@/core/ENode';
 import type { Wire } from '@/core/Wire';
+import type { ComponentType } from '@/core/types/ComponentType';
+import type { Component } from '@/core/Component';
 
 /**
  * Manages editing operations of 3D models from the circuit scene into the core circuit model.
@@ -342,5 +344,99 @@ export class CircuitEditionManager {
       enodeId,
       sourceType,
     });
+  }
+
+  /**
+   * Add a component to the circuit model and emit the appropriate event
+   * handles conversion of world position and rotation to circuit model values
+   * @param type - Component type to add
+   * @param gridPosition - Position in circuit coordinates
+   * @param rotation - Rotation angle
+   * @returns The created Component
+   * @throws Error if circuit is not available or component creation fails
+   */
+  saveAddComponent(type: ComponentType, gridPosition: Vector3, rotation: Euler): Component {
+    const circuit = this._sceneManager.getCircuit();
+    try {
+      if (!circuit) {
+        throw new Error('No circuit available in the scene manager.');
+      }
+      // convert 3D world position to 2D grid position with Grid snapping
+      const modelPosition = new Position(Math.round(gridPosition.x), Math.round(-gridPosition.z));
+      const modelRotation = new Rotation(-Math.round((rotation.y * 180) / Math.PI));
+      const component = circuit.addComponent(type, modelPosition, modelRotation);
+
+      const event: SceneManagerEventMap['circuitElementAction'] = {
+        type: 'component',
+        action: 'add',
+        id: component.id,
+        error: null,
+        data: {
+          componentId: component.id,
+          componentType: type,
+          position: modelPosition,
+          rotation: modelRotation,
+        },
+      };
+      this._sceneManager.emit('circuitElementAction', event);
+      return component;
+    } catch (error) {
+      const event: SceneManagerEventMap['circuitElementAction'] = {
+        type: 'component',
+        action: 'add',
+        id: undefined,
+        error: error as Error,
+        data: null,
+      };
+      this._sceneManager.emit('circuitElementAction', event);
+      throw new Error((error as Error).message);
+    }
+  }
+
+  /**
+   * Delete a component from the circuit model and emit the appropriate event
+   * @param componentId - UUID of the component to delete
+   * @returns Information about removed wires and enodes
+   * @throws Error if circuit is not available or component not found
+   */
+  saveDeleteComponent(componentId: UUID): {
+    deletedWires: UUID[];
+    deletedENodes: UUID[];
+  } {
+    const circuit = this._sceneManager.getCircuit();
+    try {
+      if (!circuit) {
+        throw new Error('No circuit available in the scene manager.');
+      }
+
+      const component = circuit.getComponent(componentId);
+      if (!component) {
+        throw new Error(`Component with ID ${componentId} not found in the circuit.`);
+      }
+
+      // Remove component from circuit (this will also remove connected wires)
+      const result: {deletedWires: UUID[], deletedENodes: UUID[]} = circuit.removeComponent(componentId);
+
+      const event: SceneManagerEventMap['circuitElementAction'] = {
+        type: 'component',
+        action: 'delete',
+        id: componentId,
+        error: null,
+        data: { ...result},
+      };
+      this._sceneManager.emit('circuitElementAction', event);
+
+      return result;
+    } catch (error) {
+      const event: SceneManagerEventMap['circuitElementAction'] = {
+        type: 'component',
+        action: 'delete',
+        id: componentId,
+        error: error as Error,
+        data: null,
+      };
+      this._sceneManager.emit('circuitElementAction', event);
+      throw new Error((error as Error).message);
+    }
   }
 }

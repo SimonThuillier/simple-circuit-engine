@@ -437,6 +437,7 @@ export class WireTool implements IEditingTool {
       } else if (monoSelection.type === 'enode' && monoSelection.data === 'BranchingPoint') {
         const enodeId = monoSelection.id;
         this._sceneManager.removeBranchingPoint(enodeId);
+        // TODO: may fail if the resulting merged wire is a duplicate - see how to handle this case
       }
     }
   }

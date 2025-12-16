@@ -9,11 +9,13 @@ import * as THREE from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import type { Circuit } from '../../core/Circuit';
-import type { Component } from '../../core/components/Component';
+import type { Component } from '../../core/Component';
 import type { Wire } from '../../core/Wire';
 import type { ENode } from '../../core/ENode';
 import type { UUID } from '../../core/types/Identifier';
 import { ENodeType } from '../../core/types/ENodeType';
+import { Position } from '../../core/types/Position';
+import { Rotation } from '../../core/types/Rotation';
 import { EventEmitter } from '../shared/EventEmitter';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
 import type {
@@ -52,6 +54,7 @@ import { WireVisualManager } from '../shared/WireVisualManager';
 import type { ComponentType } from '@/core/types/ComponentType';
 import { CircuitEditionManager } from './CircuitEditionManager';
 import { BranchingPointVisualFactory } from '../shared/components/BranchingPointVisualFactory';
+import type {Euler} from "three";
 
 /**
  * Static Circuit Scene Manager Implementation
@@ -105,7 +108,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
 
   // BranchingPointVisualFactory for creating branching point visuals (T022)
   private branchingPointVisualFactory: BranchingPointVisualFactory =
-    new BranchingPointVisualFactory();
+      new BranchingPointVisualFactory();
 
   /**
    * Create a new Static Circuit Renderer
@@ -241,9 +244,9 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     const gridHalfSize = this.circuit ? Math.ceil(this.circuit.metadata.size / 2) : 10;
     const vector = this.hoverManager!.getGroundPlanePosition().clone();
     vector.set(
-      Math.min(Math.max(vector.x, -gridHalfSize), gridHalfSize),
-      0,
-      Math.min(Math.max(vector.z, -gridHalfSize), gridHalfSize)
+        Math.min(Math.max(vector.x, -gridHalfSize), gridHalfSize),
+        0,
+        Math.min(Math.max(vector.z, -gridHalfSize), gridHalfSize)
     );
     return vector;
   }
@@ -515,8 +518,8 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
           }
         } catch (error) {
           console.warn(
-            `Failed to ${selected ? 'apply' : 'remove'} component selection visual:`,
-            error
+              `Failed to ${selected ? 'apply' : 'remove'} component selection visual:`,
+              error
           );
         }
       }
@@ -751,6 +754,15 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     return this.mapControls;
   }
 
+  /**
+   * Get the FactoryRegistry for component visual factories
+   *
+   * @returns IFactoryRegistry instance
+   */
+  getFactoryRegistry(): IFactoryRegistry {
+    return this.factoryRegistry;
+  }
+
   getComponentObject3Ds(): Map<string, THREE.Group> {
     return this.componentObject3Ds;
   }
@@ -786,7 +798,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
    * @param selection
    */
   getSelectionPositions(
-    selection: SelectionData
+      selection: SelectionData
   ): Map<UUID, { type: HoverableType; position: THREE.Vector3 }> {
     const selectionPositions = new Map<UUID, { type: HoverableType; position: THREE.Vector3 }>();
     if (selection.kind === 'mono') {
@@ -1360,7 +1372,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
       const factory = this.factoryRegistry.get(component.type);
       // Support both function-based (legacy) and class-based (new) factories
       const mesh =
-        typeof factory === 'function' ? factory(component) : factory.createVisual(component);
+          typeof factory === 'function' ? factory(component) : factory.createVisual(component);
 
       // Position mesh at component location (2D circuit -> 3D world)
       mesh.position.set(component.position.x, 0, -component.position.y);
@@ -1396,52 +1408,30 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     });
   }
 
-  private _unindexComponentObject3D(componentId: string, group: THREE.Group): void {
-    this.componentObject3Ds.delete(componentId);
+  private _removeComponentObject3D(id: string): void {
+    const group = this.componentObject3Ds.get(id);
+    if (!group) {return;}
+
+    this.scene!.remove(group);
+    // Parcours complet pour disposer toutes les géométries / matériaux des enfants
     group.traverse((obj) => {
       if (obj.userData && obj.userData.type === 'enodeGroup') {
-        const enodeId = obj.userData.enodeId;
-        if (enodeId) {
-          this.enodeObject3Ds.delete(enodeId);
+        this._removeEnodeObject3D(obj.userData.enodeId);
+      }
+      else if (obj instanceof THREE.Mesh) {
+        if (obj.geometry) {
+          obj.geometry.dispose();
+        }
+        if (obj.material) {
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach((mat) => mat.dispose());
+          } else {
+            obj.material.dispose();
+          }
         }
       }
     });
-  }
-
-  private _removeComponentObject3D(id: string): void {
-    const group = this.componentObject3Ds.get(id);
-    if (group) {
-      this.scene!.remove(group);
-      // Parcours complet pour disposer toutes les géométries / matériaux des enfants
-      group.traverse((obj) => {
-        if (obj.userData && obj.userData.type === 'enode') {
-          this._removeEnodeObject3D(obj.userData.enodeId);
-        } else if (obj instanceof THREE.Mesh) {
-          if (obj.geometry) {
-            obj.geometry.dispose();
-          }
-          if (obj.material) {
-            if (Array.isArray(obj.material)) {
-              obj.material.forEach((mat) => mat.dispose());
-            } else {
-              obj.material.dispose();
-            }
-          }
-        } else if (obj instanceof THREE.Line) {
-          if (obj.geometry) {
-            obj.geometry.dispose();
-          }
-          if (obj.material) {
-            if (Array.isArray(obj.material)) {
-              obj.material.forEach((mat) => mat.dispose());
-            } else {
-              obj.material.dispose();
-            }
-          }
-        }
-      });
-      this._unindexComponentObject3D(id, group as THREE.Group);
-    }
+    this.componentObject3Ds.delete(id);
   }
 
   private _createEnodeObject3D(enode: ENode): void {
@@ -1508,8 +1498,8 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
    * @param wireId
    */
   splitWire(
-    wireId: UUID,
-    worldPosition: THREE.Vector3
+      wireId: UUID,
+      worldPosition: THREE.Vector3
   ): { branchingPoint: ENode; wire1: Wire; wire2: Wire } {
     // T045: Call CircuitEditionManager to split the wire and create branching point
     const result = this.circuitEditionManager.saveSplitWire(wireId, worldPosition);
@@ -1523,7 +1513,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
 
     // T047: Add branching point visual to scene
     const branchingPointGroup = this.branchingPointVisualFactory.createVisual(
-      result.branchingPoint
+        result.branchingPoint
     );
 
     const pos = result.branchingPoint.getPosition(this.circuit!);
@@ -1582,6 +1572,38 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     const wire = this.circuitEditionManager.saveAddWire(sourceEnodeId, targetEnodeId);
     this.wireVisualManager.createOrUpdateWire(wire);
     return wire;
+  }
+
+  /**
+   * Add a component to the circuit and scene
+   *
+   * @param type - Component type to add
+   * @param worldPosition - Position in 3D world coordinates (x, z)
+   * @param rotation - 3D world rotation
+   * @returns The created Component
+   */
+  addComponent(type: ComponentType, worldPosition: THREE.Vector3, rotation: Euler): Component {
+    // Create component in circuit model
+    const component = this.circuitEditionManager.saveAddComponent(type, worldPosition, rotation);
+    // Create and add visual to scene
+    this._createComponentObject3D(component);
+    return component;
+  }
+
+  /**
+   * Remove a component from the circuit and scene
+   *
+   * @param componentId - UUID of the component to remove
+   */
+  removeComponent(componentId: UUID): void {
+    // Remove from circuit model (also removes connected wires)
+    const result = this.circuitEditionManager.saveDeleteComponent(componentId);
+    // Remove visuals for wires that were connected to the component
+    for (const wireId of result.deletedWires) {
+      this._removeWireObject3D(wireId);
+    }
+    // Remove component visual
+    this._removeComponentObject3D(componentId);
   }
 
   /**
