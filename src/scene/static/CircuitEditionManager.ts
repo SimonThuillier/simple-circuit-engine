@@ -1,5 +1,5 @@
 import type { CircuitSceneManager } from './CircuitSceneManager';
-import {Object3D, Vector3} from 'three';
+import { Object3D, Vector3 } from 'three';
 import { Rotation } from '@/core/types/Rotation';
 import { Position } from '@/core/types/Position';
 import type { ModelEditAction, SceneManagerEventMap } from '../shared/types';
@@ -55,9 +55,9 @@ export class CircuitEditionManager {
    * @private
    */
   private _saveComponentAddOrEdit(
-      componentId: string,
-      action: ModelEditAction,
-      component: Object3D
+    componentId: string,
+    action: ModelEditAction,
+    component: Object3D
   ): SceneManagerEventMap['circuitElementAction'] {
     // Logic to save the current state of the scene component into the core model
     const circuit = this._sceneManager.getCircuit();
@@ -70,8 +70,8 @@ export class CircuitEditionManager {
     }
     const modelRotation = new Rotation(-Math.round((component.rotation.y * 180) / Math.PI));
     const modelPosition = new Position(
-        Math.round(component.position.x),
-        Math.round(-component.position.z)
+      Math.round(component.position.x),
+      Math.round(-component.position.z)
     );
     circuitComponent.setRotation(modelRotation);
     circuitComponent.setPosition(modelPosition);
@@ -94,17 +94,14 @@ export class CircuitEditionManager {
    * @throws Error
    * @return The circuit enode
    */
-  saveAddBranchingPoint(gridPosition: Vector3){
+  saveAddBranchingPoint(gridPosition: Vector3) {
     const circuit = this._sceneManager.getCircuit();
     try {
       if (!circuit) {
         throw new Error('No circuit available in the scene manager.');
       }
       // T050: Grid snapping - convert world position to grid position
-      const modelPosition = new Position(
-          Math.round(gridPosition.x),
-          Math.round(-gridPosition.z)
-      );
+      const modelPosition = new Position(Math.round(gridPosition.x), Math.round(-gridPosition.z));
       const circuitEnode = circuit.addBranchingPoint(modelPosition);
 
       const event: SceneManagerEventMap['circuitElementAction'] = {
@@ -113,8 +110,8 @@ export class CircuitEditionManager {
         id: circuitEnode.id,
         error: null,
         data: {
-          position: modelPosition
-        }
+          position: modelPosition,
+        },
       };
       this._sceneManager.emit('circuitElementAction', event);
       return circuitEnode;
@@ -137,7 +134,7 @@ export class CircuitEditionManager {
    * @throws Error
    * @return The circuit enode
    */
-  saveEditBranchingPoint(branchingPoint: Object3D){
+  saveEditBranchingPoint(branchingPoint: Object3D) {
     const circuit = this._sceneManager.getCircuit();
     try {
       if (!circuit) {
@@ -149,8 +146,8 @@ export class CircuitEditionManager {
       }
 
       const modelPosition = new Position(
-          Math.round(branchingPoint.position.x),
-          Math.round(-branchingPoint.position.z)
+        Math.round(branchingPoint.position.x),
+        Math.round(-branchingPoint.position.z)
       );
       const sourceType = branchingPoint.userData.sourceType as ENodeSourceType | undefined;
       circuitEnode.setPosition(modelPosition);
@@ -164,7 +161,7 @@ export class CircuitEditionManager {
         data: {
           position: modelPosition,
           sourceType: sourceType,
-        }
+        },
       };
       this._sceneManager.emit('circuitElementAction', event);
       return circuitEnode;
@@ -187,8 +184,11 @@ export class CircuitEditionManager {
    * @throws Error
    * @return The circuit enode
    */
-  saveDeleteBranchingPoint(enodeId: UUID) :
-      {deletedWires?: UUID[] | undefined, mergedWires?: UUID[] | undefined, newWire?: Wire | undefined}{
+  saveDeleteBranchingPoint(enodeId: UUID): {
+    deletedWires?: UUID[] | undefined;
+    mergedWires?: UUID[] | undefined;
+    newWire?: Wire | undefined;
+  } {
     const circuit = this._sceneManager.getCircuit();
     try {
       if (!circuit) {
@@ -202,8 +202,8 @@ export class CircuitEditionManager {
         id: enodeId,
         error: null,
         data: {
-          ...result
-        }
+          ...result,
+        },
       };
       this._sceneManager.emit('circuitElementAction', event);
       return result;
@@ -227,7 +227,7 @@ export class CircuitEditionManager {
    * @throws Error
    * @return The circuit wire
    */
-  saveAddWire(sourceEnodeId : UUID, targetEnodeId : UUID){
+  saveAddWire(sourceEnodeId: UUID, targetEnodeId: UUID) {
     const circuit = this._sceneManager.getCircuit();
     try {
       if (!circuit) {
@@ -246,7 +246,7 @@ export class CircuitEditionManager {
         data: {
           node1: wire.node1,
           node2: wire.node2,
-        }
+        },
       };
       this._sceneManager.emit('circuitElementAction', event);
       return wire;
@@ -270,18 +270,15 @@ export class CircuitEditionManager {
    * @returns Object containing the new branching point and two wires
    */
   saveSplitWire(
-      wireId: UUID,
-      worldPosition: Vector3
+    wireId: UUID,
+    worldPosition: Vector3
   ): { branchingPoint: ENode; wire1: Wire; wire2: Wire } {
     const circuit = this._sceneManager.getCircuit();
     if (!circuit) {
       throw new Error('No circuit available in the scene manager.');
     }
     // Convert world position to grid position
-    const gridPosition = new Position(
-        Math.round(worldPosition.x),
-        Math.round(-worldPosition.z)
-    );
+    const gridPosition = new Position(Math.round(worldPosition.x), Math.round(-worldPosition.z));
     const result = circuit.splitWire(wireId, gridPosition);
 
     this._sceneManager.emit('wireSplit', {
@@ -300,7 +297,7 @@ export class CircuitEditionManager {
    * @throws Error
    * @return The circuit wire
    */
-  saveDeleteWire(wireId : UUID): void {
+  saveDeleteWire(wireId: UUID): void {
     const circuit = this._sceneManager.getCircuit();
     try {
       if (!circuit) {
@@ -312,7 +309,7 @@ export class CircuitEditionManager {
         action: 'delete',
         id: wireId,
         error: null,
-        data: null
+        data: null,
       };
       this._sceneManager.emit('circuitElementAction', event);
       return;
@@ -346,5 +343,4 @@ export class CircuitEditionManager {
       sourceType,
     });
   }
-
 }

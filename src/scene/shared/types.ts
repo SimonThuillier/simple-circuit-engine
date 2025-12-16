@@ -272,10 +272,7 @@ export type HitboxUserData = EnodeHitboxUserData | ComponentHitboxUserData | Wir
 /**
  * Supported wires material states for visual feedback
  */
-export type WireMaterialState =
-    | 'idle'
-    | 'hovered'
-    | 'selected';
+export type WireMaterialState = 'idle' | 'hovered' | 'selected';
 
 /** Represents the Selection of one Hoverable Element of the scene **/
 export interface MonoSelectionData {

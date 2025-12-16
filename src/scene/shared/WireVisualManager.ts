@@ -17,9 +17,9 @@ import type { Circuit } from '../../core/Circuit';
 import type { Wire } from '../../core/Wire';
 import { ENodeType } from '../../core/types/ENodeType';
 import { createLine2Material } from './MaterialUtils';
-import type {CircuitSceneManager} from "../static/CircuitSceneManager";
-import type {WireMaterialState} from "./types";
-import {HitboxLayers} from "./LayerConstants";
+import type { CircuitSceneManager } from '../static/CircuitSceneManager';
+import type { WireMaterialState } from './types';
+import { HitboxLayers } from './LayerConstants';
 
 /**
  * Wire path representation for rendering
@@ -57,7 +57,6 @@ export class WireVisualManager {
   private containerWidth: number = 500;
   private containerHeight: number = 500;
 
-
   private _sceneManager: CircuitSceneManager;
   /** Shared LineMaterials for all wires (memory efficient, consistent styling) */
   private wireMaterials: Map<WireMaterialState, LineMaterial> = new Map();
@@ -68,9 +67,9 @@ export class WireVisualManager {
     this._sceneManager = sceneManager;
     // Create shared LineMaterial with default white color and 2px width
     this.wireMaterials = new Map([
-        ['idle', createLine2Material(0xffffff, 2)],
-        ['hovered', createLine2Material(0x40dfff, 4)],
-        ['selected', createLine2Material(0xffaa00, 3)]
+      ['idle', createLine2Material(0xffffff, 2)],
+      ['hovered', createLine2Material(0x40dfff, 4)],
+      ['selected', createLine2Material(0xffaa00, 3)],
     ]);
   }
 
@@ -95,7 +94,7 @@ export class WireVisualManager {
   setResolution(width: number, height: number): void {
     this.containerWidth = width;
     this.containerHeight = height;
-    for(const material of this.wireMaterials.values()) {
+    for (const material of this.wireMaterials.values()) {
       material.resolution.set(width, height);
     }
   }
@@ -106,10 +105,7 @@ export class WireVisualManager {
    * @param wire - Wire to render
    * @returns The created/updated Line2 object
    */
-  createOrUpdateWire(
-    wire: Wire
-  ): Line2 {
-
+  createOrUpdateWire(wire: Wire): Line2 {
     const wirePath = this.computeWirePath(wire);
 
     let line = this._sceneManager.getWireObject3Ds().get(wire.id);
@@ -144,9 +140,7 @@ export class WireVisualManager {
    * @param wire - Wire to compute path for
    * @returns WirePath with array of Vector3 points from start to end
    */
-  computeWirePath(
-    wire: Wire
-  ): WirePath {
+  computeWirePath(wire: Wire): WirePath {
     const circuit = this._sceneManager.getCircuit()!; // TODO handle null circuit
     const componentObject3Ds = this._sceneManager.getComponentObject3Ds();
 
@@ -271,9 +265,7 @@ export class WireVisualManager {
    *
    * @param componentId - Component that moved
    */
-  updateWiresForComponent(
-    componentId: UUID
-  ): void {
+  updateWiresForComponent(componentId: UUID): void {
     const circuit = this._sceneManager.getCircuit()!; // TODO handle null circuit
 
     const component = circuit.getComponent(componentId);
@@ -404,7 +396,7 @@ export class WireVisualManager {
     const geometry = new LineGeometry();
     geometry.setFromPoints([
       startPosition.clone(),
-      startPosition.clone()
+      startPosition.clone(),
       //startPosition.clone().add(new THREE.Vector3(5, 5, 5))
     ]);
 
@@ -421,8 +413,8 @@ export class WireVisualManager {
 
     this.previewWire = previewLine;
     this.previewWire.userData = {
-      startPosition: startPosition.clone()
-    }
+      startPosition: startPosition.clone(),
+    };
 
     this._sceneManager.getScene().add(previewLine);
 
@@ -442,10 +434,7 @@ export class WireVisualManager {
 
     const startPosition = this.previewWire.userData.startPosition;
 
-    geometry.setFromPoints([
-      startPosition.clone(),
-      endPosition.clone()
-    ]);
+    geometry.setFromPoints([startPosition.clone(), endPosition.clone()]);
   }
 
   /**
@@ -484,8 +473,8 @@ export class WireVisualManager {
     const heightHalf = this.containerHeight / 2;
 
     return new THREE.Vector2(
-        (vector.x * widthHalf) + widthHalf,
-        -(vector.y * heightHalf) + heightHalf
+      vector.x * widthHalf + widthHalf,
+      -(vector.y * heightHalf) + heightHalf
     );
   }
 
@@ -507,9 +496,9 @@ export class WireVisualManager {
    * @returns Object with pointIndex and distance, or null if none found
    */
   findNearestIntermediatePoint(
-      wireId: UUID,
-      clientPos: THREE.Vector2,
-      thresholdPx: number = 10
+    wireId: UUID,
+    clientPos: THREE.Vector2,
+    thresholdPx: number = 10
   ): { pointIndex: number; distance: number } | null {
     const circuit = this._sceneManager.getCircuit();
     if (!circuit) return null;
@@ -554,10 +543,7 @@ export class WireVisualManager {
     const container = this._sceneManager.getContainer();
     const rect = container.getBoundingClientRect();
 
-    return new THREE.Vector2(
-      clientPos.x - rect.left,
-      clientPos.y - rect.top
-    );
+    return new THREE.Vector2(clientPos.x - rect.left, clientPos.y - rect.top);
   }
 
   /**
@@ -577,7 +563,7 @@ export class WireVisualManager {
     this.removePreviewWire();
 
     // Dispose shared material once during full cleanup
-    for(const material of this.wireMaterials.values()) {
+    for (const material of this.wireMaterials.values()) {
       material.dispose();
     }
     this.wireMaterials.clear();

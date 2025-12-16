@@ -13,35 +13,6 @@ import * as THREE from 'three';
 import { HitboxLayers } from '../LayerConstants';
 
 /**
- * Factory function type for creating Three.js visuals from Circuit components
- *
- * @param component - The circuit component to visualize
- * @returns THREE.Object3D containing the visual representation
- *
- * @remarks
- * Factories should:
- * - Set object.userData.componentId = component.id for identification
- * - Set object.userData.componentType = component.type for filtering
- * - Return objects positioned at origin (scene manager handles placement)
- * - Use appropriate materials that respond to lighting
- *
- * @example
- * ```typescript
- * const batteryFactory: ComponentVisualFactory = (component) => {
- *   const geometry = new THREE.CylinderGeometry(0.3, 0.3, 1, 16);
- *   const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
- *   const mesh = new THREE.Mesh(geometry, material);
- *   mesh.userData.componentId = component.id;
- *   mesh.userData.componentType = component.type;
- *   return mesh;
- * };
- * ```
- *
- * @deprecated Use IComponentVisualFactory class-based factories instead
- */
-export type ComponentVisualFactory = (component: Component) => THREE.Object3D;
-
-/**
  * Interface for component visual factories
  *
  * Implementations provide methods for:

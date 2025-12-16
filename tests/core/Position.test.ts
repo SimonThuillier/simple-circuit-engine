@@ -167,22 +167,14 @@ describe('findPositionBestIndex', () => {
   describe('horizontal path', () => {
     it('should find correct index on first segment', () => {
       // Path: (0,0) -> (10,0) -> (20,0)
-      const positions = [
-        new Position(0, 0),
-        new Position(10, 0),
-        new Position(20, 0)
-      ];
+      const positions = [new Position(0, 0), new Position(10, 0), new Position(20, 0)];
       // Target at (5, 0) - on first segment
       expect(findPositionBestIndex(positions, new Position(5, 0))).toBe(1);
     });
 
     it('should find correct index on second segment', () => {
       // Path: (0,0) -> (10,0) -> (20,0)
-      const positions = [
-        new Position(0, 0),
-        new Position(10, 0),
-        new Position(20, 0)
-      ];
+      const positions = [new Position(0, 0), new Position(10, 0), new Position(20, 0)];
       // Target at (15, 0) - on second segment
       expect(findPositionBestIndex(positions, new Position(15, 0))).toBe(2);
     });
@@ -191,22 +183,14 @@ describe('findPositionBestIndex', () => {
   describe('L-shaped path', () => {
     it('should find correct index on horizontal segment', () => {
       // Path: (0,0) -> (10,0) -> (10,10)
-      const positions = [
-        new Position(0, 0),
-        new Position(10, 0),
-        new Position(10, 10)
-      ];
+      const positions = [new Position(0, 0), new Position(10, 0), new Position(10, 10)];
       // Target at (5, 0) - on horizontal segment
       expect(findPositionBestIndex(positions, new Position(5, 0))).toBe(1);
     });
 
     it('should find correct index on vertical segment', () => {
       // Path: (0,0) -> (10,0) -> (10,10)
-      const positions = [
-        new Position(0, 0),
-        new Position(10, 0),
-        new Position(10, 10)
-      ];
+      const positions = [new Position(0, 0), new Position(10, 0), new Position(10, 10)];
       // Target at (10, 5) - on vertical segment
       expect(findPositionBestIndex(positions, new Position(10, 5))).toBe(2);
     });
@@ -219,7 +203,7 @@ describe('findPositionBestIndex', () => {
         new Position(0, 0),
         new Position(10, 0),
         new Position(10, 10),
-        new Position(20, 10)
+        new Position(20, 10),
       ];
       // Target at (5, 1) - closest to first horizontal segment
       expect(findPositionBestIndex(positions, new Position(5, 1))).toBe(1);
@@ -231,7 +215,7 @@ describe('findPositionBestIndex', () => {
         new Position(0, 0),
         new Position(10, 0),
         new Position(10, 10),
-        new Position(20, 10)
+        new Position(20, 10),
       ];
       // Target at (11, 5) - closest to vertical segment (index 2)
       expect(findPositionBestIndex(positions, new Position(11, 5))).toBe(2);
@@ -243,7 +227,7 @@ describe('findPositionBestIndex', () => {
         new Position(0, 0),
         new Position(10, 0),
         new Position(10, 10),
-        new Position(20, 10)
+        new Position(20, 10),
       ];
       // Target at (15, 10) - on last horizontal segment
       expect(findPositionBestIndex(positions, new Position(15, 10))).toBe(3);
@@ -252,11 +236,7 @@ describe('findPositionBestIndex', () => {
 
   describe('target exactly on positions', () => {
     it('should handle target at segment endpoint', () => {
-      const positions = [
-        new Position(0, 0),
-        new Position(10, 0),
-        new Position(20, 0)
-      ];
+      const positions = [new Position(0, 0), new Position(10, 0), new Position(20, 0)];
       // Target exactly at middle position - should be on either segment
       const index = findPositionBestIndex(positions, new Position(10, 0));
       expect(index).toBeGreaterThanOrEqual(1);
@@ -291,8 +271,8 @@ describe('simplifyPositions', () => {
     it('should remove middle collinear point on horizontal line', () => {
       const positions = [
         new Position(0, 0),
-        new Position(5, 0),  // collinear - should be removed
-        new Position(10, 0)
+        new Position(5, 0), // collinear - should be removed
+        new Position(10, 0),
       ];
       const result = simplifyPositions(positions);
       expect(result).toHaveLength(2);
@@ -303,10 +283,10 @@ describe('simplifyPositions', () => {
     it('should remove all middle collinear points on horizontal line', () => {
       const positions = [
         new Position(0, 0),
-        new Position(3, 0),   // collinear
-        new Position(7, 0),   // collinear
-        new Position(12, 0),  // collinear
-        new Position(20, 0)
+        new Position(3, 0), // collinear
+        new Position(7, 0), // collinear
+        new Position(12, 0), // collinear
+        new Position(20, 0),
       ];
       const result = simplifyPositions(positions);
       expect(result).toHaveLength(2);
@@ -319,8 +299,8 @@ describe('simplifyPositions', () => {
     it('should remove middle collinear point on vertical line', () => {
       const positions = [
         new Position(5, 0),
-        new Position(5, 5),  // collinear - should be removed
-        new Position(5, 10)
+        new Position(5, 5), // collinear - should be removed
+        new Position(5, 10),
       ];
       const result = simplifyPositions(positions);
       expect(result).toHaveLength(2);
@@ -333,8 +313,8 @@ describe('simplifyPositions', () => {
     it('should remove middle collinear point on diagonal line', () => {
       const positions = [
         new Position(0, 0),
-        new Position(5, 5),  // collinear - should be removed
-        new Position(10, 10)
+        new Position(5, 5), // collinear - should be removed
+        new Position(10, 10),
       ];
       const result = simplifyPositions(positions);
       expect(result).toHaveLength(2);
@@ -345,9 +325,9 @@ describe('simplifyPositions', () => {
     it('should remove collinear points on steep diagonal', () => {
       const positions = [
         new Position(0, 0),
-        new Position(2, 4),  // collinear (slope 2)
-        new Position(4, 8),  // collinear
-        new Position(6, 12)
+        new Position(2, 4), // collinear (slope 2)
+        new Position(4, 8), // collinear
+        new Position(6, 12),
       ];
       const result = simplifyPositions(positions);
       expect(result).toHaveLength(2);
@@ -360,8 +340,8 @@ describe('simplifyPositions', () => {
     it('should keep corner point in L-shaped path', () => {
       const positions = [
         new Position(0, 0),
-        new Position(10, 0),  // corner - NOT collinear
-        new Position(10, 10)
+        new Position(10, 0), // corner - NOT collinear
+        new Position(10, 10),
       ];
       const result = simplifyPositions(positions);
       expect(result).toHaveLength(3);
@@ -376,10 +356,10 @@ describe('simplifyPositions', () => {
       // Path: horizontal -> corner -> vertical with redundant points
       const positions = [
         new Position(0, 0),
-        new Position(5, 0),   // collinear with prev and next horizontal
-        new Position(10, 0),  // corner - keep
-        new Position(10, 5),  // collinear with prev and next vertical
-        new Position(10, 10)
+        new Position(5, 0), // collinear with prev and next horizontal
+        new Position(10, 0), // corner - keep
+        new Position(10, 5), // collinear with prev and next vertical
+        new Position(10, 10),
       ];
       const result = simplifyPositions(positions);
       expect(result).toHaveLength(3);
@@ -393,7 +373,7 @@ describe('simplifyPositions', () => {
         new Position(0, 0),
         new Position(5, 5),
         new Position(10, 0),
-        new Position(15, 5)
+        new Position(15, 5),
       ];
       const result = simplifyPositions(positions);
       expect(result).toHaveLength(4);
@@ -403,10 +383,10 @@ describe('simplifyPositions', () => {
       // Staircase: each segment is either horizontal or vertical, no collinear
       const positions = [
         new Position(0, 0),
-        new Position(5, 0),   // horizontal end, vertical start
-        new Position(5, 5),   // vertical end, horizontal start
-        new Position(10, 5),  // horizontal end, vertical start
-        new Position(10, 10)
+        new Position(5, 0), // horizontal end, vertical start
+        new Position(5, 5), // vertical end, horizontal start
+        new Position(10, 5), // horizontal end, vertical start
+        new Position(10, 10),
       ];
       const result = simplifyPositions(positions);
       // All corners should be kept
@@ -418,8 +398,8 @@ describe('simplifyPositions', () => {
     it('should handle duplicate positions (collinear with themselves)', () => {
       const positions = [
         new Position(0, 0),
-        new Position(0, 0),  // duplicate - collinear
-        new Position(10, 0)
+        new Position(0, 0), // duplicate - collinear
+        new Position(10, 0),
       ];
       const result = simplifyPositions(positions);
       expect(result).toHaveLength(2);

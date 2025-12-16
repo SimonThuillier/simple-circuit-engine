@@ -190,7 +190,6 @@ export class PositionTool implements IEditingTool {
         // moving wires connected to component in real-time during drag
         this._sceneManager.getWireVisualManager().updateWiresForComponent(id);
       }
-
     }
 
     // Update current position and emit dragMove event (T039)
@@ -328,7 +327,7 @@ export class PositionTool implements IEditingTool {
     // Emit componentRotated event
     this._sceneManager.emit('componentRotated', {
       componentId: componentId,
-      newRotation: newAngle
+      newRotation: newAngle,
     });
     // Save new component state into the circuit model
     this._sceneManager

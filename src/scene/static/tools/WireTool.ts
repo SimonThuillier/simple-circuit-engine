@@ -10,7 +10,7 @@
  */
 
 import * as THREE from 'three';
-import type {IEditingTool, ToolType, CursorType, MonoSelectionData} from '../../shared/types';
+import type { IEditingTool, ToolType, CursorType, MonoSelectionData } from '../../shared/types';
 import type { CircuitSceneManager } from '../CircuitSceneManager';
 import type { UUID } from '../../../core/types/Identifier';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
@@ -120,7 +120,6 @@ export class WireTool implements IEditingTool {
     container.removeEventListener('dblclick', this.handleDblClick);
     window.removeEventListener('keydown', this.handleKeyDown);
 
-
     // Reset state
     this.mode = 'idle';
     this.wireCreatingState = null;
@@ -178,8 +177,9 @@ export class WireTool implements IEditingTool {
       if (!wire) return;
 
       // Priority 1: Check for existing intermediate point
-      const nearestPoint = this._sceneManager.getWireVisualManager()
-          .findNearestIntermediatePoint(wireId, screenPos);
+      const nearestPoint = this._sceneManager
+        .getWireVisualManager()
+        .findNearestIntermediatePoint(wireId, screenPos);
       if (nearestPoint) {
         // Start dragging existing intermediate point
         const pos = wire.intermediatePositions[nearestPoint.pointIndex];
@@ -207,7 +207,7 @@ export class WireTool implements IEditingTool {
 
       if (this.mode === 'idle') {
         // this is considered a double click/hold on branching point which starts drag
-        if(isBranchingPoint && Date.now() - this.lastCancelledOpTs < 500) {
+        if (isBranchingPoint && Date.now() - this.lastCancelledOpTs < 500) {
           this.startBPDrag(enodeId, this._sceneManager.cursorGroundPlanePosition());
           this._sceneManager.getControls()!.enablePan = false;
           this._sceneManager.on('gridPositionMove', this.handleGridPositionMove);
@@ -266,14 +266,12 @@ export class WireTool implements IEditingTool {
           return;
         }
         this.completeWireCreation(newBpId);
-        this._sceneManager.getSelectionManager()
-            .selectOne('enode', newBpId, this._sceneManager
-                .getObject3D('enode', newBpId)!);
+        this._sceneManager.getSelectionManager().selectOne('enode', newBpId, { componentId: null });
         return;
       }
       if (hoveredElement && hoveredElement.type === 'enode') {
         const enodeId = hoveredElement.id;
-        if(enodeId === this.wireCreatingState?.sourceEnodeId) {
+        if (enodeId === this.wireCreatingState?.sourceEnodeId) {
           // clicking on the same enode : cancel the wire creation
           const now = Date.now();
           if (now - this.wireCreatingState?.ts < 500) {
@@ -282,30 +280,24 @@ export class WireTool implements IEditingTool {
           this.cancelWireCreation();
         }
         const wireId = this.completeWireCreation(enodeId);
-        if(wireId){
-          this._sceneManager.getSelectionManager()
-              .selectOne('wire', wireId, this._sceneManager
-                  .getObject3D('wire', wireId)!);
+        if (wireId) {
+          this._sceneManager.getSelectionManager().selectOne('wire', wireId);
         }
       }
       if (hoveredElement && hoveredElement.type === 'wire') {
         // this interesting case create a new branching point on the wire and connect to it
         const targetWireId = hoveredElement.id;
         const gridPosition = this._sceneManager.cursorGroundPlanePosition();
-        const newBpId= this.createBranchingPointOnWire(targetWireId, gridPosition);
+        const newBpId = this.createBranchingPointOnWire(targetWireId, gridPosition);
         if (!newBpId) {
-            this.cancelWireCreation();
-            return;
+          this.cancelWireCreation();
+          return;
         }
         const wireId = this.completeWireCreation(newBpId);
-        if(wireId){
-          this._sceneManager.getSelectionManager()
-              .selectOne('wire', wireId, this._sceneManager
-                  .getObject3D('wire', wireId)!);
+        if (wireId) {
+          this._sceneManager.getSelectionManager().selectOne('wire', wireId);
         }
       }
-
-
     } else if (this.mode === 'wire_dragging') {
       // T066: Commit drag operation
       this.commitWireDrag();
@@ -335,7 +327,7 @@ export class WireTool implements IEditingTool {
     const enodeGroup = this._sceneManager.getEnodeObject3Ds().get(sourceEnodeId);
     if (!enodeGroup) return;
     const sourcePosition = enodeGroup.position.clone();
-    if (enodeGroup.userData.componentId){
+    if (enodeGroup.userData.componentId) {
       // since pins (enodes of components) are children of the component object3D,
       // we need to get the world position
       enodeGroup.getWorldPosition(sourcePosition);
@@ -350,7 +342,7 @@ export class WireTool implements IEditingTool {
       sourceEnodeId,
       sourcePosition: sourcePosition.clone(),
       previewWire,
-      ts: Date.now()
+      ts: Date.now(),
     };
     console.log('Wire creating state initialized:', this.wireCreatingState);
 
@@ -392,7 +384,7 @@ export class WireTool implements IEditingTool {
     // Saving to model, Validation checks are done in the process (T036, T037)
     try {
       // Create definitive wire visual (T038)
-      const wire = this._sceneManager.addWire(sourceEnodeId, targetEnodeId)
+      const wire = this._sceneManager.addWire(sourceEnodeId, targetEnodeId);
       // Emit success event
       this._sceneManager.emit('toolOperationCompleted', {
         toolType: this.type,
@@ -402,8 +394,7 @@ export class WireTool implements IEditingTool {
       // Reset state (end preview)
       this.cancelWireCreation();
       return wire.id;
-    }
-    catch(error){
+    } catch (error) {
       this.cancelWireCreation();
       this._sceneManager.emit('toolValidationError', {
         toolType: this.type,
@@ -432,17 +423,16 @@ export class WireTool implements IEditingTool {
       // Handle deletion of wires or branching points
       const selection = this._sceneManager.getSelectionManager().getSelection();
       if (!selection) return;
-      if (selection.kind === 'multi'){
+      if (selection.kind === 'multi') {
         // TODO handle multi selection later
         return;
       }
       const monoSelection = selection as MonoSelectionData;
 
-      if(monoSelection.type === 'wire'){
+      if (monoSelection.type === 'wire') {
         const wireId = monoSelection.id;
         this._sceneManager.removeWire(wireId);
-      }
-      else if (monoSelection.type === 'enode' && monoSelection.data === 'BranchingPoint') {
+      } else if (monoSelection.type === 'enode' && monoSelection.data === 'BranchingPoint') {
         const enodeId = monoSelection.id;
         this._sceneManager.removeBranchingPoint(enodeId);
       }
@@ -592,10 +582,10 @@ export class WireTool implements IEditingTool {
    * @param worldPosition - Initial position
    */
   private startWireDrag(
-      wireId: UUID,
-      targetType: 'intermediate' | 'new_intermediate',
-      pointIndex: number,
-      worldPosition: THREE.Vector3
+    wireId: UUID,
+    targetType: 'intermediate' | 'new_intermediate',
+    pointIndex: number,
+    worldPosition: THREE.Vector3
   ): void {
     const circuit = this._sceneManager.getCircuit();
     if (!circuit) return;
@@ -604,14 +594,14 @@ export class WireTool implements IEditingTool {
     if (!wire) return;
 
     // Store original positions for cancellation
-    const originalPositions = wire.intermediatePositions.map(p => ({ ...p }));
+    const originalPositions = wire.intermediatePositions.map((p) => ({ ...p }));
 
     // If creating new intermediate point, insert it now
     if (targetType === 'new_intermediate') {
       const insertIndex = pointIndex;
       const gridPos = {
         x: Math.round(worldPosition.x),
-        y: Math.round(-worldPosition.z)
+        y: Math.round(-worldPosition.z),
       };
       originalPositions.splice(insertIndex, 0, gridPos);
       pointIndex = insertIndex;
@@ -623,12 +613,12 @@ export class WireTool implements IEditingTool {
       pointIndex,
       initialPosition: worldPosition.clone(),
       originalPositions,
-      targetType
+      targetType,
     };
 
     this._sceneManager.emit('toolOperationStarted', {
       toolType: this.type,
-      operationData: { wireId, pointIndex, targetType }
+      operationData: { wireId, pointIndex, targetType },
     });
   }
 
@@ -645,7 +635,7 @@ export class WireTool implements IEditingTool {
     // Apply grid snapping
     const gridPos = {
       x: Math.round(worldPosition.x),
-      y: Math.round(-worldPosition.z)
+      y: Math.round(-worldPosition.z),
     };
 
     // Dragging intermediate point
@@ -658,7 +648,7 @@ export class WireTool implements IEditingTool {
 
     // T063: Real-time geometry update with temporary positions
     // Use circuit's update method to set intermediate positions
-    const positionObjects = newPositions.map(p => new Position(p.x, p.y));
+    const positionObjects = newPositions.map((p) => new Position(p.x, p.y));
     circuit.updateWireIntermediatePositions(this.wireDragState.wireId, positionObjects);
     this._sceneManager.getWireVisualManager().updateWire(this.wireDragState.wireId);
   }
@@ -679,7 +669,7 @@ export class WireTool implements IEditingTool {
       // T067: Check for merge/delete conditions
       const finalPositions = this.checkMergeDelete(wire);
       // Convert to Position objects
-      const positionObjects = finalPositions.map(p => new Position(p.x, p.y));
+      const positionObjects = finalPositions.map((p) => new Position(p.x, p.y));
       // Persist to model via CircuitEditionManager
       circuit.updateWireIntermediatePositions(this.wireDragState.wireId, positionObjects, true);
       // Update visual
@@ -688,16 +678,16 @@ export class WireTool implements IEditingTool {
         toolType: this.type,
         operationData: {
           wireId: this.wireDragState.wireId,
-          intermediatePositions: positionObjects
+          intermediatePositions: positionObjects,
         },
         changedData: {
-          updatedWires: [this.wireDragState.wireId]
-        }
+          updatedWires: [this.wireDragState.wireId],
+        },
       });
     } catch (error) {
       this._sceneManager.emit('toolValidationError', {
         toolType: this.type,
-        errorMessage: `Failed to commit wire drag: ${(error as Error).message}`
+        errorMessage: `Failed to commit wire drag: ${(error as Error).message}`,
       });
     }
 
@@ -716,12 +706,12 @@ export class WireTool implements IEditingTool {
     if (!circuit) return;
 
     // Revert intermediate positions
-    const positionObjects = this.wireDragState.originalPositions.map(p => new Position(p.x, p.y));
+    const positionObjects = this.wireDragState.originalPositions.map((p) => new Position(p.x, p.y));
     circuit.updateWireIntermediatePositions(this.wireDragState.wireId, positionObjects, true);
     this._sceneManager.getWireVisualManager().updateWire(this.wireDragState.wireId);
 
     this._sceneManager.emit('toolOperationCancelled', {
-      toolType: this.type
+      toolType: this.type,
     });
 
     // Reset state
@@ -734,10 +724,7 @@ export class WireTool implements IEditingTool {
    * @param enodeId - UUID of the branching point being dragged
    * @param worldPosition - Initial position
    */
-  private startBPDrag(
-      enodeId: UUID,
-      worldPosition: THREE.Vector3
-  ): void {
+  private startBPDrag(enodeId: UUID, worldPosition: THREE.Vector3): void {
     const circuit = this._sceneManager.getCircuit();
     if (!circuit) return;
 
@@ -753,7 +740,7 @@ export class WireTool implements IEditingTool {
 
     this._sceneManager.emit('toolOperationStarted', {
       toolType: this.type,
-      operationData: { enodeId }
+      operationData: { enodeId },
     });
   }
 
@@ -770,7 +757,7 @@ export class WireTool implements IEditingTool {
     // Apply grid snapping
     const gridPos = {
       x: Math.round(worldPosition.x),
-      y: Math.round(-worldPosition.z)
+      y: Math.round(-worldPosition.z),
     };
 
     // T068: Dragging branching point - move all connected wires
@@ -814,9 +801,9 @@ export class WireTool implements IEditingTool {
         toolType: this.type,
         operationData: {
           branchingPointId: this.bpDragState.enodeId,
-          newPosition: branchingPoint.position
+          newPosition: branchingPoint.position,
         },
-        changedData: {}
+        changedData: {},
       });
     }
 
@@ -845,7 +832,7 @@ export class WireTool implements IEditingTool {
     if (!branchingPoint) return;
     const gridPos = {
       x: Math.round(initialPosition.x),
-      y: Math.round(-initialPosition.z)
+      y: Math.round(-initialPosition.z),
     };
     branchingPoint.setPosition(gridPos as Position);
 
@@ -856,7 +843,7 @@ export class WireTool implements IEditingTool {
     }
 
     this._sceneManager.emit('toolOperationCancelled', {
-      toolType: this.type
+      toolType: this.type,
     });
 
     // Reset state
@@ -893,8 +880,7 @@ export class WireTool implements IEditingTool {
 
     // Check if close to endpoint1
     const distToEndpoint1 = Math.sqrt(
-        Math.pow(draggedPos.x - endpoint1.x, 2) +
-        Math.pow(draggedPos.y - endpoint1.y, 2)
+      Math.pow(draggedPos.x - endpoint1.x, 2) + Math.pow(draggedPos.y - endpoint1.y, 2)
     );
     if (distToEndpoint1 < threshold) {
       // Remove this point
@@ -904,8 +890,7 @@ export class WireTool implements IEditingTool {
 
     // Check if close to endpoint2
     const distToEndpoint2 = Math.sqrt(
-        Math.pow(draggedPos.x - endpoint2.x, 2) +
-        Math.pow(draggedPos.y - endpoint2.y, 2)
+      Math.pow(draggedPos.x - endpoint2.x, 2) + Math.pow(draggedPos.y - endpoint2.y, 2)
     );
     if (distToEndpoint2 < threshold) {
       // Remove this point
@@ -919,8 +904,7 @@ export class WireTool implements IEditingTool {
 
       const otherPos = positions[i];
       const dist = Math.sqrt(
-          Math.pow(draggedPos.x - otherPos.x, 2) +
-          Math.pow(draggedPos.y - otherPos.y, 2)
+        Math.pow(draggedPos.x - otherPos.x, 2) + Math.pow(draggedPos.y - otherPos.y, 2)
       );
 
       if (dist < threshold) {

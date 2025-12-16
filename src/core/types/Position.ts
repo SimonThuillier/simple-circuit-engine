@@ -191,9 +191,7 @@ function pointToSegmentDistance(
   // If segment is a point, return distance to that point
   const segmentLengthSquared = dx * dx + dy * dy;
   if (segmentLengthSquared === 0) {
-    return Math.sqrt(
-      (point.x - segmentStart.x) ** 2 + (point.y - segmentStart.y) ** 2
-    );
+    return Math.sqrt((point.x - segmentStart.x) ** 2 + (point.y - segmentStart.y) ** 2);
   }
 
   // Calculate projection of point onto the line (as parameter t)
@@ -202,8 +200,7 @@ function pointToSegmentDistance(
     0,
     Math.min(
       1,
-      ((point.x - segmentStart.x) * dx + (point.y - segmentStart.y) * dy) /
-        segmentLengthSquared
+      ((point.x - segmentStart.x) * dx + (point.y - segmentStart.y) * dy) / segmentLengthSquared
     )
   );
 
@@ -298,4 +295,3 @@ function areCollinear(a: Position, b: Position, c: Position, tolerance: number =
   const crossProduct = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
   return Math.abs(crossProduct) <= tolerance;
 }
-

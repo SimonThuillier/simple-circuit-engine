@@ -12,7 +12,7 @@ import * as THREE from 'three';
 import type { ENode } from '@/core/ENode';
 import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
 import { HitboxLayers } from '../LayerConstants';
-import {ENodeType} from "@/core/types/ENodeType";
+import { ENodeType } from '@/core/types/ENodeType';
 
 /**
  * Factory for creating branching point visuals.
@@ -27,14 +27,14 @@ import {ENodeType} from "@/core/types/ENodeType";
 export class BranchingPointVisualFactory {
   // Color constants
   private static readonly COLORS = {
-    null: 0xffffff,      // white - no source
-    Voltage: 0xff0000,   // red - voltage source
-    Current: 0x0000ff,   // blue - current source
+    null: 0xffffff, // white - no source
+    Voltage: 0xff0000, // red - voltage source
+    Current: 0x0000ff, // blue - current source
   };
 
   private static readonly DEFAULT_HOVER_COLOR = 0x4488ff; // Yellow for hitbox hover feedback
-  private static readonly HOVER_EMISSIVE = 0x4488ff;     // Slight brightening on hover
-  private static readonly SELECTED_EMISSIVE = 0xff8800;  // More brightening on selection
+  private static readonly HOVER_EMISSIVE = 0x4488ff; // Slight brightening on hover
+  private static readonly SELECTED_EMISSIVE = 0xff8800; // More brightening on selection
 
   // Cone geometry dimensions
   private static readonly CONE_RADIUS = 0.3;
@@ -62,26 +62,26 @@ export class BranchingPointVisualFactory {
 
     // Hitbox (box, raycastable)
     const hitboxGeom = new THREE.BoxGeometry(
-        BranchingPointVisualFactory.HITBOX_SQUARE,
-        BranchingPointVisualFactory.HITBOX_SQUARE,
-        BranchingPointVisualFactory.HITBOX_SQUARE);
+      BranchingPointVisualFactory.HITBOX_SQUARE,
+      BranchingPointVisualFactory.HITBOX_SQUARE,
+      BranchingPointVisualFactory.HITBOX_SQUARE
+    );
     const hitbox = new THREE.Mesh(
-        hitboxGeom,
-        new THREE.MeshStandardMaterial({
-          color: BranchingPointVisualFactory.DEFAULT_HOVER_COLOR,
-          transparent: true,
-          opacity: 0,
-        })
+      hitboxGeom,
+      new THREE.MeshStandardMaterial({
+        color: BranchingPointVisualFactory.DEFAULT_HOVER_COLOR,
+        transparent: true,
+        opacity: 0,
+      })
     );
     hitbox.userData = {
       type: 'enodeHitbox',
       componentId: null,
       enodeId: enode.id,
-      label: ENodeType.BranchingPoint
+      label: ENodeType.BranchingPoint,
     };
     hitbox.layers.set(HitboxLayers.ENODE);
     group.add(hitbox);
-
 
     // Create cone geometry
     const coneGeometry = new THREE.ConeGeometry(
@@ -118,9 +118,9 @@ export class BranchingPointVisualFactory {
    * @param sourceType - New source type
    */
   updateSourceType(object3D: THREE.Object3D, sourceType: ENodeSourceType | null): void {
-    const visual = object3D.children.find(
-      (child) => child.userData.type === 'enode'
-    ) as THREE.Mesh | undefined;
+    const visual = object3D.children.find((child) => child.userData.type === 'enode') as
+      | THREE.Mesh
+      | undefined;
 
     if (visual && visual.material instanceof THREE.MeshStandardMaterial) {
       const newColor = this.getColorForSourceType(sourceType);
@@ -138,9 +138,9 @@ export class BranchingPointVisualFactory {
       return;
     }
 
-    const visual = object3D.children.find(
-      (child) => child.userData.type === 'enode'
-    ) as THREE.Mesh | undefined;
+    const visual = object3D.children.find((child) => child.userData.type === 'enode') as
+      | THREE.Mesh
+      | undefined;
 
     if (visual && visual.material instanceof THREE.MeshStandardMaterial) {
       visual.material.emissive.setHex(BranchingPointVisualFactory.HOVER_EMISSIVE);
@@ -157,9 +157,9 @@ export class BranchingPointVisualFactory {
       return;
     }
 
-    const visual = object3D.children.find(
-      (child) => child.userData.type === 'enode'
-    ) as THREE.Mesh | undefined;
+    const visual = object3D.children.find((child) => child.userData.type === 'enode') as
+      | THREE.Mesh
+      | undefined;
 
     if (visual && visual.material instanceof THREE.MeshStandardMaterial) {
       visual.material.emissive.setHex(0x000000);
@@ -171,9 +171,9 @@ export class BranchingPointVisualFactory {
    * @param object3D - The branching point basis object3D (group)
    */
   applySelection(object3D: THREE.Object3D): void {
-    const visual = object3D.children.find(
-      (child) => child.userData.type === 'enode'
-    ) as THREE.Mesh | undefined;
+    const visual = object3D.children.find((child) => child.userData.type === 'enode') as
+      | THREE.Mesh
+      | undefined;
 
     if (visual && visual.material instanceof THREE.MeshStandardMaterial) {
       visual.material.emissive.setHex(BranchingPointVisualFactory.SELECTED_EMISSIVE);
@@ -186,9 +186,9 @@ export class BranchingPointVisualFactory {
    * @param object3D - The branching point basis object3D (group)
    */
   removeSelection(object3D: THREE.Object3D): void {
-    const visual = object3D.children.find(
-      (child) => child.userData.type === 'enode'
-    ) as THREE.Mesh | undefined;
+    const visual = object3D.children.find((child) => child.userData.type === 'enode') as
+      | THREE.Mesh
+      | undefined;
 
     if (visual && visual.material instanceof THREE.MeshStandardMaterial) {
       visual.material.emissive.setHex(0x000000);
