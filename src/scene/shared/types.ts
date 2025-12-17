@@ -318,7 +318,7 @@ export interface ComponentVisualUserData {
 /**
  * Available editing tool types
  */
-export type ToolType = 'position' | 'addComponent' | 'wire' | 'branchingPoint' | 'delete';
+export type ToolType = 'position' | 'addComponent' | 'wire' | 'branchingPoint' | 'delete' | 'build';
 
 /**
  * Cursor types for tool operations
