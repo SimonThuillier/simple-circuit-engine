@@ -18,7 +18,7 @@ import type {
 } from '../../shared/types';
 import type { CircuitSceneManager } from '../CircuitSceneManager';
 import type { UUID } from '../../../core/types/Identifier';
-import { nearestGridMagnetPosition } from '../../shared/GeometryUtils';
+import { nearestGridSnapPosition } from '../../shared/GeometryUtils';
 
 /**
  * Drag state for component movement (T030)
@@ -160,46 +160,7 @@ export class PositionTool implements IEditingTool {
     this._sceneManager.on('gridPositionMove', this.handleGridPositionMove);
   }
 
-  /**
-   * Handle mousemove - update component position during drag with grid snapping (T032)
-   *
-   * Updates the visual position of dragged objects in real-time with grid snapping.
-   * Emits dragMove events to notify listeners of position changes.
-   *
-   * @param cursorGridPosition - Current cursor position on the ground plane, grid-snapped
-   */
-  handleGridPositionMove(cursorGridPosition: THREE.Vector3): void {
-    if (!this.dragState) {
-      return;
-    }
 
-    const dragDelta = new THREE.Vector3().subVectors(
-      cursorGridPosition,
-      this.dragState.startPosition
-    );
-    for (const [id, data] of this.dragState.positionsAtStart.entries()) {
-      const object = this._sceneManager.getObject3D(data.type, id);
-      if (!object) {
-        continue;
-      }
-      const objectDraggedPosition = nearestGridMagnetPosition(
-        new THREE.Vector3().addVectors(data.position, dragDelta)
-      );
-      object.position.set(objectDraggedPosition.x, 0, objectDraggedPosition.z);
-      if (data.type === 'component') {
-        // moving wires connected to component in real-time during drag
-        this._sceneManager.getWireVisualManager().updateWiresForComponent(id);
-      }
-    }
-
-    // Update current position and emit dragMove event (T039)
-    this.dragState.currentPosition = cursorGridPosition;
-    this._sceneManager.emit('dragMove', {
-      selection: this.dragState.selection,
-      currentPosition: cursorGridPosition,
-      delta: dragDelta,
-    });
-  }
 
   /**
    * Handle pointerup - commit position to Circuit model (T034)
@@ -257,36 +218,6 @@ export class PositionTool implements IEditingTool {
    * @param event - Keyboard event
    */
   handleKeyDown(event: KeyboardEvent): void {
-    // Handle Escape key to cancel drag (T042)
-    if (event.key === 'Escape' && this.dragState) {
-      // stop listening to gridPositionMove events
-      this._sceneManager.off('gridPositionMove', this.handleGridPositionMove);
-
-      // Emit dragCancel event (T044)
-      this._sceneManager.emit('dragCancel', {
-        selection: this.dragState.selection,
-      });
-
-      // restore all elements to their original positions
-      for (const [id, data] of this.dragState.positionsAtStart.entries()) {
-        const object = this._sceneManager.getObject3D(data.type, id);
-        if (!object) {
-          continue;
-        }
-        const originalPosition = nearestGridMagnetPosition(data.position);
-        object.position.set(originalPosition.x, 0, originalPosition.z);
-        if (data.type === 'component') {
-          // moving wires connected to component in real-time during drag
-          this._sceneManager.getWireVisualManager().updateWiresForComponent(id);
-        }
-      }
-
-      // Clear drag state
-      this.dragState = null;
-      // re-enable MapControl change of camera after drag cancel
-      this._sceneManager.getControls()!.enablePan = true;
-    }
-
     // Handle R key to rotate selected component (T046)
     if ((event.key === 'r' || event.key === 'R') && !this.dragState) {
       this.rotateSelectedComponent();

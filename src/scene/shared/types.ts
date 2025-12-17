@@ -90,10 +90,10 @@ export interface SceneManagerEventMap {
   // Tool system events
   toolActivated: { toolType: ToolType };
   toolDeactivated: { toolType: ToolType };
-  toolOperationStarted: { toolType: ToolType; operationData: unknown };
-  toolOperationCompleted: { toolType: ToolType; operationData: unknown; changedData: ChangedData };
-  toolOperationCancelled: { toolType: ToolType };
-  toolValidationError: { toolType: ToolType; errorMessage: string };
+  toolOperationStarted: { toolType: ToolType; mode: unknown; operationData: unknown };
+  toolOperationCompleted: { toolType: ToolType; mode: unknown; operationData: unknown; changedData: ChangedData };
+  toolOperationCancelled: { toolType: ToolType; mode: unknown; };
+  toolValidationError: { toolType: ToolType; mode: unknown; errorMessage: string };
   cursorChangeRequested: { cursorType: CursorType };
   // Model circuit events (add, edit, delete)
   circuitElementAction: {

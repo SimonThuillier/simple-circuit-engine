@@ -84,28 +84,28 @@
 
 ### Implementation for User Story 2
 
-- [ ] T024 [US2] Copy ElementDragState interface (formerly DragState) from PositionTool and adapt to BuildTool in src/scene/static/tools/BuildTool.ts
-- [ ] T025 [US2] Implement startElementDrag() method with selection validation and position snapshot in src/scene/static/tools/BuildTool.ts
-- [ ] T026 [US2] Implement updateElementDrag() method with delta calculation and real-time position updates in src/scene/static/tools/BuildTool.ts
-- [ ] T027 [US2] Implement commitElementDrag() method with final position persistence and wire updates in src/scene/static/tools/BuildTool.ts
-- [ ] T028 [US2] Implement cancelElementDrag() method with position restoration from snapshot in src/scene/static/tools/BuildTool.ts
-- [ ] T029 [US2] Copy WirePointDragState interface from WireTool/PositionTool and adapt to BuildTool in src/scene/static/tools/BuildTool.ts
-- [ ] T030 [US2] Implement startWirePointDrag() method with wire validation and point index calculation in src/scene/static/tools/BuildTool.ts
-- [ ] T031 [US2] Implement updateWirePointDrag() method with intermediate position updates in src/scene/static/tools/BuildTool.ts
-- [ ] T032 [US2] Implement commitWirePointDrag() method with merge/delete check via checkMergeDelete() in src/scene/static/tools/BuildTool.ts
-- [ ] T033 [US2] Implement cancelWirePointDrag() method with position restoration in src/scene/static/tools/BuildTool.ts
-- [ ] T034 [US2] Copy BPDragState interface from PositionTool and adapt to BuildTool in src/scene/static/tools/BuildTool.ts
-- [ ] T035 [US2] Implement startBPDrag() method with branching point validation and position snapshot in src/scene/static/tools/BuildTool.ts
-- [ ] T036 [US2] Implement updateBPDrag() method with BP position updates and connected wire geometry refresh in src/scene/static/tools/BuildTool.ts
-- [ ] T037 [US2] Implement commitBPDrag() method with simplify logic for connected wires in src/scene/static/tools/BuildTool.ts
-- [ ] T038 [US2] Implement cancelBPDrag() method with position restoration in src/scene/static/tools/BuildTool.ts
-- [ ] T039 [US2] Add element drag logic to handlePointerDown() for selected element target priority in src/scene/static/tools/BuildTool.ts
-- [ ] T040 [US2] Add wire point drag logic to handlePointerDown() for wire target priority in src/scene/static/tools/BuildTool.ts
-- [ ] T041 [US2] Add drag completion logic to handlePointerUp() with mode routing (component_drag, wire_point_dragging, bp_drag) in src/scene/static/tools/BuildTool.ts
-- [ ] T042 [US2] Add position update logic to handleGridPositionMove() for all dragging modes in src/scene/static/tools/BuildTool.ts
-- [ ] T043 [US2] Add Escape key handling for drag cancellation in handleKeyDown() in src/scene/static/tools/BuildTool.ts
-- [ ] T044 [US2] Add event emission for drag operations (dragStart, dragMove, dragEnd, dragCancel) in src/scene/static/tools/BuildTool.ts
-- [ ] T045 [US2] Add camera controls locking/unlocking during drag operations in src/scene/static/tools/BuildTool.ts
+- [X] T024 [US2] Copy ElementDragState interface (formerly DragState) from PositionTool and adapt to BuildTool in src/scene/static/tools/BuildTool.ts
+- [X] T025 [US2] Implement startComponentDrag() method with selection validation and position snapshot in src/scene/static/tools/BuildTool.ts
+- [X] T026 [US2] Implement updateComponentDrag() method with delta calculation and real-time position updates in src/scene/static/tools/BuildTool.ts
+- [X] T027 [US2] Implement commitComponentDrag() method with final position persistence and wire updates in src/scene/static/tools/BuildTool.ts
+- [X] T028 [US2] Implement cancelComponentDrag() method with position restoration from snapshot in src/scene/static/tools/BuildTool.ts
+- [X] T029 [US2] Copy WirePointDragState interface from WireTool/PositionTool and adapt to BuildTool in src/scene/static/tools/BuildTool.ts
+- [X] T030 [US2] Implement startWireDrag() method with wire validation and point index calculation in src/scene/static/tools/BuildTool.ts
+- [X] T031 [US2] Implement updateWireDrag() method with intermediate position updates in src/scene/static/tools/BuildTool.ts
+- [X] T032 [US2] Implement commitWireDrag() method with merge/delete check via checkMergeDelete() in src/scene/static/tools/BuildTool.ts
+- [X] T033 [US2] Implement cancelWireDrag() method with position restoration in src/scene/static/tools/BuildTool.ts
+- [X] T034 [US2] Copy BPDragState interface from PositionTool and adapt to BuildTool in src/scene/static/tools/BuildTool.ts
+- [X] T035 [US2] Implement startBPDrag() method with branching point validation and position snapshot in src/scene/static/tools/BuildTool.ts
+- [X] T036 [US2] Implement updateBPDrag() method with BP position updates and connected wire geometry refresh in src/scene/static/tools/BuildTool.ts
+- [X] T037 [US2] Implement commitBPDrag() method with simplify logic for connected wires in src/scene/static/tools/BuildTool.ts
+- [X] T038 [US2] Implement cancelBPDrag() method with position restoration in src/scene/static/tools/BuildTool.ts
+- [X] T039 [US2] Add element drag logic to handlePointerDown() for selected element target priority in src/scene/static/tools/BuildTool.ts
+- [X] T040 [US2] Add wire point drag logic to handlePointerDown() for wire target priority in src/scene/static/tools/BuildTool.ts
+- [X] T041 [US2] Add drag completion logic to handlePointerUp() with mode routing (component_drag, wire_point_dragging, bp_drag) in src/scene/static/tools/BuildTool.ts
+- [X] T042 [US2] Add position update logic to handleGridPositionMove() for all dragging modes in src/scene/static/tools/BuildTool.ts
+- [X] T043 [US2] Add Escape key handling for drag cancellation in handleKeyDown() in src/scene/static/tools/BuildTool.ts
+- [Cancelled] T044 [US2] Add event emission for drag operations (dragStart, dragMove, dragEnd, dragCancel) in src/scene/static/tools/BuildTool.ts
+- [X] T045 [US2] Add camera controls locking/unlocking during drag operations in src/scene/static/tools/BuildTool.ts
 - [ ] T046 [US2] Migrate PositionTool.test.ts drag tests to BuildTool.test.ts in tests/scene/tools/BuildTool.test.ts
 
 **Checkpoint**: Element dragging fully functional - can drag components, branching points, and wire intermediate points with real-time visual updates

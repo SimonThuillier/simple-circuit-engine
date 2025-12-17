@@ -393,6 +393,40 @@ export class CircuitEditionManager {
     }
   }
 
+  saveEditComponent(
+      componentId: UUID,
+      visual: Object3D
+  ): Component {
+    // Logic to save the current state of the scene component into the core model
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) {
+      throw new Error('No circuit available in the scene manager.');
+    }
+    const component = circuit.getComponent(componentId);
+    if (!component) {
+      throw new Error(`Component with ID ${componentId} not found in the circuit.`);
+    }
+    const modelRotation = new Rotation(-Math.round((visual.rotation.y * 180) / Math.PI));
+    const modelPosition = new Position(
+        Math.round(visual.position.x),
+        Math.round(-visual.position.z)
+    );
+    component.setRotation(modelRotation);
+    component.setPosition(modelPosition);
+
+    this._sceneManager.emit('circuitElementAction', {
+      type: 'component',
+      action: 'edit',
+      id: componentId,
+      error: null,
+      data: {
+        position: modelPosition,
+        rotation: modelRotation,
+      },
+    });
+    return component;
+  }
+
   /**
    * Delete a component from the circuit model and emit the appropriate event
    * @param componentId - UUID of the component to delete

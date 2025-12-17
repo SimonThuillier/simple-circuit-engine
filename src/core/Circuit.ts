@@ -734,6 +734,26 @@ export class Circuit {
   }
 
   /**
+   * Get all wires connected to a component, e.g to any pin enode of the component.
+   *
+   * @param componentId - Component UUID
+   * @returns Array of connected Wires, or empty array if component not found
+   */
+  getWiresByComponent(componentId: UUID): Wire[] {
+    const component = this.components.get(componentId);
+    if (!component) {
+      return [];
+    }
+    const wires: Wire[] = [];
+
+    for (const pinId of component.pins) {
+      wires.push(...this.getWiresByNode(pinId));
+    }
+
+    return wires;
+  }
+
+  /**
    * Get both ENodes connected by a wire.
    *
    * @param wireId - Wire UUID

@@ -82,7 +82,7 @@ src/
 │   │   │   └── ComponentVisualFactory.ts  # MODIFIED: applySelection/removeSelection implemented
 │   │   ├── SelectionManager.ts            # NEW: Centralized selection state management
 │   │   ├── WireVisualManager.ts           # NEW: Wire rendering with pin positions & waypoints
-│   │   ├── GeometryUtils.ts               # MODIFIED: nearestGridMagnetPosition() added
+│   │   ├── GeometryUtils.ts               # MODIFIED: nearestGridSnapPosition() added
 │   │   └── types.ts                       # MODIFIED: SelectionData, HoverableType types added
 │   │
 │   └── static/
