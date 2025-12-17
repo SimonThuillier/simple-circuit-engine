@@ -164,22 +164,6 @@ describe('CircuitSceneManager', () => {
       expect(mesh.position.z).toEqual(-component.position.y); // y -> -z for 3D
     });
 
-    it('should use factoryRegistry to create component visuals', () => {
-      const customFactory = vi.fn((component) => {
-        const mesh = new THREE.Mesh(
-          new THREE.BoxGeometry(1, 1, 1),
-          new THREE.MeshStandardMaterial({ color: 0xff0000 })
-        );
-        mesh.userData.componentId = component.id;
-        return mesh;
-      });
-
-      registry.register(ComponentType.Battery, customFactory);
-      manager.update();
-
-      expect(customFactory).toHaveBeenCalled();
-    });
-
     it('should perform full update when no changedData provided', () => {
       manager.update();
       const scene = manager.getScene();

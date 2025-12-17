@@ -9,7 +9,7 @@ import * as THREE from 'three';
 /**
  * Apply enode hover visual effect
  */
-export function applyENodeHover(enodeGroup: THREE.Group): void {
+export function applyENodeHover(enodeGroup: THREE.Object3D): void {
   if (enodeGroup.userData.isHovered) {
     return; // Already hovered
   }
@@ -33,7 +33,7 @@ export function applyENodeHover(enodeGroup: THREE.Group): void {
 /**
  * Remove enode hover visual effect, restoring original materials
  */
-export function removeENodeHover(enodeGroup: THREE.Group): void {
+export function removeENodeHover(enodeGroup: THREE.Object3D): void {
   if (!enodeGroup.userData.isHovered) {
     return; // Already hovered
   }

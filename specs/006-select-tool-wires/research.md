@@ -129,7 +129,7 @@
 - `HoverManager.ts` - Pattern for state management with callbacks
 - `ComponentVisualFactoryBase.applyHover/removeHover` - Pattern for visual state changes
 - `createWirePathGeometry()` in GeometryUtils.ts - Already supports waypoint arrays
-- `IEditingTool` interface - Defines tool contract (handleClick, handleHover, etc.)
+- `IEditingTool` interface - Defines tool contract (handleClick, handleGridPositionMove, etc.)
 - `CircuitSceneManager._createWireMesh` - Current wire rendering to enhance
 
 ### New Capabilities Required

@@ -239,10 +239,10 @@ export class Circuit {
    * **Cascade deletion** removes:
    * - All pin ENodes belonging to the component
    * - All Wires connected to those pins
-   * - Any orphaned branching ENodes after wire removal
    *
    * @param id - Component UUID
    * @throws {Error} If component does not exist
+   * @returns Object containing arrays of deleted Wires and ENodes IDs
    *
    * @example
    * ```typescript
@@ -250,12 +250,18 @@ export class Circuit {
    * // Component, its pins, and connected wires are all removed
    * ```
    */
-  removeComponent(id: UUID): void {
+  removeComponent(id: UUID): {
+    deletedWires: UUID[];
+    deletedENodes: UUID[];
+  } {
     const component = this.components.get(id);
 
     if (!component) {
       throw new Error(`Component ${id} does not exist`);
     }
+
+    const deletedWires: UUID[] = [];
+    const deletedENodes: UUID[] = [];
 
     // Remove all wires connected to this component's pins
     for (const pinId of component.pins) {
@@ -265,15 +271,17 @@ export class Circuit {
         const wireIds = Array.from(enode.wires);
         for (const wireId of wireIds) {
           this.removeWire(wireId);
+          deletedWires.push(wireId);
         }
       }
-
       // Remove the pin ENode
       this.enodes.delete(pinId);
+      deletedENodes.push(pinId);
     }
 
     // Remove component from map
     this.components.delete(id);
+    return { deletedWires, deletedENodes };
   }
 
   hasComponent(id: UUID): boolean {
