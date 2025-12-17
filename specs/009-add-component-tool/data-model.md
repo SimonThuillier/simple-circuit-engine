@@ -41,7 +41,7 @@ interface AddComponentToolState {
 │         │                                   ▼                    │
 │         │                          [Ready - Type Selected]       │
 │         │                                   │                    │
-│         │                                   │ handleHover()      │
+│         │                                   │ handleGridPositionMove()      │
 │         │                                   ▼                    │
 │         │                          [Previewing]                  │
 │         │                            │     │                     │

@@ -51,7 +51,7 @@ export class AddComponentTool implements IEditingTool {
 
     // Attach gridPositionMove listener for hover preview updates
     this._gridPositionMoveHandler = (position: THREE.Vector3) => {
-      this.handleHover(position);
+      this.handleGridPositionMove(position);
     };
     this._sceneManager.on('gridPositionMove', this._gridPositionMoveHandler);
 
@@ -76,6 +76,9 @@ export class AddComponentTool implements IEditingTool {
     // Create initial preview if component type is already set
     if (this._componentType) {
       this._createGhostPreview();
+      // deactivating pan and zoom controls while placing components
+      this._sceneManager.getControls()!.enablePan = false;
+      this._sceneManager.getControls()!.enableZoom = false;
     }
   }
 
@@ -105,6 +108,10 @@ export class AddComponentTool implements IEditingTool {
     this._componentType = null;
     this._previewRotation = 0;
     this._hasOverlap = false;
+
+    // reactivating pan and zoom controls
+    this._sceneManager.getControls()!.enablePan = true;
+    this._sceneManager.getControls()!.enableZoom = true;
   }
 
   /**
@@ -118,7 +125,17 @@ export class AddComponentTool implements IEditingTool {
 
     // Recreate ghost preview with new component type
     this._disposeGhostPreview();
-    this._createGhostPreview();
+
+    if (!!this._componentType) {
+      this._createGhostPreview();
+      // deactivating pan and zoom controls while placing components
+      this._sceneManager.getControls()!.enablePan = false;
+      this._sceneManager.getControls()!.enableZoom = false;
+    }
+    else {
+      this._sceneManager.getControls()!.enablePan = true;
+      this._sceneManager.getControls()!.enableZoom = true;
+    }
   }
 
   /**
@@ -151,6 +168,9 @@ export class AddComponentTool implements IEditingTool {
         this._ghostPreview = null;
         return;
       }
+      visual.userData.preview = true; // Mark as preview objects
+      visual.traverse((child) => {child.userData.preview = true;});
+
 
       this._ghostPreview = visual;
 
@@ -162,6 +182,9 @@ export class AddComponentTool implements IEditingTool {
 
       // Apply initial rotation
       this._ghostPreview.rotation.y = (this._previewRotation * Math.PI) / 180;
+
+      // add to the scene
+      this._sceneManager.getScene().add(this._ghostPreview);
     } catch (error) {
       console.warn(`Failed to create ghost preview for ${this._componentType}:`, error);
       this._ghostPreview = null;
@@ -200,6 +223,8 @@ export class AddComponentTool implements IEditingTool {
    */
   private _disposeGhostPreview(): void {
     if (this._ghostPreview) {
+      // remove from the scene
+      this._sceneManager.getScene().remove(this._ghostPreview);
       // Dispose materials and geometry
       this._ghostPreview.traverse((child) => {
         if (child instanceof THREE.Mesh) {
@@ -231,25 +256,129 @@ export class AddComponentTool implements IEditingTool {
   }
 
   /**
-   * Handle hover/mouse move events (T016)
-   * Updates preview position with grid snapping
+   * Check if preview overlaps with existing components (T021)
+   * Uses THREE.Box3 bounding box collision detection
+   *
+   * @returns true if overlap detected, false otherwise
+   * @private
+   */
+  private _checkOverlap(): boolean {
+    if (!this._ghostPreview) {
+      return false;
+    }
+
+    // Create bounding box for ghost preview
+    const previewBox = new THREE.Box3().setFromObject(this._ghostPreview);
+
+    // Get all placed components
+    const componentObjects = this._sceneManager.getComponentObject3Ds();
+
+    // Check each component for overlap
+    for (const [_id, componentGroup] of componentObjects) {
+      const componentBox = new THREE.Box3().setFromObject(componentGroup);
+
+      // Check intersection
+      if (previewBox.intersectsBox(componentBox)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Apply invalid placement visual effect (T022)
+   * Sets red emissive color to indicate invalid placement
+   *
+   * @param object - Object3D to apply effect to
+   * @private
+   */
+  private _applyInvalidEffect(object: THREE.Object3D): void {
+    object.traverse((child) => {
+      if (child instanceof THREE.Mesh && child.material) {
+        if (Array.isArray(child.material)) {
+          child.material.forEach((mat: THREE.Material) => {
+            if ('emissive' in mat) {
+              (mat as any).emissive.setHex(0xff0000);
+              (mat as any).emissiveIntensity = 0.5;
+            }
+          });
+        } else {
+          const mat = child.material as any;
+          if ('emissive' in mat) {
+            mat.emissive.setHex(0xff0000);
+            mat.emissiveIntensity = 0.5;
+          }
+        }
+      }
+    });
+  }
+
+  /**
+   * Remove invalid placement visual effect (T023)
+   * Restores normal emissive values
+   *
+   * @param object - Object3D to restore
+   * @private
+   */
+  private _removeInvalidEffect(object: THREE.Object3D): void {
+    object.traverse((child) => {
+      if (child instanceof THREE.Mesh && child.material) {
+        if (Array.isArray(child.material)) {
+          child.material.forEach((mat: THREE.Material) => {
+            if ('emissive' in mat) {
+              (mat as any).emissive.setHex(0x000000);
+              (mat as any).emissiveIntensity = 0;
+            }
+          });
+        } else {
+          const mat = child.material as any;
+          if ('emissive' in mat) {
+            mat.emissive.setHex(0x000000);
+            mat.emissiveIntensity = 0;
+          }
+        }
+      }
+    });
+  }
+
+  /**
+   * Handle gridPosition move events (T016, T024)
+   * Updates preview position with grid snapping and checks for overlap
    *
    * @param worldPosition - Current cursor position in world coordinates (already grid-snapped)
    */
-  handleHover(worldPosition: THREE.Vector3): void {
-    // Update preview position (position is already grid-snapped from CircuitSceneManager)
-    this._previewPosition.copy(worldPosition);
+  handleGridPositionMove(worldPosition: THREE.Vector3): void {
+    // Update preview position as grid-snapped current world position
+    this._previewPosition.set(
+        Math.round(worldPosition.x),
+        0,
+        Math.round(worldPosition.z)
+    );
 
     // Update ghost preview position if it exists
     if (this._ghostPreview) {
       this._ghostPreview.position.copy(this._previewPosition);
-    }
 
-    // TODO: User Story 2 - Overlap detection will be added here
+      // Check for overlap (T024)
+      const previousOverlap = this._hasOverlap;
+      this._hasOverlap = this._checkOverlap();
+
+      // Apply or remove invalid effect based on overlap state
+      if (this._hasOverlap && !previousOverlap) {
+        // Just detected overlap
+        this._applyInvalidEffect(this._ghostPreview);
+      } else if (!this._hasOverlap && previousOverlap) {
+        // Overlap cleared
+        this._removeInvalidEffect(this._ghostPreview);
+      }
+    } else {
+      this._hasOverlap = false;
+    }
   }
 
   /**
-   * Handle click events for component placement (T017, T019)
+   * Handle click events for component placement (T017, T019, T026, T027)
    * Validates and places component at preview position
    *
    * @param worldPosition - Click position in world coordinates
@@ -264,7 +393,14 @@ export class AddComponentTool implements IEditingTool {
       return;
     }
 
-    // TODO: User Story 2 - Check overlap before placing
+    // Check for overlap before placing (T026, T027)
+    if (this._hasOverlap) {
+      this._sceneManager.emit('toolValidationError', {
+        toolType: this.type,
+        errorMessage: 'Cannot place component: position occupied',
+      });
+      return;
+    }
 
     try {
       // Convert preview rotation to Euler
@@ -315,6 +451,20 @@ export class AddComponentTool implements IEditingTool {
     // Update ghost preview rotation if it exists
     if (this._ghostPreview) {
       this._ghostPreview.rotation.y = (this._previewRotation * Math.PI) / 180;
+      // Check for overlap (T024)
+      const previousOverlap = this._hasOverlap;
+      this._hasOverlap = this._checkOverlap();
+
+      // Apply or remove invalid effect based on overlap state
+      if (this._hasOverlap && !previousOverlap) {
+        // Just detected overlap
+        this._applyInvalidEffect(this._ghostPreview);
+      } else if (!this._hasOverlap && previousOverlap) {
+        // Overlap cleared
+        this._removeInvalidEffect(this._ghostPreview);
+      }
+    } else {
+        this._hasOverlap = false;
     }
   }
 

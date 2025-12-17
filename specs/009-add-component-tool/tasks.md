@@ -52,7 +52,7 @@
 - [x] T013 [US1] Implement createGhostPreview() method - use FactoryRegistry.get() and createVisual() in src/scene/static/tools/AddComponentTool.ts
 - [x] T014 [US1] Implement applyGhostEffect() method - traverse Object3D and set material.opacity = 0.5 and material.transparent = true in src/scene/static/tools/AddComponentTool.ts
 - [x] T015 [US1] Implement getPreviewObjects() to return [ghostPreview] when preview exists in src/scene/static/tools/AddComponentTool.ts
-- [x] T016 [US1] Implement handleHover() method - update previewPosition with grid snapping in src/scene/static/tools/AddComponentTool.ts
+- [x] T016 [US1] Implement handleGridPositionMove() method - update previewPosition with grid snapping in src/scene/static/tools/AddComponentTool.ts
 - [x] T017 [US1] Implement handleClick() method - call addComponent() on CircuitSceneManager when clicking empty space in src/scene/static/tools/AddComponentTool.ts
 - [x] T018 [US1] Implement getCursorType() - return 'crosshair' by default in src/scene/static/tools/AddComponentTool.ts
 - [x] T019 [US1] Emit toolOperationCompleted event with component details after successful placement in src/scene/static/tools/AddComponentTool.ts
@@ -70,13 +70,13 @@
 
 ### Implementation for User Story 2
 
-- [ ] T021 [US2] Implement checkOverlap() method using THREE.Box3.setFromObject() and intersectsBox() in src/scene/static/tools/AddComponentTool.ts
-- [ ] T022 [US2] Implement applyInvalidEffect() method - set emissive to red (0xff0000) with intensity 0.5 in src/scene/static/tools/AddComponentTool.ts
-- [ ] T023 [US2] Implement removeInvalidEffect() method - restore normal emissive values in src/scene/static/tools/AddComponentTool.ts
-- [ ] T024 [US2] Update handleHover() to call checkOverlap() and apply invalid effect when overlap detected in src/scene/static/tools/AddComponentTool.ts
-- [ ] T025 [US2] Update getCursorType() to return 'not-allowed' when hasOverlap is true in src/scene/static/tools/AddComponentTool.ts
-- [ ] T026 [US2] Update handleClick() to check hasOverlap and emit toolValidationError if overlap detected in src/scene/static/tools/AddComponentTool.ts
-- [ ] T027 [US2] Emit toolValidationError event with message "Cannot place component: position occupied" when overlap prevents placement in src/scene/static/tools/AddComponentTool.ts
+- [x] T021 [US2] Implement checkOverlap() method using THREE.Box3.setFromObject() and intersectsBox() in src/scene/static/tools/AddComponentTool.ts
+- [x] T022 [US2] Implement applyInvalidEffect() method - set emissive to red (0xff0000) with intensity 0.5 in src/scene/static/tools/AddComponentTool.ts
+- [x] T023 [US2] Implement removeInvalidEffect() method - restore normal emissive values in src/scene/static/tools/AddComponentTool.ts
+- [x] T024 [US2] Update handleGridPositionMove() to call checkOverlap() and apply invalid effect when overlap detected in src/scene/static/tools/AddComponentTool.ts
+- [x] T025 [US2] Update getCursorType() to return 'not-allowed' when hasOverlap is true in src/scene/static/tools/AddComponentTool.ts
+- [x] T026 [US2] Update handleClick() to check hasOverlap and emit toolValidationError if overlap detected in src/scene/static/tools/AddComponentTool.ts
+- [x] T027 [US2] Emit toolValidationError event with message "Cannot place component: position occupied" when overlap prevents placement in src/scene/static/tools/AddComponentTool.ts
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work - placement works with overlap prevention
 
@@ -90,13 +90,13 @@
 
 ### Implementation for User Story 3
 
-- [ ] T028 [US3] Implement handleScroll() method - increment/decrement previewRotation by 90° based on scroll direction in src/scene/static/tools/AddComponentTool.ts
-- [ ] T029 [US3] Implement rotation wrapping logic - normalize rotation to 0-360 range (0° → 90° → 180° → 270° → 0°) in src/scene/static/tools/AddComponentTool.ts
-- [ ] T030 [US3] Update createGhostPreview() to apply initial rotation to ghost preview object in src/scene/static/tools/AddComponentTool.ts
-- [ ] T031 [US3] Update handleHover() to apply current previewRotation to ghost preview position in src/scene/static/tools/AddComponentTool.ts
-- [ ] T032 [US3] Attach 'wheel' event listener in onActivate() to call handleScroll() in src/scene/static/tools/AddComponentTool.ts
-- [ ] T033 [US3] Remove 'wheel' event listener in onDeactivate() in src/scene/static/tools/AddComponentTool.ts
-- [ ] T034 [US3] Update handleClick() to pass previewRotation to addComponent() method in src/scene/static/tools/AddComponentTool.ts
+- [x] T028 [US3] Implement handleScroll() method - increment/decrement previewRotation by 90° based on scroll direction in src/scene/static/tools/AddComponentTool.ts
+- [x] T029 [US3] Implement rotation wrapping logic - normalize rotation to 0-360 range (0° → 90° → 180° → 270° → 0°) in src/scene/static/tools/AddComponentTool.ts
+- [x] T030 [US3] Update createGhostPreview() to apply initial rotation to ghost preview object in src/scene/static/tools/AddComponentTool.ts
+- [x] T031 [US3] Update handleGridPositionMove() to apply current previewRotation to ghost preview position in src/scene/static/tools/AddComponentTool.ts
+- [x] T032 [US3] Attach 'wheel' event listener in onActivate() to call handleScroll() in src/scene/static/tools/AddComponentTool.ts
+- [x] T033 [US3] Remove 'wheel' event listener in onDeactivate() in src/scene/static/tools/AddComponentTool.ts
+- [x] T034 [US3] Update handleClick() to pass previewRotation to addComponent() method in src/scene/static/tools/AddComponentTool.ts
 
 **Checkpoint**: All primary placement features should now work - placement, overlap detection, rotation
 

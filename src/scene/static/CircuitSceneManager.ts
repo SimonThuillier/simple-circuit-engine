@@ -76,8 +76,8 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
 
   // Visual object tracking
   private grid: THREE.GridHelper | null = null;
-  private componentObject3Ds: Map<UUID, THREE.Group> = new Map();
-  private enodeObject3Ds: Map<UUID, THREE.Group> = new Map();
+  private componentObject3Ds: Map<UUID, THREE.Object3D> = new Map();
+  private enodeObject3Ds: Map<UUID, THREE.Object3D> = new Map();
   private wireObject3Ds: Map<UUID, Line2> = new Map();
 
   // Edit mode and tool system (Phase 5)
@@ -240,6 +240,10 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     }
   }
 
+  /**
+   * Get the current cursor position on the ground plane (y=0) in world coordinates
+   * The position is clamped within the circuit grid boundaries but not snapped to grid
+   */
   cursorGroundPlanePosition(): THREE.Vector3 {
     const gridHalfSize = this.circuit ? Math.ceil(this.circuit.metadata.size / 2) : 10;
     const vector = this.hoverManager!.getGroundPlanePosition().clone();
@@ -1393,11 +1397,11 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     try {
       const factory = this.factoryRegistry.get(component.type);
       // Support both function-based (legacy) and class-based (new) factories
-      const mesh =
-          typeof factory === 'function' ? factory(component) : factory.createVisual(component);
+      const mesh = factory.createVisual(component);
 
       // Position mesh at component location (2D circuit -> 3D world)
       mesh.position.set(component.position.x, 0, -component.position.y);
+      mesh.rotation.set(0, THREE.MathUtils.degToRad(-component.rotation.angle), 0);
 
       // Store component metadata
       mesh.userData.componentId = component.id;
@@ -1415,12 +1419,12 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
   /**
    * Index component mesh and its pins meshes for interaction (hover, selection)
    * @param componentId
-   * @param group
+   * @param object3D
    * @private
    */
-  private _indexComponentObject3D(componentId: string, group: THREE.Group): void {
-    this.componentObject3Ds.set(componentId, group);
-    group.traverse((obj) => {
+  private _indexComponentObject3D(componentId: string, object3D: THREE.Object3D): void {
+    this.componentObject3Ds.set(componentId, object3D);
+    object3D.traverse((obj) => {
       if (obj.userData && obj.userData.type === 'enodeGroup') {
         const enodeId = obj.userData.enodeId;
         if (enodeId) {
