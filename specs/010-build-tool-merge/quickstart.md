@@ -154,10 +154,10 @@ export class BuildTool implements IEditingTool {
 ```typescript
 type BuildToolMode =
   | 'idle'                   // Default state, no active operation
-  | 'wire_creating'          // Creating wire from source to target
-  | 'element_dragging'       // Dragging component or branching point
+  | 'wire_creation'          // Creating wire from source to target
+  | 'component_drag'       // Dragging component or branching point
   | 'wire_point_dragging'    // Dragging wire intermediate point
-  | 'bp_dragging';           // Dragging standalone branching point
+  | 'bp_drag';           // Dragging standalone branching point
 ```
 
 ## Event Handling

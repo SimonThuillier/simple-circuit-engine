@@ -60,17 +60,17 @@
 
 ### Implementation for User Story 1
 
-- [ ] T013 [US1] Copy WireCreatingState interface from WireTool and adapt to BuildTool in src/scene/static/tools/BuildTool.ts
-- [ ] T014 [US1] Implement startWireCreation() method with source enode validation and preview wire creation in src/scene/static/tools/BuildTool.ts
-- [ ] T015 [US1] Implement updateWireCreation() helper for preview wire endpoint updates in src/scene/static/tools/BuildTool.ts
-- [ ] T016 [US1] Implement completeWireCreation() method with target validation, wire creation, and preview cleanup in src/scene/static/tools/BuildTool.ts
-- [ ] T017 [US1] Implement cancelWireCreation() method with preview disposal and state reset in src/scene/static/tools/BuildTool.ts
-- [ ] T018 [US1] Add wire creation logic to handlePointerDown() for enode target priority in src/scene/static/tools/BuildTool.ts
-- [ ] T019 [US1] Add wire completion logic to handlePointerUp() with target type routing (pin/empty/wire) in src/scene/static/tools/BuildTool.ts
-- [ ] T020 [US1] Add preview update logic to handleGridPositionMove() for wire_creating mode in src/scene/static/tools/BuildTool.ts
-- [ ] T021 [US1] Add Escape key handling for wire creation cancellation in handleKeyDown() in src/scene/static/tools/BuildTool.ts
-- [ ] T022 [US1] Add event emission for wire creation operations (toolOperationStarted, toolOperationCompleted, toolValidationError) in src/scene/static/tools/BuildTool.ts
-- [ ] T023 [US1] Migrate WireTool.test.ts to BuildTool.test.ts with wire creation test cases in tests/scene/tools/BuildTool.test.ts
+- [X] T013 [US1] Copy WireCreatingState interface from WireTool and adapt to BuildTool in src/scene/static/tools/BuildTool.ts
+- [X] T014 [US1] Implement startWireCreation() method with source enode validation and preview wire creation in src/scene/static/tools/BuildTool.ts
+- [X] T015 [US1] Implement updateWireCreation() helper for preview wire endpoint updates in src/scene/static/tools/BuildTool.ts
+- [X] T016 [US1] Implement completeWireCreation() method with target validation, wire creation, and preview cleanup in src/scene/static/tools/BuildTool.ts
+- [X] T017 [US1] Implement cancelWireCreation() method with preview disposal and state reset in src/scene/static/tools/BuildTool.ts
+- [X] T018 [US1] Add wire creation logic to handlePointerDown() for enode target priority in src/scene/static/tools/BuildTool.ts
+- [X] T019 [US1] Add wire completion logic to handlePointerUp() with target type routing (pin/empty/wire) in src/scene/static/tools/BuildTool.ts
+- [X] T020 [US1] Add preview update logic to handleGridPositionMove() for wire_creation mode in src/scene/static/tools/BuildTool.ts
+- [X] T021 [US1] Add Escape key handling for wire creation cancellation in handleKeyDown() in src/scene/static/tools/BuildTool.ts
+- [X] T022 [US1] Add event emission for wire creation operations (toolOperationStarted, toolOperationCompleted, toolValidationError) in src/scene/static/tools/BuildTool.ts
+- [X] T023 [US1] Migrate WireTool.test.ts to BuildTool.test.ts with wire creation test cases in tests/scene/tools/BuildTool.test.ts
 
 **Checkpoint**: Wire creation fully functional - can create wires from pins to pins, pins to empty space (creates BP), and pins to wires (creates BP and splits wire)
 
@@ -101,7 +101,7 @@
 - [ ] T038 [US2] Implement cancelBPDrag() method with position restoration in src/scene/static/tools/BuildTool.ts
 - [ ] T039 [US2] Add element drag logic to handlePointerDown() for selected element target priority in src/scene/static/tools/BuildTool.ts
 - [ ] T040 [US2] Add wire point drag logic to handlePointerDown() for wire target priority in src/scene/static/tools/BuildTool.ts
-- [ ] T041 [US2] Add drag completion logic to handlePointerUp() with mode routing (element_dragging, wire_point_dragging, bp_dragging) in src/scene/static/tools/BuildTool.ts
+- [ ] T041 [US2] Add drag completion logic to handlePointerUp() with mode routing (component_drag, wire_point_dragging, bp_drag) in src/scene/static/tools/BuildTool.ts
 - [ ] T042 [US2] Add position update logic to handleGridPositionMove() for all dragging modes in src/scene/static/tools/BuildTool.ts
 - [ ] T043 [US2] Add Escape key handling for drag cancellation in handleKeyDown() in src/scene/static/tools/BuildTool.ts
 - [ ] T044 [US2] Add event emission for drag operations (dragStart, dragMove, dragEnd, dragCancel) in src/scene/static/tools/BuildTool.ts

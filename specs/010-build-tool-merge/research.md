@@ -26,10 +26,10 @@ Use a mode-based state machine with explicit state tracking and mode transitions
 ```typescript
 type BuildToolMode =
   | 'idle'
-  | 'wire_creating'
-  | 'element_dragging'
+  | 'wire_creation'
+  | 'component_drag'
   | 'wire_point_dragging'
-  | 'bp_dragging';
+  | 'bp_drag';
 
 class BuildTool implements IEditingTool {
   private mode: BuildToolMode = 'idle';
@@ -294,7 +294,7 @@ class BuildTool {
     // ... etc
 
     // Also cleanup any active operations
-    if (this.mode === 'wire_creating') {
+    if (this.mode === 'wire_creation') {
       this.cancelWireCreation();
     }
     // ... etc

@@ -107,26 +107,26 @@ describe('BranchingPointVisualFactory', () => {
 ```typescript
 describe('WireTool', () => {
   describe('wire creation', () => {
-    it('should enter wire_creating state on first enode click', () => {
+    it('should enter wire_creation state on first enode click', () => {
       // Setup: create scene with two components
       // Action: click on first pin
-      // Assert: tool state is wire_creating, source is set
+      // Assert: tool state is wire_creation, source is set
     });
 
     it('should create wire on second enode click', () => {
-      // Setup: tool in wire_creating state
+      // Setup: tool in wire_creation state
       // Action: click on second pin
       // Assert: wire created in circuit model
     });
 
     it('should show preview line during creation', () => {
-      // Setup: tool in wire_creating state
+      // Setup: tool in wire_creation state
       // Action: move mouse
       // Assert: preview line updates
     });
 
     it('should cancel on Escape', () => {
-      // Setup: tool in wire_creating state
+      // Setup: tool in wire_creation state
       // Action: press Escape
       // Assert: tool returns to idle, no wire created
     });
@@ -193,7 +193,7 @@ describe('WireTool', () => {
 - [ ] Add tests for each method
 
 ### WireTool Implementation
-- [ ] State machine (idle, wire_creating, dragging)
+- [ ] State machine (idle, wire_creation, dragging)
 - [ ] Event listener setup/teardown
 - [ ] Single-click on enode → start wire creation
 - [ ] Single-click on wire → start drag

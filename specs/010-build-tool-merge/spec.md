@@ -142,7 +142,7 @@ The codebase is cleaned up by removing PositionTool, WireTool, DeleteTool, and B
 
 - **BuildTool**: The unified editing tool that handles wire creation, element positioning, rotation, deletion, and branching points. Replaces PositionTool, WireTool, DeleteTool, and BranchingPointTool.
 - **ToolType**: Updated type union containing only 'build' and 'addComponent' after cleanup.
-- **BuildToolMode**: Internal state machine tracking current operation mode (idle, wire_creating, element_dragging, wire_point_dragging, bp_dragging).
+- **BuildToolMode**: Internal state machine tracking current operation mode (idle, wire_creation, component_drag, wire_point_dragging, bp_drag).
 
 ## Success Criteria _(mandatory)_
 

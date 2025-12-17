@@ -41,7 +41,7 @@ constructor(sceneManager: CircuitSceneManager)
 ### State Types
 
 ```typescript
-type WireToolMode = 'idle' | 'wire_creating' | 'wire_dragging' | 'bp_dragging';
+type WireToolMode = 'idle' | 'wire_creation' | 'wire_drag' | 'bp_drag';
 
 interface WireCreatingState {
   sourceEnodeId: UUID;

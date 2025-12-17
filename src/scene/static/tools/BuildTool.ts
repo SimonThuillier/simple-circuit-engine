@@ -13,27 +13,35 @@
  */
 
 import * as THREE from 'three';
-import type { IEditingTool, ToolType, CursorType, SelectionData, HoverableType } from '../../shared/types';
+import type {
+  IEditingTool,
+  ToolType,
+  CursorType,
+  SelectionData,
+  HoverableType,
+  MonoSelectionData
+} from '../../shared/types';
 import type { CircuitSceneManager } from '../CircuitSceneManager';
 import type { UUID } from '../../../core/types/Identifier';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
+import {Position} from "@/core/types/Position";
 
 /**
  * Build tool operating modes
  *
  * State transitions:
- *   idle → wire_creating (click enode)
- *   idle → element_dragging (pointerdown on selected element)
- *   idle → wire_point_dragging (click wire or intermediate point)
- *   idle → bp_dragging (double-click+hold branching point)
+ *   idle → wire_creation (click enode)
+ *   idle → component_drag (pointerdown on selected element)
+ *   idle → wire_drag (click wire or intermediate point)
+ *   idle → bp_drag (double-click+hold branching point)
  *   {any active mode} → idle (pointerup, Escape, or operation complete)
  */
-type BuildToolMode = 'idle' | 'wire_creating' | 'element_dragging' | 'wire_point_dragging' | 'bp_dragging';
+type BuildToolMode = 'idle' | 'wire_creation' | 'wire_drag' | 'component_drag' | 'bp_drag';
 
 /**
  * State during wire creation operation
  */
-interface WireCreatingState {
+interface WireCreationState {
   /**
    * UUID of the source enode (pin or branching point)
    */
@@ -57,35 +65,9 @@ interface WireCreatingState {
 }
 
 /**
- * State during component or branching point drag
- */
-interface ElementDragState {
-  /**
-   * Current selection being dragged
-   */
-  selection: SelectionData;
-
-  /**
-   * Original positions of all dragged objects (for cancel)
-   * Maps UUID → {type, position}
-   */
-  positionsAtStart: Map<UUID, { type: HoverableType; position: THREE.Vector3 }>;
-
-  /**
-   * World position where drag started (for delta calculation)
-   */
-  startPosition: THREE.Vector3;
-
-  /**
-   * Current cursor position (updated during drag)
-   */
-  currentPosition: THREE.Vector3;
-}
-
-/**
  * State during wire intermediate point drag
  */
-interface WirePointDragState {
+interface WireDragState {
   /**
    * UUID of wire being modified
    */
@@ -117,6 +99,32 @@ interface WirePointDragState {
 }
 
 /**
+ * State during component or branching point drag
+ */
+interface ComponentDragState {
+  /**
+   * Current selection being dragged
+   */
+  selection: SelectionData;
+
+  /**
+   * Original positions of all dragged objects (for cancel)
+   * Maps UUID → {type, position}
+   */
+  positionsAtStart: Map<UUID, { type: HoverableType; position: THREE.Vector3 }>;
+
+  /**
+   * World position where drag started (for delta calculation)
+   */
+  startPosition: THREE.Vector3;
+
+  /**
+   * Current cursor position (updated during drag)
+   */
+  currentPosition: THREE.Vector3;
+}
+
+/**
  * State during branching point drag
  */
 interface BPDragState {
@@ -145,9 +153,9 @@ export class BuildTool implements IEditingTool {
   private lastCancelledOpTs: number = 0;
 
   // Mode-specific state
-  private wireCreatingState: WireCreatingState | null = null;
-  private elementDragState: ElementDragState | null = null;
-  private wirePointDragState: WirePointDragState | null = null;
+  private wireCreationState: WireCreationState | null = null;
+  private wireDragState: WireDragState | null = null;
+  private componentDragState: ComponentDragState | null = null;
   private bpDragState: BPDragState | null = null;
 
   /**
@@ -172,9 +180,9 @@ export class BuildTool implements IEditingTool {
   onActivate(): void {
     // Reset all state
     this.mode = 'idle';
-    this.wireCreatingState = null;
-    this.elementDragState = null;
-    this.wirePointDragState = null;
+    this.wireCreationState = null;
+    this.wireDragState = null;
+    this.componentDragState = null;
     this.bpDragState = null;
     this.lastCancelledOpTs = 0;
 
@@ -192,20 +200,8 @@ export class BuildTool implements IEditingTool {
    * Cancels any active operations and removes all event handlers
    */
   onDeactivate(): void {
-    // Cancel any active operations
-    if (this.mode === 'wire_creating') {
-      // TODO: Implement cancelWireCreation()
-      // this.cancelWireCreation();
-    } else if (this.mode === 'element_dragging') {
-      // TODO: Implement cancelElementDrag()
-      // this.cancelElementDrag();
-    } else if (this.mode === 'wire_point_dragging') {
-      // TODO: Implement cancelWirePointDrag()
-      // this.cancelWirePointDrag();
-    } else if (this.mode === 'bp_dragging') {
-      // TODO: Implement cancelBPDrag()
-      // this.cancelBPDrag();
-    }
+    // Security : Cancel any active operations
+    this.cancelOperation();
 
     const container = this._sceneManager.getContainer();
     // Remove event listeners
@@ -217,15 +213,30 @@ export class BuildTool implements IEditingTool {
 
     // Reset all state
     this.mode = 'idle';
-    this.wireCreatingState = null;
-    this.elementDragState = null;
-    this.wirePointDragState = null;
+    this.wireCreationState = null;
+    this.wireDragState = null;
+    this.componentDragState = null;
     this.bpDragState = null;
 
     // Safety: re-enable camera controls
     const controls = this._sceneManager.getControls();
     if (controls) {
       controls.enablePan = true;
+    }
+  }
+
+  /**
+   * Cancel current ongoing operation : can be called from outside if needed
+   */
+  cancelOperation(): void {
+    if (this.mode === 'wire_creation') {
+      this.cancelWireCreation();
+    } else if (this.mode === 'wire_drag') {
+      this.cancelWireDrag();
+    } else if (this.mode === 'bp_drag') {
+      this.cancelBPDrag();
+    } else if (this.mode === 'component_drag') {
+      this.cancelComponentDrag();
     }
   }
 
@@ -237,7 +248,7 @@ export class BuildTool implements IEditingTool {
     const hoveredElement = this._sceneManager.getHoveredElement();
 
     // During wire creation
-    if (this.mode === 'wire_creating') {
+    if (this.mode === 'wire_creation') {
       if (!this.isValidWireTarget(hoveredElement)) {
         return 'not-allowed';
       }
@@ -246,9 +257,9 @@ export class BuildTool implements IEditingTool {
 
     // During drag operations
     if (
-      this.mode === 'element_dragging' ||
-      this.mode === 'wire_point_dragging' ||
-      this.mode === 'bp_dragging'
+      this.mode === 'component_drag' ||
+      this.mode === 'wire_drag' ||
+      this.mode === 'bp_drag'
     ) {
       return 'grabbing';
     }
@@ -283,16 +294,681 @@ export class BuildTool implements IEditingTool {
     const previews: THREE.Object3D[] = [];
 
     // Wire creation preview
-    if (this.mode === 'wire_creating' && this.wireCreatingState?.previewWire) {
-      previews.push(this.wireCreatingState.previewWire);
+    if (this.mode === 'wire_creation' && this.wireCreationState?.previewWire) {
+      previews.push(this.wireCreationState.previewWire);
     }
 
     return previews;
   }
 
   // ========================================================================
-  // Helper Methods
+  // Event Handlers
   // ========================================================================
+
+  /**
+   * Handle pointer down event
+   * Routes to appropriate operation based on hover target and state
+   */
+  private handlePointerDown(event: MouseEvent): void {
+    if (event.button !== 0) return; // Only handle left click
+
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return;
+    const hoveredElement = this._sceneManager.getHoveredElement();
+
+    if (this.mode === 'idle') {
+      if(hoveredElement && hoveredElement.type === 'wire') {
+        const wireId = hoveredElement.id;
+        const screenPos = new THREE.Vector2(event.clientX, event.clientY);
+        const worldPosition = this._sceneManager.cursorGroundPlanePosition();
+
+        // T061: Drag target resolution: branching point > existing intermediate > new intermediate
+        const wire = circuit.getWire(wireId);
+        if (!wire) return;
+
+        // Priority 1: Check for existing intermediate point
+        const nearestPoint = this._sceneManager
+            .getWireVisualManager()
+            .findNearestIntermediatePoint(wireId, screenPos);
+        if (nearestPoint) {
+          // Start dragging existing intermediate point
+          const pos = wire.intermediatePositions[nearestPoint.pointIndex];
+          if (pos) {
+            const worldPos = new THREE.Vector3(pos.x, 0, -pos.y);
+            this.startWireDrag(wireId, 'intermediate', nearestPoint.pointIndex, worldPos);
+            this._sceneManager.getControls()!.enablePan = false;
+            this._sceneManager.on('gridPositionMove', this.handleGridPositionMove);
+            return;
+          }
+        }
+
+        // Priority 2: Create new intermediate point at click position
+        const insertIndex = this._sceneManager
+            .getWireVisualManager()
+            .getInsertIndexForPosition(wireId, worldPosition);
+        this.startWireDrag(wireId, 'new_intermediate', insertIndex, worldPosition);
+        this._sceneManager.getControls()!.enablePan = false;
+        this._sceneManager.on('gridPositionMove', this.handleGridPositionMove);
+        return;
+      }
+      // Priority X : Check if we're hovering an enode (pin or branching point)
+      if(hoveredElement && hoveredElement.type === 'enode') {
+        const enodeId = hoveredElement.id;
+        const isBranchingPoint = !hoveredElement.object3D.userData.componentId;
+        // this is considered a double click+hold on branching point which starts drag
+        if (isBranchingPoint && Date.now() - this.lastCancelledOpTs < 500) {
+          this.startBPDrag(enodeId, this._sceneManager.cursorGroundPlanePosition());
+          this._sceneManager.getControls()!.enablePan = false;
+          this._sceneManager.on('gridPositionMove', this.handleGridPositionMove);
+          return;
+        }
+        // normal case start wire creation
+        this.startWireCreation(enodeId);
+        this._sceneManager.getControls()!.enablePan = false;
+        this._sceneManager.on('gridPositionMove', this.handleGridPositionMove);
+      }
+    }
+    else if(this.mode === 'wire_creation') {
+      if (!hoveredElement){
+        // Clicked on empty space during wire creation - cancel ?
+        // TODO: isn't it the spec to create a branching point here? or handled elsewhere and this branch is unnecessary ?
+        this.cancelWireCreation();
+      }
+
+    }
+  }
+
+  /**
+   * Handle pointer up event
+   *
+   * Ends current operation, commits final positions to the circuit model,
+   * and re-enables camera controls.
+   *
+   * Completes current operation based on mode
+   */
+  private handlePointerUp(event: MouseEvent): void {
+    if (event.button !== 0) return; // Only handle left click
+
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return;
+    const hoveredElement = this._sceneManager.getHoveredElement();
+
+    if (this.mode === 'wire_creation') {
+      if (!hoveredElement) {
+        // finishing on empty space : create end branching point
+        const worldPosition = this._sceneManager.cursorGroundPlanePosition();
+        const newBpId = this.createStandaloneBranchingPoint(worldPosition);
+        if (!newBpId) {
+          this.cancelWireCreation();
+          return;
+        }
+        this.completeWireCreation(newBpId);
+        this._sceneManager.getSelectionManager().selectOne('enode', newBpId, { componentId: null });
+        return;
+      }
+      if (hoveredElement && hoveredElement.type === 'enode') {
+        const enodeId = hoveredElement.id;
+        if (enodeId === this.wireCreationState?.sourceEnodeId) {
+          // clicking on the same enode : cancel the wire creation
+          const now = Date.now();
+          if (now - this.wireCreationState?.ts < 500) {
+            this.lastCancelledOpTs = now; // flag used to activate drag of branching point on next pointerdown
+          }
+          this.cancelWireCreation();
+        }
+        const wireId = this.completeWireCreation(enodeId);
+        if (wireId) {
+          this._sceneManager.getSelectionManager().selectOne('wire', wireId);
+        }
+      }
+      if (hoveredElement && hoveredElement.type === 'wire') {
+        // this interesting case create a new branching point on the wire and connect to it
+        const targetWireId = hoveredElement.id;
+        const gridPosition = this._sceneManager.cursorGroundPlanePosition();
+        const newBpId = this.createBranchingPointOnWire(targetWireId, gridPosition);
+        if (!newBpId) {
+          this.cancelWireCreation();
+          return;
+        }
+        const wireId = this.completeWireCreation(newBpId);
+        if (wireId) {
+          this._sceneManager.getSelectionManager().selectOne('wire', wireId);
+        }
+      }
+    }
+    else if (this.mode === 'wire_drag') {
+      // Commit wire drag operation
+      this.commitWireDrag();
+    }
+    else if (this.mode === 'bp_drag') {
+      // Commit branching point drag operation
+      this.commitBPDrag();
+    }
+
+    // Finally stop listening to gridPositionMove events
+    this._sceneManager.off('gridPositionMove', this.handleGridPositionMove);
+    // and unlock MapControl change of camera
+    this._sceneManager.getControls()!.enablePan = true;
+  }
+
+  /**
+   * Handle grid position move event according to ongoing mode
+   * Updates preview or drag position during active operations
+   */
+  private handleGridPositionMove(position: THREE.Vector3): void {
+    if (this.mode === 'wire_creation') {
+      // Update preview wire endpoint
+      this.updateWireCreation(position);
+    }
+    else if (this.mode === 'wire_drag') {
+      // Update wire drag target position and the displayed path of the wire
+      this.updateWireDrag(position);
+    }
+    else if (this.mode === 'bp_drag') {
+      // T062: Update branching point drag position
+      this.updateBPDrag(position);
+    }
+  }
+
+  /**
+   * Handle keyboard events
+   * Supports Escape (cancel), Delete/Backspace (delete), R (rotate)
+   */
+  private handleKeyDown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      if (this.mode === 'wire_creation') {
+        this.cancelWireCreation();
+      } else if (this.mode === 'wire_drag') {
+        // T065: Cancel drag on Escape
+        this.cancelWireDrag();
+      } else if (this.mode === 'bp_drag') {
+        // T065: Cancel drag on Escape
+        this.cancelBPDrag();
+      }
+    }
+    else if (event.key === 'Delete' || event.key === 'Backspace') {
+      // Handle deletion of wires or branching points
+      const selection = this._sceneManager.getSelectionManager().getSelection();
+      if (!selection) return;
+      if (selection.kind === 'multi') return; //this tool only handles mono selection for deletion
+      const monoSelection = selection as MonoSelectionData;
+
+      if (monoSelection.type === 'wire') {
+        const wireId = monoSelection.id;
+        this._sceneManager.removeWire(wireId);
+      } else if (monoSelection.type === 'enode' && monoSelection.data === 'BranchingPoint') {
+        const enodeId = monoSelection.id;
+        this._sceneManager.removeBranchingPoint(enodeId);
+        // TODO: may fail if the resulting merged wire is a duplicate - see how to handle this case
+      }
+    }
+  }
+
+  /**
+   * Handle double-click events
+   * Routes to rotation (component) or branching point creation (wire/empty)
+   */
+  private handleDblClick(event: MouseEvent): void {
+    if (event.button !== 0) return; // Only handle left click
+
+    const hoveredElement = this._sceneManager.getHoveredElement();
+
+    // Priority 1 - Check if we're hovering a wire => split it with new branchingPoint
+    if (hoveredElement && hoveredElement.type === 'wire') {
+      const wireId = hoveredElement.id;
+      const gridPosition = this._sceneManager.cursorGroundPlanePosition();
+      this.createBranchingPointOnWire(wireId, gridPosition);
+    } else if (!hoveredElement) {
+      // Priority 2 - Double-click on empty space - create standalone branching point
+      const gridPosition = this._sceneManager.cursorGroundPlanePosition();
+      this.createStandaloneBranchingPoint(gridPosition);
+    }
+  }
+
+  /**
+   * Operations lifecycle methods
+   * (start, update, cancel, complete)
+   */
+
+  /**
+   * Start wire creation from source enode
+   * @param sourceEnodeId - Source enode ID
+   */
+  private startWireCreation(sourceEnodeId: UUID): void {
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return;
+
+    const sourceEnode = circuit.getENode(sourceEnodeId);
+    if (!sourceEnode) return;
+
+    // Get source position
+    const enodeGroup = this._sceneManager.getEnodeObject3Ds().get(sourceEnodeId);
+    if (!enodeGroup) return;
+    const sourcePosition = enodeGroup.position.clone();
+    if (enodeGroup.userData.componentId) {
+      // since pins (enodes of components) are children of the component object3D,
+      // we need to get the world position
+      enodeGroup.getWorldPosition(sourcePosition);
+    }
+
+    // Create preview wire
+    const previewWire = this._sceneManager.getWireVisualManager().createPreviewWire(sourcePosition);
+
+    // Enter wire creating state
+    this.mode = 'wire_creation';
+    this.wireCreationState = {
+      sourceEnodeId,
+      sourcePosition: sourcePosition.clone(),
+      previewWire,
+      ts: Date.now(),
+    };
+    console.log('Wire creating state initialized:', this.wireCreationState);
+
+    this._sceneManager.emit('toolOperationStarted', {
+      toolType: this.type,
+      operationData: { sourceEnodeId },
+    });
+  }
+
+  /**
+   * Update wire creation preview with new target position
+   * @param position
+   * @private
+   */
+  private updateWireCreation(position: THREE.Vector3): void {
+    this._sceneManager.getWireVisualManager().updatePreviewWire(position);
+  }
+
+  /**
+   * Cancel wire creation and reset state
+   */
+  private cancelWireCreation(): void {
+    if (this.mode !== 'wire_creation') return;
+
+    this._sceneManager.getWireVisualManager().removePreviewWire();
+
+    this._sceneManager.emit('toolOperationCancelled', {
+      toolType: this.type,
+    });
+    // Reset state
+    this.mode = 'idle';
+    this.wireCreationState = null;
+  }
+
+  /**
+   * Complete wire creation between source and target enodes
+   * @param targetEnodeId - Target enode ID
+   */
+  private completeWireCreation(targetEnodeId: UUID): UUID | undefined {
+    if (this.mode !== 'wire_creation') return;
+
+    if(!this.wireCreationState) return;
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return;
+
+    const sourceEnodeId = this.wireCreationState.sourceEnodeId;
+
+    // Saving to model, Validation checks are done in the process
+    try {
+      // Create definitive wire visual
+      const wire = this._sceneManager.addWire(sourceEnodeId, targetEnodeId);
+      // Emit success event
+      this._sceneManager.emit('toolOperationCompleted', {
+        toolType: this.type,
+        operationData: { wireId: wire.id, sourceEnodeId, targetEnodeId },
+        changedData: { addedWires: [wire.id] },
+      });
+      // Reset state (end preview)
+      this.cancelWireCreation();
+      return wire.id;
+    } catch (error) {
+      this.cancelWireCreation();
+      this._sceneManager.emit('toolValidationError', {
+        toolType: this.type,
+        errorMessage: `Duplicate wire creation between enodes ${sourceEnodeId} and ${targetEnodeId}`,
+      });
+      return;
+    }
+  }
+
+  /**
+   * Start wire dragging operation
+   * @param wireId - Wire being dragged
+   * @param targetType - Type of drag target
+   * @param pointIndex - Index of intermediate point, or -1 for new/branching
+   * @param worldPosition - Initial position
+   */
+  private startWireDrag(
+      wireId: UUID,
+      targetType: 'intermediate' | 'new_intermediate',
+      pointIndex: number,
+      worldPosition: THREE.Vector3
+  ): void {
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return;
+
+    const wire = circuit.getWire(wireId);
+    if (!wire) return;
+
+    // Store original positions for cancellation
+    const originalPositions = wire.intermediatePositions.map((p) => ({ ...p }));
+
+    // If creating new intermediate point, insert it now
+    if (targetType === 'new_intermediate') {
+      const insertIndex = pointIndex;
+      const gridPos = {
+        x: Math.round(worldPosition.x),
+        y: Math.round(-worldPosition.z),
+      };
+      originalPositions.splice(insertIndex, 0, gridPos);
+      pointIndex = insertIndex;
+    }
+
+    this.mode = 'wire_drag';
+    this.wireDragState = {
+      wireId,
+      pointIndex,
+      initialPosition: worldPosition.clone(),
+      originalPositions,
+      targetType,
+    };
+
+    this._sceneManager.emit('toolOperationStarted', {
+      toolType: this.type,
+      operationData: { wireId, pointIndex, targetType },
+    });
+  }
+
+  /**
+   * Update drag target position during drag
+   * @param worldPosition - Current cursor position in world space
+   */
+  private updateWireDrag(worldPosition: THREE.Vector3): void {
+    if (this.mode !== 'wire_drag' || !this.wireDragState) return;
+
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return;
+
+    // Apply grid snapping
+    const gridPos = {
+      x: Math.round(worldPosition.x),
+      y: Math.round(-worldPosition.z),
+    };
+
+    // Dragging intermediate point
+    const wire = circuit.getWire(this.wireDragState.wireId);
+    if (!wire) return;
+
+    // Update intermediate positions array
+    const newPositions = [...this.wireDragState.originalPositions];
+    newPositions[this.wireDragState.pointIndex] = gridPos;
+
+    // T063: Real-time geometry update with temporary positions
+    // Use circuit's update method to set intermediate positions
+    const positionObjects = newPositions.map((p) => new Position(p.x, p.y));
+    circuit.updateWireIntermediatePositions(this.wireDragState.wireId, positionObjects);
+    this._sceneManager.getWireVisualManager().updateWire(this.wireDragState.wireId);
+  }
+
+  /**
+   * Cancel wire drag operation and revert to original positions
+   */
+  private cancelWireDrag(): void {
+    if (this.mode !== 'wire_drag' || !this.wireDragState) return;
+
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return;
+
+    // Revert intermediate positions
+    const positionObjects = this.wireDragState.originalPositions.map((p) => new Position(p.x, p.y));
+    circuit.updateWireIntermediatePositions(this.wireDragState.wireId, positionObjects, true);
+    this._sceneManager.getWireVisualManager().updateWire(this.wireDragState.wireId);
+
+    this._sceneManager.emit('toolOperationCancelled', {
+      toolType: this.type,
+    });
+
+    // Reset state
+    this.mode = 'idle';
+    this.wireDragState = null;
+  }
+
+  /**
+   * Commit drag operation and persist changes
+   */
+  private commitWireDrag(): void {
+    if (this.mode !== 'wire_drag' || !this.wireDragState) return;
+
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return;
+
+    const wire = circuit.getWire(this.wireDragState.wireId);
+    if (!wire) return;
+
+    try {
+      // T067: Check for merge/delete conditions
+      const finalPositions = this.checkMergeDelete(wire);
+      // Convert to Position objects
+      const positionObjects = finalPositions.map((p) => new Position(p.x, p.y));
+      // Persist to model via CircuitEditionManager
+      circuit.updateWireIntermediatePositions(this.wireDragState.wireId, positionObjects, true);
+      // Update visual
+      this._sceneManager.getWireVisualManager().refreshWireGeometry(this.wireDragState.wireId);
+      this._sceneManager.emit('toolOperationCompleted', {
+        toolType: this.type,
+        operationData: {
+          wireId: this.wireDragState.wireId,
+          intermediatePositions: positionObjects,
+        },
+        changedData: {
+          updatedWires: [this.wireDragState.wireId],
+        },
+      });
+    } catch (error) {
+      this._sceneManager.emit('toolValidationError', {
+        toolType: this.type,
+        errorMessage: `Failed to commit wire drag: ${(error as Error).message}`,
+      });
+    }
+
+    // Reset state
+    this.mode = 'idle';
+    this.wireDragState = null;
+  }
+
+  /**
+   * Start branching point dragging operation
+   * @param enodeId - UUID of the branching point being dragged
+   * @param worldPosition - Initial position
+   */
+  private startBPDrag(enodeId: UUID, worldPosition: THREE.Vector3): void {
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return;
+
+    const branchingPoint = circuit.getENode(enodeId);
+    if (!branchingPoint) return;
+
+    this.mode = 'bp_drag';
+    const dragState: BPDragState = {
+      enodeId,
+      initialPosition: worldPosition.clone(),
+    };
+    this.bpDragState = dragState;
+
+    this._sceneManager.emit('toolOperationStarted', {
+      toolType: this.type,
+      operationData: { enodeId },
+    });
+  }
+
+  /**
+   * Update branching point position during drag
+   * @param worldPosition - Current cursor position in world space
+   */
+  private updateBPDrag(worldPosition: THREE.Vector3): void {
+    if (this.mode !== 'bp_drag' || !this.bpDragState) return;
+
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return;
+
+    // Apply grid snapping
+    const gridPos = {
+      x: Math.round(worldPosition.x),
+      y: Math.round(-worldPosition.z),
+    };
+
+    // T068: Dragging branching point - move all connected wires
+    const branchingPoint = circuit.getENode(this.bpDragState.enodeId);
+    if (!branchingPoint) return;
+
+    // Update branching point position via setPosition method
+    const position = new Position(gridPos.x, gridPos.y);
+    branchingPoint.setPosition(position);
+
+    // Update branching point visual
+    const enodeGroup = this._sceneManager.getEnodeObject3Ds().get(this.bpDragState.enodeId);
+    if (enodeGroup) {
+      enodeGroup.position.set(gridPos.x, 0, -gridPos.y);
+    }
+    // Update all wires connected to this branching point
+    for (const connectedWireId of branchingPoint.wires) {
+      this._sceneManager.getWireVisualManager().updateWire(connectedWireId);
+    }
+  }
+
+  /**
+   * Cancel branching point drag operation and revert to original positions
+   */
+  private cancelBPDrag(): void {
+    if (this.mode !== 'bp_drag' || !this.bpDragState) return;
+
+    const initialPosition = this.bpDragState.initialPosition;
+    // Update bp visual
+    const enodeGroup = this._sceneManager.getEnodeObject3Ds().get(this.bpDragState.enodeId);
+    if (!enodeGroup) {
+      return;
+    }
+    enodeGroup.position.set(initialPosition.x, 0, initialPosition.z);
+
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return;
+    const branchingPoint = circuit.getENode(this.bpDragState.enodeId);
+    if (!branchingPoint) return;
+    const gridPos = {
+      x: Math.round(initialPosition.x),
+      y: Math.round(-initialPosition.z),
+    };
+    branchingPoint.setPosition(gridPos as Position);
+
+    // Update all connected wires
+    for (const connectedWireId of branchingPoint.wires) {
+      circuit.simplifyWireIntermediatePositions(connectedWireId);
+      this._sceneManager.getWireVisualManager().updateWire(connectedWireId);
+    }
+
+    this._sceneManager.emit('toolOperationCancelled', {
+      toolType: this.type,
+    });
+
+    // Reset state
+    this.mode = 'idle';
+    this.bpDragState = null;
+  }
+
+  /**
+   * Commit branching point drag operation and persist changes
+   */
+  private commitBPDrag(): void {
+    if (this.mode !== 'bp_drag' || !this.bpDragState) return;
+
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return;
+
+    // Branching point drag position is already updated, but it's a good place to simplify wire path if necessary
+    const branchingPoint = circuit.getENode(this.bpDragState.enodeId);
+    if (branchingPoint) {
+      // Update all wires connected to this branching point
+      for (const connectedWireId of branchingPoint.wires) {
+        circuit.simplifyWireIntermediatePositions(connectedWireId);
+        this._sceneManager.getWireVisualManager().updateWire(connectedWireId);
+      }
+
+      this._sceneManager.emit('toolOperationCompleted', {
+        toolType: this.type,
+        operationData: {
+          branchingPointId: this.bpDragState.enodeId,
+          newPosition: branchingPoint.position,
+        },
+        changedData: {},
+      });
+    }
+
+    // Reset state
+    this.mode = 'idle';
+    this.bpDragState = null;
+  }
+
+
+
+  /**
+   * private helpers
+   */
+
+  /**
+   * Create a standalone branching point at empty grid position (T048)
+   * @param worldPosition - 3D position in world space
+   */
+  private createStandaloneBranchingPoint(worldPosition: THREE.Vector3): UUID | undefined {
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return;
+    try {
+      // Create branching point in circuit model (no sourceType initially)
+      const branchingPoint = this._sceneManager.addBranchingPoint(worldPosition);
+      return branchingPoint.id;
+    } catch (error) {
+      this._sceneManager.emit('toolValidationError', {
+        toolType: this.type,
+        errorMessage: `Failed to create branching point: ${(error as Error).message}`,
+      });
+    }
+    return;
+  }
+
+  /**
+   * Create a branching point on an existing wire, splitting it (T044)
+   * @param wireId - Wire to split
+   * @param worldPosition - 3D position in world space
+   */
+  private createBranchingPointOnWire(wireId: UUID, worldPosition: THREE.Vector3): UUID | undefined {
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return;
+
+    try {
+      const result = this._sceneManager.splitWire(wireId, worldPosition);
+      // Emit success event
+      this._sceneManager.emit('toolOperationCompleted', {
+        toolType: this.type,
+        operationData: {
+          wireId,
+          branchingPointId: result.branchingPoint.id,
+          wire1Id: result.wire1.id,
+          wire2Id: result.wire2.id,
+        },
+        changedData: {
+          removedWires: [wireId],
+          addedWires: [result.wire1.id, result.wire2.id],
+          addedENodes: [result.branchingPoint.id],
+        },
+      });
+      return result.branchingPoint.id;
+    } catch (error) {
+      this._sceneManager.emit('toolValidationError', {
+        toolType: this.type,
+        errorMessage: `Failed to create branching point: ${(error as Error).message}`,
+      });
+    }
+  }
+
 
   /**
    * Check if hoveredElement is a valid wire target during wire creation
@@ -300,12 +976,13 @@ export class BuildTool implements IEditingTool {
    * @returns True if target is valid for wire endpoint
    */
   private isValidWireTarget(hoveredElement: { type: HoverableType; id: UUID } | null): boolean {
+    if (!this.wireCreationState) return false;
+
     if (!hoveredElement) return true; // Empty space is valid (creates BP)
-    if (!this.wireCreatingState) return false;
 
     // Enode is valid unless it's the source
     if (hoveredElement.type === 'enode') {
-      return hoveredElement.id !== this.wireCreatingState.sourceEnodeId;
+      return hoveredElement.id !== this.wireCreationState.sourceEnodeId;
     }
 
     // Wire is valid (creates BP on wire)
@@ -324,8 +1001,8 @@ export class BuildTool implements IEditingTool {
    * @returns Operation type to perform
    */
   private disambiguateClick(
-    hoveredElement: { type: HoverableType; id: UUID; object3D: any } | null
-  ): 'wire_creation' | 'element_drag' | 'wire_drag' | 'none' {
+      hoveredElement: { type: HoverableType; id: UUID; object3D: any } | null
+  ): 'wire_creation' | 'component_drag' | 'wire_drag' | 'none' {
     if (!hoveredElement) return 'none';
 
     const selection = this._sceneManager.getSelectionManager().getSelection();
@@ -337,7 +1014,7 @@ export class BuildTool implements IEditingTool {
 
     // Priority 2: Selected element (start drag)
     if (selection && selection.kind === 'mono' && hoveredElement.id === selection.id) {
-      return 'element_drag';
+      return 'component_drag';
     }
 
     // Priority 3: Wire (drag intermediate point)
@@ -351,64 +1028,70 @@ export class BuildTool implements IEditingTool {
   /**
    * Check if wire intermediate point should be merged or deleted
    * Returns updated positions array after merge/delete check
-   * @param wire - Wire object with current intermediate positions
-   * @returns Updated positions array (may be shorter if points merged)
+   * @param wire - Wire being modified
+   * @returns Final intermediate positions array
    */
-  private checkMergeDelete(wire: {
-    intermediatePositions: { x: number; y: number }[];
-  }): { x: number; y: number }[] {
-    // TODO: Implement merge/delete logic
-    // For now, return positions unchanged
-    return wire.intermediatePositions;
+  private checkMergeDelete(wire: any): { x: number; y: number }[] {
+    if (!this.wireDragState) return wire.intermediatePositions;
+
+    const positions = [...wire.intermediatePositions];
+    // handle no intermediate positions
+    if (positions.length === 0) return positions;
+    const draggedIndex = this.wireDragState.pointIndex;
+    const draggedPos = positions[draggedIndex];
+
+    // Check if dragged point is very close to wire endpoints or other intermediate points
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return positions;
+
+    const node1 = circuit.getENode(wire.node1);
+    const node2 = circuit.getENode(wire.node2);
+    if (!node1 || !node2) return positions;
+
+    const endpoint1 = node1.getPosition(circuit);
+    const endpoint2 = node2.getPosition(circuit);
+
+    const threshold = 0.5; // Grid units
+
+    // Check if close to endpoint1
+    const distToEndpoint1 = Math.sqrt(
+        Math.pow(draggedPos.x - endpoint1.x, 2) + Math.pow(draggedPos.y - endpoint1.y, 2)
+    );
+    if (distToEndpoint1 < threshold) {
+      // Remove this point
+      positions.splice(draggedIndex, 1);
+      return positions;
+    }
+
+    // Check if close to endpoint2
+    const distToEndpoint2 = Math.sqrt(
+        Math.pow(draggedPos.x - endpoint2.x, 2) + Math.pow(draggedPos.y - endpoint2.y, 2)
+    );
+    if (distToEndpoint2 < threshold) {
+      // Remove this point
+      positions.splice(draggedIndex, 1);
+      return positions;
+    }
+
+    // Check if close to other intermediate points
+    for (let i = 0; i < positions.length; i++) {
+      if (i === draggedIndex) continue;
+
+      const otherPos = positions[i];
+      const dist = Math.sqrt(
+          Math.pow(draggedPos.x - otherPos.x, 2) + Math.pow(draggedPos.y - otherPos.y, 2)
+      );
+
+      if (dist < threshold) {
+        // Merge: remove the dragged point
+        positions.splice(draggedIndex, 1);
+        return positions;
+      }
+    }
+
+    return positions;
   }
 
-  // ========================================================================
-  // Event Handlers
-  // ========================================================================
 
-  /**
-   * Handle pointer down event
-   * Routes to appropriate operation based on hover target and state
-   */
-  private handlePointerDown(event: MouseEvent): void {
-    // Only handle left click
-    if (event.button !== 0) return;
 
-    // TODO: Implement pointer down logic
-  }
-
-  /**
-   * Handle pointer up event
-   * Completes current operation based on mode
-   */
-  private handlePointerUp(event: MouseEvent): void {
-    // Only handle left click
-    if (event.button !== 0) return;
-
-    // TODO: Implement pointer up logic
-  }
-
-  /**
-   * Handle grid position move event
-   * Updates preview or drag position during active operations
-   */
-  private handleGridPositionMove(position: THREE.Vector3): void {
-    // TODO: Implement position move logic
-  }
-
-  /**
-   * Handle keyboard events
-   * Supports Escape (cancel), Delete/Backspace (delete), R (rotate)
-   */
-  private handleKeyDown(event: KeyboardEvent): void {
-    // TODO: Implement keyboard handling
-  }
-
-  /**
-   * Handle double-click events
-   * Routes to rotation (component) or branching point creation (wire/empty)
-   */
-  private handleDblClick(event: MouseEvent): void {
-    // TODO: Implement double-click logic
-  }
 }

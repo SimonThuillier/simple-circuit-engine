@@ -17,18 +17,18 @@ BuildTool is a stateful class that transitions between multiple modes based on u
  * Operating modes for BuildTool
  *
  * State transitions:
- *   idle → wire_creating (click enode)
- *   idle → element_dragging (pointerdown on selected element)
+ *   idle → wire_creation (click enode)
+ *   idle → component_drag (pointerdown on selected element)
  *   idle → wire_point_dragging (click wire or intermediate point)
- *   idle → bp_dragging (double-click+hold branching point)
+ *   idle → bp_drag (double-click+hold branching point)
  *   {any active mode} → idle (pointerup, Escape, or operation complete)
  */
 type BuildToolMode =
   | 'idle'                   // No active operation
-  | 'wire_creating'          // Creating wire from source to target
-  | 'element_dragging'       // Dragging component or branching point
+  | 'wire_creation'          // Creating wire from source to target
+  | 'component_drag'       // Dragging component or branching point
   | 'wire_point_dragging'    // Dragging wire intermediate point
-  | 'bp_dragging';           // Dragging standalone branching point
+  | 'bp_drag';           // Dragging standalone branching point
 ```
 
 ### State Diagram
@@ -37,21 +37,21 @@ type BuildToolMode =
 stateDiagram-v2
     [*] --> idle
 
-    idle --> wire_creating: click enode
-    wire_creating --> idle: pointerup (complete)
-    wire_creating --> idle: Escape (cancel)
+    idle --> wire_creation: click enode
+    wire_creation --> idle: pointerup (complete)
+    wire_creation --> idle: Escape (cancel)
 
-    idle --> element_dragging: pointerdown on selected element
-    element_dragging --> idle: pointerup (commit)
-    element_dragging --> idle: Escape (cancel)
+    idle --> component_drag: pointerdown on selected element
+    component_drag --> idle: pointerup (commit)
+    component_drag --> idle: Escape (cancel)
 
     idle --> wire_point_dragging: click wire
     wire_point_dragging --> idle: pointerup (commit)
     wire_point_dragging --> idle: Escape (cancel)
 
-    idle --> bp_dragging: double-click+hold BP
-    bp_dragging --> idle: pointerup (commit)
-    bp_dragging --> idle: Escape (cancel)
+    idle --> bp_drag: double-click+hold BP
+    bp_drag --> idle: pointerup (commit)
+    bp_drag --> idle: Escape (cancel)
 
     idle --> idle: Delete key (delete selected)
     idle --> idle: R key (rotate selected)
@@ -64,10 +64,10 @@ stateDiagram-v2
 
 | From Mode | Event | To Mode | Condition |
 |-----------|-------|---------|-----------|
-| idle | pointerdown | wire_creating | hoveredElement.type === 'enode' |
-| idle | pointerdown | element_dragging | selection exists AND hoveredElement matches selection |
+| idle | pointerdown | wire_creation | hoveredElement.type === 'enode' |
+| idle | pointerdown | component_drag | selection exists AND hoveredElement matches selection |
 | idle | pointerdown | wire_point_dragging | hoveredElement.type === 'wire' |
-| idle | pointerdown | bp_dragging | hoveredElement.type === 'enode' AND isBranchingPoint AND recentCancel |
+| idle | pointerdown | bp_drag | hoveredElement.type === 'enode' AND isBranchingPoint AND recentCancel |
 | {any} | pointerup | idle | Always (commit or complete) |
 | {any} | Escape | idle | Always (cancel) |
 | idle | Delete/Backspace | idle | selection exists (delete element) |
@@ -324,7 +324,7 @@ const insertIndex = this._sceneManager.getWireVisualManager()
 BuildTool emits events at key state transitions:
 
 ### toolOperationStarted
-**Emitted**: When entering active mode (wire_creating, element_dragging, etc.)
+**Emitted**: When entering active mode (wire_creation, component_drag, etc.)
 **Payload**:
 ```typescript
 {
@@ -436,7 +436,7 @@ BuildTool emits events at key state transitions:
    - Cannot delete component pin enodes (only standalone BPs)
 
 ### Resource Management
-1. Preview wire must be disposed when exiting wire_creating mode
+1. Preview wire must be disposed when exiting wire_creation mode
 2. Camera controls (pan) locked during active operations
 3. Camera controls unlocked on operation end (success or cancel)
 4. Event listeners added in onActivate(), removed in onDeactivate()
@@ -445,8 +445,8 @@ BuildTool emits events at key state transitions:
 
 ```typescript
 // Enums
-type BuildToolMode = 'idle' | 'wire_creating' | 'element_dragging'
-                   | 'wire_point_dragging' | 'bp_dragging';
+type BuildToolMode = 'idle' | 'wire_creation' | 'component_drag'
+                   | 'wire_point_dragging' | 'bp_drag';
 
 // State Interfaces
 interface WireCreatingState {

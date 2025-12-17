@@ -84,12 +84,12 @@
 
 ### Implementation for User Story 1
 
-- [X] T025 [US1] Define WireToolMode type ('idle' | 'wire_creating' | 'dragging') in src/scene/static/tools/WireTool.ts
+- [X] T025 [US1] Define WireToolMode type ('idle' | 'wire_creation' | 'dragging') in src/scene/static/tools/WireTool.ts
 - [X] T026 [US1] Define WireCreatingState and DraggingState interfaces in src/scene/static/tools/WireTool.ts
 - [X] T027 [US1] Implement `onActivate()` with event listener setup in src/scene/static/tools/WireTool.ts
 - [X] T028 [US1] Implement `onDeactivate()` with event listener cleanup in src/scene/static/tools/WireTool.ts
 - [X] T029 [US1] Implement `handlePointerDown(event)` for single-click on enode to start wire creation in src/scene/static/tools/WireTool.ts
-- [X] T030 [US1] Implement `startWireCreation(sourceEnodeId)` to enter wire_creating state in src/scene/static/tools/WireTool.ts
+- [X] T030 [US1] Implement `startWireCreation(sourceEnodeId)` to enter wire_creation state in src/scene/static/tools/WireTool.ts
 - [X] T031 [US1] Implement `handleGridPositionMove(position)` to update preview wire during creation in src/scene/static/tools/WireTool.ts
 - [X] T032 [US1] Implement `completeWireCreation(targetEnodeId)` to create wire between two enodes in src/scene/static/tools/WireTool.ts
 - [X] T033 [US1] Implement `handleKeyDown(event)` for Escape cancellation during wire creation in src/scene/static/tools/WireTool.ts

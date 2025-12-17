@@ -110,9 +110,9 @@ onActivate(): void {
 ```typescript
 onDeactivate(): void {
   // Cancel active operations
-  if (this.mode === 'wire_creating') {
+  if (this.mode === 'wire_creation') {
     this.cancelWireCreation();
-  } else if (this.mode === 'element_dragging') {
+  } else if (this.mode === 'component_drag') {
     this.cancelElementDrag();
   }
   // ... other modes
@@ -155,7 +155,7 @@ getCursorType(): CursorType {
   const hoveredElement = this._sceneManager.getHoveredElement();
 
   // During wire creation
-  if (this.mode === 'wire_creating') {
+  if (this.mode === 'wire_creation') {
     if (!this.isValidWireTarget(hoveredElement)) {
       return 'not-allowed';
     }
@@ -163,8 +163,8 @@ getCursorType(): CursorType {
   }
 
   // During drag
-  if (this.mode === 'element_dragging' || this.mode === 'wire_point_dragging'
-      || this.mode === 'bp_dragging') {
+  if (this.mode === 'component_drag' || this.mode === 'wire_point_dragging'
+      || this.mode === 'bp_drag') {
     return 'grabbing';
   }
 
@@ -206,12 +206,12 @@ getPreviewObjects(): THREE.Object3D[] {
   const previews: THREE.Object3D[] = [];
 
   // Wire creation preview
-  if (this.mode === 'wire_creating' && this.wireCreatingState?.previewWire) {
+  if (this.mode === 'wire_creation' && this.wireCreatingState?.previewWire) {
     previews.push(this.wireCreatingState.previewWire);
   }
 
   // Could add drag preview highlights in future
-  // if (this.mode === 'element_dragging') {
+  // if (this.mode === 'component_drag') {
   //   previews.push(this.dragHighlight);
   // }
 
