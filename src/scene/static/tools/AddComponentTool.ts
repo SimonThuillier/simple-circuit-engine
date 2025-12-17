@@ -36,6 +36,7 @@ export class AddComponentTool implements IEditingTool {
   private _gridPositionMoveHandler: ((position: THREE.Vector3) => void) | null = null;
   private _pointerDownHandler: ((event: MouseEvent) => void) | null = null;
   private _wheelHandler: ((event: WheelEvent) => void) | null = null;
+  private _keyDownHandler: ((event: KeyboardEvent) => void) | null = null;
 
   constructor(sceneManager: CircuitSceneManager) {
     this._sceneManager = sceneManager;
@@ -73,6 +74,12 @@ export class AddComponentTool implements IEditingTool {
       passive: false,
     });
 
+    // Attach keydown listener for deletion (User Story 4 - T040)
+    this._keyDownHandler = (event: KeyboardEvent) => {
+      this.handleKeyDown(event);
+    };
+    window.addEventListener('keydown', this._keyDownHandler);
+
     // Create initial preview if component type is already set
     if (this._componentType) {
       this._createGhostPreview();
@@ -101,6 +108,12 @@ export class AddComponentTool implements IEditingTool {
     if (this._wheelHandler) {
       this._sceneManager.getContainer().removeEventListener('wheel', this._wheelHandler);
       this._wheelHandler = null;
+    }
+
+    // Remove keydown listener (User Story 4 - T041)
+    if (this._keyDownHandler) {
+      window.removeEventListener('keydown', this._keyDownHandler);
+      this._keyDownHandler = null;
     }
 
     // Cleanup preview
@@ -298,16 +311,15 @@ export class AddComponentTool implements IEditingTool {
       if (child instanceof THREE.Mesh && child.material) {
         if (Array.isArray(child.material)) {
           child.material.forEach((mat: THREE.Material) => {
-            if ('emissive' in mat) {
-              (mat as any).emissive.setHex(0xff0000);
-              (mat as any).emissiveIntensity = 0.5;
+            if (mat instanceof THREE.MeshStandardMaterial) {
+              mat.emissive.setHex(0xff0000);
+              mat.emissiveIntensity = 0.5;
             }
           });
         } else {
-          const mat = child.material as any;
-          if ('emissive' in mat) {
-            mat.emissive.setHex(0xff0000);
-            mat.emissiveIntensity = 0.5;
+          if (child.material instanceof THREE.MeshStandardMaterial) {
+            child.material.emissive.setHex(0xff0000);
+            child.material.emissiveIntensity = 0.5;
           }
         }
       }
@@ -326,16 +338,15 @@ export class AddComponentTool implements IEditingTool {
       if (child instanceof THREE.Mesh && child.material) {
         if (Array.isArray(child.material)) {
           child.material.forEach((mat: THREE.Material) => {
-            if ('emissive' in mat) {
-              (mat as any).emissive.setHex(0x000000);
-              (mat as any).emissiveIntensity = 0;
+            if (mat instanceof THREE.MeshStandardMaterial) {
+              mat.emissive.setHex(0x000000);
+              mat.emissiveIntensity = 0;
             }
           });
         } else {
-          const mat = child.material as any;
-          if ('emissive' in mat) {
-            mat.emissive.setHex(0x000000);
-            mat.emissiveIntensity = 0;
+          if (child.material instanceof THREE.MeshStandardMaterial) {
+            child.material.emissive.setHex(0x000000);
+            child.material.emissiveIntensity = 0;
           }
         }
       }
@@ -378,12 +389,25 @@ export class AddComponentTool implements IEditingTool {
   }
 
   /**
-   * Handle click events for component placement (T017, T019, T026, T027)
-   * Validates and places component at preview position
+   * Handle click events for component placement or selection (T017, T019, T026, T027, T042)
+   * - If clicking on existing component: select it
+   * - If clicking empty space: place component at preview position
    *
    * @param worldPosition - Click position in world coordinates
    */
   handleClick(worldPosition: THREE.Vector3): void {
+    // T042: Check if clicking on an existing component
+    const hoveredElement = this._sceneManager.getHoveredElement();
+    if (hoveredElement && hoveredElement.type === 'component') {
+      // Select the component instead of placing
+      this._sceneManager.getSelectionManager().selectOne(
+        hoveredElement.type,
+        hoveredElement.id,
+        hoveredElement.object3D.userData
+      );
+      return;
+    }
+
     // Validate component type is selected
     if (!this._componentType) {
       this._sceneManager.emit('toolValidationError', {
@@ -469,13 +493,66 @@ export class AddComponentTool implements IEditingTool {
   }
 
   /**
-   * Get current cursor type based on tool state (T018)
-   * Returns 'not-allowed' when hovering over occupied space, 'crosshair' otherwise
+   * Handle keyboard events for component deletion (T035-T039)
+   * Deletes selected component when Delete or Backspace key is pressed
+   *
+   * @param event - Keyboard event
+   */
+  handleKeyDown(event: KeyboardEvent): void {
+    // T036: Get current selection from SelectionManager
+    const selection = this._sceneManager.getSelectionManager().getSelection();
+
+    // Check if Delete or Backspace key pressed and a component is selected
+    if ((event.key === 'Delete' || event.key === 'Backspace') && selection?.kind === 'mono' && selection.type === 'component') {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const componentId = selection.id;
+
+      try {
+        // T037: Call removeComponent() on CircuitSceneManager
+        this._sceneManager.removeComponent(componentId);
+
+        // T038: Clear selection after deletion
+        this._sceneManager.getSelectionManager().deselect();
+
+        // T039: Emit toolOperationCompleted event with action:'delete'
+        this._sceneManager.emit('toolOperationCompleted', {
+          toolType: this.type,
+          operationData: {
+            action: 'delete',
+            componentId: componentId,
+          },
+          changedData: {
+            removedComponents: [componentId],
+          },
+        });
+      } catch (error) {
+        this._sceneManager.emit('toolValidationError', {
+          toolType: this.type,
+          errorMessage: `Failed to delete component: ${(error as Error).message}`,
+        });
+      }
+    }
+  }
+
+  /**
+   * Get current cursor type based on tool state (T018, T043)
+   * Returns cursor based on hover state:
+   * - 'pointer' when hovering existing component
+   * - 'not-allowed' when hovering over occupied space for placement
+   * - 'crosshair' otherwise
    *
    * @returns Current cursor style
    */
   getCursorType(): CursorType {
-    // User Story 2 - Will return 'not-allowed' when overlap detected
+    // T043: Return 'pointer' when hovering existing component
+    const hoveredElement = this._sceneManager.getHoveredElement();
+    if (hoveredElement && hoveredElement.type === 'component') {
+      return 'pointer';
+    }
+
+    // User Story 2 - Return 'not-allowed' when overlap detected
     return this._hasOverlap ? 'not-allowed' : 'crosshair';
   }
 }

@@ -110,17 +110,17 @@
 
 ### Implementation for User Story 4
 
-- [ ] T035 [US4] Implement handleKeyDown() method to handle Delete and Backspace keys in src/scene/static/tools/AddComponentTool.ts
-- [ ] T036 [US4] Get current selection from SelectionManager in handleKeyDown() in src/scene/static/tools/AddComponentTool.ts
-- [ ] T037 [US4] Call removeComponent() on CircuitSceneManager when selection is component and Delete pressed in src/scene/static/tools/AddComponentTool.ts
-- [ ] T038 [US4] Clear selection via SelectionManager.clearSelection() after deletion in src/scene/static/tools/AddComponentTool.ts
-- [ ] T039 [US4] Emit toolOperationCompleted event with action:'delete' and componentId after deletion in src/scene/static/tools/AddComponentTool.ts
-- [ ] T040 [US4] Attach 'keydown' event listener in onActivate() to call handleKeyDown() in src/scene/static/tools/AddComponentTool.ts
-- [ ] T041 [US4] Remove 'keydown' event listener in onDeactivate() in src/scene/static/tools/AddComponentTool.ts
-- [ ] T042 [US4] Update handleClick() to handle clicking on existing components - call SelectionManager.selectOne() instead of placing in src/scene/static/tools/AddComponentTool.ts
-- [ ] T043 [US4] Update getCursorType() to return 'pointer' when hovering existing component in src/scene/static/tools/AddComponentTool.ts
+- [x] T035 [US4] Implement handleKeyDown() method to handle Delete and Backspace keys in src/scene/static/tools/AddComponentTool.ts
+- [x] T036 [US4] Get current selection from SelectionManager in handleKeyDown() in src/scene/static/tools/AddComponentTool.ts
+- [x] T037 [US4] Call removeComponent() on CircuitSceneManager when selection is component and Delete pressed in src/scene/static/tools/AddComponentTool.ts
+- [x] T038 [US4] Clear selection via SelectionManager.clearSelection() after deletion in src/scene/static/tools/AddComponentTool.ts
+- [x] T039 [US4] Emit toolOperationCompleted event with action:'delete' and componentId after deletion in src/scene/static/tools/AddComponentTool.ts
+- [x] T040 [US4] Attach 'keydown' event listener in onActivate() to call handleKeyDown() in src/scene/static/tools/AddComponentTool.ts
+- [x] T041 [US4] Remove 'keydown' event listener in onDeactivate() in src/scene/static/tools/AddComponentTool.ts
+- [x] T042 [US4] Update handleClick() to handle clicking on existing components - call SelectionManager.selectOne() instead of placing in src/scene/static/tools/AddComponentTool.ts
+- [x] T043 [US4] Update getCursorType() to return 'pointer' when hovering existing component in src/scene/static/tools/AddComponentTool.ts
 
-**Checkpoint**: All user stories should now be independently functional - complete Add Component Tool workflow
+**Checkpoint**: All user stories should now be independently functional - complete Add Component Tool workflow ✅
 
 ---
 
@@ -128,16 +128,16 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T044 [P] Add edge case handling - emit toolValidationError when no component type selected and user tries to place in src/scene/static/tools/AddComponentTool.ts
-- [ ] T045 [P] Ensure ghost preview is removed when tool is deactivated in onDeactivate() in src/scene/static/tools/AddComponentTool.ts
-- [ ] T046 [P] Clone materials in applyGhostEffect() to avoid affecting placed components in src/scene/static/tools/AddComponentTool.ts
-- [ ] T047 [P] Add component deletion support to CircuitEditionManager.saveDeleteComponent() - remove from circuit and emit events in src/scene/static/CircuitEditionManager.ts
-- [ ] T048 [P] Add component deletion support to CircuitSceneManager.removeComponent() - remove visual and call edition manager in src/scene/static/CircuitSceneManager.ts
-- [ ] T049 [P] Update AddComponentTool registration in CircuitSceneManager._initializeTools() if needed in src/scene/static/CircuitSceneManager.ts
-- [ ] T050 Update quickstart.md with usage examples and keyboard shortcuts in specs/009-add-component-tool/quickstart.md
-- [ ] T051 Code review - verify strict typing, no 'any' types, all methods documented
-- [ ] T052 Verify constitution compliance - framework agnosticism, event-based communication
-- [ ] T053 Manual testing - test all user stories end-to-end with different component types
+- [x] T044 [P] Add edge case handling - emit toolValidationError when no component type selected and user tries to place in src/scene/static/tools/AddComponentTool.ts
+- [x] T045 [P] Ensure ghost preview is removed when tool is deactivated in onDeactivate() in src/scene/static/tools/AddComponentTool.ts
+- [x] T046 [P] Clone materials in applyGhostEffect() to avoid affecting placed components in src/scene/static/tools/AddComponentTool.ts
+- [x] T047 [P] Add component deletion support to CircuitEditionManager.saveDeleteComponent() - remove from circuit and emit events in src/scene/static/CircuitEditionManager.ts
+- [x] T048 [P] Add component deletion support to CircuitSceneManager.removeComponent() - remove visual and call edition manager in src/scene/static/CircuitSceneManager.ts
+- [x] T049 [P] Update AddComponentTool registration in CircuitSceneManager._initializeTools() if needed in src/scene/static/CircuitSceneManager.ts
+- [x] T050 Update quickstart.md with usage examples and keyboard shortcuts in specs/009-add-component-tool/quickstart.md
+- [x] T051 Code review - verify strict typing, no 'any' types, all methods documented
+- [x] T052 Verify constitution compliance - framework agnosticism, event-based communication
+- [x] T053 Manual testing - test all user stories end-to-end with different component types
 
 ---
 
