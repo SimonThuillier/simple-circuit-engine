@@ -58,8 +58,41 @@
         background-color: #f0f0f0;
       }
 
-      .tool-button .active {
+      .tool-button.active {
         background-color: #e0e0e0;
+      }
+
+      #component-list {
+        display: none;
+        padding: 0;
+        margin: 0;
+        list-style: none;
+        background: white;
+        border-left: 3px solid #4caf50;
+      }
+
+      #component-list.visible {
+        display: block;
+      }
+
+      .component-item {
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 13px;
+        color: #555;
+        border-bottom: 1px solid #f0f0f0;
+        transition: background-color 0.15s;
+      }
+
+      .component-item:hover {
+        background-color: #f5f5f5;
+        color: #333;
+      }
+
+      .component-item.selected {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+        font-weight: 500;
       }
 
       button {
@@ -205,6 +238,7 @@
         min-width: 170px;
         width: 170px;
         height: 100%;
+        overflow-y: auto;
       }
 
       /* Ensure viewer adapts smoothly */
@@ -411,6 +445,8 @@
       <div id="editor-menu">
         <div id="tool-position" class="tool-button">Position</div>
         <div id="tool-wire" class="tool-button">Wiring</div>
+        <div id="tool-add-component" class="tool-button">Add Component</div>
+        <ul id="component-list"></ul>
       </div>
       <div id="viewer-container"></div>
     </div>
@@ -590,6 +626,120 @@
       document.getElementById('tool-wire').addEventListener('click', (e) => {
         sceneManager.toggleTool('wire');
       });
+
+      // Add Component Tool Logic
+      (function() {
+        const toolButton = document.getElementById('tool-add-component');
+        const componentList = document.getElementById('component-list');
+        let isToolActive = false;
+        let selectedComponentType = null;
+
+        // Populate component list from factory registry
+        function populateComponentList() {
+          const componentTypes = sceneManager.getAvailableComponentTypes();
+          componentList.innerHTML = '';
+
+          // nullItem allows deselecting component type
+          const nullItem = document.createElement('li');
+          nullItem.className = 'component-item';
+          nullItem.textContent = 'None';
+          nullItem.addEventListener('click', (e) => {
+            e.stopPropagation();
+            selectComponent(null, nullItem);
+          });
+          componentList.appendChild(nullItem);
+
+          componentTypes.forEach(type => {
+            const item = document.createElement('li');
+            item.className = 'component-item';
+            item.textContent = type;
+            item.dataset.componentType = type;
+
+            item.addEventListener('click', (e) => {
+              e.stopPropagation();
+              selectComponent(type, item);
+            });
+
+            componentList.appendChild(item);
+          });
+        }
+
+        // Select a component type
+        function selectComponent(type, itemElement) {
+          selectedComponentType = type;
+
+          // Update visual selection
+          const allItems = componentList.querySelectorAll('.component-item');
+          allItems.forEach(item => item.classList.remove('selected'));
+          itemElement.classList.add('selected');
+
+          // Set component type via scene manager
+          const activeTool = sceneManager.getActiveTool();
+          if (activeTool === 'addComponent') {
+            try {
+              sceneManager.setAddComponentType(type);
+              console.log(`Selected component type: ${type}`);
+            } catch (error) {
+              console.error('Failed to set component type:', error);
+            }
+          }
+        }
+
+        // Toggle tool and component list
+        toolButton.addEventListener('click', (e) => {
+          e.stopPropagation();
+
+          if (isToolActive) {
+            // Deactivate tool
+            sceneManager.deactivateTool('addComponent');
+            componentList.classList.remove('visible');
+            toolButton.classList.remove('active');
+            isToolActive = false;
+
+            // Clear component type selection
+            selectedComponentType = null;
+            const allItems = componentList.querySelectorAll('.component-item');
+            allItems.forEach(item => item.classList.remove('selected'));
+          } else {
+            // Activate tool
+            sceneManager.setEditMode(true);
+            sceneManager.setActiveTool('addComponent');
+
+            // Populate and show component list
+            populateComponentList();
+            componentList.classList.add('visible');
+            toolButton.classList.add('active');
+            isToolActive = true;
+          }
+        });
+
+        // Listen to tool activation/deactivation events from sceneManager
+        sceneManager.on('toolActivated', (e) => {
+          if (e.toolType === 'addComponent') {
+            toolButton.classList.add('active');
+            componentList.classList.add('visible');
+            isToolActive = true;
+          } else {
+            // Another tool was activated, deactivate add component
+            toolButton.classList.remove('active');
+            componentList.classList.remove('visible');
+            isToolActive = false;
+          }
+        });
+
+        sceneManager.on('toolDeactivated', (e) => {
+          if (e.toolType === 'addComponent') {
+            toolButton.classList.remove('active');
+            componentList.classList.remove('visible');
+            isToolActive = false;
+            selectedComponentType = null;
+
+            // Clear visual selection
+            const allItems = componentList.querySelectorAll('.component-item');
+            allItems.forEach(item => item.classList.remove('selected'));
+          }
+        });
+      })();
     </script>
   </body>
 </html>

@@ -1185,6 +1185,28 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
   }
 
   /**
+   * Get the list of available component types for the AddComponent tool
+   */
+  getAvailableComponentTypes(): ComponentType[] {
+    return this.factoryRegistry.getRegisteredTypes();
+  }
+
+  /**
+   * Set the component type for the AddComponent tool
+   * @param componentType
+   */
+  setAddComponentType(componentType: ComponentType | null): void {
+    if (!this.editMode || this.activeTool !== 'addComponent') {
+        throw new Error('Edit mode must be enabled and AddComponent tool must be active to set component type');
+    }
+    const tool = this.tools.get('addComponent') as AddComponentTool;
+    if (!tool) {
+      throw new Error('AddComponent tool not found');
+    }
+    tool.setComponentType(componentType);
+  }
+
+  /**
    * Get the currently active tool (FR-028)
    *
    * @returns Current tool type or null if no tool is active

@@ -45,18 +45,18 @@
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] Implement AddComponentTool class skeleton with IEditingTool interface in src/scene/static/tools/AddComponentTool.ts
-- [ ] T010 [US1] Implement onActivate() lifecycle method - attach event listeners (pointerdown, hover) in src/scene/static/tools/AddComponentTool.ts
-- [ ] T011 [US1] Implement onDeactivate() lifecycle method - remove event listeners and cleanup in src/scene/static/tools/AddComponentTool.ts
-- [ ] T012 [US1] Implement setComponentType() method to set selected component type in src/scene/static/tools/AddComponentTool.ts
-- [ ] T013 [US1] Implement createGhostPreview() method - use FactoryRegistry.get() and createVisual() in src/scene/static/tools/AddComponentTool.ts
-- [ ] T014 [US1] Implement applyGhostEffect() method - traverse Object3D and set material.opacity = 0.5 and material.transparent = true in src/scene/static/tools/AddComponentTool.ts
-- [ ] T015 [US1] Implement getPreviewObjects() to return [ghostPreview] when preview exists in src/scene/static/tools/AddComponentTool.ts
-- [ ] T016 [US1] Implement handleHover() method - update previewPosition with grid snapping in src/scene/static/tools/AddComponentTool.ts
-- [ ] T017 [US1] Implement handleClick() method - call addComponent() on CircuitSceneManager when clicking empty space in src/scene/static/tools/AddComponentTool.ts
-- [ ] T018 [US1] Implement getCursorType() - return 'crosshair' by default in src/scene/static/tools/AddComponentTool.ts
-- [ ] T019 [US1] Emit toolOperationCompleted event with component details after successful placement in src/scene/static/tools/AddComponentTool.ts
-- [ ] T020 [US1] Add JSDoc documentation for all public methods in src/scene/static/tools/AddComponentTool.ts
+- [x] T009 [US1] Implement AddComponentTool class skeleton with IEditingTool interface in src/scene/static/tools/AddComponentTool.ts
+- [x] T010 [US1] Implement onActivate() lifecycle method - attach event listeners (pointerdown, hover) in src/scene/static/tools/AddComponentTool.ts
+- [x] T011 [US1] Implement onDeactivate() lifecycle method - remove event listeners and cleanup in src/scene/static/tools/AddComponentTool.ts
+- [x] T012 [US1] Implement setComponentType() method to set selected component type in src/scene/static/tools/AddComponentTool.ts
+- [x] T013 [US1] Implement createGhostPreview() method - use FactoryRegistry.get() and createVisual() in src/scene/static/tools/AddComponentTool.ts
+- [x] T014 [US1] Implement applyGhostEffect() method - traverse Object3D and set material.opacity = 0.5 and material.transparent = true in src/scene/static/tools/AddComponentTool.ts
+- [x] T015 [US1] Implement getPreviewObjects() to return [ghostPreview] when preview exists in src/scene/static/tools/AddComponentTool.ts
+- [x] T016 [US1] Implement handleHover() method - update previewPosition with grid snapping in src/scene/static/tools/AddComponentTool.ts
+- [x] T017 [US1] Implement handleClick() method - call addComponent() on CircuitSceneManager when clicking empty space in src/scene/static/tools/AddComponentTool.ts
+- [x] T018 [US1] Implement getCursorType() - return 'crosshair' by default in src/scene/static/tools/AddComponentTool.ts
+- [x] T019 [US1] Emit toolOperationCompleted event with component details after successful placement in src/scene/static/tools/AddComponentTool.ts
+- [x] T020 [US1] Add JSDoc documentation for all public methods in src/scene/static/tools/AddComponentTool.ts
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - basic component placement works
 
