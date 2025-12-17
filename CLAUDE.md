@@ -4,6 +4,7 @@ Auto-generated from all feature plans. Last updated: 2025-11-28
 
 ## Active Technologies
 - N/A (in-memory circuit model) (009-add-component-tool)
+- TypeScript (strict mode), targeting ES2022 + Three.js 0.181+ (for 3D scene interaction) (010-build-tool-merge)
 
 - TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (already installed), three/addons/lines/Line2.js, three/addons/lines/LineGeometry.js, three/addons/lines/LineMaterial.js (007-line2-wire-refactor)
 - N/A (in-memory scene state only) (007-line2-wire-refactor)
@@ -77,10 +78,10 @@ function badExample(input: number | null): string {
 ```
 
 ## Recent Changes
+- 010-build-tool-merge: Added TypeScript (strict mode), targeting ES2022 + Three.js 0.181+ (for 3D scene interaction)
 - 009-add-component-tool: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (already installed)
 
 - 008-wire-tool-branching: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (Line2, LineGeometry, LineMaterial from addons)
-- 007-line2-wire-refactor: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (already installed), three/addons/lines/Line2.js, three/addons/lines/LineGeometry.js, three/addons/lines/LineMaterial.js
 
 
 <!-- MANUAL ADDITIONS START -->
