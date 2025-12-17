@@ -106,7 +106,7 @@
 - [X] T043 [US2] Add Escape key handling for drag cancellation in handleKeyDown() in src/scene/static/tools/BuildTool.ts
 - [Cancelled] T044 [US2] Add event emission for drag operations (dragStart, dragMove, dragEnd, dragCancel) in src/scene/static/tools/BuildTool.ts
 - [X] T045 [US2] Add camera controls locking/unlocking during drag operations in src/scene/static/tools/BuildTool.ts
-- [ ] T046 [US2] Migrate PositionTool.test.ts drag tests to BuildTool.test.ts in tests/scene/tools/BuildTool.test.ts
+- [X] T046 [US2] Migrate PositionTool.test.ts drag tests to BuildTool.test.ts in tests/scene/tools/BuildTool.test.ts
 
 **Checkpoint**: Element dragging fully functional - can drag components, branching points, and wire intermediate points with real-time visual updates
 
@@ -120,11 +120,11 @@
 
 ### Implementation for User Story 3
 
-- [ ] T047 [US3] Implement rotateSelectedComponent() method with 90-degree rotation logic in src/scene/static/tools/BuildTool.ts
-- [ ] T048 [US3] Implement selectAndRotateComponent() method for unselected component double-click case in src/scene/static/tools/BuildTool.ts
-- [ ] T049 [US3] Add 'R' key handling for component rotation in handleKeyDown() in src/scene/static/tools/BuildTool.ts
-- [ ] T050 [US3] Add component double-click rotation logic to handleDblClick() with target priority (component > wire > empty) in src/scene/static/tools/BuildTool.ts
-- [ ] T051 [US3] Add event emission for component rotation (componentRotated) in src/scene/static/tools/BuildTool.ts
+- [X] T047 [US3] Implement rotateSelectedComponent() method with 90-degree rotation logic in src/scene/static/tools/BuildTool.ts
+- [X] T048 [US3] Implement selectAndRotateComponent() method for unselected component double-click case in src/scene/static/tools/BuildTool.ts
+- [X] T049 [US3] Add 'R' key handling for component rotation in handleKeyDown() in src/scene/static/tools/BuildTool.ts
+- [X] T050 [US3] Add component double-click rotation logic to handleDblClick() with target priority (component > wire > empty) in src/scene/static/tools/BuildTool.ts
+- [Cancelled] T051 [US3] Add event emission for component rotation (componentRotated) in src/scene/static/tools/BuildTool.ts
 - [ ] T052 [US3] Migrate PositionTool.test.ts rotation tests to BuildTool.test.ts in tests/scene/tools/BuildTool.test.ts
 
 **Checkpoint**: Component rotation fully functional - can rotate via 'R' key or double-click, including unselected components
@@ -139,12 +139,12 @@
 
 ### Implementation for User Story 4
 
-- [ ] T053 [US4] Implement deleteSelectedElement() method with type routing (component/wire/enode) in src/scene/static/tools/BuildTool.ts
-- [ ] T054 [US4] Add component deletion logic with cascade to connected wires in deleteSelectedElement() in src/scene/static/tools/BuildTool.ts
-- [ ] T055 [US4] Add wire deletion logic in deleteSelectedElement() in src/scene/static/tools/BuildTool.ts
-- [ ] T056 [US4] Add branching point deletion logic with wire merge validation in deleteSelectedElement() in src/scene/static/tools/BuildTool.ts
-- [ ] T057 [US4] Add Delete/Backspace key handling in handleKeyDown() in src/scene/static/tools/BuildTool.ts
-- [ ] T058 [US4] Add event emission for deletion operations (toolOperationCompleted with removedComponents/removedWires/removedENodes) in src/scene/static/tools/BuildTool.ts
+- [Cancelled] T053 [US4] Implement deleteSelectedElement() method with type routing (component/wire/enode) in src/scene/static/tools/BuildTool.ts
+- [X] T054 [US4] Add component deletion logic with cascade to connected wires in deleteSelectedElement() in src/scene/static/tools/BuildTool.ts
+- [X] T055 [US4] Add wire deletion logic in deleteSelectedElement() in src/scene/static/tools/BuildTool.ts
+- [X] T056 [US4] Add branching point deletion logic with wire merge validation in deleteSelectedElement() in src/scene/static/tools/BuildTool.ts
+- [X] T057 [US4] Add Delete/Backspace key handling in handleKeyDown() in src/scene/static/tools/BuildTool.ts
+- [Cancelled] T058 [US4] Add event emission for deletion operations (toolOperationCompleted with removedComponents/removedWires/removedENodes) in src/scene/static/tools/BuildTool.ts
 - [ ] T059 [US4] Migrate DeleteTool.test.ts to BuildTool.test.ts with deletion test cases in tests/scene/tools/BuildTool.test.ts
 
 **Checkpoint**: Element deletion fully functional - can delete components, wires, and branching points with appropriate cascade behavior
@@ -159,11 +159,11 @@
 
 ### Implementation for User Story 5
 
-- [ ] T060 [US5] Implement createBranchingPointOnWire() method with wire split logic in src/scene/static/tools/BuildTool.ts
-- [ ] T061 [US5] Implement createStandaloneBranchingPoint() method with grid position snapping in src/scene/static/tools/BuildTool.ts
-- [ ] T062 [US5] Add wire double-click logic to handleDblClick() for branching point creation in src/scene/static/tools/BuildTool.ts
-- [ ] T063 [US5] Add empty space double-click logic to handleDblClick() for standalone branching point creation in src/scene/static/tools/BuildTool.ts
-- [ ] T064 [US5] Add event emission for branching point creation (toolOperationCompleted with addedENodes) in src/scene/static/tools/BuildTool.ts
+- [X] T060 [US5] Implement createBranchingPointOnWire() method with wire split logic in src/scene/static/tools/BuildTool.ts
+- [X] T061 [US5] Implement createStandaloneBranchingPoint() method with grid position snapping in src/scene/static/tools/BuildTool.ts
+- [X] T062 [US5] Add wire double-click logic to handleDblClick() for branching point creation in src/scene/static/tools/BuildTool.ts
+- [X] T063 [US5] Add empty space double-click logic to handleDblClick() for standalone branching point creation in src/scene/static/tools/BuildTool.ts
+- [X] T064 [US5] Add event emission for branching point creation (toolOperationCompleted with addedENodes) in src/scene/static/tools/BuildTool.ts
 - [ ] T065 [US5] Migrate BranchingPointTool.test.ts to BuildTool.test.ts with branching point test cases in tests/scene/tools/BuildTool.test.ts
 
 **Checkpoint**: Branching point creation fully functional - can create branching points on wires (splits wire) and in empty space

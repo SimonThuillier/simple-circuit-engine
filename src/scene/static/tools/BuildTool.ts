@@ -443,6 +443,7 @@ export class BuildTool implements IEditingTool {
    * Supports Escape (cancel), Delete/Backspace (delete), R (rotate)
    */
   private handleKeyDown(event: KeyboardEvent): void {
+    // cancel ongoing action on Escape
     if (event.key === 'Escape') {
       if (this.mode === 'wire_creation') {
         this.cancelWireCreation();
@@ -456,15 +457,21 @@ export class BuildTool implements IEditingTool {
       else if (this.mode === 'component_drag') {
         this.cancelComponentDrag();
       }
+      return;
     }
-    else if (event.key === 'Delete' || event.key === 'Backspace') {
-      // Handle deletion of wires or branching points
-      const selection = this._sceneManager.getSelectionManager().getSelection();
-      if (!selection) return;
-      if (selection.kind === 'multi') return; //this tool only handles mono selection for deletion
-      const monoSelection = selection as MonoSelectionData;
+    // actions on selection
+    const selection = this._sceneManager.getSelectionManager().getSelection();
+    if (!selection) return;
+    if (selection.kind === 'multi') return; //this tool only handles mono selection for deletion
+    const monoSelection = selection as MonoSelectionData;
 
-      if (monoSelection.type === 'wire') {
+    if (event.key === 'Delete' || event.key === 'Backspace') {
+      // Handle deletion of components, wires, branching points
+      if (monoSelection.type === 'component'){
+        const componentId = monoSelection.id;
+        this._sceneManager.removeComponent(componentId);
+      }
+      else if (monoSelection.type === 'wire') {
         const wireId = monoSelection.id;
         this._sceneManager.removeWire(wireId);
       }
@@ -473,6 +480,13 @@ export class BuildTool implements IEditingTool {
         this._sceneManager.removeBranchingPoint(enodeId);
         // TODO: may fail if the resulting merged wire is a duplicate - see how to handle this case
       }
+    }
+    else if ((event.key === 'r' || event.key === 'R')) {
+        // Handle R key to rotate selected component
+        if (monoSelection.type === 'component'){
+            const componentId = monoSelection.id;
+            this.rotateComponent(componentId);
+        }
     }
   }
 
@@ -490,8 +504,14 @@ export class BuildTool implements IEditingTool {
       const wireId = hoveredElement.id;
       const gridPosition = this._sceneManager.cursorGroundPlanePosition();
       this.createBranchingPointOnWire(wireId, gridPosition);
-    } else if (!hoveredElement) {
-      // Priority 2 - Double-click on empty space - create standalone branching point
+    }
+    // Priority 2 - Check if we're hovering a component => rotate it
+    else if (hoveredElement && hoveredElement.type === 'component') {
+      const componentId = hoveredElement.id;
+      this.rotateComponent(componentId);
+    }
+    else if (!hoveredElement) {
+      // Priority 3 - Double-click on empty space - create standalone branching point
       const gridPosition = this._sceneManager.cursorGroundPlanePosition();
       this.createStandaloneBranchingPoint(gridPosition);
     }
@@ -1181,6 +1201,46 @@ export class BuildTool implements IEditingTool {
     }
 
     return 'none';
+  }
+
+  /**
+   * Rotate a component 90° clockwise
+   *
+   * Updates both the circuit model and visual representation.
+   * Emits componentRotated event to notify listeners.
+   * Only works on selected components (not wires or enodes).
+   */
+  private rotateComponent(componentId: UUID): void {
+    const object = this._sceneManager.getObject3D('component', componentId);
+    if (!object) {
+      return;
+    }
+    const currentAngle = object.rotation.y;
+    const newAngle = (currentAngle - Math.PI / 2) % (Math.PI * 2);
+    object.rotation.set(0, newAngle, 0);
+
+    try {
+      const component = this._sceneManager.getCircuitEditionManager()
+          .saveEditComponent(componentId, object);
+      this._sceneManager.getWireVisualManager().updateWiresForComponent(component.id);
+      this._sceneManager.emit('toolOperationCompleted', {
+        toolType: this.type,
+        mode: 'component_rotate',
+        operationData: {
+          componentId: componentId,
+          newPosition: component.position,
+        },
+        changedData: {},
+      });
+    }
+    catch( error) {
+      this._sceneManager.emit('toolValidationError', {
+        toolType: this.type,
+        mode: this.mode,
+        errorMessage: `Failed to commit component rotate: ${(error as Error).message}`,
+      });
+      this.cancelComponentDrag(false);
+    }
   }
 
   /**
