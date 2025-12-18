@@ -20,7 +20,7 @@ import { createLine2Material } from './MaterialUtils';
 import type { CircuitSceneManager } from '../static/CircuitSceneManager';
 import type { WireMaterialState } from './types';
 import { HitboxLayers } from './LayerConstants';
-import {gridToWorldPosition} from "./GeometryUtils";
+import { gridToWorldPosition } from './GeometryUtils';
 
 /**
  * Wire path representation for rendering
@@ -374,8 +374,8 @@ export class WireVisualManager {
    * @returns World position of the pin, or null if not found
    */
   getPinWorldPositionFromGroup(
-      enodeId: UUID,
-      componentGroup: THREE.Object3D
+    enodeId: UUID,
+    componentGroup: THREE.Object3D
   ): THREE.Vector3 | null {
     const target = new THREE.Vector3();
     let found = false;
@@ -385,8 +385,8 @@ export class WireVisualManager {
 
       // Look for enode visual or enodeGroup with matching ID
       if (
-          child.userData.enodeId === enodeId ||
-          (child.userData.type === 'enodeGroup' && child.userData.enodeId === enodeId)
+        child.userData.enodeId === enodeId ||
+        (child.userData.type === 'enodeGroup' && child.userData.enodeId === enodeId)
       ) {
         child.getWorldPosition(target);
         found = true;
@@ -454,9 +454,9 @@ export class WireVisualManager {
    * @returns Object with pointIndex and distance, or null if none found
    */
   findNearestIntermediatePoint(
-      wireId: UUID,
-      clientPos: THREE.Vector2,
-      thresholdPx: number = 10
+    wireId: UUID,
+    clientPos: THREE.Vector2,
+    thresholdPx: number = 10
   ): { pointIndex: number; distance: number } | null {
     const circuit = this._sceneManager.getCircuit();
     if (!circuit) return null;
@@ -511,20 +511,20 @@ export class WireVisualManager {
 
     // Get start position
     const startPos = this._getENodeWorldPosition(
-        node1.id,
-        node1.type,
-        node1.component,
-        circuit,
-        componentObject3Ds
+      node1.id,
+      node1.type,
+      node1.component,
+      circuit,
+      componentObject3Ds
     );
 
     // Get end position
     const endPos = this._getENodeWorldPosition(
-        node2.id,
-        node2.type,
-        node2.component,
-        circuit,
-        componentObject3Ds
+      node2.id,
+      node2.type,
+      node2.component,
+      circuit,
+      componentObject3Ds
     );
 
     // Build full path: start -> intermediate positions -> end
@@ -558,11 +558,11 @@ export class WireVisualManager {
    * @returns World position as Vector3
    */
   private _getENodeWorldPosition(
-      enodeId: UUID,
-      enodeType: ENodeType,
-      componentId: UUID | undefined,
-      circuit: Circuit,
-      componentGroups: Map<UUID, THREE.Object3D>
+    enodeId: UUID,
+    enodeType: ENodeType,
+    componentId: UUID | undefined,
+    circuit: Circuit,
+    componentGroups: Map<UUID, THREE.Object3D>
   ): THREE.Vector3 {
     if (enodeType === ENodeType.Pin && componentId) {
       const componentGroup = componentGroups.get(componentId);
@@ -587,7 +587,6 @@ export class WireVisualManager {
     }
     return gridToWorldPosition(enode.getPosition(circuit));
   }
-
 
   /**
    * Convert 3D world position to 2D screen position (T056)

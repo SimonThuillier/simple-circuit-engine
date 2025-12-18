@@ -82,8 +82,13 @@ export interface SceneManagerEventMap {
   toolActivated: { toolType: ToolType };
   toolDeactivated: { toolType: ToolType };
   toolOperationStarted: { toolType: ToolType; mode: unknown; operationData: unknown };
-  toolOperationCompleted: { toolType: ToolType; mode: unknown; operationData: unknown; changedData: unknown };
-  toolOperationCancelled: { toolType: ToolType; mode: unknown; };
+  toolOperationCompleted: {
+    toolType: ToolType;
+    mode: unknown;
+    operationData: unknown;
+    changedData: unknown;
+  };
+  toolOperationCancelled: { toolType: ToolType; mode: unknown };
   toolValidationError: { toolType: ToolType; mode: unknown; errorMessage: string };
   cursorChangeRequested: { cursorType: CursorType };
   // Model circuit events (add, edit, delete)

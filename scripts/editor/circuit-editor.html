@@ -627,7 +627,7 @@
       });
 
       // Add Component Tool Logic
-      (function() {
+      (function () {
         const toolButton = document.getElementById('tool-add-component');
         const componentList = document.getElementById('component-list');
         let isToolActive = false;
@@ -648,7 +648,7 @@
           });
           componentList.appendChild(nullItem);
 
-          componentTypes.forEach(type => {
+          componentTypes.forEach((type) => {
             const item = document.createElement('li');
             item.className = 'component-item';
             item.textContent = type;
@@ -669,7 +669,7 @@
 
           // Update visual selection
           const allItems = componentList.querySelectorAll('.component-item');
-          allItems.forEach(item => item.classList.remove('selected'));
+          allItems.forEach((item) => item.classList.remove('selected'));
           itemElement.classList.add('selected');
 
           // Set component type via scene manager
@@ -698,7 +698,7 @@
             // Clear component type selection
             selectedComponentType = null;
             const allItems = componentList.querySelectorAll('.component-item');
-            allItems.forEach(item => item.classList.remove('selected'));
+            allItems.forEach((item) => item.classList.remove('selected'));
           } else {
             // Activate tool
             sceneManager.setEditMode(true);
@@ -735,7 +735,7 @@
 
             // Clear visual selection
             const allItems = componentList.querySelectorAll('.component-item');
-            allItems.forEach(item => item.classList.remove('selected'));
+            allItems.forEach((item) => item.classList.remove('selected'));
           }
         });
       })();

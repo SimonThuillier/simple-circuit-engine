@@ -65,12 +65,15 @@ describe('CircuitEditionManager', () => {
 
       expect(result).toBeDefined();
       expect(result.type).toBe(ENodeType.BranchingPoint);
-      expect(emitSpy).toHaveBeenCalledWith('circuitElementAction', expect.objectContaining({
-        type: 'enode',
-        action: 'add',
-        id: result.id,
-        error: null,
-      }));
+      expect(emitSpy).toHaveBeenCalledWith(
+        'circuitElementAction',
+        expect.objectContaining({
+          type: 'enode',
+          action: 'add',
+          id: result.id,
+          error: null,
+        })
+      );
     });
 
     it('should convert world position to grid position', () => {
@@ -88,8 +91,9 @@ describe('CircuitEditionManager', () => {
       const managerNoCircuit = new CircuitEditionManager(noCircuitManager.sceneManager);
       const worldPosition = new THREE.Vector3(5, 0, -3);
 
-      expect(() => managerNoCircuit.saveAddBranchingPoint(worldPosition))
-        .toThrow('No circuit available in the scene manager.');
+      expect(() => managerNoCircuit.saveAddBranchingPoint(worldPosition)).toThrow(
+        'No circuit available in the scene manager.'
+      );
     });
 
     it('should emit error event when adding branching point fails', () => {
@@ -103,12 +107,15 @@ describe('CircuitEditionManager', () => {
         // Expected to throw
       }
 
-      expect(noCircuitManager.emitSpy).toHaveBeenCalledWith('circuitElementAction', expect.objectContaining({
-        type: 'enode',
-        action: 'add',
-        id: undefined,
-        error: expect.any(Error),
-      }));
+      expect(noCircuitManager.emitSpy).toHaveBeenCalledWith(
+        'circuitElementAction',
+        expect.objectContaining({
+          type: 'enode',
+          action: 'add',
+          id: undefined,
+          error: expect.any(Error),
+        })
+      );
     });
   });
 
@@ -143,12 +150,15 @@ describe('CircuitEditionManager', () => {
     it('should emit event when emit parameter is true', () => {
       manager.saveEditBranchingPoint(branchingPointObject3D, true);
 
-      expect(emitSpy).toHaveBeenCalledWith('circuitElementAction', expect.objectContaining({
-        type: 'enode',
-        action: 'edit',
-        id: enodeId,
-        error: null,
-      }));
+      expect(emitSpy).toHaveBeenCalledWith(
+        'circuitElementAction',
+        expect.objectContaining({
+          type: 'enode',
+          action: 'edit',
+          id: enodeId,
+          error: null,
+        })
+      );
     });
 
     it('should not emit event when emit parameter is false', () => {
@@ -160,16 +170,18 @@ describe('CircuitEditionManager', () => {
     it('should throw error when enode is not found', () => {
       branchingPointObject3D.userData.enodeId = 'non-existent-id';
 
-      expect(() => manager.saveEditBranchingPoint(branchingPointObject3D, false))
-        .toThrow('No enode with id non-existent-id found in the circuit.');
+      expect(() => manager.saveEditBranchingPoint(branchingPointObject3D, false)).toThrow(
+        'No enode with id non-existent-id found in the circuit.'
+      );
     });
 
     it('should throw error when no circuit is available', () => {
       const noCircuitManager = createMockSceneManager(null);
       const managerNoCircuit = new CircuitEditionManager(noCircuitManager.sceneManager);
 
-      expect(() => managerNoCircuit.saveEditBranchingPoint(branchingPointObject3D, false))
-        .toThrow('No circuit available in the scene manager.');
+      expect(() => managerNoCircuit.saveEditBranchingPoint(branchingPointObject3D, false)).toThrow(
+        'No circuit available in the scene manager.'
+      );
     });
   });
 
@@ -186,20 +198,24 @@ describe('CircuitEditionManager', () => {
 
       expect(result).toBeDefined();
       expect(circuit.getENode(enodeId)).toBeUndefined();
-      expect(emitSpy).toHaveBeenCalledWith('circuitElementAction', expect.objectContaining({
-        type: 'enode',
-        action: 'delete',
-        id: enodeId,
-        error: null,
-      }));
+      expect(emitSpy).toHaveBeenCalledWith(
+        'circuitElementAction',
+        expect.objectContaining({
+          type: 'enode',
+          action: 'delete',
+          id: enodeId,
+          error: null,
+        })
+      );
     });
 
     it('should throw error when no circuit is available', () => {
       const noCircuitManager = createMockSceneManager(null);
       const managerNoCircuit = new CircuitEditionManager(noCircuitManager.sceneManager);
 
-      expect(() => managerNoCircuit.saveDeleteBranchingPoint(enodeId))
-        .toThrow('No circuit available in the scene manager.');
+      expect(() => managerNoCircuit.saveDeleteBranchingPoint(enodeId)).toThrow(
+        'No circuit available in the scene manager.'
+      );
     });
   });
 
@@ -221,33 +237,39 @@ describe('CircuitEditionManager', () => {
       expect(result).toBeDefined();
       expect(result.node1).toBe(sourceEnodeId);
       expect(result.node2).toBe(targetEnodeId);
-      expect(emitSpy).toHaveBeenCalledWith('circuitElementAction', expect.objectContaining({
-        type: 'wire',
-        action: 'add',
-        id: result.id,
-        error: null,
-      }));
+      expect(emitSpy).toHaveBeenCalledWith(
+        'circuitElementAction',
+        expect.objectContaining({
+          type: 'wire',
+          action: 'add',
+          id: result.id,
+          error: null,
+        })
+      );
     });
 
     it('should throw error when no circuit is available', () => {
       const noCircuitManager = createMockSceneManager(null);
       const managerNoCircuit = new CircuitEditionManager(noCircuitManager.sceneManager);
 
-      expect(() => managerNoCircuit.saveAddWire(sourceEnodeId, targetEnodeId))
-        .toThrow('No circuit available in the scene manager.');
+      expect(() => managerNoCircuit.saveAddWire(sourceEnodeId, targetEnodeId)).toThrow(
+        'No circuit available in the scene manager.'
+      );
     });
 
     it('should emit error event when wire creation fails', () => {
       // Try to create a wire between invalid enodes
-      expect(() => manager.saveAddWire('invalid-id-1', 'invalid-id-2'))
-        .toThrow();
+      expect(() => manager.saveAddWire('invalid-id-1', 'invalid-id-2')).toThrow();
 
-      expect(emitSpy).toHaveBeenCalledWith('circuitElementAction', expect.objectContaining({
-        type: 'wire',
-        action: 'add',
-        id: undefined,
-        error: expect.any(Error),
-      }));
+      expect(emitSpy).toHaveBeenCalledWith(
+        'circuitElementAction',
+        expect.objectContaining({
+          type: 'wire',
+          action: 'add',
+          id: undefined,
+          error: expect.any(Error),
+        })
+      );
     });
   });
 
@@ -279,15 +301,21 @@ describe('CircuitEditionManager', () => {
       manager.saveSplitWire(wireId, worldPosition);
 
       // Should emit delete for original wire, add for BP, add for two new wires
-      expect(emitSpy).toHaveBeenCalledWith('circuitElementAction', expect.objectContaining({
-        type: 'wire',
-        action: 'delete',
-        id: wireId,
-      }));
-      expect(emitSpy).toHaveBeenCalledWith('circuitElementAction', expect.objectContaining({
-        type: 'enode',
-        action: 'add',
-      }));
+      expect(emitSpy).toHaveBeenCalledWith(
+        'circuitElementAction',
+        expect.objectContaining({
+          type: 'wire',
+          action: 'delete',
+          id: wireId,
+        })
+      );
+      expect(emitSpy).toHaveBeenCalledWith(
+        'circuitElementAction',
+        expect.objectContaining({
+          type: 'enode',
+          action: 'add',
+        })
+      );
     });
 
     it('should throw error when no circuit is available', () => {
@@ -295,8 +323,9 @@ describe('CircuitEditionManager', () => {
       const managerNoCircuit = new CircuitEditionManager(noCircuitManager.sceneManager);
       const worldPosition = new THREE.Vector3(5, 0, 0);
 
-      expect(() => managerNoCircuit.saveSplitWire(wireId, worldPosition))
-        .toThrow('No circuit available in the scene manager.');
+      expect(() => managerNoCircuit.saveSplitWire(wireId, worldPosition)).toThrow(
+        'No circuit available in the scene manager.'
+      );
     });
   });
 
@@ -314,12 +343,15 @@ describe('CircuitEditionManager', () => {
       manager.saveDeleteWire(wireId);
 
       expect(circuit.getWire(wireId)).toBeUndefined();
-      expect(emitSpy).toHaveBeenCalledWith('circuitElementAction', expect.objectContaining({
-        type: 'wire',
-        action: 'delete',
-        id: wireId,
-        error: null,
-      }));
+      expect(emitSpy).toHaveBeenCalledWith(
+        'circuitElementAction',
+        expect.objectContaining({
+          type: 'wire',
+          action: 'delete',
+          id: wireId,
+          error: null,
+        })
+      );
     });
 
     it('should not throw for non-existent wire but emit error event', () => {
@@ -338,7 +370,11 @@ describe('CircuitEditionManager', () => {
     });
 
     it('should update wire intermediate positions', () => {
-      const positions = [{ x: 2, y: 3 }, { x: 5, y: 5 }, { x: 8, y: 3 }];
+      const positions = [
+        { x: 2, y: 3 },
+        { x: 5, y: 5 },
+        { x: 8, y: 3 },
+      ];
 
       const result = manager.saveEditWirePositions(wireId, positions, false);
 
@@ -347,16 +383,23 @@ describe('CircuitEditionManager', () => {
     });
 
     it('should emit event when emit parameter is true', () => {
-      const positions = [{ x: 2, y: 3 }, { x: 5, y: 5 }, { x: 8, y: 3 }];
+      const positions = [
+        { x: 2, y: 3 },
+        { x: 5, y: 5 },
+        { x: 8, y: 3 },
+      ];
 
       manager.saveEditWirePositions(wireId, positions, true);
 
-      expect(emitSpy).toHaveBeenCalledWith('circuitElementAction', expect.objectContaining({
-        type: 'wire',
-        action: 'edit',
-        id: wireId,
-        error: null,
-      }));
+      expect(emitSpy).toHaveBeenCalledWith(
+        'circuitElementAction',
+        expect.objectContaining({
+          type: 'wire',
+          action: 'edit',
+          id: wireId,
+          error: null,
+        })
+      );
     });
 
     it('should not emit event when emit parameter is false', () => {
@@ -406,12 +449,15 @@ describe('CircuitEditionManager', () => {
       const result = manager.saveSimplifyWirePositions(wireId);
 
       expect(result).toBeDefined();
-      expect(emitSpy).toHaveBeenCalledWith('circuitElementAction', expect.objectContaining({
-        type: 'wire',
-        action: 'edit',
-        id: wireId,
-        error: null,
-      }));
+      expect(emitSpy).toHaveBeenCalledWith(
+        'circuitElementAction',
+        expect.objectContaining({
+          type: 'wire',
+          action: 'edit',
+          id: wireId,
+          error: null,
+        })
+      );
     });
 
     it('should return undefined when no circuit is available', () => {
@@ -460,8 +506,9 @@ describe('CircuitEditionManager', () => {
       const noCircuitManager = createMockSceneManager(null);
       const managerNoCircuit = new CircuitEditionManager(noCircuitManager.sceneManager);
 
-      expect(() => managerNoCircuit.saveENodeSourceTypeAction(enodeId, 'power'))
-        .toThrow('No circuit available in the scene manager.');
+      expect(() => managerNoCircuit.saveENodeSourceTypeAction(enodeId, 'power')).toThrow(
+        'No circuit available in the scene manager.'
+      );
     });
   });
 
@@ -474,12 +521,15 @@ describe('CircuitEditionManager', () => {
 
       expect(result).toBeDefined();
       expect(result.type).toBe(ComponentType.Battery);
-      expect(emitSpy).toHaveBeenCalledWith('circuitElementAction', expect.objectContaining({
-        type: 'component',
-        action: 'add',
-        id: result.id,
-        error: null,
-      }));
+      expect(emitSpy).toHaveBeenCalledWith(
+        'circuitElementAction',
+        expect.objectContaining({
+          type: 'component',
+          action: 'add',
+          id: result.id,
+          error: null,
+        })
+      );
     });
 
     it('should convert world position and rotation to grid values', () => {
@@ -501,8 +551,9 @@ describe('CircuitEditionManager', () => {
       const position = new THREE.Vector3(5, 0, -3);
       const rotation = new THREE.Euler(0, 0, 0);
 
-      expect(() => managerNoCircuit.saveAddComponent(ComponentType.Battery, position, rotation))
-        .toThrow('No circuit available in the scene manager.');
+      expect(() =>
+        managerNoCircuit.saveAddComponent(ComponentType.Battery, position, rotation)
+      ).toThrow('No circuit available in the scene manager.');
     });
 
     it('should emit error event when component creation fails', () => {
@@ -517,12 +568,15 @@ describe('CircuitEditionManager', () => {
         // Expected to throw
       }
 
-      expect(noCircuitManager.emitSpy).toHaveBeenCalledWith('circuitElementAction', expect.objectContaining({
-        type: 'component',
-        action: 'add',
-        id: undefined,
-        error: expect.any(Error),
-      }));
+      expect(noCircuitManager.emitSpy).toHaveBeenCalledWith(
+        'circuitElementAction',
+        expect.objectContaining({
+          type: 'component',
+          action: 'add',
+          id: undefined,
+          error: expect.any(Error),
+        })
+      );
     });
   });
 
@@ -555,12 +609,15 @@ describe('CircuitEditionManager', () => {
     it('should emit event when emit parameter is true', () => {
       manager.saveEditComponent(componentId, componentVisual, true);
 
-      expect(emitSpy).toHaveBeenCalledWith('circuitElementAction', expect.objectContaining({
-        type: 'component',
-        action: 'edit',
-        id: componentId,
-        error: null,
-      }));
+      expect(emitSpy).toHaveBeenCalledWith(
+        'circuitElementAction',
+        expect.objectContaining({
+          type: 'component',
+          action: 'edit',
+          id: componentId,
+          error: null,
+        })
+      );
     });
 
     it('should not emit event when emit parameter is false', () => {
@@ -573,15 +630,17 @@ describe('CircuitEditionManager', () => {
       const noCircuitManager = createMockSceneManager(null);
       const managerNoCircuit = new CircuitEditionManager(noCircuitManager.sceneManager);
 
-      expect(() => managerNoCircuit.saveEditComponent(componentId, componentVisual, false))
-        .toThrow('No circuit available in the scene manager.');
+      expect(() => managerNoCircuit.saveEditComponent(componentId, componentVisual, false)).toThrow(
+        'No circuit available in the scene manager.'
+      );
     });
 
     it('should throw error when component is not found', () => {
       componentVisual.userData.componentId = 'non-existent-id';
 
-      expect(() => manager.saveEditComponent('non-existent-id', componentVisual, false))
-        .toThrow('Component with ID non-existent-id not found in the circuit.');
+      expect(() => manager.saveEditComponent('non-existent-id', componentVisual, false)).toThrow(
+        'Component with ID non-existent-id not found in the circuit.'
+      );
     });
   });
 
@@ -600,21 +659,21 @@ describe('CircuitEditionManager', () => {
       expect(result.deletedWires).toBeDefined();
       expect(result.deletedENodes).toBeDefined();
       expect(circuit.getComponent(componentId)).toBeUndefined();
-      expect(emitSpy).toHaveBeenCalledWith('circuitElementAction', expect.objectContaining({
-        type: 'component',
-        action: 'delete',
-        id: componentId,
-        error: null,
-      }));
+      expect(emitSpy).toHaveBeenCalledWith(
+        'circuitElementAction',
+        expect.objectContaining({
+          type: 'component',
+          action: 'delete',
+          id: componentId,
+          error: null,
+        })
+      );
     });
 
     it('should return deleted wires when component has connected wires', () => {
       // Create another component and wire them together
       const component2 = circuit.addComponent(ComponentType.Lightbulb, new Position(5, 0), 0);
-      const wire = circuit.addWire(
-        circuit.getComponent(componentId)!.pins[0],
-        component2.pins[0]
-      );
+      const wire = circuit.addWire(circuit.getComponent(componentId)!.pins[0], component2.pins[0]);
       const wireId = (wire as any).id;
 
       const result = manager.saveDeleteComponent(componentId);
@@ -626,13 +685,15 @@ describe('CircuitEditionManager', () => {
       const noCircuitManager = createMockSceneManager(null);
       const managerNoCircuit = new CircuitEditionManager(noCircuitManager.sceneManager);
 
-      expect(() => managerNoCircuit.saveDeleteComponent(componentId))
-        .toThrow('No circuit available in the scene manager.');
+      expect(() => managerNoCircuit.saveDeleteComponent(componentId)).toThrow(
+        'No circuit available in the scene manager.'
+      );
     });
 
     it('should throw error when component is not found', () => {
-      expect(() => manager.saveDeleteComponent('non-existent-id'))
-        .toThrow('Component with ID non-existent-id not found in the circuit.');
+      expect(() => manager.saveDeleteComponent('non-existent-id')).toThrow(
+        'Component with ID non-existent-id not found in the circuit.'
+      );
     });
 
     it('should emit error event when deletion fails', () => {
@@ -642,12 +703,15 @@ describe('CircuitEditionManager', () => {
         // Expected to throw
       }
 
-      expect(emitSpy).toHaveBeenCalledWith('circuitElementAction', expect.objectContaining({
-        type: 'component',
-        action: 'delete',
-        id: 'non-existent-id',
-        error: expect.any(Error),
-      }));
+      expect(emitSpy).toHaveBeenCalledWith(
+        'circuitElementAction',
+        expect.objectContaining({
+          type: 'component',
+          action: 'delete',
+          id: 'non-existent-id',
+          error: expect.any(Error),
+        })
+      );
     });
   });
 

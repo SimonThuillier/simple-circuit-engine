@@ -101,7 +101,9 @@ export class AddComponentTool implements IEditingTool {
     }
 
     if (this._pointerDownHandler) {
-      this._sceneManager.getContainer().removeEventListener('pointerdown', this._pointerDownHandler);
+      this._sceneManager
+        .getContainer()
+        .removeEventListener('pointerdown', this._pointerDownHandler);
       this._pointerDownHandler = null;
     }
 
@@ -144,8 +146,7 @@ export class AddComponentTool implements IEditingTool {
       // deactivating pan and zoom controls while placing components
       this._sceneManager.getControls()!.enablePan = false;
       this._sceneManager.getControls()!.enableZoom = false;
-    }
-    else {
+    } else {
       this._sceneManager.getControls()!.enablePan = true;
       this._sceneManager.getControls()!.enableZoom = true;
     }
@@ -182,8 +183,9 @@ export class AddComponentTool implements IEditingTool {
         return;
       }
       visual.userData.preview = true; // Mark as preview objects
-      visual.traverse((child) => {child.userData.preview = true;});
-
+      visual.traverse((child) => {
+        child.userData.preview = true;
+      });
 
       this._ghostPreview = visual;
 
@@ -361,11 +363,7 @@ export class AddComponentTool implements IEditingTool {
    */
   handleGridPositionMove(worldPosition: THREE.Vector3): void {
     // Update preview position as grid-snapped current world position
-    this._previewPosition.set(
-        Math.round(worldPosition.x),
-        0,
-        Math.round(worldPosition.z)
-    );
+    this._previewPosition.set(Math.round(worldPosition.x), 0, Math.round(worldPosition.z));
 
     // Update ghost preview position if it exists
     if (this._ghostPreview) {
@@ -400,11 +398,9 @@ export class AddComponentTool implements IEditingTool {
     const hoveredElement = this._sceneManager.getHoveredElement();
     if (hoveredElement && hoveredElement.type === 'component') {
       // Select the component instead of placing
-      this._sceneManager.getSelectionManager().selectOne(
-        hoveredElement.type,
-        hoveredElement.id,
-        hoveredElement.object3D.userData
-      );
+      this._sceneManager
+        .getSelectionManager()
+        .selectOne(hoveredElement.type, hoveredElement.id, hoveredElement.object3D.userData);
       return;
     }
 
@@ -412,6 +408,7 @@ export class AddComponentTool implements IEditingTool {
     if (!this._componentType) {
       this._sceneManager.emit('toolValidationError', {
         toolType: this.type,
+        mode: 'default',
         errorMessage: 'No component type selected. Use setComponentType() first.',
       });
       return;
@@ -421,6 +418,7 @@ export class AddComponentTool implements IEditingTool {
     if (this._hasOverlap) {
       this._sceneManager.emit('toolValidationError', {
         toolType: this.type,
+        mode: 'default',
         errorMessage: 'Cannot place component: position occupied',
       });
       return;
@@ -440,8 +438,8 @@ export class AddComponentTool implements IEditingTool {
       // Emit success event (T019)
       this._sceneManager.emit('toolOperationCompleted', {
         toolType: this.type,
+        mode: 'default',
         operationData: {
-          action: 'add',
           componentId: component.id,
           componentType: this._componentType,
           position: worldPosition.clone(),
@@ -454,6 +452,7 @@ export class AddComponentTool implements IEditingTool {
     } catch (error) {
       this._sceneManager.emit('toolValidationError', {
         toolType: this.type,
+        mode: 'default',
         errorMessage: `Failed to place component: ${(error as Error).message}`,
       });
     }
@@ -488,7 +487,7 @@ export class AddComponentTool implements IEditingTool {
         this._removeInvalidEffect(this._ghostPreview);
       }
     } else {
-        this._hasOverlap = false;
+      this._hasOverlap = false;
     }
   }
 
@@ -503,7 +502,11 @@ export class AddComponentTool implements IEditingTool {
     const selection = this._sceneManager.getSelectionManager().getSelection();
 
     // Check if Delete or Backspace key pressed and a component is selected
-    if ((event.key === 'Delete' || event.key === 'Backspace') && selection?.kind === 'mono' && selection.type === 'component') {
+    if (
+      (event.key === 'Delete' || event.key === 'Backspace') &&
+      selection?.kind === 'mono' &&
+      selection.type === 'component'
+    ) {
       event.preventDefault();
       event.stopPropagation();
 
@@ -519,8 +522,8 @@ export class AddComponentTool implements IEditingTool {
         // T039: Emit toolOperationCompleted event with action:'delete'
         this._sceneManager.emit('toolOperationCompleted', {
           toolType: this.type,
+          mode: 'delete',
           operationData: {
-            action: 'delete',
             componentId: componentId,
           },
           changedData: {
@@ -530,6 +533,7 @@ export class AddComponentTool implements IEditingTool {
       } catch (error) {
         this._sceneManager.emit('toolValidationError', {
           toolType: this.type,
+          mode: 'delete',
           errorMessage: `Failed to delete component: ${(error as Error).message}`,
         });
       }

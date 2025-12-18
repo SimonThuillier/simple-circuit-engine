@@ -7,8 +7,7 @@
 
 import * as THREE from 'three';
 import { Position } from '../../core/types/Position';
-import {Rotation} from "@/core/types/Rotation";
-
+import { Rotation } from '@/core/types/Rotation';
 
 /**
  * Create a grid helper for the scene
@@ -74,4 +73,3 @@ export function worldToGridRotation(rotation: THREE.Euler): Rotation {
 export function gridToWorldRotation(rotation: Rotation): THREE.Euler {
   return new THREE.Euler(0, THREE.MathUtils.degToRad(-rotation.angle), 0);
 }
-

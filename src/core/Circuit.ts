@@ -597,7 +597,7 @@ export class Circuit {
   /**
    * Split a wire in the circuit.
    *
-   * It creates two new wires connected by a new branching point ENode at the specified position.
+   * It creates two new wires connected by either the target enode or a new branching point ENode at the specified position.
    * Returns 2 UUIDS of the new wires.
    *
    * @param id - Wire UUID
@@ -616,13 +616,15 @@ export class Circuit {
    * connecting through the new branching point.
    *
    * @param wireId - Wire to split
-   * @param position - Position for the new branching point
+   * @param position - Position for the new branching point : no effect if targetEnodeId provided
+   * @param targetEnodeId - if provided, the existing enode to split the wire at
    * @returns Object containing the new branching point and two wires
    * @throws Error if wireId not found
    */
   splitWire(
     wireId: UUID,
-    position: Position
+    position: Position,
+    targetEnodeId: UUID | null = null
   ): {
     branchingPoint: ENode;
     wire1: Wire;
@@ -657,8 +659,17 @@ export class Circuit {
     enode1.wires.delete(wireId);
     enode2.wires.delete(wireId);
 
-    // Create new branching point ENode at specified position
-    const branchingPoint = this.addBranchingPoint(position);
+    let branchingPoint: ENode;
+    if (targetEnodeId) {
+      if (!this.enodes.get(targetEnodeId)) {
+        throw new Error(`Target ENode ${targetEnodeId} does not exist`);
+      } else {
+        branchingPoint = this.enodes.get(targetEnodeId)!;
+      }
+    } else {
+      // Create new branching point ENode at specified position
+      branchingPoint = this.addBranchingPoint(position);
+    }
 
     const newWire1 = this.addWire(enode1.id, branchingPoint.id, [...positionsWire1]);
     const newWire2 = this.addWire(branchingPoint.id, enode2.id, [...positionsWire2]);
@@ -871,6 +882,20 @@ export class Circuit {
     if (!wire) {
       throw new Error(`Wire ${wireId} does not exist`);
     }
+
+    // remove collinear positions if simplify
+    const fullPositions = [
+      this.enodes.get(wire.node1)!.getPosition(this),
+      ...wire.intermediatePositions,
+      this.enodes.get(wire.node2)!.getPosition(this),
+    ];
+    const simplifiedFullPositions = simplifyPositions(fullPositions, 10);
+    // remove first and last positions (they are the positions of the nodes)
+    wire.intermediatePositions = simplifiedFullPositions.slice(
+      1,
+      simplifiedFullPositions.length - 1
+    );
+
     wire.intermediatePositions = simplifyPositions(wire.intermediatePositions);
     return wire;
   }

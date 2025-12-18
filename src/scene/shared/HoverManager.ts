@@ -231,7 +231,7 @@ export class HoverManager {
 
       // Validate userData has correct type
       if (userData && userData.type === objectType) {
-        if(userData.hasOwnProperty('preview')) {
+        if (userData.hasOwnProperty('preview')) {
           continue; // Ignore preview hitboxes
         }
         // Extract element ID based on hitbox type
