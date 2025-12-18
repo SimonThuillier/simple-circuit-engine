@@ -443,8 +443,7 @@
 
     <div id="editor-container">
       <div id="editor-menu">
-        <div id="tool-position" class="tool-button">Position</div>
-        <div id="tool-wire" class="tool-button">Wiring</div>
+        <div id="tool-build" class="tool-button">Build</div>
         <div id="tool-add-component" class="tool-button">Add Component</div>
         <ul id="component-list"></ul>
       </div>
@@ -529,6 +528,9 @@
       });
       sceneManager.on('toolOperationCancelled', (e) => {
         console.warn('toolOperationCancelled', e);
+      });
+      sceneManager.on('toolOperationCompleted', (e) => {
+        console.log('toolOperationCompleted', e);
       });
       sceneManager.on('toolValidationError', (e) => {
         console.error('toolValidationError', e);
@@ -620,11 +622,8 @@
         });
       })();
 
-      document.getElementById('tool-position').addEventListener('click', (e) => {
-        sceneManager.toggleTool('position');
-      });
-      document.getElementById('tool-wire').addEventListener('click', (e) => {
-        sceneManager.toggleTool('wire');
+      document.getElementById('tool-build').addEventListener('click', (e) => {
+        sceneManager.toggleTool('build');
       });
 
       // Add Component Tool Logic

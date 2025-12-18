@@ -17,7 +17,6 @@ import type {
   IEditingTool,
   ToolType,
   CursorType,
-  SelectionData,
   HoverableType,
   MonoSelectionData, HoveredElement
 } from '../../shared/types';
@@ -129,6 +128,17 @@ interface BPDragState {
   initialPosition: THREE.Vector3;
 }
 
+interface LastCancelledOp {
+  /**
+   * Type of operation that was cancelled
+   */
+  mode: BuildToolMode;
+  /**
+   * Timestamp of cancellation
+   */
+  ts: number;
+}
+
 /**
  * Unified tool for building circuits
  * Implements all circuit editing functionality in a single tool
@@ -140,7 +150,7 @@ export class BuildTool implements IEditingTool {
 
   // Tool state
   private mode: BuildToolMode = 'idle';
-  private lastCancelledOpTs: number = 0;
+  private lastCancelledOp: LastCancelledOp | null = null;
 
   // Mode-specific state
   private wireCreationState: WireCreationState | null = null;
@@ -174,7 +184,7 @@ export class BuildTool implements IEditingTool {
     this.wireDragState = null;
     this.componentDragState = null;
     this.bpDragState = null;
-    this.lastCancelledOpTs = 0;
+    this.lastCancelledOp = null;
 
     // Set up event listeners
     const container = this._sceneManager.getContainer();
@@ -207,6 +217,7 @@ export class BuildTool implements IEditingTool {
     this.wireDragState = null;
     this.componentDragState = null;
     this.bpDragState = null;
+    this.lastCancelledOp = null;
 
     // Safety: re-enable camera controls
     const controls = this._sceneManager.getControls();
@@ -301,22 +312,23 @@ export class BuildTool implements IEditingTool {
    */
   private handlePointerDown(event: MouseEvent): void {
     if (event.button !== 0) return; // Only handle left click
-
     const circuit = this._sceneManager.getCircuit();
     if (!circuit) return;
     const hoveredElement = this._sceneManager.getHoveredElement();
 
     if (this.mode === 'idle') {
-      // Priority 1 : Check if we're hovering an enode (pin or branching point)
       if(hoveredElement && hoveredElement.type === 'enode') {
         const enodeId = hoveredElement.id;
+        // special priority 0 : if a wire creation was just cancelled, and we click again on the same enode within 500ms, we start dragging the branching point instead of starting a new wire creation
         const isBranchingPoint = !hoveredElement.object3D.userData.componentId;
-        // this is considered a double click+hold on branching point which starts drag
-        if (isBranchingPoint && Date.now() - this.lastCancelledOpTs < 500) {
+        if(isBranchingPoint && this.lastCancelledOp
+            && this.lastCancelledOp.mode === 'wire_creation'
+            && Date.now() - this.lastCancelledOp.ts < 500) {
           this.startBPDrag(enodeId, this._sceneManager.cursorGroundPlanePosition());
           return;
         }
-        // normal case start wire creation
+
+        // Priority 1 : Check if we're hovering an enode and start wire creation
         this.startWireCreation(enodeId);
         return;
       }
@@ -362,6 +374,7 @@ export class BuildTool implements IEditingTool {
         // Clicked on empty space during wire creation - cancel ?
         // TODO: isn't it the spec to create a branching point here? or handled elsewhere and this branch is unnecessary ?
         this.cancelWireCreation();
+        return;
       }
     }
   }
@@ -385,12 +398,7 @@ export class BuildTool implements IEditingTool {
       // specific case : clicking on source enode cancels the wire creation but may lead to dragging branching point
       if (hoveredElement && hoveredElement.type === 'enode'
           && hoveredElement.id === this.wireCreationState?.sourceEnodeId) {
-        // clicking on the same enode : cancel the wire creation
         this.cancelWireCreation();
-        const now = Date.now();
-        if (now - this.wireCreationState?.ts < 500) {
-          this.lastCancelledOpTs = now; // flag used to activate drag of branching point on next pointerdown
-        }
       }
       else {
         this.completeWireCreation(hoveredElement);
@@ -586,6 +594,10 @@ export class BuildTool implements IEditingTool {
         mode: this.mode,
       });
     }
+    this.lastCancelledOp = {
+      mode: this.mode,
+      ts: Date.now(),
+    };
     // Reset state
     this.mode = 'idle';
     this.wireCreationState = null;
@@ -766,6 +778,10 @@ export class BuildTool implements IEditingTool {
         mode: this.mode
       });
     }
+    this.lastCancelledOp = {
+      mode: this.mode,
+      ts: Date.now(),
+    };
     // Reset state
     this.mode = 'idle';
     this.wireDragState = null;
@@ -835,7 +851,8 @@ export class BuildTool implements IEditingTool {
       initialPosition: worldPosition.clone(),
     };
 
-    // register for gridPositionMove events, pan can remain enabled
+    // block MapControls panning and register for gridPositionMove events
+    this._sceneManager.getControls()!.enablePan = false;
     this._sceneManager.on('gridPositionMove', this.handleGridPositionMove);
 
     this._sceneManager.emit('toolOperationStarted', {
@@ -886,6 +903,10 @@ export class BuildTool implements IEditingTool {
         mode: 'component_drag'
       });
     }
+    this.lastCancelledOp = {
+      mode: this.mode,
+      ts: Date.now(),
+    };
     // Reset state
     this.mode = 'idle';
     this.componentDragState = null;
@@ -1034,6 +1055,10 @@ export class BuildTool implements IEditingTool {
         mode: 'bp_drag'
       });
     }
+    this.lastCancelledOp = {
+      mode: this.mode,
+      ts: Date.now(),
+    };
     // Reset state
     this.mode = 'idle';
     this.bpDragState = null;
@@ -1098,6 +1123,16 @@ export class BuildTool implements IEditingTool {
     try {
       // Create branching point in circuit model (no sourceType initially)
       const branchingPoint = this._sceneManager.addBranchingPoint(worldPosition);
+      this._sceneManager.emit('toolOperationCompleted', {
+        toolType: this.type,
+        mode: 'bp_creation',
+        operationData: {
+          worldPosition
+        },
+        changedData: {
+          enodeId: branchingPoint.id,
+        },
+      });
       return branchingPoint.id;
     } catch (error) {
       this._sceneManager.emit('toolValidationError', {
@@ -1126,14 +1161,12 @@ export class BuildTool implements IEditingTool {
         mode: 'bp_creation',
         operationData: {
           wireId,
-          branchingPointId: result.branchingPoint.id,
-          wire1Id: result.wire1.id,
-          wire2Id: result.wire2.id,
+          worldPosition,
         },
         changedData: {
-          removedWires: [wireId],
-          addedWires: [result.wire1.id, result.wire2.id],
-          addedENodes: [result.branchingPoint.id],
+          removedWire: wireId,
+          enodeId: result.branchingPoint.id,
+          addedWires: [result.wire1.id, result.wire2.id]
         },
       });
       return result.branchingPoint.id;
@@ -1177,31 +1210,33 @@ export class BuildTool implements IEditingTool {
    * Priority: enode > selected element > wire > empty
    * @param hoveredElement - Current hovered element
    * @returns Operation type to perform
+   * @private
+   * @remarks Currently not used but reserved for future target disambiguation logic
    */
-  private disambiguateClick(
-      hoveredElement: { type: HoverableType; id: UUID; object3D: any } | null
-  ): 'wire_creation' | 'component_drag' | 'wire_drag' | 'none' {
-    if (!hoveredElement) return 'none';
-
-    const selection = this._sceneManager.getSelectionManager().getSelection();
-
-    // Priority 1: Enode (start wire creation)
-    if (hoveredElement.type === 'enode') {
-      return 'wire_creation';
-    }
-
-    // Priority 2: Selected element (start drag)
-    if (selection && selection.kind === 'mono' && hoveredElement.id === selection.id) {
-      return 'component_drag';
-    }
-
-    // Priority 3: Wire (drag intermediate point)
-    if (hoveredElement.type === 'wire') {
-      return 'wire_drag';
-    }
-
-    return 'none';
-  }
+  // private _disambiguateClick(
+  //     hoveredElement: { type: HoverableType; id: UUID; object3D: any } | null
+  // ): 'wire_creation' | 'component_drag' | 'wire_drag' | 'none' {
+  //   if (!hoveredElement) return 'none';
+  //
+  //   const selection = this._sceneManager.getSelectionManager().getSelection();
+  //
+  //   // Priority 1: Enode (start wire creation)
+  //   if (hoveredElement.type === 'enode') {
+  //     return 'wire_creation';
+  //   }
+  //
+  //   // Priority 2: Selected element (start drag)
+  //   if (selection && selection.kind === 'mono' && hoveredElement.id === selection.id) {
+  //     return 'component_drag';
+  //   }
+  //
+  //   // Priority 3: Wire (drag intermediate point)
+  //   if (hoveredElement.type === 'wire') {
+  //     return 'wire_drag';
+  //   }
+  //
+  //   return 'none';
+  // }
 
   /**
    * Rotate a component 90° clockwise

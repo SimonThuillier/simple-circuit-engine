@@ -50,16 +50,7 @@ export type SceneManagerEvent =
   | 'toolValidationError'
   | 'cursorChangeRequested'
   | 'circuitElementAction'
-  | 'branchingPointCreated'
-  | 'wireSplit'
-  | 'wireIntermediatePositionsChanged'
-  | 'enodeSourceTypeChanged'
   | 'gridPositionMove'
-  | 'dragStart'
-  | 'dragMove'
-  | 'dragEnd'
-  | 'dragCancel'
-  | 'componentRotated'
   | 'selectionChange';
 
 /**
@@ -91,7 +82,7 @@ export interface SceneManagerEventMap {
   toolActivated: { toolType: ToolType };
   toolDeactivated: { toolType: ToolType };
   toolOperationStarted: { toolType: ToolType; mode: unknown; operationData: unknown };
-  toolOperationCompleted: { toolType: ToolType; mode: unknown; operationData: unknown; changedData: ChangedData };
+  toolOperationCompleted: { toolType: ToolType; mode: unknown; operationData: unknown; changedData: unknown };
   toolOperationCancelled: { toolType: ToolType; mode: unknown; };
   toolValidationError: { toolType: ToolType; mode: unknown; errorMessage: string };
   cursorChangeRequested: { cursorType: CursorType };
@@ -133,6 +124,7 @@ export type SceneManagerCallback<T = any> = (payload: T) => void;
  * Optional parameter for incremental scene manager updates
  * If provided, only specified elements are updated
  * If omitted or empty, full update is performed
+ * TODO: should be deprecated
  */
 export interface ChangedData {
   /** Component IDs that were added to the circuit */
@@ -317,8 +309,10 @@ export interface ComponentVisualUserData {
 
 /**
  * Available editing tool types
+ *
+ * Note: 'build' replaces the previous tools: 'position', 'wire', 'delete', 'branchingPoint'
  */
-export type ToolType = 'position' | 'addComponent' | 'wire' | 'branchingPoint' | 'delete' | 'build';
+export type ToolType = 'build' | 'addComponent';
 
 /**
  * Cursor types for tool operations

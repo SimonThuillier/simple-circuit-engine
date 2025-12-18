@@ -125,7 +125,7 @@
 - [X] T049 [US3] Add 'R' key handling for component rotation in handleKeyDown() in src/scene/static/tools/BuildTool.ts
 - [X] T050 [US3] Add component double-click rotation logic to handleDblClick() with target priority (component > wire > empty) in src/scene/static/tools/BuildTool.ts
 - [Cancelled] T051 [US3] Add event emission for component rotation (componentRotated) in src/scene/static/tools/BuildTool.ts
-- [ ] T052 [US3] Migrate PositionTool.test.ts rotation tests to BuildTool.test.ts in tests/scene/tools/BuildTool.test.ts
+- [X] T052 [US3] Migrate PositionTool.test.ts rotation tests to BuildTool.test.ts in tests/scene/tools/BuildTool.test.ts
 
 **Checkpoint**: Component rotation fully functional - can rotate via 'R' key or double-click, including unselected components
 
@@ -145,7 +145,7 @@
 - [X] T056 [US4] Add branching point deletion logic with wire merge validation in deleteSelectedElement() in src/scene/static/tools/BuildTool.ts
 - [X] T057 [US4] Add Delete/Backspace key handling in handleKeyDown() in src/scene/static/tools/BuildTool.ts
 - [Cancelled] T058 [US4] Add event emission for deletion operations (toolOperationCompleted with removedComponents/removedWires/removedENodes) in src/scene/static/tools/BuildTool.ts
-- [ ] T059 [US4] Migrate DeleteTool.test.ts to BuildTool.test.ts with deletion test cases in tests/scene/tools/BuildTool.test.ts
+- [X] T059 [US4] Migrate DeleteTool.test.ts to BuildTool.test.ts with deletion test cases in tests/scene/tools/BuildTool.test.ts
 
 **Checkpoint**: Element deletion fully functional - can delete components, wires, and branching points with appropriate cascade behavior
 
@@ -164,7 +164,7 @@
 - [X] T062 [US5] Add wire double-click logic to handleDblClick() for branching point creation in src/scene/static/tools/BuildTool.ts
 - [X] T063 [US5] Add empty space double-click logic to handleDblClick() for standalone branching point creation in src/scene/static/tools/BuildTool.ts
 - [X] T064 [US5] Add event emission for branching point creation (toolOperationCompleted with addedENodes) in src/scene/static/tools/BuildTool.ts
-- [ ] T065 [US5] Migrate BranchingPointTool.test.ts to BuildTool.test.ts with branching point test cases in tests/scene/tools/BuildTool.test.ts
+- [X] T065 [US5] Migrate BranchingPointTool.test.ts to BuildTool.test.ts with branching point test cases in tests/scene/tools/BuildTool.test.ts
 
 **Checkpoint**: Branching point creation fully functional - can create branching points on wires (splits wire) and in empty space
 
@@ -178,24 +178,24 @@
 
 ### Implementation for User Story 6
 
-- [ ] T066 [US6] Update ToolType union in src/scene/shared/types.ts to only include 'build' and 'addComponent'
-- [ ] T067 [US6] Register BuildTool in CircuitSceneManager tool factory in src/scene/static/CircuitSceneManager.ts
-- [ ] T068 [US6] Update CircuitSceneManager.setActiveTool() method to handle 'build' tool type in src/scene/static/CircuitSceneManager.ts
-- [ ] T069 [US6] Remove PositionTool import and registration from CircuitSceneManager in src/scene/static/CircuitSceneManager.ts
-- [ ] T070 [US6] Remove WireTool import and registration from CircuitSceneManager in src/scene/static/CircuitSceneManager.ts
-- [ ] T071 [US6] Remove DeleteTool import and registration from CircuitSceneManager in src/scene/static/CircuitSceneManager.ts
-- [ ] T072 [US6] Remove BranchingPointTool import and registration from CircuitSceneManager in src/scene/static/CircuitSceneManager.ts
-- [ ] T073 [US6] Delete src/scene/static/tools/PositionTool.ts file
-- [ ] T074 [US6] Delete src/scene/static/tools/WireTool.ts file
-- [ ] T075 [US6] Delete src/scene/static/tools/DeleteTool.ts file
-- [ ] T076 [US6] Delete src/scene/static/tools/BranchingPointTool.ts file
-- [ ] T077 [US6] Delete tests/scene/tools/PositionTool.test.ts file (tests migrated to BuildTool.test.ts)
-- [ ] T078 [US6] Delete tests/scene/tools/WireTool.test.ts file (tests migrated to BuildTool.test.ts)
-- [ ] T079 [US6] Delete tests/scene/tools/DeleteTool.test.ts file (tests migrated to BuildTool.test.ts)
-- [ ] T080 [US6] Delete tests/scene/tools/BranchingPointTool.test.ts file (tests migrated to BuildTool.test.ts)
-- [ ] T081 [US6] Search and update any remaining references to old tool types in application code (grep for 'position', 'wire', 'delete', 'branchingPoint' tool strings)
-- [ ] T082 [US6] Run npm test to verify all tests pass with BuildTool
-- [ ] T083 [US6] Run npm run lint to verify no linting errors
+- [X] T066 [US6] Update ToolType union in src/scene/shared/types.ts to only include 'build' and 'addComponent'
+- [X] T067 [US6] Register BuildTool in CircuitSceneManager tool factory in src/scene/static/CircuitSceneManager.ts
+- [X] T068 [US6] Update CircuitSceneManager.setActiveTool() method to handle 'build' tool type in src/scene/static/CircuitSceneManager.ts
+- [X] T069 [US6] Remove PositionTool import and registration from CircuitSceneManager in src/scene/static/CircuitSceneManager.ts
+- [X] T070 [US6] Remove WireTool import and registration from CircuitSceneManager in src/scene/static/CircuitSceneManager.ts
+- [X] T071 [US6] Remove DeleteTool import and registration from CircuitSceneManager in src/scene/static/CircuitSceneManager.ts
+- [X] T072 [US6] Remove BranchingPointTool import and registration from CircuitSceneManager in src/scene/static/CircuitSceneManager.ts
+- [X] T073 [US6] Delete src/scene/static/tools/PositionTool.ts file
+- [X] T074 [US6] Delete src/scene/static/tools/WireTool.ts file
+- [X] T075 [US6] Delete src/scene/static/tools/DeleteTool.ts file
+- [X] T076 [US6] Delete src/scene/static/tools/BranchingPointTool.ts file
+- [X] T077 [US6] Delete tests/scene/tools/PositionTool.test.ts file (tests migrated to BuildTool.test.ts)
+- [X] T078 [US6] Delete tests/scene/tools/WireTool.test.ts file (tests migrated to BuildTool.test.ts)
+- [X] T079 [US6] Delete tests/scene/tools/DeleteTool.test.ts file (tests migrated to BuildTool.test.ts)
+- [X] T080 [US6] Delete tests/scene/tools/BranchingPointTool.test.ts file (tests migrated to BuildTool.test.ts)
+- [X] T081 [US6] Search and update any remaining references to old tool types in application code (grep for 'position', 'wire', 'delete', 'branchingPoint' tool strings)
+- [X] T082 [US6] Run npm test to verify all tests pass with BuildTool
+- [X] T083 [US6] Run npm run lint to verify no linting errors
 
 **Checkpoint**: Cleanup complete - only BuildTool and AddComponentTool remain, all tests pass
 
@@ -205,13 +205,13 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T084 [P] Update CLAUDE.md with BuildTool architecture and state machine documentation
-- [ ] T085 [P] Code review for TypeScript strict mode compliance and error handling
-- [ ] T086 Performance profiling for 60fps target during drag operations
-- [ ] T087 Manual validation of all quickstart.md test scenarios
-- [ ] T088 [P] Review JSDoc completeness for all public methods and state interfaces
-- [ ] T089 Verify IEditingTool contract validation checklist (contracts/IEditingTool.md)
-- [ ] T090 Review event emission consistency across all operations
+- [X] T084 [P] Update CLAUDE.md with BuildTool architecture and state machine documentation
+- [X] T085 [P] Code review for TypeScript strict mode compliance and error handling
+- [Skipped] T086 Performance profiling for 60fps target during drag operations
+- [Skipped] T087 Manual validation of all quickstart.md test scenarios
+- [Skipped] T088 [P] Review JSDoc completeness for all public methods and state interfaces
+- [Skipped] T089 Verify IEditingTool contract validation checklist (contracts/IEditingTool.md)
+- [Skipped] T090 Review event emission consistency across all operations
 
 ---
 

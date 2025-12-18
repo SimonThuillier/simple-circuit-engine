@@ -41,11 +41,8 @@ import { setupSceneLights } from '../shared/LightingUtils';
 import { createGridHelper } from '../shared/GeometryUtils';
 import { createEnodeGeometry } from '../shared/GeometryUtils';
 import { createStandardMaterial } from '../shared/MaterialUtils';
-import { PositionTool } from './tools/PositionTool';
+import { BuildTool } from './tools/BuildTool';
 import { AddComponentTool } from './tools/AddComponentTool';
-import { WireTool } from './tools/WireTool';
-import { BranchingPointTool } from './tools/BranchingPointTool';
-import { DeleteTool } from './tools/DeleteTool';
 import type { IEditingTool } from '../shared/types';
 import { HoverManager } from '../shared/HoverManager';
 import { applyENodeHover, removeENodeHover } from '../shared/ENodesUtils';
@@ -426,7 +423,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
       this.hoverManager.updateFromMouse(x, y);
       const newPosition = this.cursorGroundPlanePosition();
       if (!newPosition.equals(oldPosition)) {
-        // this important event will be used by tools such as PositionTool to update preview positions
+        // this important event will be used by tools such as BuildTool to update preview positions
         this.emit('gridPositionMove', newPosition);
       }
     };
@@ -1238,11 +1235,8 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
    */
   private _initializeTools(): void {
     // Create tool instances
-    this.tools.set('position', new PositionTool(this));
+    this.tools.set('build', new BuildTool(this));
     this.tools.set('addComponent', new AddComponentTool(this));
-    this.tools.set('wire', new WireTool(this));
-    this.tools.set('branchingPoint', new BranchingPointTool(this));
-    this.tools.set('delete', new DeleteTool(this));
   }
 
   /**

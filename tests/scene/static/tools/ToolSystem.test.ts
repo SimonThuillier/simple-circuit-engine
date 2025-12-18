@@ -150,10 +150,10 @@ describe('Tool System Architecture (T060-T063)', () => {
       const toolActivatedSpy = vi.fn();
       sceneManager.on('toolActivated', toolActivatedSpy);
 
-      sceneManager.setActiveTool('position');
+      sceneManager.setActiveTool('build');
 
       expect(toolActivatedSpy).toHaveBeenCalledWith({
-        toolType: 'position',
+        toolType: 'build',
       });
     });
 
@@ -161,11 +161,11 @@ describe('Tool System Architecture (T060-T063)', () => {
       const toolDeactivatedSpy = vi.fn();
       sceneManager.on('toolDeactivated', toolDeactivatedSpy);
 
-      sceneManager.setActiveTool('position');
-      sceneManager.setActiveTool('wire');
+      sceneManager.setActiveTool('build');
+      sceneManager.setActiveTool('addComponent');
 
       expect(toolDeactivatedSpy).toHaveBeenCalledWith({
-        toolType: 'position',
+        toolType: 'build',
       });
     });
 
@@ -173,7 +173,7 @@ describe('Tool System Architecture (T060-T063)', () => {
       const cursorChangeSpy = vi.fn();
       sceneManager.on('cursorChangeRequested', cursorChangeSpy);
 
-      sceneManager.setActiveTool('position');
+      sceneManager.setActiveTool('build');
 
       expect(cursorChangeSpy).toHaveBeenCalled();
     });
@@ -184,10 +184,10 @@ describe('Tool System Architecture (T060-T063)', () => {
       sceneManager.on('toolDeactivated', () => events.push('deactivated'));
       sceneManager.on('toolActivated', () => events.push('activated'));
 
-      sceneManager.setActiveTool('position');
+      sceneManager.setActiveTool('build');
       events.length = 0; // Clear initial activation
 
-      sceneManager.setActiveTool('wire');
+      sceneManager.setActiveTool('addComponent');
 
       expect(events).toEqual(['deactivated', 'activated']);
     });
@@ -199,7 +199,7 @@ describe('Tool System Architecture (T060-T063)', () => {
       sceneManager.on('toolActivated', listener1);
       sceneManager.on('toolActivated', listener2);
 
-      sceneManager.setActiveTool('delete');
+      sceneManager.setActiveTool('build');
 
       expect(listener1).toHaveBeenCalled();
       expect(listener2).toHaveBeenCalled();
