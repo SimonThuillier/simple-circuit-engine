@@ -6,37 +6,8 @@
  */
 
 import * as THREE from 'three';
-import type { Position } from '../../core/types/Position';
-
-/**
- * Create geometry for a wire connection
- *
- * @param start - Start position
- * @param end - End position
- * @returns BufferGeometry for the wire line
- */
-export function createWireGeometry(start: Position, end: Position): THREE.BufferGeometry {
-  const points: THREE.Vector3[] = [
-    new THREE.Vector3(start.x, 0, -start.y),
-    new THREE.Vector3(end.x, 0, -end.y),
-  ];
-
-  const geometry = new THREE.BufferGeometry().setFromPoints(points);
-  return geometry;
-}
-
-/**
- * Create geometry for a wire with multiple waypoints
- *
- * @param waypoints - Array of positions defining the wire path
- * @returns BufferGeometry for the wire line
- */
-export function createWirePathGeometry(waypoints: Position[]): THREE.BufferGeometry {
-  const points: THREE.Vector3[] = waypoints.map((pos) => new THREE.Vector3(pos.x, 0, pos.y));
-
-  const geometry = new THREE.BufferGeometry().setFromPoints(points);
-  return geometry;
-}
+import { Position } from '../../core/types/Position';
+import { Rotation } from '@/core/types/Rotation';
 
 /**
  * Create a grid helper for the scene
@@ -63,26 +34,42 @@ export function createGridHelper(
  * @param position
  * @constructor
  */
-export function nearestGridMagnetPosition(position: THREE.Vector3): THREE.Vector3 {
+export function nearestWorldSnapPosition(position: THREE.Vector3): THREE.Vector3 {
   return new THREE.Vector3(Math.round(position.x), 0, Math.round(position.z));
 }
 
 /**
- * Create geometry for an electrical node (enode/branching point)
- *
- * @param radius - Radius of the sphere
- * @returns SphereGeometry for the node
+ * Converts a world 3D position to the snapped 2D model grid position.
+ * @param position
+ * @constructor
  */
-export function createEnodeGeometry(radius: number = 0.2): THREE.SphereGeometry {
-  return new THREE.SphereGeometry(radius, 16, 16);
+export function worldToGridPosition(position: THREE.Vector3): Position {
+  return new Position(Math.round(position.x), Math.round(-position.z));
 }
 
 /**
- * Create an axes helper for debugging
- *
- * @param size - Size of the axes
- * @returns AxesHelper object
+ * Converts a model grid 2D position to the world 3D position.
+ * @param position
+ * @constructor
  */
-export function createAxesHelper(size: number = 5): THREE.AxesHelper {
-  return new THREE.AxesHelper(size);
+export function gridToWorldPosition(position: Position): THREE.Vector3 {
+  return new THREE.Vector3(position.x, 0, -position.y);
+}
+
+/**
+ * Converts a world 3D rotation to the model grid 2D rotation.
+ * @param rotation
+ * @constructor
+ */
+export function worldToGridRotation(rotation: THREE.Euler): Rotation {
+  return new Rotation(Math.round(THREE.MathUtils.radToDeg(-rotation.y)));
+}
+
+/**
+ * Converts model grid 2D rotation to the world 3D rotation.
+ * @param rotation
+ * @constructor
+ */
+export function gridToWorldRotation(rotation: Rotation): THREE.Euler {
+  return new THREE.Euler(0, THREE.MathUtils.degToRad(-rotation.angle), 0);
 }

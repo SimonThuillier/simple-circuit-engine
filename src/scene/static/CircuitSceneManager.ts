@@ -14,14 +14,10 @@ import type { Wire } from '../../core/Wire';
 import type { ENode } from '../../core/ENode';
 import type { UUID } from '../../core/types/Identifier';
 import { ENodeType } from '../../core/types/ENodeType';
-import { Position } from '../../core/types/Position';
-import { Rotation } from '../../core/types/Rotation';
 import { EventEmitter } from '../shared/EventEmitter';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
 import type {
-  SceneManagerEvent,
   SceneManagerEventMap,
-  SceneManagerCallback,
   ChangedData,
   SceneManagerOptions,
   MapControlsOptions,
@@ -36,16 +32,15 @@ import type {
   MultiSelectionData,
   WireHitboxUserData,
 } from '../shared/types';
-import { createPerspectiveCamera, setupCameraFromMetadata } from '../shared/CameraUtils';
+import { createPerspectiveCamera } from '../shared/CameraUtils';
 import { setupSceneLights } from '../shared/LightingUtils';
-import { createGridHelper } from '../shared/GeometryUtils';
-import { createEnodeGeometry } from '../shared/GeometryUtils';
-import { createStandardMaterial } from '../shared/MaterialUtils';
-import { PositionTool } from './tools/PositionTool';
+import {
+  createGridHelper,
+  gridToWorldPosition,
+  gridToWorldRotation,
+} from '../shared/GeometryUtils';
+import { BuildTool } from './tools/BuildTool';
 import { AddComponentTool } from './tools/AddComponentTool';
-import { WireTool } from './tools/WireTool';
-import { BranchingPointTool } from './tools/BranchingPointTool';
-import { DeleteTool } from './tools/DeleteTool';
 import type { IEditingTool } from '../shared/types';
 import { HoverManager } from '../shared/HoverManager';
 import { applyENodeHover, removeENodeHover } from '../shared/ENodesUtils';
@@ -54,7 +49,7 @@ import { WireVisualManager } from '../shared/WireVisualManager';
 import type { ComponentType } from '@/core/types/ComponentType';
 import { CircuitEditionManager } from './CircuitEditionManager';
 import { BranchingPointVisualFactory } from '../shared/components/BranchingPointVisualFactory';
-import type {Euler} from "three";
+import type { Euler } from 'three';
 
 /**
  * Static Circuit Scene Manager Implementation
@@ -85,7 +80,6 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
   private activeTool: ToolType | null = null;
   private tools: Map<ToolType, IEditingTool> = new Map();
   private toolState: any = null;
-  private previewObjects: THREE.Object3D[] = [];
 
   // MapControls (Phase 2)
   private mapControls: MapControls | null = null;
@@ -108,7 +102,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
 
   // BranchingPointVisualFactory for creating branching point visuals (T022)
   private branchingPointVisualFactory: BranchingPointVisualFactory =
-      new BranchingPointVisualFactory();
+    new BranchingPointVisualFactory();
 
   /**
    * Create a new Static Circuit Renderer
@@ -248,9 +242,9 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     const gridHalfSize = this.circuit ? Math.ceil(this.circuit.metadata.size / 2) : 10;
     const vector = this.hoverManager!.getGroundPlanePosition().clone();
     vector.set(
-        Math.min(Math.max(vector.x, -gridHalfSize), gridHalfSize),
-        0,
-        Math.min(Math.max(vector.z, -gridHalfSize), gridHalfSize)
+      Math.min(Math.max(vector.x, -gridHalfSize), gridHalfSize),
+      0,
+      Math.min(Math.max(vector.z, -gridHalfSize), gridHalfSize)
     );
     return vector;
   }
@@ -426,7 +420,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
       this.hoverManager.updateFromMouse(x, y);
       const newPosition = this.cursorGroundPlanePosition();
       if (!newPosition.equals(oldPosition)) {
-        // this important event will be used by tools such as PositionTool to update preview positions
+        // this important event will be used by tools such as BuildTool to update preview positions
         this.emit('gridPositionMove', newPosition);
       }
     };
@@ -522,8 +516,8 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
           }
         } catch (error) {
           console.warn(
-              `Failed to ${selected ? 'apply' : 'remove'} component selection visual:`,
-              error
+            `Failed to ${selected ? 'apply' : 'remove'} component selection visual:`,
+            error
           );
         }
       }
@@ -767,11 +761,11 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     return this.factoryRegistry;
   }
 
-  getComponentObject3Ds(): Map<string, THREE.Group> {
+  getComponentObject3Ds(): Map<string, THREE.Object3D> {
     return this.componentObject3Ds;
   }
 
-  getEnodeObject3Ds(): Map<string, THREE.Group> {
+  getEnodeObject3Ds(): Map<string, THREE.Object3D> {
     return this.enodeObject3Ds;
   }
 
@@ -802,7 +796,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
    * @param selection
    */
   getSelectionPositions(
-      selection: SelectionData
+    selection: SelectionData
   ): Map<UUID, { type: HoverableType; position: THREE.Vector3 }> {
     const selectionPositions = new Map<UUID, { type: HoverableType; position: THREE.Vector3 }>();
     if (selection.kind === 'mono') {
@@ -1105,7 +1099,6 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
 
         this.activeTool = null;
         this.toolState = null;
-        this._clearPreviewObjects();
 
         // Emit toolDeactivated event
         this.emit('toolDeactivated', { toolType: previousTool });
@@ -1144,7 +1137,6 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
       tool.onDeactivate();
     }
 
-    this._clearPreviewObjects();
     this.activeTool = null;
     // Emit toolDeactivated event
     this.emit('toolDeactivated', { toolType: previousTool });
@@ -1201,7 +1193,9 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
    */
   setAddComponentType(componentType: ComponentType | null): void {
     if (!this.editMode || this.activeTool !== 'addComponent') {
-        throw new Error('Edit mode must be enabled and AddComponent tool must be active to set component type');
+      throw new Error(
+        'Edit mode must be enabled and AddComponent tool must be active to set component type'
+      );
     }
     const tool = this.tools.get('addComponent') as AddComponentTool;
     if (!tool) {
@@ -1238,65 +1232,8 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
    */
   private _initializeTools(): void {
     // Create tool instances
-    this.tools.set('position', new PositionTool(this));
+    this.tools.set('build', new BuildTool(this));
     this.tools.set('addComponent', new AddComponentTool(this));
-    this.tools.set('wire', new WireTool(this));
-    this.tools.set('branchingPoint', new BranchingPointTool(this));
-    this.tools.set('delete', new DeleteTool(this));
-  }
-
-  /**
-   * Clear all preview objects from the scene
-   * @private
-   */
-  private _clearPreviewObjects(): void {
-    for (const obj of this.previewObjects) {
-      this.scene!.remove(obj);
-
-      // Dispose geometry and material
-      if (obj instanceof THREE.Mesh) {
-        obj.geometry.dispose();
-        if (Array.isArray(obj.material)) {
-          obj.material.forEach((mat) => mat.dispose());
-        } else {
-          obj.material.dispose();
-        }
-      } else if (obj instanceof THREE.Line) {
-        obj.geometry.dispose();
-        if (Array.isArray(obj.material)) {
-          obj.material.forEach((mat) => mat.dispose());
-        } else {
-          obj.material.dispose();
-        }
-      }
-    }
-
-    this.previewObjects = [];
-  }
-
-  /**
-   * Update preview objects from active tool
-   * @private
-   */
-  private _updatePreviewObjects(): void {
-    if (!this.activeTool) {
-      return;
-    }
-
-    const tool = this.tools.get(this.activeTool);
-    if (!tool) {
-      return;
-    }
-
-    // Clear existing preview objects
-    this._clearPreviewObjects();
-
-    // Get new preview objects from tool
-    const newPreviewObjects = tool.getPreviewObjects();
-    for (const obj of newPreviewObjects) {
-      this.scene!.add(obj);
-      this.previewObjects.push(obj);
-    }
   }
 
   /**
@@ -1400,8 +1337,8 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
       const mesh = factory.createVisual(component);
 
       // Position mesh at component location (2D circuit -> 3D world)
-      mesh.position.set(component.position.x, 0, -component.position.y);
-      mesh.rotation.set(0, THREE.MathUtils.degToRad(-component.rotation.angle), 0);
+      mesh.position.copy(gridToWorldPosition(component.position));
+      mesh.rotation.copy(gridToWorldRotation(component.rotation));
 
       // Store component metadata
       mesh.userData.componentId = component.id;
@@ -1436,15 +1373,16 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
 
   private _removeComponentObject3D(id: string): void {
     const group = this.componentObject3Ds.get(id);
-    if (!group) {return;}
+    if (!group) {
+      return;
+    }
 
     this.scene!.remove(group);
     // Parcours complet pour disposer toutes les géométries / matériaux des enfants
     group.traverse((obj) => {
       if (obj.userData && obj.userData.type === 'enodeGroup') {
         this._removeEnodeObject3D(obj.userData.enodeId);
-      }
-      else if (obj instanceof THREE.Mesh) {
+      } else if (obj instanceof THREE.Mesh) {
         if (obj.geometry) {
           obj.geometry.dispose();
         }
@@ -1460,28 +1398,25 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     this.componentObject3Ds.delete(id);
   }
 
+  /**
+   * Create enode (branching point ONLY) visual object and add to scene
+   * pin enodes are created and attache to their components by createComponentObject3D()
+   *
+   * @param enode
+   * @private
+   */
   private _createEnodeObject3D(enode: ENode): void {
-    try {
-      // Only visualize branching point enodes, not component pin enodes
-      // Pin enodes are connection points on components and don't need separate visualization
-      if (enode.type === ENodeType.Pin) {
-        // Skip pin enodes - they're visualized as part of their components
-        return;
-      }
+    // Skip pin enodes - they're visualized as part of their components
+    if (enode.type === ENodeType.Pin) return;
 
-      // Use BranchingPointVisualFactory to create the visual (T023)
-      const group = this.branchingPointVisualFactory.createVisual(enode);
+    // Use BranchingPointVisualFactory to create the visual
+    const group = this.branchingPointVisualFactory.createVisual(enode);
 
-      // Use getPosition() to properly handle position retrieval
-      const pos = enode.getPosition(this.circuit);
-      group.position.set(pos.x, 0, -pos.y);
+    // Use getPosition() to properly handle position retrieval
+    group.position.copy(gridToWorldPosition(enode.getPosition(this.circuit!)));
 
-      this.scene!.add(group);
-      this.enodeObject3Ds.set(enode.id, group);
-    } catch (error) {
-      const err = error as Error;
-      console.warn(`Failed to create mesh for enode ${enode.id}:`, err.message);
-    }
+    this.scene!.add(group);
+    this.enodeObject3Ds.set(enode.id, group);
   }
 
   private _removeEnodeObject3D(id: string): void {
@@ -1507,46 +1442,36 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
 
   addBranchingPoint(worldPosition: THREE.Vector3): ENode {
     const branchingPoint = this.circuitEditionManager.saveAddBranchingPoint(worldPosition);
-
-    // T051: Create and add visual to scene
-    const group = this.branchingPointVisualFactory.createVisual(branchingPoint);
-
-    const pos = branchingPoint.getPosition(this.circuit!);
-    group.position.set(pos.x, 0, -pos.y);
-    this.scene!.add(group);
-    this.enodeObject3Ds.set(branchingPoint.id, group);
-
+    // Create and add bp visual to scene
+    this._createEnodeObject3D(branchingPoint);
     return branchingPoint;
   }
 
   /**
-   * Split wire at a position, inserting a new branching point and two new wires replacing the deleted ones
+   * Split wire either :
+   * - at a position, inserting a new branching point and two new wires replacing the deleted ones
+   * - at an existing target enode, replacing the wire by two new wires connected to this enode
    * @param wireId
+   * @param worldPosition - world Position for the new branching point : no effect if targetEnodeId provided
+   * @param targetEnodeId - if provided, the existing enode to split the wire at
    */
   splitWire(
-      wireId: UUID,
-      worldPosition: THREE.Vector3
+    wireId: UUID,
+    worldPosition: THREE.Vector3,
+    targetEnodeId: UUID | null = null
   ): { branchingPoint: ENode; wire1: Wire; wire2: Wire } {
-    // T045: Call CircuitEditionManager to split the wire and create branching point
-    const result = this.circuitEditionManager.saveSplitWire(wireId, worldPosition);
-
-    // T046: Remove old wire visual from scene
+    // 1: Call CircuitEditionManager to split the wire and create branching point
+    const result = this.circuitEditionManager.saveSplitWire(wireId, worldPosition, targetEnodeId);
+    // 2: Remove old wire visual from scene
     this.wireVisualManager.removeWire(wireId);
+    // 3: add new Branching point visual to the scene (only if not targetEnodeId)
+    if (!targetEnodeId) {
+      this._createEnodeObject3D(result.branchingPoint);
+    }
 
-    // T046: Add new wire visuals to scene
+    // 4: Add new wire visuals to scene
     this.wireVisualManager.createOrUpdateWire(result.wire1);
     this.wireVisualManager.createOrUpdateWire(result.wire2);
-
-    // T047: Add branching point visual to scene
-    const branchingPointGroup = this.branchingPointVisualFactory.createVisual(
-        result.branchingPoint
-    );
-
-    const pos = result.branchingPoint.getPosition(this.circuit!);
-    branchingPointGroup.position.set(pos.x, 0, -pos.y);
-
-    this.scene!.add(branchingPointGroup);
-    this.enodeObject3Ds.set(result.branchingPoint.id, branchingPointGroup);
 
     return result;
   }

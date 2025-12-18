@@ -194,7 +194,7 @@ These are runtime-only states, not persisted in the model.
 ### WireTool State
 
 ```typescript
-type WireToolMode = 'idle' | 'wire_creating' | 'wire_dragging' | 'bp_dragging';
+type WireToolMode = 'idle' | 'wire_creation' | 'wire_drag' | 'bp_drag';
 
 interface WireCreatingState {
   sourceEnodeId: UUID;
@@ -278,7 +278,7 @@ const BRANCHING_POINT_COLORS = {
 │ pins: UUID[]    │         │ addWire()       │
 └────────┬────────┘         │ addBranchingPt()│
          │                  │ splitWire()     │
-         │ pins             │ updateWire...() │
+         │ pins             │ updateWireById...() │
          ▼                  └─────────────────┘
 ┌─────────────────┐
 │      ENode      │

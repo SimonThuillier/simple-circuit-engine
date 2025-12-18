@@ -443,8 +443,7 @@
 
     <div id="editor-container">
       <div id="editor-menu">
-        <div id="tool-position" class="tool-button">Position</div>
-        <div id="tool-wire" class="tool-button">Wiring</div>
+        <div id="tool-build" class="tool-button">Build</div>
         <div id="tool-add-component" class="tool-button">Add Component</div>
         <ul id="component-list"></ul>
       </div>
@@ -529,6 +528,9 @@
       });
       sceneManager.on('toolOperationCancelled', (e) => {
         console.warn('toolOperationCancelled', e);
+      });
+      sceneManager.on('toolOperationCompleted', (e) => {
+        console.log('toolOperationCompleted', e);
       });
       sceneManager.on('toolValidationError', (e) => {
         console.error('toolValidationError', e);
@@ -620,15 +622,12 @@
         });
       })();
 
-      document.getElementById('tool-position').addEventListener('click', (e) => {
-        sceneManager.toggleTool('position');
-      });
-      document.getElementById('tool-wire').addEventListener('click', (e) => {
-        sceneManager.toggleTool('wire');
+      document.getElementById('tool-build').addEventListener('click', (e) => {
+        sceneManager.toggleTool('build');
       });
 
       // Add Component Tool Logic
-      (function() {
+      (function () {
         const toolButton = document.getElementById('tool-add-component');
         const componentList = document.getElementById('component-list');
         let isToolActive = false;
@@ -649,7 +648,7 @@
           });
           componentList.appendChild(nullItem);
 
-          componentTypes.forEach(type => {
+          componentTypes.forEach((type) => {
             const item = document.createElement('li');
             item.className = 'component-item';
             item.textContent = type;
@@ -670,7 +669,7 @@
 
           // Update visual selection
           const allItems = componentList.querySelectorAll('.component-item');
-          allItems.forEach(item => item.classList.remove('selected'));
+          allItems.forEach((item) => item.classList.remove('selected'));
           itemElement.classList.add('selected');
 
           // Set component type via scene manager
@@ -699,7 +698,7 @@
             // Clear component type selection
             selectedComponentType = null;
             const allItems = componentList.querySelectorAll('.component-item');
-            allItems.forEach(item => item.classList.remove('selected'));
+            allItems.forEach((item) => item.classList.remove('selected'));
           } else {
             // Activate tool
             sceneManager.setEditMode(true);
@@ -736,7 +735,7 @@
 
             // Clear visual selection
             const allItems = componentList.querySelectorAll('.component-item');
-            allItems.forEach(item => item.classList.remove('selected'));
+            allItems.forEach((item) => item.classList.remove('selected'));
           }
         });
       })();

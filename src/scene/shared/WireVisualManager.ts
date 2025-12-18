@@ -20,6 +20,7 @@ import { createLine2Material } from './MaterialUtils';
 import type { CircuitSceneManager } from '../static/CircuitSceneManager';
 import type { WireMaterialState } from './types';
 import { HitboxLayers } from './LayerConstants';
+import { gridToWorldPosition } from './GeometryUtils';
 
 /**
  * Wire path representation for rendering
@@ -100,7 +101,36 @@ export class WireVisualManager {
   }
 
   /**
-   * Create or update the visual for a wire
+   * Get the Line2 object for a wire
+   *
+   * @param wireId - Wire ID
+   * @returns Line2 or undefined if not found
+   */
+  getWireLine(wireId: UUID): Line2 | undefined {
+    return this._sceneManager.getWireObject3Ds().get(wireId);
+  }
+
+  /**
+   * Check if a wire visual exists
+   *
+   * @param wireId - Wire ID
+   * @returns true if wire visual exists
+   */
+  hasWire(wireId: UUID): boolean {
+    return this._sceneManager.getWireObject3Ds().has(wireId);
+  }
+
+  /**
+   * Get all wire IDs managed by this manager
+   *
+   * @returns Array of wire UUIDs
+   */
+  getWireIds(): UUID[] {
+    return Array.from(this._sceneManager.getWireObject3Ds().keys());
+  }
+
+  /**
+   * Create or update the visual for a wire using model wire positions
    *
    * @param wire - Wire to render
    * @returns The created/updated Line2 object
@@ -135,127 +165,17 @@ export class WireVisualManager {
   }
 
   /**
-   * Compute the full path for a wire including intermediate positions
+   * Update a specific wire's geometry
    *
-   * @param wire - Wire to compute path for
-   * @returns WirePath with array of Vector3 points from start to end
+   * @param wireId - Wire ID to update
    */
-  computeWirePath(wire: Wire): WirePath {
+  updateWireById(wireId: UUID): void {
     const circuit = this._sceneManager.getCircuit()!; // TODO handle null circuit
-    const componentObject3Ds = this._sceneManager.getComponentObject3Ds();
 
-    const node1 = circuit.getENode(wire.node1);
-    const node2 = circuit.getENode(wire.node2);
-
-    if (!node1 || !node2) {
-      throw new Error(`Wire ${wire.id} has invalid node references`);
+    const wire = circuit.getWire(wireId);
+    if (wire) {
+      this.createOrUpdateWire(wire);
     }
-
-    // Get start position
-    const startPos = this._getENodeWorldPosition(
-      node1.id,
-      node1.type,
-      node1.component,
-      circuit,
-      componentObject3Ds
-    );
-
-    // Get end position
-    const endPos = this._getENodeWorldPosition(
-      node2.id,
-      node2.type,
-      node2.component,
-      circuit,
-      componentObject3Ds
-    );
-
-    // Build full path: start -> intermediate positions -> end
-    const points: THREE.Vector3[] = [startPos];
-
-    // Add intermediate positions (convert from grid to world coordinates)
-    for (const pos of wire.intermediatePositions) {
-      points.push(new THREE.Vector3(pos.x, 0, -pos.y));
-    }
-
-    points.push(endPos);
-
-    return { wireId: wire.id, points };
-  }
-
-  /**
-   * Get the world position of an ENode (pin or branching point)
-   *
-   * For pins: Traverses component group to find pin visual and gets world position
-   * For branching points: Converts grid position to world coordinates
-   *
-   * @param enodeId - The ENode ID
-   * @param enodeType - Type of the ENode (Pin or BranchingPoint)
-   * @param componentId - Parent component ID (for pins)
-   * @param circuit - Circuit for position lookup
-   * @param componentGroups - Map of component ID to Three.js objects
-   * @returns World position as Vector3
-   */
-  private _getENodeWorldPosition(
-    enodeId: UUID,
-    enodeType: ENodeType,
-    componentId: UUID | undefined,
-    circuit: Circuit,
-    componentGroups: Map<UUID, THREE.Object3D>
-  ): THREE.Vector3 {
-    if (enodeType === ENodeType.Pin && componentId) {
-      const componentGroup = componentGroups.get(componentId);
-      if (componentGroup) {
-        const pinPosition = this.getPinWorldPositionFromGroup(enodeId, componentGroup);
-        if (pinPosition) {
-          return pinPosition;
-        }
-      }
-      // Fallback to component center if pin not found in visual hierarchy
-      // TODO: handles regularly when branching points are renderered as scene objects
-      const enode = circuit.getENode(enodeId);
-      if (enode) {
-        const pos = enode.getPosition(circuit);
-        return new THREE.Vector3(pos.x, 0, -pos.y);
-      }
-    }
-
-    // Branching point or fallback: use ENode.getPosition()
-    const enode = circuit.getENode(enodeId);
-    if (!enode) {
-      throw new Error(`ENode ${enodeId} not found`);
-    }
-    const pos = enode.getPosition(circuit);
-    return new THREE.Vector3(pos.x, 0, -pos.y);
-  }
-
-  /**
-   * Get pin world position by traversing component group
-   *
-   * @param enodeId - The pin's ENode ID
-   * @param componentGroup - The component's Three.js group
-   * @returns World position of the pin, or null if not found
-   */
-  getPinWorldPositionFromGroup(
-    enodeId: UUID,
-    componentGroup: THREE.Object3D
-  ): THREE.Vector3 | null {
-    const target = new THREE.Vector3();
-    let found = false;
-
-    componentGroup.traverse((child) => {
-      if (found) return;
-
-      // Look for enode visual or enodeGroup with matching ID
-      if (
-        child.userData.enodeId === enodeId ||
-        (child.userData.type === 'enodeGroup' && child.userData.enodeId === enodeId)
-      ) {
-        child.getWorldPosition(target);
-        found = true;
-      }
-    });
-
-    return found ? target : null;
   }
 
   /**
@@ -285,27 +205,18 @@ export class WireVisualManager {
 
     // Update each wire
     for (const wireId of wireIdsToUpdate) {
-      const wire = circuit.getWire(wireId);
-      if (wire) {
-        this.createOrUpdateWire(wire);
-      }
+      this.updateWireById(wireId);
     }
   }
 
   /**
-   * Update a specific wire's geometry
-   *
-   * @param wireId - Wire ID to update
+   * visual hover and selection effects
    */
-  updateWire(wireId: UUID): void {
-    const circuit = this._sceneManager.getCircuit()!; // TODO handle null circuit
 
-    const wire = circuit.getWire(wireId);
-    if (wire) {
-      this.createOrUpdateWire(wire);
-    }
-  }
-
+  /**
+   * Apply hovered visual effect to a wire
+   * @param wireId
+   */
   applyHoveredVisual(wireId: UUID): void {
     const line = this._sceneManager.getWireObject3Ds().get(wireId);
     if (!line) return;
@@ -337,6 +248,10 @@ export class WireVisualManager {
   }
 
   /**
+   * removal and dispose
+   */
+
+  /**
    * Remove a wire visual from the scene
    *
    * @param wireId - Wire ID to remove
@@ -355,33 +270,31 @@ export class WireVisualManager {
   }
 
   /**
-   * Get the Line2 object for a wire
-   *
-   * @param wireId - Wire ID
-   * @returns Line2 or undefined if not found
+   * Clean up all managed wire visuals
    */
-  getWireLine(wireId: UUID): Line2 | undefined {
-    return this._sceneManager.getWireObject3Ds().get(wireId);
+  dispose(): void {
+    const wireLines = this._sceneManager.getWireObject3Ds();
+    const scene = this._sceneManager.getScene();
+    for (const [_wireId, line] of wireLines) {
+      scene.remove(line);
+      line.geometry.dispose();
+      // Individual wire materials are NOT disposed here - only geometries
+    }
+    wireLines.clear();
+
+    // Remove preview wire if it exists
+    this.removePreviewWire();
+
+    // Dispose shared material once during full cleanup
+    for (const material of this.wireMaterials.values()) {
+      material.dispose();
+    }
+    this.wireMaterials.clear();
   }
 
   /**
-   * Check if a wire visual exists
-   *
-   * @param wireId - Wire ID
-   * @returns true if wire visual exists
+   * Preview wire helpers
    */
-  hasWire(wireId: UUID): boolean {
-    return this._sceneManager.getWireObject3Ds().has(wireId);
-  }
-
-  /**
-   * Get all wire IDs managed by this manager
-   *
-   * @returns Array of wire UUIDs
-   */
-  getWireIds(): UUID[] {
-    return Array.from(this._sceneManager.getWireObject3Ds().keys());
-  }
 
   /**
    * Create a preview wire for wire creation mode.
@@ -450,12 +363,37 @@ export class WireVisualManager {
   }
 
   /**
-   * Refresh wire geometry after intermediate positions changed.
-   * @param wireId - Wire to refresh
+   * Intermediate points and position helpers
    */
-  refreshWireGeometry(wireId: UUID): void {
-    // Simply re-create the wire using the existing method
-    this.updateWire(wireId);
+
+  /**
+   * Get pin world position by traversing component group
+   *
+   * @param enodeId - The pin's ENode ID
+   * @param componentGroup - The component's Three.js group
+   * @returns World position of the pin, or null if not found
+   */
+  getPinWorldPositionFromGroup(
+    enodeId: UUID,
+    componentGroup: THREE.Object3D
+  ): THREE.Vector3 | null {
+    const target = new THREE.Vector3();
+    let found = false;
+
+    componentGroup.traverse((child) => {
+      if (found) return;
+
+      // Look for enode visual or enodeGroup with matching ID
+      if (
+        child.userData.enodeId === enodeId ||
+        (child.userData.type === 'enodeGroup' && child.userData.enodeId === enodeId)
+      ) {
+        child.getWorldPosition(target);
+        found = true;
+      }
+    });
+
+    return found ? target : null;
   }
 
   /**
@@ -509,6 +447,148 @@ export class WireVisualManager {
   }
 
   /**
+   * Find nearest intermediate point on a wire within proximity threshold (T057)
+   * @param wireId - Wire ID to search
+   * @param clientPos - Client position (event.clientX/Y) to test - will be converted to container-relative
+   * @param thresholdPx - Proximity threshold in pixels (default: 10)
+   * @returns Object with pointIndex and distance, or null if none found
+   */
+  findNearestIntermediatePoint(
+    wireId: UUID,
+    clientPos: THREE.Vector2,
+    thresholdPx: number = 10
+  ): { pointIndex: number; distance: number } | null {
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return null;
+
+    const wire = circuit.getWire(wireId);
+    if (!wire) return null;
+
+    // Convert client coordinates to container-relative coordinates
+    const containerRelativePos = this.clientToContainerCoords(clientPos);
+
+    let nearestIndex = -1;
+    let nearestDistance = Infinity;
+
+    // Check each intermediate position
+    for (let i = 0; i < wire.intermediatePositions.length; i++) {
+      const pos = wire.intermediatePositions[i];
+      if (!pos) continue;
+
+      const worldPos = gridToWorldPosition(pos);
+      const pointScreenPos = this.worldToScreen(worldPos);
+      const distance = this.screenDistance(containerRelativePos, pointScreenPos);
+
+      if (distance < thresholdPx && distance < nearestDistance) {
+        nearestIndex = i;
+        nearestDistance = distance;
+      }
+    }
+
+    if (nearestIndex >= 0) {
+      return { pointIndex: nearestIndex, distance: nearestDistance };
+    }
+
+    return null;
+  }
+
+  /**
+   * Compute the full path for a wire including intermediate positions
+   *
+   * @param wire - Wire to compute path for
+   * @returns WirePath with array of Vector3 points from start to end
+   */
+  computeWirePath(wire: Wire): WirePath {
+    const circuit = this._sceneManager.getCircuit()!; // TODO handle null circuit
+    const componentObject3Ds = this._sceneManager.getComponentObject3Ds();
+
+    const node1 = circuit.getENode(wire.node1);
+    const node2 = circuit.getENode(wire.node2);
+
+    if (!node1 || !node2) {
+      throw new Error(`Wire ${wire.id} has invalid node references`);
+    }
+
+    // Get start position
+    const startPos = this._getENodeWorldPosition(
+      node1.id,
+      node1.type,
+      node1.component,
+      circuit,
+      componentObject3Ds
+    );
+
+    // Get end position
+    const endPos = this._getENodeWorldPosition(
+      node2.id,
+      node2.type,
+      node2.component,
+      circuit,
+      componentObject3Ds
+    );
+
+    // Build full path: start -> intermediate positions -> end
+    const points: THREE.Vector3[] = [startPos];
+
+    // Add intermediate positions (convert from grid to world coordinates)
+    for (const pos of wire.intermediatePositions) {
+      points.push(gridToWorldPosition(pos));
+    }
+
+    points.push(endPos);
+
+    return { wireId: wire.id, points };
+  }
+
+  /**
+   * private helpers
+   */
+
+  /**
+   * Get the world position of an ENode (pin or branching point)
+   *
+   * For pins: Traverses component group to find pin visual and gets world position
+   * For branching points: Converts grid position to world coordinates
+   *
+   * @param enodeId - The ENode ID
+   * @param enodeType - Type of the ENode (Pin or BranchingPoint)
+   * @param componentId - Parent component ID (for pins)
+   * @param circuit - Circuit for position lookup
+   * @param componentGroups - Map of component ID to Three.js objects
+   * @returns World position as Vector3
+   */
+  private _getENodeWorldPosition(
+    enodeId: UUID,
+    enodeType: ENodeType,
+    componentId: UUID | undefined,
+    circuit: Circuit,
+    componentGroups: Map<UUID, THREE.Object3D>
+  ): THREE.Vector3 {
+    if (enodeType === ENodeType.Pin && componentId) {
+      const componentGroup = componentGroups.get(componentId);
+      if (componentGroup) {
+        const pinPosition = this.getPinWorldPositionFromGroup(enodeId, componentGroup);
+        if (pinPosition) {
+          return pinPosition;
+        }
+      }
+      // Fallback to component center if pin not found in visual hierarchy
+      // TODO: handles regularly when branching points are renderered as scene objects
+      const enode = circuit.getENode(enodeId);
+      if (enode) {
+        return gridToWorldPosition(enode.getPosition(circuit));
+      }
+    }
+
+    // Branching point or fallback: use ENode.getPosition()
+    const enode = circuit.getENode(enodeId);
+    if (!enode) {
+      throw new Error(`ENode ${enodeId} not found`);
+    }
+    return gridToWorldPosition(enode.getPosition(circuit));
+  }
+
+  /**
    * Convert 3D world position to 2D screen position (T056)
    * @param worldPosition - World position as Vector3
    * @returns Screen position as Vector2
@@ -539,52 +619,6 @@ export class WireVisualManager {
   }
 
   /**
-   * Find nearest intermediate point on a wire within proximity threshold (T057)
-   * @param wireId - Wire ID to search
-   * @param clientPos - Client position (event.clientX/Y) to test - will be converted to container-relative
-   * @param thresholdPx - Proximity threshold in pixels (default: 10)
-   * @returns Object with pointIndex and distance, or null if none found
-   */
-  findNearestIntermediatePoint(
-    wireId: UUID,
-    clientPos: THREE.Vector2,
-    thresholdPx: number = 10
-  ): { pointIndex: number; distance: number } | null {
-    const circuit = this._sceneManager.getCircuit();
-    if (!circuit) return null;
-
-    const wire = circuit.getWire(wireId);
-    if (!wire) return null;
-
-    // Convert client coordinates to container-relative coordinates
-    const containerRelativePos = this.clientToContainerCoords(clientPos);
-
-    let nearestIndex = -1;
-    let nearestDistance = Infinity;
-
-    // Check each intermediate position
-    for (let i = 0; i < wire.intermediatePositions.length; i++) {
-      const pos = wire.intermediatePositions[i];
-      if (!pos) continue;
-
-      const worldPos = new THREE.Vector3(pos.x, 0, -pos.y);
-      const pointScreenPos = this.worldToScreen(worldPos);
-      const distance = this.screenDistance(containerRelativePos, pointScreenPos);
-
-      if (distance < thresholdPx && distance < nearestDistance) {
-        nearestIndex = i;
-        nearestDistance = distance;
-      }
-    }
-
-    if (nearestIndex >= 0) {
-      return { pointIndex: nearestIndex, distance: nearestDistance };
-    }
-
-    return null;
-  }
-
-  /**
    * Convert client coordinates (event.clientX/Y) to container-relative coordinates
    * @param clientPos - Position in client/viewport coordinates
    * @returns Position relative to the container's top-left corner
@@ -594,28 +628,5 @@ export class WireVisualManager {
     const rect = container.getBoundingClientRect();
 
     return new THREE.Vector2(clientPos.x - rect.left, clientPos.y - rect.top);
-  }
-
-  /**
-   * Clean up all managed wire visuals
-   */
-  dispose(): void {
-    const wireLines = this._sceneManager.getWireObject3Ds();
-    const scene = this._sceneManager.getScene();
-    for (const [_wireId, line] of wireLines) {
-      scene.remove(line);
-      line.geometry.dispose();
-      // Individual wire materials are NOT disposed here - only geometries
-    }
-    wireLines.clear();
-
-    // Remove preview wire if it exists
-    this.removePreviewWire();
-
-    // Dispose shared material once during full cleanup
-    for (const material of this.wireMaterials.values()) {
-      material.dispose();
-    }
-    this.wireMaterials.clear();
   }
 }
