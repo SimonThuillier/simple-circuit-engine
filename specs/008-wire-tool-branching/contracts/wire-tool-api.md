@@ -22,7 +22,7 @@ interface IEditingTool {
   getPreviewObjects(): THREE.Object3D[];
 }
 
-type ToolType = 'position' | 'addComponent' | 'wire' | 'branchingPoint' | 'delete';
+type ToolType = 'position' | 'addComponent' | 'wire' | 'eNode' | 'delete';
 type CursorType = 'default' | 'pointer' | 'crosshair' | 'grab' | 'grabbing' | 'not-allowed';
 ```
 
@@ -132,7 +132,7 @@ addBranchingPoint(position: Position, sourceType?: ENodeSourceType): ENode;
  * @throws Error if wireId not found
  */
 splitWire(wireId: UUID, position: Position): {
-  branchingPoint: ENode;
+  eNode: ENode;
   wire1: Wire;
   wire2: Wire;
 };
@@ -218,7 +218,7 @@ interface IBranchingPointVisualFactory {
 ```typescript
 // THREE.Group structure
 {
-  name: 'branchingPoint',
+  name: 'eNode',
   userData: {
     type: 'enode',
     enodeId: UUID,
@@ -327,7 +327,7 @@ addBranchingPoint(worldPosition: THREE.Vector3, sourceType?: ENodeSourceType): E
  * Split a wire at world position, creating a branching point.
  */
 splitWire(wireId: UUID, worldPosition: THREE.Vector3): {
-  branchingPoint: ENode;
+  eNode: ENode;
   wire1: Wire;
   wire2: Wire;
 };

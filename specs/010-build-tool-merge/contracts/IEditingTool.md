@@ -313,7 +313,7 @@ if (nextTool) {
 ## Backward Compatibility
 
 ### Breaking Changes
-- ✅ ToolType enum updated (removes 'position', 'wire', 'delete', 'branchingPoint')
+- ✅ ToolType enum updated (removes 'position', 'wire', 'delete', 'eNode')
 - ✅ Tool string literals must update: 'position' → 'build', 'wire' → 'build'
 
 ### Non-Breaking Changes

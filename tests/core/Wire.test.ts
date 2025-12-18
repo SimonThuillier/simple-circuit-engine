@@ -347,15 +347,14 @@ describe('Wire', () => {
 
       const result = circuit.splitWire(originalId, new Position(5, 0));
       expect(result).toHaveProperty('branchingPoint');
-      expect(result).toHaveProperty('wire1');
-      expect(result).toHaveProperty('wire2');
+      expect(result).toHaveProperty('wires');
 
       // L'ancien fil doit avoir été supprimé
       expect(circuit.getWire(originalId)).toBeUndefined();
 
       // Les nouveaux fils doivent exister dans le circuit
-      const nw1 = circuit.getWire(result.wire1.id);
-      const nw2 = circuit.getWire(result.wire2.id);
+      const nw1 = circuit.getWire(result.wires[0]!.id);
+      const nw2 = circuit.getWire(result.wires[1]!.id);
       expect(nw1).toBeDefined();
       expect(nw2).toBeDefined();
       if (!nw1 || !nw2) return; // narrowing sûre avant d'accéder
@@ -370,8 +369,8 @@ describe('Wire', () => {
       // Le branching point doit être connecté aux deux nouveaux fils
       expect(bp.wires.size).toBe(2);
       const bwIds = Array.from(bp.wires);
-      expect(bwIds).toContain(result.wire1.id);
-      expect(bwIds).toContain(result.wire2.id);
+      expect(bwIds).toContain(result.wires[0]!.id);
+      expect(bwIds).toContain(result.wires[1]!.id);
 
       // Les pins originales doivent toujours être présentes et connectées via les nouveaux fils
       const nodePin1 = circuit.getENode(pin1)!;
@@ -382,8 +381,8 @@ describe('Wire', () => {
       expect(nodePin2.wires.size).toBeGreaterThanOrEqual(1);
 
       // Vérifier que pour chaque nouveau fil, l'un des noeuds est bien le branching point
-      const nodesA = circuit.getNodesByWire(result.wire1.id)!;
-      const nodesB = circuit.getNodesByWire(result.wire2.id)!;
+      const nodesA = circuit.getNodesByWire(result.wires[0]!.id)!;
+      const nodesB = circuit.getNodesByWire(result.wires[1]!.id)!;
       const idsA = [nodesA[0].id, nodesA[1].id];
       const idsB = [nodesB[0].id, nodesB[1].id];
       expect(idsA).toContain(bp.id);

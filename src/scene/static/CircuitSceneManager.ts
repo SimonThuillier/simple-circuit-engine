@@ -1462,7 +1462,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     wireId: UUID,
     worldPosition: THREE.Vector3,
     targetEnodeId: UUID | null = null
-  ): { branchingPoint: ENode; wire1: Wire; wire2: Wire } {
+  ): { branchingPoint: ENode; wires: Wire[] } {
     // 1: Call CircuitEditionManager to split the wire and create branching point
     const result = this.circuitEditionManager.saveSplitWire(wireId, worldPosition, targetEnodeId);
     // 2: Remove old wire visual from scene
@@ -1473,8 +1473,9 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     }
 
     // 4: Add new wire visuals to scene
-    this.wireVisualManager.createOrUpdateWire(result.wire1);
-    this.wireVisualManager.createOrUpdateWire(result.wire2);
+    for(const wire of result.wires){
+      this.wireVisualManager.createOrUpdateWire(wire);
+    }
 
     return result;
   }

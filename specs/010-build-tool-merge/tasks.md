@@ -193,7 +193,7 @@
 - [X] T078 [US6] Delete tests/scene/tools/WireTool.test.ts file (tests migrated to BuildTool.test.ts)
 - [X] T079 [US6] Delete tests/scene/tools/DeleteTool.test.ts file (tests migrated to BuildTool.test.ts)
 - [X] T080 [US6] Delete tests/scene/tools/BranchingPointTool.test.ts file (tests migrated to BuildTool.test.ts)
-- [X] T081 [US6] Search and update any remaining references to old tool types in application code (grep for 'position', 'wire', 'delete', 'branchingPoint' tool strings)
+- [X] T081 [US6] Search and update any remaining references to old tool types in application code (grep for 'position', 'wire', 'delete', 'eNode' tool strings)
 - [X] T082 [US6] Run npm test to verify all tests pass with BuildTool
 - [X] T083 [US6] Run npm run lint to verify no linting errors
 

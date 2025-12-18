@@ -850,7 +850,7 @@ export class BuildTool implements IEditingTool {
           changedData: {
             removedWire: wireId,
             enodeId: result.branchingPoint.id,
-            addedWires: [result.wire1.id, result.wire2.id],
+            addedWires: result.wires.map(w => w.id)
           },
         });
         this._sceneManager
@@ -876,7 +876,7 @@ export class BuildTool implements IEditingTool {
           changedData: {
             removedWire: wireId,
             enodeId: result.branchingPoint.id,
-            addedWires: [result.wire1.id, result.wire2.id],
+            addedWires: result.wires.map(w => w.id)
           },
         });
         if (targetEnodeId) {
@@ -1213,7 +1213,7 @@ export class BuildTool implements IEditingTool {
         changedData: {
           removedWire: wireId,
           enodeId: result.branchingPoint.id,
-          addedWires: [result.wire1.id, result.wire2.id],
+          addedWires: result.wires.map(w => w.id)
         },
       });
       return result.branchingPoint.id;

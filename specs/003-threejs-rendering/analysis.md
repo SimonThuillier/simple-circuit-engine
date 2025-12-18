@@ -389,7 +389,7 @@ cursorChangeRequested: { cursorType: CursorType };
 
 Add new types:
 ```typescript
-export type ToolType = 'position' | 'addComponent' | 'wire' | 'branchingPoint' | 'delete';
+export type ToolType = 'position' | 'addComponent' | 'wire' | 'eNode' | 'delete';
 export type CursorType = 'default' | 'pointer' | 'crosshair' | 'move' | 'not-allowed' | 'grab' | 'grabbing';
 
 export interface IEditingTool {

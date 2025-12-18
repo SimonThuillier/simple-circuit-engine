@@ -151,7 +151,7 @@ class Circuit {
    * @returns Object containing the new branching point and two wires
    */
   splitWire(wireId: UUID, position: Position): {
-    branchingPoint: ENode;
+    eNode: ENode;
     wire1: Wire;
     wire2: Wire;
   };
