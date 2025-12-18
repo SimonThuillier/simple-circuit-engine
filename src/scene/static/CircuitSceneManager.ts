@@ -41,6 +41,7 @@ import {
 } from '../shared/GeometryUtils';
 import { BuildTool } from './tools/BuildTool';
 import { AddComponentTool } from './tools/AddComponentTool';
+import { MultiSelectTool } from './tools/MultiSelectTool';
 import type { IEditingTool } from '../shared/types';
 import { HoverManager } from '../shared/HoverManager';
 import { applyENodeHover, removeENodeHover } from '../shared/ENodesUtils';
@@ -521,7 +522,8 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
           );
         }
       }
-    } else if (enodes) {
+    }
+    if (enodes) {
       for (const [id, _data] of enodes) {
         const object3D = this.enodeObject3Ds.get(id);
         if (!object3D) {
@@ -534,8 +536,8 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
           this.branchingPointVisualFactory.removeSelection(object3D);
         }
       }
-      // enodes selection visual handling can be added here in the future
-    } else if (wires) {
+    }
+    if (wires) {
       for (const [id, _data] of wires) {
         if (selected) {
           this.wireVisualManager.applySelectedVisual(id);
@@ -1234,6 +1236,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     // Create tool instances
     this.tools.set('build', new BuildTool(this));
     this.tools.set('addComponent', new AddComponentTool(this));
+    this.tools.set('multiSelect', new MultiSelectTool(this));
   }
 
   /**

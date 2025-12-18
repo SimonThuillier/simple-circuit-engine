@@ -8,8 +8,7 @@
  */
 
 import type { UUID } from '../../core/types/Identifier';
-import type { HoverableType, SelectionData } from './types';
-import type { Object3D } from 'three';
+import type { HoverableType, SelectionData, MultiSelectionData } from './types';
 import { ENodeType } from '@/core/types/ENodeType';
 
 /**
@@ -209,6 +208,263 @@ export class SelectionManager {
 
     // Notify callbacks
     this.notifyCallbacks(null, previousSelection);
+  }
+
+  /**
+   * Select multiple elements at once, replacing any existing selection
+   *
+   * Creates a MultiSelectionData with the provided element maps.
+   * Empty maps are allowed; passing all empty maps clears the selection.
+   *
+   * @param components - Map of component IDs to optional metadata
+   * @param enodes - Map of enode IDs to optional metadata
+   * @param wires - Map of wire IDs to optional metadata
+   */
+  selectMultiple(
+    components?: Map<UUID, string | null>,
+    enodes?: Map<UUID, string | null>,
+    wires?: Map<UUID, string | null>
+  ): void {
+
+    const previousSelection = this.selection;
+
+    // Check if all maps are empty - treat as deselect
+    const totalCount =
+      (components?.size ?? 0) + (enodes?.size ?? 0) + (wires?.size ?? 0);
+
+    if (totalCount === 0) {
+      this.deselect();
+      return;
+    }
+
+    const newSelection: MultiSelectionData = {
+      kind: 'multi',
+      ...(components && components.size > 0 ? { components } : {}),
+      ...(enodes && enodes.size > 0 ? { enodes } : {}),
+      ...(wires && wires.size > 0 ? { wires } : {}),
+    };
+
+    // No change if selections are equal
+    if (this._selectionsEqual(newSelection, previousSelection)) {
+      return;
+    }
+
+    // Update state
+    this.selection = newSelection;
+    this.selectedAt = Date.now();
+
+    // Notify callbacks
+    this.notifyCallbacks(newSelection, previousSelection);
+  }
+
+  /**
+   * Add a single element to the current selection
+   *
+   * If current selection is null, creates a mono selection.
+   * If current selection is mono, converts to multi and adds element.
+   * If current selection is multi, adds element to appropriate map.
+   *
+   * No-op if element is already selected.
+   *
+   * @param type - Type of element to add
+   * @param objectId - UUID of element to add
+   * @param userData - Optional metadata for the element
+   */
+  addToSelection(type: HoverableType, objectId: UUID, userData?: object): void {
+    // If already selected, no-op
+    if (this.isSelected(type, objectId)) {
+      return;
+    }
+
+    const previousSelection = this.selection;
+
+    // If no selection, create mono selection
+    if (!previousSelection) {
+      this.selectOne(type, objectId, userData);
+      return;
+    }
+
+    // If mono selection, convert to multi
+    if (previousSelection.kind === 'mono') {
+      const components = new Map<UUID, string | null>();
+      const enodes = new Map<UUID, string | null>();
+      const wires = new Map<UUID, string | null>();
+
+      // Add existing selection
+      if (previousSelection.type === 'component') {
+        components.set(previousSelection.id, previousSelection.data ?? null);
+      } else if (previousSelection.type === 'enode') {
+        enodes.set(previousSelection.id, previousSelection.data ?? null);
+      } else if (previousSelection.type === 'wire') {
+        wires.set(previousSelection.id, previousSelection.data ?? null);
+      }
+
+      // Add new element
+      if (type === 'component') {
+        components.set(objectId, null);
+      } else if (type === 'enode') {
+        enodes.set(objectId, null);
+      } else if (type === 'wire') {
+        wires.set(objectId, null);
+      }
+
+      this.selectMultiple(components, enodes, wires);
+      return;
+    }
+
+    // If multi selection, add to appropriate map
+    if (previousSelection.kind === 'multi') {
+      const components = new Map(previousSelection.components ?? new Map());
+      const enodes = new Map(previousSelection.enodes ?? new Map());
+      const wires = new Map(previousSelection.wires ?? new Map());
+
+      if (type === 'component') {
+        components.set(objectId, null);
+      } else if (type === 'enode') {
+        enodes.set(objectId, null);
+      } else if (type === 'wire') {
+        wires.set(objectId, null);
+      }
+
+      this.selectMultiple(components, enodes, wires);
+    }
+  }
+
+  /**
+   * Remove a single element from the current selection
+   *
+   * If element is in a mono selection, clears the selection.
+   * If element is in a multi selection, removes from appropriate map.
+   * If multi selection becomes single element, converts to mono.
+   *
+   * No-op if element is not selected.
+   *
+   * @param type - Type of element to remove
+   * @param objectId - UUID of element to remove
+   */
+  removeFromSelection(type: HoverableType, objectId: UUID): void {
+    // If not selected, no-op
+    if (!this.isSelected(type, objectId)) {
+      return;
+    }
+
+    const previousSelection = this.selection;
+
+    if (!previousSelection) {
+      return;
+    }
+
+    // If mono selection, deselect
+    if (previousSelection.kind === 'mono') {
+      this.deselect();
+      return;
+    }
+
+    // If multi selection, remove from appropriate map
+    if (previousSelection.kind === 'multi') {
+      const components = new Map(previousSelection.components ?? new Map());
+      const enodes = new Map(previousSelection.enodes ?? new Map());
+      const wires = new Map(previousSelection.wires ?? new Map());
+
+      if (type === 'component') {
+        components.delete(objectId);
+      } else if (type === 'enode') {
+        enodes.delete(objectId);
+      } else if (type === 'wire') {
+        wires.delete(objectId);
+      }
+
+      const totalCount = components.size + enodes.size + wires.size;
+
+      // If only one element left, convert to mono
+      if (totalCount === 1) {
+        if (components.size === 1) {
+          for (const [id, data] of components.entries()) {
+            this.selectOne('component', id, data ? { data } : undefined);
+            return;
+          }
+        } else if (enodes.size === 1) {
+          for (const [id, data] of enodes.entries()) {
+            this.selectOne('enode', id, data ? { data } : undefined);
+            return;
+          }
+        } else if (wires.size === 1) {
+          for (const [id, data] of wires.entries()) {
+            this.selectOne('wire', id, data ? { data } : undefined);
+            return;
+          }
+        }
+        return;
+      }
+
+      // Otherwise, update multi selection
+      this.selectMultiple(components, enodes, wires);
+    }
+  }
+
+  /**
+   * Get the total count of selected elements across all types
+   *
+   * @returns Number of selected elements (0 if no selection)
+   */
+  getSelectionCount(): number {
+    if (!this.selection) {
+      return 0;
+    }
+
+    if (this.selection.kind === 'mono') {
+      return 1;
+    }
+
+    if (this.selection.kind === 'multi') {
+      return (
+        (this.selection.components?.size ?? 0) +
+        (this.selection.enodes?.size ?? 0) +
+        (this.selection.wires?.size ?? 0)
+      );
+    }
+
+    return 0;
+  }
+
+  /**
+   * Get all selected element IDs grouped by type
+   *
+   * Returns empty arrays if no selection.
+   * For mono selection, returns single-element array in appropriate category.
+   *
+   * @returns Object with arrays of selected IDs by type
+   */
+  getSelectedIds(): {
+    components: UUID[];
+    enodes: UUID[];
+    wires: UUID[];
+  } {
+    if (!this.selection) {
+      return { components: [], enodes: [], wires: [] };
+    }
+
+    if (this.selection.kind === 'mono') {
+      if (this.selection.type === 'component') {
+        return { components: [this.selection.id], enodes: [], wires: [] };
+      }
+      if (this.selection.type === 'enode') {
+        return { components: [], enodes: [this.selection.id], wires: [] };
+      }
+      if (this.selection.type === 'wire') {
+        return { components: [], enodes: [], wires: [this.selection.id] };
+      }
+    }
+
+    if (this.selection.kind === 'multi') {
+      return {
+        components: Array.from(this.selection.components?.keys() ?? []),
+        enodes: Array.from(this.selection.enodes?.keys() ?? []),
+        wires: Array.from(this.selection.wires?.keys() ?? []),
+      };
+    }
+
+    return { components: [], enodes: [], wires: [] };
   }
 
   /**

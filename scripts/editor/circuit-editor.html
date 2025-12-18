@@ -444,6 +444,7 @@
     <div id="editor-container">
       <div id="editor-menu">
         <div id="tool-build" class="tool-button">Build</div>
+        <div id="tool-multi-select" class="tool-button">Multi-Select</div>
         <div id="tool-add-component" class="tool-button">Add Component</div>
         <ul id="component-list"></ul>
       </div>
@@ -593,7 +594,7 @@
         resizeRenderer();
       });
 
-      // Accordion toggle logic
+      // Input Accordion toggle logic
       (function () {
         const accordion = document.getElementById('input-accordion');
         const toggleBtn = document.getElementById('toggle-input');
@@ -625,6 +626,54 @@
       document.getElementById('tool-build').addEventListener('click', (e) => {
         sceneManager.toggleTool('build');
       });
+
+      // Build Tool Logic
+      (function () {
+        const toolButton = document.getElementById('tool-build');
+        let isToolActive = false;
+        toolButton.addEventListener('click', (e) => {
+          e.stopPropagation();
+
+          document.querySelectorAll('.tool-button').forEach(el => el.classList.remove('active'));
+
+          if (isToolActive) {
+            // Deactivate tool
+            sceneManager.deactivateTool('build');
+            toolButton.classList.remove('active');
+            isToolActive = false;
+          } else {
+            // Activate tool
+            sceneManager.setEditMode(true);
+            sceneManager.setActiveTool('build');
+            toolButton.classList.add('active');
+            isToolActive = true;
+          }
+        });
+      })();
+
+      // Multi-Select Tool Logic
+      (function () {
+        const toolButton = document.getElementById('tool-multi-select');
+        let isToolActive = false;
+        toolButton.addEventListener('click', (e) => {
+          e.stopPropagation();
+
+          document.querySelectorAll('.tool-button').forEach(el => el.classList.remove('active'));
+
+          if (isToolActive) {
+            // Deactivate tool
+            sceneManager.deactivateTool('multiSelect');
+            toolButton.classList.remove('active');
+            isToolActive = false;
+          } else {
+            // Activate tool
+            sceneManager.setEditMode(true);
+            sceneManager.setActiveTool('multiSelect');
+            toolButton.classList.add('active');
+            isToolActive = true;
+          }
+        });
+      })();
 
       // Add Component Tool Logic
       (function () {
@@ -687,6 +736,8 @@
         // Toggle tool and component list
         toolButton.addEventListener('click', (e) => {
           e.stopPropagation();
+
+          document.querySelectorAll('.tool-button').forEach(el => el.classList.remove('active'));
 
           if (isToolActive) {
             // Deactivate tool

@@ -317,7 +317,7 @@ export interface ComponentVisualUserData {
  *
  * Note: 'build' replaces the previous tools: 'position', 'wire', 'delete', 'branchingPoint'
  */
-export type ToolType = 'build' | 'addComponent';
+export type ToolType = 'build' | 'addComponent' | 'multiSelect';
 
 /**
  * Cursor types for tool operations
