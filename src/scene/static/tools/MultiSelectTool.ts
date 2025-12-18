@@ -10,7 +10,12 @@ import type {
 import type { CircuitSceneManager } from '../CircuitSceneManager';
 import type { UUID } from '../../../core/types/Identifier';
 import * as THREE from 'three';
-import { isPointInScreenRect } from '../../shared/GeometryUtils';
+import {
+  gridToWorldPosition,
+  isPointInScreenRect,
+  nearestWorldSnapPosition,
+  worldToGridPosition
+} from '../../shared/GeometryUtils';
 
 /**
  * Operating modes for the MultiSelectTool
@@ -31,6 +36,20 @@ export interface SelectionRectState {
   shiftHeld: boolean;
   /** Elements currently previewed as "will be selected" */
   previewedElements: Set<UUID>;
+}
+
+/**
+ * State during bulk move operation (T023)
+ */
+export interface BulkDragState {
+  /** Starting cursor position in world coordinates */
+  dragStartWorld: THREE.Vector3;
+  /** Snapshot of initial positions for all selected elements */
+  initialPositions: Map<UUID, THREE.Vector3>;
+  /** Wire IDs that need geometry updates during drag */
+  affectedWireIds: Set<UUID>;
+  /** Initial intermediate positions for selected wires (wireId -> array of positions) */
+  initialWireIntermediatePositions: Map<UUID, THREE.Vector3[]>;
 }
 
 /** Minimum selection rectangle size in pixels to distinguish from click */
@@ -54,11 +73,15 @@ export class MultiSelectTool implements IEditingTool {
   // Selection rectangle state
   private selectionRectState: SelectionRectState | null = null;
 
+  // Bulk drag state (Phase 4)
+  private bulkDragState: BulkDragState | null = null;
+
   // Bound event handlers for stable references
   private handlePointerDown: (event: PointerEvent) => void;
   private handlePointerMove: (event: PointerEvent) => void;
   private handlePointerUp: (event: PointerEvent) => void;
   private handleKeyDown: (event: KeyboardEvent) => void;
+  private handleGridPositionMove: (position: THREE.Vector3) => void;
 
   constructor(sceneManager: CircuitSceneManager) {
     this.sceneManager = sceneManager;
@@ -68,6 +91,7 @@ export class MultiSelectTool implements IEditingTool {
     this.handlePointerMove = this._handlePointerMove.bind(this);
     this.handlePointerUp = this._handlePointerUp.bind(this);
     this.handleKeyDown = this._handleKeyDown.bind(this);
+    this.handleGridPositionMove = this._handleGridPositionMove.bind(this);
   }
 
   /**
@@ -83,6 +107,7 @@ export class MultiSelectTool implements IEditingTool {
   onActivate(): void {
     this.mode = 'idle';
     this.selectionRectState = null;
+    this.bulkDragState = null;
 
     // Register event listeners
     const container = this.sceneManager.getContainer();
@@ -105,9 +130,11 @@ export class MultiSelectTool implements IEditingTool {
     container.removeEventListener('pointermove', this.handlePointerMove);
     container.removeEventListener('pointerup', this.handlePointerUp);
     window.removeEventListener('keydown', this.handleKeyDown);
+    this.sceneManager.off('gridPositionMove', this.handleGridPositionMove);
 
     this.mode = 'idle';
     this.selectionRectState = null;
+    this.bulkDragState = null;
   }
 
   /**
@@ -116,12 +143,13 @@ export class MultiSelectTool implements IEditingTool {
   cancelOperation(): void {
     if (this.mode === 'selecting') {
       this._cancelSelectionRect();
+    } else if (this.mode === 'dragging') {
+      this._cancelBulkDrag();
     }
-    // Future: handle 'dragging' mode cancellation in Phase 4
   }
 
   /**
-   * Get the current cursor type for this tool
+   * Get the current cursor type for this tool (T031)
    */
   getCursorType(): CursorType {
     const hoveredElement = this.sceneManager.getHoveredElement();
@@ -134,7 +162,7 @@ export class MultiSelectTool implements IEditingTool {
         return 'grabbing';
       case 'idle':
       default:
-        // Check if hovering over a selected element (for drag cursor)
+        // T031: Check if hovering over a selected element (for drag cursor)
         if (hoveredElement) {
           const isSelected = selectionManager.isSelected(hoveredElement.type, hoveredElement.id);
           if (isSelected) {
@@ -156,14 +184,14 @@ export class MultiSelectTool implements IEditingTool {
   }
 
   // ==========================================================================
-  // Event Handlers (T011, T013, T016, T017, T019-T022)
+  // Event Handlers
   // ==========================================================================
 
   /**
-   * Handle pointer down event (T011, T019, T020, T021)
+   * Handle pointer down event (T011, T019, T020, T021, T024)
    * - Empty space: start rectangle selection
    * - Element click: select that element (clear others unless Shift held)
-   * - Selected element: prepare for drag (Phase 4)
+   * - Selected element: prepare for bulk drag (Phase 4)
    */
   private _handlePointerDown(event: PointerEvent): void {
     if (event.button !== 0) return; // Only left click
@@ -202,7 +230,8 @@ export class MultiSelectTool implements IEditingTool {
                   }
                 }
             }
-            else if (hoveredElement.type === 'enode') {
+            // enode without componentId means branching point
+            else if (hoveredElement.type === 'enode' && !hoveredElement.object3D.userData.componentId) {
               const enode = this.sceneManager.getCircuit()!.getENode(hoveredElement.id);
               if(enode) {
                 for (const wireId of enode.wires) {
@@ -211,19 +240,18 @@ export class MultiSelectTool implements IEditingTool {
               }
             }
           }
-
-
           return;
         }
 
         // T019: Single click selects element (clears previous)
-        if (!isSelected) {
+        if (!isSelected && !(hoveredElement.type === 'enode' && !!hoveredElement.object3D.userData.componentId)) {
           selectionManager.selectOne(hoveredElement.type, hoveredElement.id);
           return;
         }
 
-        // Clicking on already selected element - prepare for drag (Phase 4)
-        // For now, just do nothing
+        // T024: Clicking on already selected element - start bulk drag
+        const worldPosition = this.sceneManager.cursorGroundPlanePosition();
+        this._startBulkDrag(worldPosition);
         return;
       }
 
@@ -259,8 +287,8 @@ export class MultiSelectTool implements IEditingTool {
   }
 
   /**
-   * Handle pointer up event (T016, T21)
-   * Commits selection or clears if it was just a click
+   * Handle pointer up event (T016, T021, T029)
+   * Commits selection or bulk drag, or clears if it was just a click
    */
   private _handlePointerUp(event: PointerEvent): void {
     if (event.button !== 0) return; // Only left click
@@ -284,25 +312,50 @@ export class MultiSelectTool implements IEditingTool {
 
       // T016: Commit selection
       this._commitSelectionRect();
+    } else if (this.mode === 'dragging' && this.bulkDragState) {
+      // T029: Commit bulk drag
+      this._commitBulkDrag();
     }
   }
 
   /**
-   * Handle keyboard events (T017)
+   * Handle grid position move event (T027)
+   * Updates element positions during bulk drag
+   */
+  private _handleGridPositionMove(position: THREE.Vector3): void {
+    if (this.mode === 'dragging' && this.bulkDragState) {
+      this._updateBulkDrag(position);
+    }
+  }
+
+  /**
+   * Handle keyboard events (T017, T030, T034)
    * - Escape: cancel current operation
+   * - Delete/Backspace: delete selection
    */
   private _handleKeyDown(event: KeyboardEvent): void {
-    // T017: Escape cancels rectangle selection
+    // T017, T030: Escape cancels rectangle selection or bulk drag
     if (event.key === 'Escape') {
       if (this.mode === 'selecting') {
         this._cancelSelectionRect();
         return;
+      } else if (this.mode === 'dragging') {
+        this._cancelBulkDrag();
+        return;
+      }
+    }
+
+    // T034: Delete/Backspace triggers bulk delete
+    if (event.key === 'Delete' || event.key === 'Backspace') {
+      // Only delete if we have a selection and we're idle (not during drag)
+      if (this.mode === 'idle') {
+        this.deleteSelection();
       }
     }
   }
 
   // ==========================================================================
-  // Selection Rectangle Operations (T012, T014, T015, T016, T018, T22)
+  // Selection Rectangle Operations (T012, T014, T015, T016, T018, T022)
   // ==========================================================================
 
   /**
@@ -586,5 +639,326 @@ export class MultiSelectTool implements IEditingTool {
       this.selectionRectState.overlayElement.remove();
     }
     this.selectionRectState = null;
+  }
+
+  // ==========================================================================
+  // Bulk Drag Operations (T024-T032) - Phase 4
+  // ==========================================================================
+
+  /**
+   * Start bulk drag operation (T024, T025, T026, T032)
+   */
+  private _startBulkDrag(worldPosition: THREE.Vector3): void {
+    const circuit = this.sceneManager.getCircuit();
+    if (!circuit) return;
+
+    const selectionManager = this.sceneManager.getSelectionManager();
+    const selectedIds = selectionManager.getSelectedIds();
+
+    // T025: Capture initial positions for all selected elements
+    const initialPositions = new Map<UUID, THREE.Vector3>();
+
+    // Capture component positions
+    for (const componentId of selectedIds.components) {
+      const object3D = this.sceneManager.getComponentObject3Ds().get(componentId);
+      if (object3D) {
+        initialPositions.set(componentId, object3D.position.clone());
+      }
+    }
+
+    // Capture branching point positions
+    for (const enodeId of selectedIds.enodes) {
+      const object3D = this.sceneManager.getEnodeObject3Ds().get(enodeId);
+      if (object3D && !object3D.userData.componentId) { // Only branching points
+        initialPositions.set(enodeId, object3D.position.clone());
+      }
+    }
+
+    // T026: Collect affected wires (selected wires + boundary wires)
+    const affectedWireIds = new Set<UUID>();
+
+    // Add selected wires
+    for (const wireId of selectedIds.wires) {
+      affectedWireIds.add(wireId);
+    }
+
+    // Add boundary wires (wires connected to selected components/enodes but not fully selected)
+    for (const componentId of selectedIds.components) {
+      const component = circuit.getComponent(componentId);
+      if (component) {
+        for (const pinId of component.pins) {
+          const enode = circuit.getENode(pinId);
+          if (enode) {
+            for (const wireId of enode.wires) {
+              affectedWireIds.add(wireId);
+            }
+          }
+        }
+      }
+    }
+
+    for (const enodeId of selectedIds.enodes) {
+      const enode = circuit.getENode(enodeId);
+      if (enode) {
+        for (const wireId of enode.wires) {
+          affectedWireIds.add(wireId);
+        }
+      }
+    }
+
+    // Capture initial intermediate positions for selected wires
+    const initialWireIntermediatePositions = new Map<UUID, THREE.Vector3[]>();
+    for (const wireId of selectedIds.wires) {
+      const wire = circuit.getWire(wireId);
+      if (wire && wire.intermediatePositions.length > 0) {
+        // Clone all intermediate positions
+        const positions = wire.intermediatePositions.map(pos =>
+          gridToWorldPosition(pos)
+        );
+        initialWireIntermediatePositions.set(wireId, positions);
+      }
+    }
+
+    // Initialize drag state
+    this.bulkDragState = {
+      dragStartWorld: worldPosition.clone(),
+      initialPositions,
+      affectedWireIds,
+      initialWireIntermediatePositions,
+    };
+
+    this.mode = 'dragging';
+
+    // Lock camera controls
+    const controls = this.sceneManager.getControls();
+    if (controls) {
+      controls.enablePan = false;
+    }
+
+    // Register for grid position move events
+    this.sceneManager.on('gridPositionMove', this.handleGridPositionMove);
+
+    // T032: Emit event
+    this.sceneManager.emit('toolOperationStarted', {
+      toolType: this.type,
+      mode: 'dragging',
+      operationData: { elementCount: initialPositions.size },
+    });
+  }
+
+  /**
+   * Update bulk drag - apply delta to all selected elements (T027, T028)
+   */
+  private _updateBulkDrag(worldPosition: THREE.Vector3): void {
+    if (!this.bulkDragState) return;
+
+    const { dragStartWorld, initialPositions, affectedWireIds, initialWireIntermediatePositions } = this.bulkDragState;
+
+    // Calculate delta
+    const delta = new THREE.Vector3().subVectors(worldPosition, dragStartWorld);
+
+    // T027: Apply delta to all selected elements
+    for (const [elementId, initialPos] of initialPositions) {
+      const newPosition = new THREE.Vector3().addVectors(initialPos, delta);
+      const snappedPosition = nearestWorldSnapPosition(newPosition);
+
+      // Update component visual
+      const componentObject3D = this.sceneManager.getComponentObject3Ds().get(elementId);
+      if (componentObject3D) {
+        componentObject3D.position.copy(snappedPosition);
+
+        // Update component in circuit model
+        this.sceneManager.getCircuitEditionManager().saveEditComponent(elementId, componentObject3D);
+        continue;
+      }
+
+      // Update branching point visual
+      const enodeObject3D = this.sceneManager.getEnodeObject3Ds().get(elementId);
+      if (enodeObject3D) {
+        enodeObject3D.position.copy(snappedPosition);
+
+        // Update branching point in circuit model
+        this.sceneManager.getCircuitEditionManager().saveEditBranchingPoint(enodeObject3D);
+      }
+    }
+
+    // Apply delta to intermediate positions of selected wires
+    const editionManager = this.sceneManager.getCircuitEditionManager();
+    for (const [wireId, initialIntermediatePositions] of initialWireIntermediatePositions) {
+      // Apply delta to each intermediate position
+      const updatedPositions = initialIntermediatePositions.map(pos => {
+        const newPos = new THREE.Vector3().addVectors(pos, delta);
+        return worldToGridPosition(newPos);
+      });
+
+      // Update wire intermediate positions in circuit model
+      editionManager.saveEditWirePositions(wireId, updatedPositions, false);
+    }
+
+    // T028: Update wire geometry for all affected wires
+    const wireVisualManager = this.sceneManager.getWireVisualManager();
+    for (const wireId of affectedWireIds) {
+      wireVisualManager.updateWireById(wireId);
+    }
+  }
+
+  /**
+   * Commit bulk drag operation (T029, T032)
+   */
+  private _commitBulkDrag(): void {
+    if (!this.bulkDragState) return;
+
+    const circuit = this.sceneManager.getCircuit();
+    if (!circuit) return;
+
+    const { dragStartWorld, initialPositions } = this.bulkDragState;
+    const currentPosition = this.sceneManager.cursorGroundPlanePosition();
+
+    // Calculate final delta
+    const delta = new THREE.Vector3().subVectors(currentPosition, dragStartWorld);
+    const gridDelta = worldToGridPosition(delta);
+
+
+    // T032: Emit completion event
+    this.sceneManager.emit('toolOperationCompleted', {
+      toolType: this.type,
+      mode: 'dragging',
+      operationData: {
+        elementCount: initialPositions.size,
+        delta: { x: gridDelta.x, y: gridDelta.y },
+      },
+      changedData: {},
+    });
+
+    // Cleanup
+    this.mode = 'idle';
+    this.bulkDragState = null;
+
+    // Unregister grid position move listener
+    this.sceneManager.off('gridPositionMove', this.handleGridPositionMove);
+
+    // Unlock camera controls
+    const controls = this.sceneManager.getControls();
+    if (controls) {
+      controls.enablePan = true;
+    }
+  }
+
+  /**
+   * Cancel bulk drag operation - revert all elements to initial positions (T030)
+   */
+  private _cancelBulkDrag(): void {
+    if (!this.bulkDragState) return;
+
+    const { initialPositions, affectedWireIds, initialWireIntermediatePositions } = this.bulkDragState;
+
+    // Revert all elements to initial positions
+    for (const [elementId, initialPos] of initialPositions) {
+      const componentObject3D = this.sceneManager.getComponentObject3Ds().get(elementId);
+      if (componentObject3D) {
+        componentObject3D.position.copy(initialPos);
+        this.sceneManager.getCircuitEditionManager().saveEditComponent(elementId, componentObject3D);
+        continue;
+      }
+
+      const enodeObject3D = this.sceneManager.getEnodeObject3Ds().get(elementId);
+      if (enodeObject3D) {
+        enodeObject3D.position.copy(initialPos);
+        this.sceneManager.getCircuitEditionManager().saveEditBranchingPoint(enodeObject3D);
+      }
+    }
+
+    // Revert intermediate positions of selected wires
+    const editionManager = this.sceneManager.getCircuitEditionManager();
+    for (const [wireId, initialIntermediatePositions] of initialWireIntermediatePositions) {
+      const positions = initialIntermediatePositions.map(pos => worldToGridPosition(pos));
+      editionManager.saveEditWirePositions(wireId, positions, false);
+    }
+
+    // Update all affected wires
+    const wireVisualManager = this.sceneManager.getWireVisualManager();
+    for (const wireId of affectedWireIds) {
+      wireVisualManager.updateWireById(wireId);
+    }
+
+    // Emit cancellation event
+    this.sceneManager.emit('toolOperationCancelled', {
+      toolType: this.type,
+      mode: 'dragging',
+    });
+
+    // Cleanup
+    this.mode = 'idle';
+    this.bulkDragState = null;
+
+    // Unregister grid position move listener
+    this.sceneManager.off('gridPositionMove', this.handleGridPositionMove);
+
+    // Unlock camera controls
+    const controls = this.sceneManager.getControls();
+    if (controls) {
+      controls.enablePan = true;
+    }
+  }
+
+  // ==========================================================================
+  // Bulk Delete Operations (T033-T037) - Phase 5
+  // ==========================================================================
+
+  /**
+   * Delete all selected elements (T033, T034, T035, T036, T037)
+   *
+   * Deletion order per research.md:
+   * 1. Selected wires
+   * 2. Selected components (cascades to connected wires)
+   * 3. Selected branching points
+   */
+  deleteSelection(): boolean {
+    const selectionManager = this.sceneManager.getSelectionManager();
+    const selectedIds = selectionManager.getSelectedIds();
+
+    const totalCount =
+      selectedIds.components.length +
+      selectedIds.enodes.length +
+      selectedIds.wires.length;
+
+    // No selection to delete
+    if (totalCount === 0) {
+      return false;
+    }
+
+    // T033: Delete in order: wires → components → branching points
+
+    // 1. Delete selected wires
+    for (const wireId of selectedIds.wires) {
+      this.sceneManager.removeWire(wireId);
+    }
+
+    // 2. Delete selected components (T035: cascades to connected wires - orphaned cleanup)
+    for (const componentId of selectedIds.components) {
+      this.sceneManager.removeComponent(componentId);
+    }
+
+    // 3. Delete selected branching points
+    for (const enodeId of selectedIds.enodes) {
+      this.sceneManager.removeBranchingPoint(enodeId);
+    }
+
+    // T037: Emit bulk delete event
+    this.sceneManager.emit('toolOperationCompleted', {
+      toolType: this.type,
+      mode: 'bulk_delete',
+      operationData: {
+        componentCount: selectedIds.components.length,
+        branchingPointCount: selectedIds.enodes.length,
+        wireCount: selectedIds.wires.length,
+      },
+      changedData: {},
+    });
+
+    // T036: Clear selection after delete
+    selectionManager.deselect();
+
+    return true;
   }
 }

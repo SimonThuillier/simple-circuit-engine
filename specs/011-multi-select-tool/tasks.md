@@ -74,16 +74,16 @@
 
 ### Implementation for User Story 2
 
-- [ ] T023 [US2] Define BulkDragState interface in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T024 [US2] Implement handlePointerDown detection for selected elements to initiate bulk drag in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T025 [US2] Implement initial position snapshot capture for all selected elements in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T026 [US2] Implement affected wire ID collection (boundary wires + selected wires) in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T027 [US2] Implement handleGridPositionMove to apply delta to all selected elements in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T028 [US2] Implement wire geometry updates via WireVisualManager during drag in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T029 [US2] Implement handlePointerUp to commit bulk move with grid snapping in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T030 [US2] Implement Escape key handling to revert all elements to initial positions in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T031 [US2] Implement cursor change to 'grab' when hovering selected elements in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T032 [US2] Emit bulkDragStarted and bulkDragCompleted events in src/scene/static/tools/MultiSelectTool.ts
+- [X] T023 [US2] Define BulkDragState interface in src/scene/static/tools/MultiSelectTool.ts
+- [X] T024 [US2] Implement handlePointerDown detection for selected elements to initiate bulk drag in src/scene/static/tools/MultiSelectTool.ts
+- [X] T025 [US2] Implement initial position snapshot capture for all selected elements in src/scene/static/tools/MultiSelectTool.ts
+- [X] T026 [US2] Implement affected wire ID collection (boundary wires + selected wires) in src/scene/static/tools/MultiSelectTool.ts
+- [X] T027 [US2] Implement handleGridPositionMove to apply delta to all selected elements in src/scene/static/tools/MultiSelectTool.ts
+- [X] T028 [US2] Implement wire geometry updates via WireVisualManager during drag in src/scene/static/tools/MultiSelectTool.ts
+- [X] T029 [US2] Implement handlePointerUp to commit bulk move with grid snapping in src/scene/static/tools/MultiSelectTool.ts
+- [X] T030 [US2] Implement Escape key handling to revert all elements to initial positions in src/scene/static/tools/MultiSelectTool.ts
+- [X] T031 [US2] Implement cursor change to 'grab' when hovering selected elements in src/scene/static/tools/MultiSelectTool.ts
+- [X] T032 [US2] Emit bulkDragStarted and bulkDragCompleted events in src/scene/static/tools/MultiSelectTool.ts
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
@@ -97,11 +97,11 @@
 
 ### Implementation for User Story 3
 
-- [ ] T033 [US3] Implement deleteSelection() method with ordered deletion (wires → components → branching points) in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T034 [US3] Implement handleKeyDown for Delete/Backspace to trigger bulk delete in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T035 [US3] Implement orphaned wire cleanup after component deletion in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T036 [US3] Implement selection clearing after delete operation in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T037 [US3] Emit bulkDeleteCompleted event in src/scene/static/tools/MultiSelectTool.ts
+- [X] T033 [US3] Implement deleteSelection() method with ordered deletion (wires → components → branching points) in src/scene/static/tools/MultiSelectTool.ts
+- [X] T034 [US3] Implement handleKeyDown for Delete/Backspace to trigger bulk delete in src/scene/static/tools/MultiSelectTool.ts
+- [X] T035 [US3] Implement orphaned wire cleanup after component deletion in src/scene/static/tools/MultiSelectTool.ts
+- [X] T036 [US3] Implement selection clearing after delete operation in src/scene/static/tools/MultiSelectTool.ts
+- [X] T037 [US3] Emit bulkDeleteCompleted event in src/scene/static/tools/MultiSelectTool.ts
 
 **Checkpoint**: At this point, User Stories 1, 2, AND 3 should all work independently
 
