@@ -26,9 +26,7 @@ import type {
 } from '../shared/types';
 import { createPerspectiveCamera, setupCameraFromMetadata } from '../shared/CameraUtils';
 import { setupSceneLights } from '../shared/LightingUtils';
-import { createWireGeometry } from '../shared/GeometryUtils';
 import { createLineMaterial } from '../shared/MaterialUtils';
-import { createEnodeGeometry } from '../shared/GeometryUtils';
 import { createStandardMaterial } from '../shared/MaterialUtils';
 import { InterpolationController } from '../shared/InterpolationController';
 import { HoverManager } from '../shared/HoverManager';

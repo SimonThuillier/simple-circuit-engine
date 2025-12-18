@@ -1001,7 +1001,7 @@ describe('BuildTool', () => {
       it('should snap to grid position', () => {
         // Migrated from BranchingPointTool.test.ts
         // Standalone BP should snap to nearest grid position
-        // Uses nearestGridSnapPosition() helper
+        // Uses nearestWorldSnapPosition() helper
         expect(true).toBe(true); // Test needs BuildTool instance
       });
 

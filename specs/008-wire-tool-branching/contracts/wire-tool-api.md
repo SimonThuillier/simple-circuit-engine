@@ -275,7 +275,7 @@ removePreviewWire(): void;
  * Used during real-time drag operations.
  * @param wireId - Wire to update
  */
-updateWire(wireId: UUID): void;
+updateWireById(wireId: UUID): void;
 
 /**
  * Refresh wire geometry after intermediate positions changed.

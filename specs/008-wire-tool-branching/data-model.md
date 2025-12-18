@@ -278,7 +278,7 @@ const BRANCHING_POINT_COLORS = {
 │ pins: UUID[]    │         │ addWire()       │
 └────────┬────────┘         │ addBranchingPt()│
          │                  │ splitWire()     │
-         │ pins             │ updateWire...() │
+         │ pins             │ updateWireById...() │
          ▼                  └─────────────────┘
 ┌─────────────────┐
 │      ENode      │

@@ -24,7 +24,7 @@ import type { CircuitSceneManager } from '../CircuitSceneManager';
 import type { UUID } from '../../../core/types/Identifier';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import {Position} from "@/core/types/Position";
-import {nearestGridSnapPosition} from "../../shared/GeometryUtils";
+import {nearestWorldSnapPosition, worldToGridPosition} from "../../shared/GeometryUtils";
 
 /**
  * Build tool operating modes
@@ -699,10 +699,7 @@ export class BuildTool implements IEditingTool {
     // If creating new intermediate point, insert it now
     if (targetType === 'new_intermediate') {
       const insertIndex = pointIndex;
-      const gridPos = {
-        x: Math.round(worldPosition.x),
-        y: Math.round(-worldPosition.z),
-      };
+      const gridPos = worldToGridPosition(worldPosition);
       originalPositions.splice(insertIndex, 0, gridPos);
       pointIndex = insertIndex;
     }
@@ -734,28 +731,18 @@ export class BuildTool implements IEditingTool {
   private updateWireDrag(worldPosition: THREE.Vector3): void {
     if (this.mode !== 'wire_drag' || !this.wireDragState) return;
 
-    const circuit = this._sceneManager.getCircuit();
-    if (!circuit) return;
-
-    // Apply grid snapping
-    const gridPos = {
-      x: Math.round(worldPosition.x),
-      y: Math.round(-worldPosition.z),
-    };
-
-    // Dragging intermediate point
-    const wire = circuit.getWire(this.wireDragState.wireId);
-    if (!wire) return;
-
     // Update intermediate positions array
+    const gridPos = worldToGridPosition(worldPosition);
     const newPositions = [...this.wireDragState.originalPositions];
     newPositions[this.wireDragState.pointIndex] = gridPos;
 
     // T063: Real-time geometry update with temporary positions
     // Use circuit's update method to set intermediate positions
-    const positionObjects = newPositions.map((p) => new Position(p.x, p.y));
-    circuit.updateWireIntermediatePositions(this.wireDragState.wireId, positionObjects);
-    this._sceneManager.getWireVisualManager().updateWire(this.wireDragState.wireId);
+    this._sceneManager.getCircuitEditionManager().saveEditWirePositions(
+        this.wireDragState.wireId,
+        newPositions
+    )
+    this._sceneManager.getWireVisualManager().updateWireById(this.wireDragState.wireId);
   }
 
   /**
@@ -764,13 +751,13 @@ export class BuildTool implements IEditingTool {
   private cancelWireDrag(emit: boolean = true): void {
     if (this.mode !== 'wire_drag' || !this.wireDragState) return;
 
-    const circuit = this._sceneManager.getCircuit();
-    if (!circuit) return;
-
     // Revert intermediate positions
-    const positionObjects = this.wireDragState.originalPositions.map((p) => new Position(p.x, p.y));
-    circuit.updateWireIntermediatePositions(this.wireDragState.wireId, positionObjects, true);
-    this._sceneManager.getWireVisualManager().updateWire(this.wireDragState.wireId);
+    this._sceneManager.getCircuitEditionManager().saveEditWirePositions(
+        this.wireDragState.wireId,
+        this.wireDragState.originalPositions,
+        true
+    )
+    this._sceneManager.getWireVisualManager().updateWireById(this.wireDragState.wireId);
 
     if(emit){
       this._sceneManager.emit('toolOperationCancelled', {
@@ -802,18 +789,20 @@ export class BuildTool implements IEditingTool {
     try {
       // T067: Check for merge/delete conditions
       const finalPositions = this.checkMergeDelete(wire);
-      // Convert to Position objects
-      const positionObjects = finalPositions.map((p) => new Position(p.x, p.y));
       // Persist to model via CircuitEditionManager
-      circuit.updateWireIntermediatePositions(this.wireDragState.wireId, positionObjects, true);
+      this._sceneManager.getCircuitEditionManager().saveEditWirePositions(
+          this.wireDragState.wireId,
+          finalPositions,
+          true
+      );
       // Update visual
-      this._sceneManager.getWireVisualManager().refreshWireGeometry(this.wireDragState.wireId);
+      this._sceneManager.getWireVisualManager().updateWireById(this.wireDragState.wireId);
       this._sceneManager.emit('toolOperationCompleted', {
         toolType: this.type,
         mode: this.mode,
         operationData: {
           wireId: this.wireDragState.wireId,
-          intermediatePositions: positionObjects,
+          intermediatePositions: finalPositions,
         },
         changedData: {
           updatedWires: [this.wireDragState.wireId],
@@ -873,7 +862,7 @@ export class BuildTool implements IEditingTool {
         .getObject3D('component', this.componentDragState.componentId);
     if (!object) return;
 
-    const newPosition = nearestGridSnapPosition(worldPosition);
+    const newPosition = nearestWorldSnapPosition(worldPosition);
     object.position.copy(newPosition);
 
     // moving wires connected to component in real-time during drag
@@ -928,10 +917,11 @@ export class BuildTool implements IEditingTool {
 
     try {
       const component = this._sceneManager.getCircuitEditionManager()
-          .saveEditComponent(componentId, object);
+          .saveEditComponent(componentId, object, true);
       for (const connectedWire of circuit.getWiresByComponent(componentId)) {
-        circuit.simplifyWireIntermediatePositions(connectedWire.id);
-        this._sceneManager.getWireVisualManager().updateWire(connectedWire.id);
+        this._sceneManager.getCircuitEditionManager()
+            .saveSimplifyWirePositions(connectedWire.id);
+        this._sceneManager.getWireVisualManager().updateWireById(connectedWire.id);
       }
       this._sceneManager.emit('toolOperationCompleted', {
         toolType: this.type,
@@ -992,31 +982,15 @@ export class BuildTool implements IEditingTool {
   private updateBPDrag(worldPosition: THREE.Vector3): void {
     if (this.mode !== 'bp_drag' || !this.bpDragState) return;
 
-    const circuit = this._sceneManager.getCircuit();
-    if (!circuit) return;
+    const visual = this._sceneManager.getEnodeObject3Ds().get(this.bpDragState.enodeId);
+    if(!visual) return;
 
-    // Apply grid snapping
-    const gridPos = {
-      x: Math.round(worldPosition.x),
-      y: Math.round(-worldPosition.z),
-    };
+    visual.position.copy(nearestWorldSnapPosition(worldPosition));
+    const enode = this._sceneManager.getCircuitEditionManager().saveEditBranchingPoint(visual);
 
-    // T068: Dragging branching point - move all connected wires
-    const branchingPoint = circuit.getENode(this.bpDragState.enodeId);
-    if (!branchingPoint) return;
-
-    // Update branching point position via setPosition method
-    const position = new Position(gridPos.x, gridPos.y);
-    branchingPoint.setPosition(position);
-
-    // Update branching point visual
-    const enodeGroup = this._sceneManager.getEnodeObject3Ds().get(this.bpDragState.enodeId);
-    if (enodeGroup) {
-      enodeGroup.position.set(gridPos.x, 0, -gridPos.y);
-    }
     // Update all wires connected to this branching point
-    for (const connectedWireId of branchingPoint.wires) {
-      this._sceneManager.getWireVisualManager().updateWire(connectedWireId);
+    for (const connectedWireId of enode.wires) {
+      this._sceneManager.getWireVisualManager().updateWireById(connectedWireId);
     }
   }
 
@@ -1028,25 +1002,16 @@ export class BuildTool implements IEditingTool {
 
     const initialPosition = this.bpDragState.initialPosition;
     // Update bp visual
-    const enodeGroup = this._sceneManager.getEnodeObject3Ds().get(this.bpDragState.enodeId);
-    if (!enodeGroup) return;
-    enodeGroup.position.set(initialPosition.x, 0, initialPosition.z);
+    const visual = this._sceneManager.getEnodeObject3Ds().get(this.bpDragState.enodeId);
+    if (!visual) return;
+    visual.position.copy(initialPosition);
 
-    const circuit = this._sceneManager.getCircuit();
-    if (!circuit) return;
-    const branchingPoint = circuit.getENode(this.bpDragState.enodeId);
-    if (!branchingPoint) return;
-    const gridPos = {
-      x: Math.round(initialPosition.x),
-      y: Math.round(-initialPosition.z),
-    };
-    // TODO: this commit directly to the circuit model - should we use CircuitEditionManager instead?
-    branchingPoint.setPosition(gridPos as Position);
+    const enode = this._sceneManager.getCircuitEditionManager()
+        .saveEditBranchingPoint(visual);
 
-    // Update all connected wires
-    for (const connectedWireId of branchingPoint.wires) {
-      circuit.simplifyWireIntermediatePositions(connectedWireId);
-      this._sceneManager.getWireVisualManager().updateWire(connectedWireId);
+    // restore all wires connected to this branching point
+    for (const connectedWireId of enode.wires) {
+      this._sceneManager.getWireVisualManager().updateWireById(connectedWireId);
     }
 
     if(emit){
@@ -1080,8 +1045,9 @@ export class BuildTool implements IEditingTool {
       }
       // Branching point drag position is already updated, but it's a good place to simplify wire path if necessary
       for (const connectedWireId of branchingPoint.wires) {
-        circuit.simplifyWireIntermediatePositions(connectedWireId);
-        this._sceneManager.getWireVisualManager().updateWire(connectedWireId);
+        this._sceneManager.getCircuitEditionManager()
+            .saveSimplifyWirePositions(connectedWireId);
+        this._sceneManager.getWireVisualManager().updateWireById(connectedWireId);
       }
       this._sceneManager.emit('toolOperationCompleted', {
         toolType: this.type,

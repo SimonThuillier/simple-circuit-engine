@@ -1,14 +1,14 @@
 import type { CircuitSceneManager } from './CircuitSceneManager';
 import {Euler, Object3D, Vector3} from 'three';
-import { Rotation } from '@/core/types/Rotation';
 import { Position } from '@/core/types/Position';
-import type { ModelEditAction, SceneManagerEventMap } from '../shared/types';
+import type { SceneManagerEventMap } from '../shared/types';
 import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
 import type { UUID } from '@/core/types/Identifier';
 import type { ENode } from '@/core/ENode';
 import type { Wire } from '@/core/Wire';
 import type { ComponentType } from '@/core/types/ComponentType';
 import type { Component } from '@/core/Component';
+import {worldToGridPosition, worldToGridRotation} from "../shared/GeometryUtils";
 
 /**
  * Manages editing operations of 3D models from the circuit scene into the core circuit model.
@@ -21,89 +21,19 @@ export class CircuitEditionManager {
   }
 
   /**
-   * Given an action on a component (add, edit, delete), updates the core circuit model
-   * and emits the appropriate event.
-   * @param componentId
-   * @param action
-   * @param component
-   */
-  saveComponentAction(componentId: string, action: ModelEditAction, component: Object3D): void {
-    try {
-      if (action === 'delete') {
-        // TODO handle delete action
-        return;
-      }
-      const event = this._saveComponentAddOrEdit(componentId, action, component);
-      this._sceneManager.emit('circuitElementAction', event);
-      return;
-    } catch (error) {
-      const event: SceneManagerEventMap['circuitElementAction'] = {
-        type: 'component',
-        action: action,
-        id: componentId,
-        error: error as Error,
-        data: null,
-      };
-      this._sceneManager.emit('circuitElementAction', event);
-      return;
-    }
-  }
-
-  /**
-   * Internal method to handle saving component state. May throw errors.
-   * @param componentId
-   * @param action
-   * @param component
-   * @private
-   */
-  private _saveComponentAddOrEdit(
-    componentId: string,
-    action: ModelEditAction,
-    component: Object3D
-  ): SceneManagerEventMap['circuitElementAction'] {
-    // Logic to save the current state of the scene component into the core model
-    const circuit = this._sceneManager.getCircuit();
-    if (!circuit) {
-      throw new Error('No circuit available in the scene manager.');
-    }
-    const circuitComponent = circuit.getComponent(componentId);
-    if (!circuitComponent) {
-      throw new Error(`Component with ID ${componentId} not found in the circuit.`);
-    }
-    const modelRotation = new Rotation(-Math.round((component.rotation.y * 180) / Math.PI));
-    const modelPosition = new Position(
-      Math.round(component.position.x),
-      Math.round(-component.position.z)
-    );
-    circuitComponent.setRotation(modelRotation);
-    circuitComponent.setPosition(modelPosition);
-
-    return {
-      type: 'component',
-      action: action,
-      id: componentId,
-      error: null,
-      data: {
-        position: modelPosition,
-        rotation: modelRotation,
-      },
-    };
-  }
-
-  /**
    * add branching point to the core circuit model and emits the appropriate event.
-   * @param gridPosition - the grid position to add the branching point at
+   * @param position - the world position to add the branching point at
    * @throws Error
    * @return The circuit enode
    */
-  saveAddBranchingPoint(gridPosition: Vector3) {
+  saveAddBranchingPoint(position: Vector3) {
     const circuit = this._sceneManager.getCircuit();
     try {
       if (!circuit) {
         throw new Error('No circuit available in the scene manager.');
       }
-      // T050: Grid snapping - convert world position to grid position
-      const modelPosition = new Position(Math.round(gridPosition.x), Math.round(-gridPosition.z));
+
+      const modelPosition = worldToGridPosition(position);
       const circuitEnode = circuit.addBranchingPoint(modelPosition);
 
       const event: SceneManagerEventMap['circuitElementAction'] = {
@@ -133,39 +63,38 @@ export class CircuitEditionManager {
   /**
    * edit branching point to the core circuit model and emits the appropriate event.
    * @param branchingPoint - the branching point Object3D
+   * @param emit - should the event be emitted if commit OK (error event will always be)
    * @throws Error
    * @return The circuit enode
    */
-  saveEditBranchingPoint(branchingPoint: Object3D) {
+  saveEditBranchingPoint(branchingPoint: Object3D, emit: boolean=false) {
     const circuit = this._sceneManager.getCircuit();
     try {
       if (!circuit) {
         throw new Error('No circuit available in the scene manager.');
       }
-      const circuitEnode = circuit.getENode(branchingPoint.userData.id);
+      const circuitEnode = circuit.getENode(branchingPoint.userData.enodeId);
       if (!circuitEnode) {
-        throw new Error(`No enode with id ${branchingPoint.userData.id} found in the circuit.`);
+        throw new Error(`No enode with id ${branchingPoint.userData.enodeId} found in the circuit.`);
       }
 
-      const modelPosition = new Position(
-        Math.round(branchingPoint.position.x),
-        Math.round(-branchingPoint.position.z)
-      );
+      const modelPosition = worldToGridPosition(branchingPoint.position);
       const sourceType = branchingPoint.userData.sourceType as ENodeSourceType | undefined;
       circuitEnode.setPosition(modelPosition);
       circuitEnode.setSourceType(sourceType);
 
-      const event: SceneManagerEventMap['circuitElementAction'] = {
-        type: 'enode',
-        action: 'edit',
-        id: circuitEnode.id,
-        error: null,
-        data: {
-          position: modelPosition,
-          sourceType: sourceType,
-        },
-      };
-      this._sceneManager.emit('circuitElementAction', event);
+      if(emit){
+        this._sceneManager.emit('circuitElementAction',{
+          type: 'enode',
+          action: 'edit',
+          id: circuitEnode.id,
+          error: null,
+          data: {
+            position: modelPosition,
+            sourceType: sourceType,
+          },
+        });
+      }
       return circuitEnode;
     } catch (error) {
       const event: SceneManagerEventMap['circuitElementAction'] = {
@@ -280,16 +209,29 @@ export class CircuitEditionManager {
       throw new Error('No circuit available in the scene manager.');
     }
     // Convert world position to grid position
-    const gridPosition = new Position(Math.round(worldPosition.x), Math.round(-worldPosition.z));
+    const gridPosition = worldToGridPosition(worldPosition);
     const result = circuit.splitWire(wireId, gridPosition);
 
-    this._sceneManager.emit('wireSplit', {
-      originalWireId: wireId,
-      branchingPointId: result.branchingPoint.id,
-      wire1Id: result.wire1.id,
-      wire2Id: result.wire2.id,
+    this._sceneManager.emit('circuitElementAction', {
+      type: 'wire',
+      action: 'delete',
+      id: wireId
     });
-
+    this._sceneManager.emit('circuitElementAction', {
+      type: 'enode',
+      action: 'add',
+      id: result.branchingPoint.id
+    });
+    this._sceneManager.emit('circuitElementAction', {
+      type: 'wire',
+      action: 'add',
+      id: result.wire2.id
+    });
+    this._sceneManager.emit('circuitElementAction', {
+      type: 'wire',
+      action: 'add',
+      id: result.wire2.id
+    });
     return result;
   }
 
@@ -328,6 +270,68 @@ export class CircuitEditionManager {
   }
 
   /**
+   * Used to commit wire edits (intermediate positions) to the core circuit model and emits the appropriate event.
+   * If emit positions are also simplified before committing.
+   * @param wireId - the wire ID
+   * @param positions
+   * @param emit
+   * @return The circuit wire
+   */
+  saveEditWirePositions(
+      wireId: UUID,
+      positions: Array<{x:number; y: number}>,
+      emit: boolean=false
+  ): Wire | undefined {
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return;
+    const wire = circuit.getWire(wireId);
+    if (!wire) return;
+
+    const positionObjects = positions.map((p) => new Position(p.x, p.y));
+    circuit.updateWireIntermediatePositions(wireId, positionObjects);
+
+    if(emit){
+      circuit.simplifyWireIntermediatePositions(wireId);
+      this._sceneManager.emit('circuitElementAction', {
+        type: 'wire',
+        action: 'edit',
+        id: wireId,
+        error: null,
+        data: {
+          intermediatePositions: [...wire.intermediatePositions],
+        },
+      });
+    }
+    return wire;
+  }
+
+  /**
+   * Used to simplify wire path in the core circuit model and emits the appropriate event.
+   * Notably used when end enodes move is committed.
+   * @param wireId - the wire ID
+   * @return The circuit wire
+   */
+  saveSimplifyWirePositions(wireId: UUID): Wire | undefined {
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return;
+    const wire = circuit.getWire(wireId);
+    if (!wire) return;
+
+    circuit.simplifyWireIntermediatePositions(wireId);
+    this._sceneManager.emit('circuitElementAction', {
+      type: 'wire',
+      action: 'edit',
+      id: wireId,
+      error: null,
+      data: {
+        intermediatePositions: [...wire.intermediatePositions],
+      },
+    });
+    return wire;
+  }
+
+
+  /**
    * Save ENode sourceType update (T011)
    * @param enodeId - ENode to update
    * @param sourceType - New sourceType value
@@ -350,20 +354,20 @@ export class CircuitEditionManager {
    * Add a component to the circuit model and emit the appropriate event
    * handles conversion of world position and rotation to circuit model values
    * @param type - Component type to add
-   * @param gridPosition - Position in circuit coordinates
-   * @param rotation - Rotation angle
+   * @param position - world Position
+   * @param rotation - world Rotation
    * @returns The created Component
    * @throws Error if circuit is not available or component creation fails
    */
-  saveAddComponent(type: ComponentType, gridPosition: Vector3, rotation: Euler): Component {
+  saveAddComponent(type: ComponentType, position: Vector3, rotation: Euler): Component {
     const circuit = this._sceneManager.getCircuit();
     try {
       if (!circuit) {
         throw new Error('No circuit available in the scene manager.');
       }
       // convert 3D world position to 2D grid position with Grid snapping
-      const modelPosition = new Position(Math.round(gridPosition.x), Math.round(-gridPosition.z));
-      const modelRotation = new Rotation(-Math.round((rotation.y * 180) / Math.PI));
+      const modelPosition = worldToGridPosition(position);
+      const modelRotation = worldToGridRotation(rotation);
       const component = circuit.addComponent(type, modelPosition, modelRotation);
 
       const event: SceneManagerEventMap['circuitElementAction'] = {
@@ -393,9 +397,16 @@ export class CircuitEditionManager {
     }
   }
 
+  /**
+   * Save edits made to a component in the circuit model and emit the appropriate event
+   * @param componentId
+   * @param visual
+   * @param emit - should the event be emitted if commit OK (error event will always be)
+   */
   saveEditComponent(
       componentId: UUID,
-      visual: Object3D
+      visual: Object3D,
+      emit: boolean=false
   ): Component {
     // Logic to save the current state of the scene component into the core model
     const circuit = this._sceneManager.getCircuit();
@@ -406,24 +417,25 @@ export class CircuitEditionManager {
     if (!component) {
       throw new Error(`Component with ID ${componentId} not found in the circuit.`);
     }
-    const modelRotation = new Rotation(-Math.round((visual.rotation.y * 180) / Math.PI));
-    const modelPosition = new Position(
-        Math.round(visual.position.x),
-        Math.round(-visual.position.z)
-    );
+
+    const modelPosition = worldToGridPosition(visual.position);
+    const modelRotation = worldToGridRotation(visual.rotation);
     component.setRotation(modelRotation);
     component.setPosition(modelPosition);
 
-    this._sceneManager.emit('circuitElementAction', {
-      type: 'component',
-      action: 'edit',
-      id: componentId,
-      error: null,
-      data: {
-        position: modelPosition,
-        rotation: modelRotation,
-      },
-    });
+    if(emit){
+      this._sceneManager.emit('circuitElementAction', {
+        type: 'component',
+        action: 'edit',
+        id: componentId,
+        error: null,
+        data: {
+          position: modelPosition,
+          rotation: modelRotation,
+        },
+      });
+    }
+
     return component;
   }
 

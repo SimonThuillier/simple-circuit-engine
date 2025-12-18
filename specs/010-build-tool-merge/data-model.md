@@ -303,7 +303,7 @@ const object = this._sceneManager.getObject3D('component', id);
 const enodeGroup = this._sceneManager.getEnodeObject3Ds().get(enodeId);
 
 // Update wire visuals
-this._sceneManager.getWireVisualManager().updateWire(wireId);
+this._sceneManager.getWireVisualManager().updateWireById(wireId);
 this._sceneManager.getWireVisualManager().updateWiresForComponent(componentId);
 this._sceneManager.getWireVisualManager().refreshWireGeometry(wireId);
 

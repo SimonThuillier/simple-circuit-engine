@@ -38,9 +38,7 @@ import type {
 } from '../shared/types';
 import { createPerspectiveCamera, setupCameraFromMetadata } from '../shared/CameraUtils';
 import { setupSceneLights } from '../shared/LightingUtils';
-import { createGridHelper } from '../shared/GeometryUtils';
-import { createEnodeGeometry } from '../shared/GeometryUtils';
-import { createStandardMaterial } from '../shared/MaterialUtils';
+import {createGridHelper, gridToWorldPosition, gridToWorldRotation} from '../shared/GeometryUtils';
 import { BuildTool } from './tools/BuildTool';
 import { AddComponentTool } from './tools/AddComponentTool';
 import type { IEditingTool } from '../shared/types';
@@ -1394,8 +1392,8 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
       const mesh = factory.createVisual(component);
 
       // Position mesh at component location (2D circuit -> 3D world)
-      mesh.position.set(component.position.x, 0, -component.position.y);
-      mesh.rotation.set(0, THREE.MathUtils.degToRad(-component.rotation.angle), 0);
+      mesh.position.copy(gridToWorldPosition(component.position));
+      mesh.rotation.copy(gridToWorldRotation(component.rotation));
 
       // Store component metadata
       mesh.userData.componentId = component.id;
@@ -1454,28 +1452,25 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     this.componentObject3Ds.delete(id);
   }
 
+  /**
+   * Create enode (branching point ONLY) visual object and add to scene
+   * pin enodes are created and attache to their components by createComponentObject3D()
+   *
+   * @param enode
+   * @private
+   */
   private _createEnodeObject3D(enode: ENode): void {
-    try {
-      // Only visualize branching point enodes, not component pin enodes
-      // Pin enodes are connection points on components and don't need separate visualization
-      if (enode.type === ENodeType.Pin) {
-        // Skip pin enodes - they're visualized as part of their components
-        return;
-      }
+    // Skip pin enodes - they're visualized as part of their components
+    if (enode.type === ENodeType.Pin) return;
 
-      // Use BranchingPointVisualFactory to create the visual (T023)
-      const group = this.branchingPointVisualFactory.createVisual(enode);
+    // Use BranchingPointVisualFactory to create the visual
+    const group = this.branchingPointVisualFactory.createVisual(enode);
 
-      // Use getPosition() to properly handle position retrieval
-      const pos = enode.getPosition(this.circuit);
-      group.position.set(pos.x, 0, -pos.y);
+    // Use getPosition() to properly handle position retrieval
+    group.position.copy(gridToWorldPosition(enode.getPosition(this.circuit!)));
 
-      this.scene!.add(group);
-      this.enodeObject3Ds.set(enode.id, group);
-    } catch (error) {
-      const err = error as Error;
-      console.warn(`Failed to create mesh for enode ${enode.id}:`, err.message);
-    }
+    this.scene!.add(group);
+    this.enodeObject3Ds.set(enode.id, group);
   }
 
   private _removeEnodeObject3D(id: string): void {
@@ -1501,46 +1496,30 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
 
   addBranchingPoint(worldPosition: THREE.Vector3): ENode {
     const branchingPoint = this.circuitEditionManager.saveAddBranchingPoint(worldPosition);
-
-    // T051: Create and add visual to scene
-    const group = this.branchingPointVisualFactory.createVisual(branchingPoint);
-
-    const pos = branchingPoint.getPosition(this.circuit!);
-    group.position.set(pos.x, 0, -pos.y);
-    this.scene!.add(group);
-    this.enodeObject3Ds.set(branchingPoint.id, group);
-
+    // Create and add bp visual to scene
+    this._createEnodeObject3D(branchingPoint);
     return branchingPoint;
   }
 
   /**
    * Split wire at a position, inserting a new branching point and two new wires replacing the deleted ones
    * @param wireId
+   * @param worldPosition
    */
   splitWire(
       wireId: UUID,
       worldPosition: THREE.Vector3
   ): { branchingPoint: ENode; wire1: Wire; wire2: Wire } {
-    // T045: Call CircuitEditionManager to split the wire and create branching point
+    // 1: Call CircuitEditionManager to split the wire and create branching point
     const result = this.circuitEditionManager.saveSplitWire(wireId, worldPosition);
-
-    // T046: Remove old wire visual from scene
+    // 2: Remove old wire visual from scene
     this.wireVisualManager.removeWire(wireId);
+    // 3: add new Branching point visual to the scene
+    this._createEnodeObject3D(result.branchingPoint);
 
-    // T046: Add new wire visuals to scene
+    // 4: Add new wire visuals to scene
     this.wireVisualManager.createOrUpdateWire(result.wire1);
     this.wireVisualManager.createOrUpdateWire(result.wire2);
-
-    // T047: Add branching point visual to scene
-    const branchingPointGroup = this.branchingPointVisualFactory.createVisual(
-        result.branchingPoint
-    );
-
-    const pos = result.branchingPoint.getPosition(this.circuit!);
-    branchingPointGroup.position.set(pos.x, 0, -pos.y);
-
-    this.scene!.add(branchingPointGroup);
-    this.enodeObject3Ds.set(result.branchingPoint.id, branchingPointGroup);
 
     return result;
   }

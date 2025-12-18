@@ -328,7 +328,7 @@ class BuildTool {
 - Emit events at state transition boundaries
 
 ### Grid Snapping
-- Apply consistent snapping via `nearestGridSnapPosition()`
+- Apply consistent snapping via `nearestWorldSnapPosition()`
 - Snap on visual update (during drag) for feedback
 - Snap on commit (end drag) for model update
 
