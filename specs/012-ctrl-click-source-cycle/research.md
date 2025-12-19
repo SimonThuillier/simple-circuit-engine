@@ -103,7 +103,7 @@ if ((event.ctrlKey || event.metaKey) && event.key === 'c') {
 
 **CircuitEditionManager** (`src/scene/static/CircuitEditionManager.ts:340-356`):
 ```typescript
-saveENodeSourceTypeAction(enodeId: UUID, sourceType: ENodeSourceType | null): void {
+saveEditENodeSourceType(enodeId: UUID, sourceType: ENodeSourceType | null): void {
   const circuit = this._sceneManager.getCircuit();
   circuit.updateENodeSourceType(enodeId, sourceType);
 
@@ -122,7 +122,7 @@ enodeSourceTypeChanged: {
 };
 ```
 
-**Decision**: Use existing `saveENodeSourceTypeAction()` for persistence. Method already handles model update and event emission.
+**Decision**: Use existing `saveEditENodeSourceType()` for persistence. Method already handles model update and event emission.
 
 **Rationale**: Zero new code needed for persistence layer. Event already defined and emitted.
 
@@ -169,7 +169,7 @@ function getNextSourceType(current: ENodeSourceType | undefined): ENodeSourceTyp
 | ENode infrastructure | Use existing, relax Circuit constraint | 1 file change (Circuit.ts) |
 | Visual factory pattern | Add updatePinSourceType() | 1 file change (ComponentVisualFactory.ts) |
 | Event handling | Early guard in handlePointerDown() | 1 file change (BuildTool.ts) |
-| Persistence | Use existing saveENodeSourceTypeAction() | No changes |
+| Persistence | Use existing saveEditENodeSourceType() | No changes |
 | Cycling logic | Pure helper function | ~10 lines in BuildTool.ts |
 
 **All NEEDS CLARIFICATION items resolved.** Ready for Phase 1 design.

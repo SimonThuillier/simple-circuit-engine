@@ -44,13 +44,13 @@ import { AddComponentTool } from './tools/AddComponentTool';
 import { MultiSelectTool } from './tools/MultiSelectTool';
 import type { IEditingTool } from '../shared/types';
 import { HoverManager } from '../shared/HoverManager';
-import { applyENodeHover, removeENodeHover } from '../shared/ENodesUtils';
 import { SelectionManager } from '../shared/SelectionManager';
 import { WireVisualManager } from '../shared/WireVisualManager';
 import type { ComponentType } from '@/core/types/ComponentType';
 import { CircuitEditionManager } from './CircuitEditionManager';
 import { BranchingPointVisualFactory } from '../shared/components/BranchingPointVisualFactory';
 import type { Euler } from 'three';
+import type {ENodeSourceType} from "@/core/types/ENodeSourceType";
 
 /**
  * Static Circuit Scene Manager Implementation
@@ -290,7 +290,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
           if (!userData.componentId) {
             this.branchingPointVisualFactory.removeHover(enodeGroup);
           } else {
-            removeENodeHover(enodeGroup);
+            this.factoryRegistry.getFallbackFactory().removePinHover(enodeGroup);
           }
         } catch (error) {
           console.warn('Failed to apply unhover effect:', error);
@@ -349,7 +349,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
           if (!userData.componentId) {
             this.branchingPointVisualFactory.applyHover(enodeGroup);
           } else {
-            applyENodeHover(enodeGroup);
+            this.factoryRegistry.getFallbackFactory().applyPinHover(enodeGroup);
           }
         } catch (error) {
           console.warn('Failed to apply hover effect:', error);
@@ -582,6 +582,27 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
   }
 
   /**
+   * Update the circuit to visualize or indicate no circuit loaded
+   * @param circuit
+   */
+  setCircuit(circuit: Circuit | null): void {
+    if (circuit === this.circuit) return; // No change
+    // TODO reset changedData ?
+    if (!!this.circuit && this.initialized) {
+      // Clear existing visuals
+      this._removeAllVisuals();
+      return;
+    }
+
+    this.circuit = circuit;
+    if (circuit !== null && this.initialized) {
+      // Perform full update with new circuit
+      this.scene!.name = this.circuit!.metadata.name || 'Circuit Scene';
+      this._fullUpdate();
+    }
+  }
+
+  /**
    * event handler when the container size changes
    * Can override the container boundingClientRect size by providing width and height
    * - Update camera projection matrix
@@ -601,27 +622,6 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
       this.camera.updateProjectionMatrix();
     }
     this.wireVisualManager.setResolution(width, height);
-  }
-
-  /**
-   * Update the circuit to visualize or indicate no circuit loaded
-   * @param circuit
-   */
-  setCircuit(circuit: Circuit | null): void {
-    if (circuit === this.circuit) return; // No change
-    // TODO reset changedData ?
-    if (!!this.circuit && this.initialized) {
-      // Clear existing visuals
-      this._removeAllVisuals();
-      return;
-    }
-
-    this.circuit = circuit;
-    if (circuit !== null && this.initialized) {
-      // Perform full update with new circuit
-      this.scene!.name = this.circuit!.metadata.name || 'Circuit Scene';
-      this._fullUpdate();
-    }
   }
 
   /**
@@ -1263,13 +1263,17 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     for (const component of components) {
       this._createComponentObject3D(component);
     }
-
-    for (const wire of wires) {
-      this._createWireObject3D(wire);
-    }
-
     for (const enode of enodes) {
       this._createEnodeObject3D(enode);
+        // For edited pin enodes, update source type visual (component creates them only in their default mode)
+      if (enode.type === ENodeType.Pin && enode.source) {
+        const pinGroup = this.enodeObject3Ds.get(enode.id);
+        if(!pinGroup) continue;
+        this.factoryRegistry.getFallbackFactory().updatePinSourceType(pinGroup, enode.source);
+      }
+    }
+    for (const wire of wires) {
+      this._createWireObject3D(wire);
     }
   }
 
@@ -1559,6 +1563,34 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     }
     // Remove component visual
     this._removeComponentObject3D(componentId);
+  }
+
+  /**
+   * Update an enode based to a new source type.
+   * @param enodeId - UUID of the enode
+   * @param enodeType - Type of the enode (BranchingPoint or Pin)
+   * @param sourceType - New source type (null for no source)
+   */
+  updateEnodeSourceType(
+      enodeId: UUID,
+      sourceType: ENodeSourceType | null
+  ): void {
+    const object3D = this.getEnodeObject3Ds().get(enodeId);
+    if (!object3D) return;
+    if(object3D.userData.lockedSourceType) return; // do not update locked source types
+
+    this.circuitEditionManager.saveEditENodeSourceType(
+        enodeId, sourceType
+    );
+
+    if(object3D.userData.componentId){
+      this.factoryRegistry.getFallbackFactory()
+          .updatePinSourceType(object3D, sourceType ?? null);
+    }
+    else {
+      this.getBranchingPointVisualFactory()
+          .updateSourceType(object3D, sourceType ?? null);
+    }
   }
 
   /**

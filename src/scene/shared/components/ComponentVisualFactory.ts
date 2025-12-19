@@ -98,6 +98,30 @@ export interface IComponentVisualFactory {
   removeSelection(object3D: THREE.Object3D): void;
 
   /**
+   * Update pin source type visual (optional method)
+   *
+   * @param pinGroup - The THREE.Group containing the pin visual
+   * @param sourceType - The new source type (null for no source)
+   *
+   * @remarks
+   * - Optional method for component factories that support pin source type visualization
+   * - Changes pin color based on source type (bronze/red/blue)
+   * - Default implementation in ComponentVisualFactoryBase
+   */
+  updatePinSourceType(pinGroup: THREE.Object3D, sourceType: ENodeSourceType | null): void;
+
+  /**
+   * Apply hover effect on a pin
+   * @param pinGroup
+   */
+  applyPinHover(pinGroup: THREE.Object3D): void;
+
+  /**
+   * Remove hover effect on a pin
+   */
+    removePinHover(pinGroup: THREE.Object3D): void;
+
+  /**
    * Update animation state based on simulation data
    *
    * @param object3D - The Object3D created by createVisual()
@@ -111,19 +135,6 @@ export interface IComponentVisualFactory {
    *   (e.g., LED glow, switch contactor rotation)
    */
   updateAnimation(object3D: THREE.Object3D, state: ComponentState): void;
-
-  /**
-   * Update pin source type visual (optional method)
-   *
-   * @param pinGroup - The THREE.Group containing the pin visual
-   * @param sourceType - The new source type (null for no source)
-   *
-   * @remarks
-   * - Optional method for component factories that support pin source type visualization
-   * - Changes pin color based on source type (bronze/red/blue)
-   * - Default implementation in ComponentVisualFactoryBase
-   */
-  updatePinSourceType?(pinGroup: THREE.Object3D, sourceType: ENodeSourceType | null): void;
 }
 
 /**
@@ -168,8 +179,6 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
 
   /** Default selection emissive intensity (higher than hover) */
   protected static readonly DEFAULT_SELECTION_INTENSITY = 0.8;
-
-  protected static readonly DEFAULT_PIN_COLOR = 0xb87333;
 
   /**
    * Create the Three.js visual representation for a component
@@ -290,17 +299,6 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
   }
 
   /**
-   * Update animation state based on simulation data (placeholder)
-   *
-   * Default implementation is a no-op for static components.
-   * Override in subclasses that have animation (LED, Switch).
-   */
-  updateAnimation(object3D: THREE.Object3D, state: ComponentState): void {
-    // Default: no-op for static components
-    // Subclasses override for component-specific animation
-  }
-
-  /**
    * Create a pin group with hitbox and visual sphere
    *
    * Creates a THREE.Group containing:
@@ -311,15 +309,21 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
    * @param componentId - UUID of the parent component
    * @param pinId - UUID of this pin/enode
    * @param label - Human-readable label (e.g., 'input', 'output', 'cathode')
+   * @param sourceType - Optional source type (voltage/current) : if provided this pin will be locked to that type
    * @returns THREE.Group configured as pin group
    */
-  protected createPinGroup(componentId: string, pinId: string, label: string): THREE.Group {
+  protected createPinGroup(
+      componentId: string,
+      pinId: string,
+      label: string,
+      sourceType: ENodeSourceType | null = null): THREE.Group {
     const pinGroup = new THREE.Group();
     pinGroup.userData = {
       type: 'enodeGroup',
       componentId: componentId,
       enodeId: pinId,
       label: label,
+      lockedSourceType: sourceType
     };
 
     // Hitbox (hemisphere, raycastable)
@@ -337,7 +341,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
       componentId: componentId,
       enodeId: pinId,
       label: label,
-      //groupId: pinGroup.id,
+      lockedSourceType: sourceType
     };
     hitbox.layers.set(HitboxLayers.ENODE);
     pinGroup.add(hitbox);
@@ -346,8 +350,8 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     const visual = new THREE.Mesh(
       new THREE.SphereGeometry(0.3, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
       new THREE.MeshStandardMaterial({
-        color: ComponentVisualFactoryBase.DEFAULT_PIN_COLOR,
-        emissive: ComponentVisualFactoryBase.DEFAULT_PIN_COLOR,
+        color: this.pinColorForSourceType(sourceType),
+        emissive: this.pinColorForSourceType(sourceType),
         emissiveIntensity: 0,
       })
     );
@@ -356,6 +360,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
       componentId: componentId,
       enodeId: pinId,
       label: label,
+      lockedSourceType: sourceType
     };
     pinGroup.add(visual);
 
@@ -398,6 +403,19 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     return hitbox;
   }
 
+  protected pinColorForSourceType(sourceType: ENodeSourceType | null): number {
+    if(!sourceType){
+      return 0xb87333; // Bronze for no source
+    }
+    if (sourceType === ENodeSourceType.Voltage) {
+      return 0xff0000; // Red for voltage
+    }
+    else if(sourceType === ENodeSourceType.Current) {
+      return 0x0000ff; // Blue for current
+    }
+    return 0xb87333; // Bronze by default
+  }
+
   /**
    * Updates the visual color of a component pin based on its source type.
    *
@@ -416,6 +434,9 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
    * - Color scheme matches BranchingPointVisualFactory for consistency
    */
   updatePinSourceType(pinGroup: THREE.Object3D, sourceType: ENodeSourceType | null): void {
+    if(!!pinGroup.userData.lockedSourceType) return; // Pin is locked to a source type, do not change color
+    pinGroup.userData.sourceType = sourceType;
+
     const visual = pinGroup.children.find(
       (child) => child.userData.type === 'enode'
     ) as THREE.Mesh | undefined;
@@ -423,13 +444,71 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     if (!visual || !(visual.material instanceof THREE.MeshStandardMaterial)) {
       return;
     }
-
-    const color = sourceType
-      ? (sourceType === ENodeSourceType.Voltage ? 0xff0000 : 0x0000ff)
-      : ComponentVisualFactoryBase.DEFAULT_PIN_COLOR;
-
+    const color = this.pinColorForSourceType(sourceType);
     visual.material.color.setHex(color);
     visual.material.emissive.setHex(color);
+  }
+
+  /**
+   * Apply hover visual effect on this pin
+   */
+  applyPinHover(pinGroup: THREE.Object3D): void {
+    if (pinGroup.userData.isHovered) {
+      return; // Already hovered
+    }
+    pinGroup.userData.isHovered = true;
+
+    pinGroup.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        const material = child.material as THREE.MeshStandardMaterial;
+
+        if (child.userData.type === 'enodeHitbox') {
+          material.opacity = 0.3;
+        } else if (child.userData.type === 'enode') {
+          material.color.setHex(0x00ff00);
+          // Apply hover effect
+          material.emissiveIntensity = 0.9;
+        }
+      }
+    });
+  }
+
+  /**
+   * remove hover visual effect on this pin
+   */
+  removePinHover(pinGroup: THREE.Object3D): void {
+    if (!pinGroup.userData.isHovered) {
+      return; // Already hovered
+    }
+    pinGroup.userData.isHovered = false;
+
+    const sourceType: ENodeSourceType | null = pinGroup.userData.lockedSourceType
+        || pinGroup.userData.sourceType
+        || null;
+
+    pinGroup.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        const material = child.material as THREE.MeshStandardMaterial;
+
+        if (child.userData.type === 'enodeHitbox') {
+          material.opacity = 0;
+        } else if (child.userData.type === 'enode') {
+          material.color.setHex(this.pinColorForSourceType(sourceType));
+          material.emissiveIntensity = 0;
+        }
+      }
+    });
+  }
+
+  /**
+   * Update animation state based on simulation data (placeholder)
+   *
+   * Default implementation is a no-op for static components.
+   * Override in subclasses that have animation (LED, Switch).
+   */
+  updateAnimation(object3D: THREE.Object3D, state: ComponentState): void {
+    // Default: no-op for static components
+    // Subclasses override for component-specific animation
   }
 }
 
@@ -482,6 +561,11 @@ export interface IFactoryRegistry {
    * @returns true if explicitly registered, false if would use fallback
    */
   has(type: ComponentType): boolean;
+
+  /**
+   * Get the fallback factory used for unregistered component types
+   */
+  getFallbackFactory(): IComponentVisualFactory;
 
   /**
    * Unregister a factory for a component type

@@ -353,7 +353,7 @@ export class BuildTool implements IEditingTool {
     if (this.mode === 'idle') {
       // Handle Ctrl+click for sourceType cycling
       if ((event.ctrlKey || event.metaKey) && hoveredElement && hoveredElement.type === 'enode') {
-        this.cycleEnodeSourceType(hoveredElement.id);
+        this.cycleEnodeSourceType(hoveredElement.id, hoveredElement.object3D);
         return; // Early exit - don't start wire creation
       }
 
@@ -1420,58 +1420,13 @@ export class BuildTool implements IEditingTool {
    * Cycles the sourceType of an enode: null → Voltage → Current → null
    * Updates both model and visual immediately.
    * @param enodeId - UUID of the enode to cycle
+   * @param hitbox - hitbox of the enode being clicked
    */
-  private cycleEnodeSourceType(enodeId: UUID): void {
-    const circuit = this._sceneManager.getCircuit();
-    if (!circuit) return;
+  private cycleEnodeSourceType(enodeId: UUID, hitbox: THREE.Object3D): void {
+    if(hitbox.userData.lockedSourceType) return; // do not update locked source types
+    if(!hitbox.parent) return;
 
-    const enode = circuit.getENode(enodeId);
-    if (!enode) return;
-
-    const nextSourceType = getNextSourceType(enode.source);
-
-    // Persist change and emit event
-    this._sceneManager
-      .getCircuitEditionManager()
-      .saveENodeSourceTypeAction(enodeId, nextSourceType ?? null);
-
-    // Update visual
-    this.updateEnodeVisual(enodeId, enode.type, nextSourceType);
-  }
-
-  /**
-   * Updates the visual representation of an enode based on its source type.
-   * @param enodeId - UUID of the enode
-   * @param enodeType - Type of the enode (BranchingPoint or Pin)
-   * @param sourceType - New source type (null for no source)
-   */
-  private updateEnodeVisual(
-    enodeId: UUID,
-    enodeType: ENodeType,
-    sourceType: ENodeSourceType | undefined
-  ): void {
-    const object3D = this._sceneManager.getEnodeObject3Ds().get(enodeId);
-    if (!object3D) return;
-
-    if (enodeType === ENodeType.BranchingPoint) {
-      this._sceneManager
-        .getBranchingPointVisualFactory()
-        .updateSourceType(object3D, sourceType ?? null);
-    } else {
-      // Component pin - get the component factory to update pin color
-      const circuit = this._sceneManager.getCircuit();
-      if (!circuit) return;
-
-      const enode = circuit.getENode(enodeId);
-      if (!enode || !enode.component) return;
-
-      const component = circuit.getComponent(enode.component);
-      if (!component) return;
-
-      const factory = this._sceneManager.getFactoryRegistry().get(component.type);
-      if ('updatePinSourceType' in factory) {
-        factory.updatePinSourceType(object3D, sourceType ?? null);
-      }
-    }
+    const nextSourceType = getNextSourceType(hitbox.parent.userData.sourceType);
+    this._sceneManager.updateEnodeSourceType(enodeId, nextSourceType || null);
   }
 }

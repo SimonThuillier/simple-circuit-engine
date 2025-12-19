@@ -119,7 +119,7 @@ private cycleEnodeSourceType(enodeId: UUID): void {
   // Persist change and emit event
   this._sceneManager
     .getCircuitEditionManager()
-    .saveENodeSourceTypeAction(enodeId, nextSourceType ?? null);
+    .saveEditENodeSourceType(enodeId, nextSourceType ?? null);
 
   // Update visual
   this.updateEnodeVisual(enodeId, enode.type, nextSourceType);

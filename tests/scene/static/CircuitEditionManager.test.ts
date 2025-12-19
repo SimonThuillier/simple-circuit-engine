@@ -476,7 +476,7 @@ describe('CircuitEditionManager', () => {
     });
   });
 
-  describe('saveENodeSourceTypeAction', () => {
+  describe('saveEditENodeSourceType', () => {
     let enodeId: string;
 
     beforeEach(() => {
@@ -485,20 +485,30 @@ describe('CircuitEditionManager', () => {
     });
 
     it('should update enode sourceType and emit event', () => {
-      manager.saveENodeSourceTypeAction(enodeId, 'power');
+      manager.saveEditENodeSourceType(enodeId, 'Voltage');
 
-      expect(emitSpy).toHaveBeenCalledWith('enodeSourceTypeChanged', {
-        enodeId,
-        sourceType: 'power',
+      expect(emitSpy).toHaveBeenCalledWith('circuitElementAction', {
+        type: 'enode',
+        action: 'edit',
+        id: enodeId,
+        error: null,
+        data: {
+          sourceType: 'Voltage'
+        },
       });
     });
 
     it('should allow setting sourceType to null', () => {
-      manager.saveENodeSourceTypeAction(enodeId, null);
+      manager.saveEditENodeSourceType(enodeId, null);
 
-      expect(emitSpy).toHaveBeenCalledWith('enodeSourceTypeChanged', {
-        enodeId,
-        sourceType: null,
+      expect(emitSpy).toHaveBeenCalledWith('circuitElementAction', {
+        type: 'enode',
+        action: 'edit',
+        id: enodeId,
+        error: null,
+        data: {
+          sourceType: null
+        },
       });
     });
 
@@ -506,7 +516,7 @@ describe('CircuitEditionManager', () => {
       const noCircuitManager = createMockSceneManager(null);
       const managerNoCircuit = new CircuitEditionManager(noCircuitManager.sceneManager);
 
-      expect(() => managerNoCircuit.saveENodeSourceTypeAction(enodeId, 'power')).toThrow(
+      expect(() => managerNoCircuit.saveEditENodeSourceType(enodeId, 'power')).toThrow(
         'No circuit available in the scene manager.'
       );
     });

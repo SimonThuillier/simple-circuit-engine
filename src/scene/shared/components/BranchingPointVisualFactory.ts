@@ -107,6 +107,7 @@ export class BranchingPointVisualFactory {
       enodeId: enode.id,
       label: ENodeType.BranchingPoint,
     };
+    visual.position.set(0, 0.1, 0); // increase the height a little
     group.add(visual);
 
     return group;

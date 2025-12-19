@@ -341,7 +341,7 @@ export class CircuitEditionManager {
    * @param enodeId - ENode to update
    * @param sourceType - New sourceType value
    */
-  saveENodeSourceTypeAction(enodeId: UUID, sourceType: ENodeSourceType | null): void {
+  saveEditENodeSourceType(enodeId: UUID, sourceType: ENodeSourceType | null): void {
     const circuit = this._sceneManager.getCircuit();
     if (!circuit) {
       throw new Error('No circuit available in the scene manager.');
@@ -349,9 +349,14 @@ export class CircuitEditionManager {
 
     circuit.updateENodeSourceType(enodeId, sourceType);
 
-    this._sceneManager.emit('enodeSourceTypeChanged', {
-      enodeId,
-      sourceType,
+    this._sceneManager.emit('circuitElementAction', {
+      type: 'enode',
+      action: 'edit',
+      id: enodeId,
+      error: null,
+      data: {
+        sourceType: sourceType,
+      },
     });
   }
 

@@ -99,6 +99,13 @@ export class FactoryRegistry implements IFactoryRegistry {
   }
 
   /**
+   * Get the fallback factory used for unregistered types
+   */
+  getFallbackFactory(): IComponentVisualFactory {
+    return this.fallbackFactory;
+  }
+
+  /**
    * Unregister a factory for a component type
    *
    * @param type - Component type identifier

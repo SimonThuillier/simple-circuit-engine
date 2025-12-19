@@ -41,7 +41,7 @@
 - [X] T008 Implement `saveBranchingPointAction(position, sourceType?)` in src/scene/static/CircuitEditionManager.ts
 - [X] T009 Implement `saveSplitWire(wireId, position)` in src/scene/static/CircuitEditionManager.ts
 - [X] T010 Implement `saveWireIntermediatePositions(wireId, positions)` in src/scene/static/CircuitEditionManager.ts
-- [X] T011 Implement `saveENodeSourceTypeAction(enodeId, sourceType)` in src/scene/static/CircuitEditionManager.ts
+- [X] T011 Implement `saveEditENodeSourceType(enodeId, sourceType)` in src/scene/static/CircuitEditionManager.ts
 
 ### WireVisualManager Extensions
 
@@ -165,7 +165,7 @@
 
 - [X] T052 [US5] Implement `cycleBranchingPointSourceType(enodeId)` in src/scene/static/tools/WireTool.ts
 - [X] T053 [US5] Add branching point detection to handleDblClick (prioritize over wire/empty) in src/scene/static/tools/WireTool.ts
-- [X] T054 [US5] Call CircuitEditionManager.saveENodeSourceTypeAction for sourceType update in src/scene/static/tools/WireTool.ts
+- [X] T054 [US5] Call CircuitEditionManager.saveEditENodeSourceType for sourceType update in src/scene/static/tools/WireTool.ts
 - [X] T055 [US5] Update branching point visual color after sourceType change in src/scene/static/tools/WireTool.ts
 
 **Checkpoint**: Double-click on branching point cycles sourceType with visual feedback

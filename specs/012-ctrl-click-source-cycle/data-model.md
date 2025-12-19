@@ -104,7 +104,7 @@ interface SceneManagerEventMap {
 }
 ```
 
-**Emitted by**: `CircuitEditionManager.saveENodeSourceTypeAction()`
+**Emitted by**: `CircuitEditionManager.saveEditENodeSourceType()`
 **Consumers**: External listeners (undo/redo, UI updates)
 
 ## Color Mapping (Existing Constants)
@@ -156,7 +156,7 @@ protected static readonly DEFAULT_PIN_COLOR = 0xb87333; // bronze
 │     └── Returns: next ENodeSourceType | undefined                      │
 │         │                                                               │
 │         ▼                                                               │
-│  4. CircuitEditionManager.saveENodeSourceTypeAction(enodeId, newType)  │
+│  4. CircuitEditionManager.saveEditENodeSourceType(enodeId, newType)  │
 │     ├── circuit.updateENodeSourceType(enodeId, newType)                │
 │     └── emit('enodeSourceTypeChanged', { enodeId, sourceType })        │
 │         │                                                               │
