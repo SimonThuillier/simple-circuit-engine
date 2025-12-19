@@ -408,10 +408,6 @@ export class CircuitRunnerSceneManager extends EventEmitter<SceneManagerEventMap
     }
   }
 
-  // ==========================================
-  // MapControls API (Phase 2)
-  // ==========================================
-
   /**
    * Get MapControls instance for direct manipulation
    *
@@ -572,23 +568,7 @@ export class CircuitRunnerSceneManager extends EventEmitter<SceneManagerEventMap
     return this.hoverManager?.isEnabled() ?? false;
   }
 
-  // ==========================================
-  // Private Helper Methods
-  // ==========================================
 
-  /**
-   * Check if scene manager is initialized
-   * @throws {Error} If not initialized
-   */
-  private _checkInitialized(): void {
-    if (!this.initialized) {
-      throw new Error('SceneManager not initialized');
-    }
-
-    if (this.disposed) {
-      throw new Error('SceneManager has been disposed');
-    }
-  }
 
   /**
    * Initialize MapControls with configuration options (Phase 2)

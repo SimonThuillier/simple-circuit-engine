@@ -36,12 +36,15 @@ export type ModelEditAction = 'edit' | 'add' | 'delete';
  * Supported scene manager event types (includes tool system events)
  */
 export type SceneManagerEvent =
+  | 'ready'
+  | 'error'
+  | 'circuitLoaded'
+  | 'circuitCleared'
+  | 'gridPositionMove'
   | 'hover'
   | 'unhover'
   | 'select'
   | 'deselect'
-  | 'error'
-  | 'ready'
   | 'toolActivated'
   | 'toolDeactivated'
   | 'toolOperationStarted'
@@ -50,13 +53,16 @@ export type SceneManagerEvent =
   | 'toolValidationError'
   | 'cursorChangeRequested'
   | 'circuitElementAction'
-  | 'gridPositionMove'
   | 'selectionChange';
 
 /**
  * Event payload map for type-safe event emission
  */
 export interface SceneManagerEventMap {
+  ready: { manager: 'static' | 'simulation' };
+  error: { message: string; error?: Error };
+  circuitLoaded: { name: string };
+  circuitCleared: { name: string };
   gridPositionMove: THREE.Vector3;
   hover: {
     objectId: UUID;
@@ -75,9 +81,6 @@ export interface SceneManagerEventMap {
   dragMove: { selection: SelectionData; currentPosition: THREE.Vector3; delta: THREE.Vector3 };
   dragEnd: { selection: SelectionData; finalPosition: THREE.Vector3 };
   dragCancel: { selection: SelectionData };
-  componentRotated: { componentId: UUID; newRotation: number };
-  error: { message: string; error?: Error };
-  ready: { manager: 'static' | 'simulation' };
   // Tool system events
   toolActivated: { toolType: ToolType };
   toolDeactivated: { toolType: ToolType };
@@ -99,25 +102,6 @@ export interface SceneManagerEventMap {
     error?: Error | null;
     data?: object | null;
   };
-  // Branching point events (T024)
-  branchingPointCreated: {
-    enodeId: UUID;
-    position: { x: number; y: number };
-  };
-  wireSplit: {
-    originalWireId: UUID;
-    branchingPointId: UUID;
-    wire1Id: UUID;
-    wire2Id: UUID;
-  };
-  wireIntermediatePositionsChanged: {
-    wireId: UUID;
-    positions: { x: number; y: number }[];
-  };
-  enodeSourceTypeChanged: {
-    enodeId: UUID;
-    sourceType: string | null;
-  };
 }
 
 /**
@@ -125,32 +109,7 @@ export interface SceneManagerEventMap {
  */
 export type SceneManagerCallback<T = any> = (payload: T) => void;
 
-/**
- * Optional parameter for incremental scene manager updates
- * If provided, only specified elements are updated
- * If omitted or empty, full update is performed
- * TODO: should be deprecated
- */
-export interface ChangedData {
-  /** Component IDs that were added to the circuit */
-  addedComponents?: UUID[];
-  /** Component IDs that were removed from the circuit */
-  removedComponents?: UUID[];
-  /** Component IDs that were modified (position, rotation, config) */
-  updatedComponents?: UUID[];
-  /** Wire IDs that were added to the circuit */
-  addedWires?: UUID[];
-  /** Wire IDs that were removed from the circuit */
-  removedWires?: UUID[];
-  /** Wire IDs that were modified (path changed) */
-  updatedWires?: UUID[];
-  /** ENode IDs that were added to the circuit */
-  addedENodes?: UUID[];
-  /** ENode IDs that were removed from the circuit */
-  removedENodes?: UUID[];
-  /** Flag indicating simulation state has changed (for SimulationCircuitRenderer) */
-  stateChanged?: boolean;
-}
+
 
 /**
  * Optional configuration for scene manager initialization
@@ -288,25 +247,6 @@ export interface MultiSelectionData {
 }
 
 export type SelectionData = MonoSelectionData | MultiSelectionData;
-
-/**
- * UserData structure for component visual state management
- *
- * Tracks hover, selection, and animation state for component visuals.
- * Used by visual factories to store original material properties for restoration.
- */
-export interface ComponentVisualUserData {
-  /** Whether the component is currently hovered */
-  isHovered?: boolean;
-  /** Whether the component is currently selected (future feature) */
-  isSelected?: boolean;
-  /** Whether the component is currently being animated (simulation state) */
-  isAnimating?: boolean;
-  /** Original emissive color (for hover/animation restoration) */
-  originalEmissive?: THREE.Color;
-  /** Original emissive intensity (for hover/animation restoration) */
-  originalEmissiveIntensity?: number;
-}
 
 /**
  * Tool System Types

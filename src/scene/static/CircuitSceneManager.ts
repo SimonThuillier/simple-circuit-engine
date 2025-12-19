@@ -18,7 +18,6 @@ import { EventEmitter } from '../shared/EventEmitter';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
 import type {
   SceneManagerEventMap,
-  ChangedData,
   SceneManagerOptions,
   MapControlsOptions,
   ToolType,
@@ -29,7 +28,6 @@ import type {
   ComponentHitboxUserData,
   SelectionData,
   HoverableType,
-  MultiSelectionData,
   WireHitboxUserData,
 } from '../shared/types';
 import { createPerspectiveCamera } from '../shared/CameraUtils';
@@ -60,80 +58,80 @@ import type {ENodeSourceType} from "@/core/types/ENodeSourceType";
  * Provides event hooks for error handling and state changes.
  */
 export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
-  public readonly factoryRegistry: IFactoryRegistry;
-
-  private circuit?: Circuit | null = null;
-  private scene: THREE.Scene | null = null;
-  // private readonly groundPlane: THREE.Plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-  private camera: THREE.PerspectiveCamera | null = null;
+  // Container and Three.js core objects
   private container: HTMLElement | null = null;
+  private scene: THREE.Scene | null = null;
+  private grid: THREE.GridHelper | null = null;
+  private camera: THREE.PerspectiveCamera | null = null;
+  private mapControls: MapControls | null = null;
+  private mapControlsOptions: MapControlsOptions = {};
+
+  // flags
   private initialized: boolean = false;
   private disposed: boolean = false;
+  private editMode: boolean = false;
 
-  // Visual object tracking
-  private grid: THREE.GridHelper | null = null;
+  // Circuit and Circuit repository
+  private circuit: Circuit | null = null;
+  public readonly circuitEditionManager: CircuitEditionManager;
+
+  // Scene objects tracking
   private componentObject3Ds: Map<UUID, THREE.Object3D> = new Map();
   private enodeObject3Ds: Map<UUID, THREE.Object3D> = new Map();
   private wireObject3Ds: Map<UUID, Line2> = new Map();
 
-  // Edit mode and tool system (Phase 5)
-  private editMode: boolean = false;
-  private activeTool: ToolType | null = null;
-  private tools: Map<ToolType, IEditingTool> = new Map();
-  private toolState: any = null;
-
-  // MapControls (Phase 2)
-  private mapControls: MapControls | null = null;
-  private mapControlsOptions: MapControlsOptions = {};
-
-  // HoverManager (Phase 3)
+  // Hover and Selection managers
   private hoverManager: HoverManager | null = null;
+  private selectionManager: SelectionManager | null = null;
+
+  // event handlers
   private mouseMoveHandler: ((event: MouseEvent) => void) | null = null;
   private mouseLeaveHandler: ((event: MouseEvent) => void) | null = null;
   private mapControlsChangeHandler: (() => void) | null = null;
 
-  // SelectionManager (Phase 6)
-  private selectionManager: SelectionManager | null = null;
+  // Scene visual object factories
+  public readonly factoryRegistry: IFactoryRegistry;
+  public readonly branchingPointVisualFactory: BranchingPointVisualFactory;
+  public readonly wireVisualManager: WireVisualManager;
 
-  // WireVisualManager (Phase 3 - User Story 3)
-  private wireVisualManager: WireVisualManager = new WireVisualManager(this);
-
-  // CircuitEditionManager handles saving edits to the core model
-  private circuitEditionManager: CircuitEditionManager = new CircuitEditionManager(this);
-
-  // BranchingPointVisualFactory for creating branching point visuals (T022)
-  private branchingPointVisualFactory: BranchingPointVisualFactory =
-    new BranchingPointVisualFactory();
+  // Circuit RepositoryTool system
+  private tools: Map<ToolType, IEditingTool> = new Map();
+  private activeTool: ToolType | null = null;
 
   /**
-   * Create a new Static Circuit Renderer
+   * Constructor and initialization
+   */
+
+  /**
+   * Create a new Static Circuit Controller
    *
    * @param factoryRegistry - Component visual factory registry
-   * @throws {TypeError} If circuit or factoryRegistry is null/undefined
+   * @throws {TypeError} factoryRegistry is null/undefined
    */
   constructor(factoryRegistry: IFactoryRegistry) {
     super();
 
     if (!factoryRegistry) {
-      throw new TypeError('FactoryRegistry is required');
+      throw new TypeError('Components FactoryRegistry is required');
     }
 
     this.factoryRegistry = factoryRegistry;
+    this.branchingPointVisualFactory = new BranchingPointVisualFactory();
+    this.wireVisualManager = new WireVisualManager(this);
+    this.circuitEditionManager = new CircuitEditionManager(this);
+
     this.handlePointerDown = this.handlePointerDown.bind(this);
     this.onContainerResize = this.onContainerResize.bind(this);
   }
 
   /**
-   * Initialize the renderer with a DOM container
+   * Initialize the Controller with a DOM container
    *
    * @param container - HTMLElement to attach scene to
-   * @param options - Optional renderer configuration
+   * @param options - Optional configuration
    */
   initialize(container: HTMLElement, options?: SceneManagerOptions): void {
-    if (this.initialized) {
-      throw new Error('Renderer already initialized');
-    }
-
+    if (this.initialized) return; // already initialized to this container
     if (!container || !(container instanceof HTMLElement)) {
       const error = new TypeError('Container must be a valid HTMLElement');
       this.emit('error', { message: error.message, error });
@@ -146,38 +144,29 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
       // Create scene
       this.scene = new THREE.Scene();
       this.scene.background = new THREE.Color(0x222230);
-
-      // Create camera
-      const aspect = container.clientWidth / container.clientHeight || 1;
-      this.camera = createPerspectiveCamera(options, aspect);
-
-      // Configure camera layers to only render layer 0 (visual layer) (Phase 5 - T034)
-      // This prevents hitbox meshes (layers 1, 2, 3) from being rendered
-      if (this.camera && this.camera.layers) {
-        this.camera.layers.set(0);
-      }
-
-      // Add lights
       setupSceneLights(this.scene);
 
-      // Initialize tools (Phase 5)
-      this._initializeTools();
-
-      // Initialize MapControls (Phase 2)
+      // Create Camera and Controls
+      const aspect = container.clientWidth / container.clientHeight || 1;
+      this.camera = createPerspectiveCamera(options, aspect);
+      // Configure camera layers to only render layer 0 (visual layer)
+      // This prevents hitbox meshes (layers 1, 2, 3) from being rendered
+      this.camera.layers.set(0);
+      // Initialize MapControls
       this._initializeMapControls(options?.mapControls);
-
-      // Initialize HoverManager (Phase 3)
-      this._initializeHoverManager();
-
-      // Initialize SelectionManager (Phase 6)
-      this._initializeSelectionManager();
 
       // Initialize WireVisualManager resolution (Line2 rendering)
       this.wireVisualManager.setResolution(container.clientWidth, container.clientHeight);
 
-      this.initialized = true;
+      // Initialize tools
+      this._initializeTools();
+      // Initialize Hover and Selection Managers
+      this._initializeHoverManager();
+      this._initializeSelectionManager();
+
 
       // Emit ready event
+      this.initialized = true;
       this.emit('ready', { manager: 'static' });
     } catch (error) {
       const err = error as Error;
@@ -233,6 +222,283 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     if (this.mapControlsOptions.rotateSpeed !== undefined) {
       this.mapControls.rotateSpeed = this.mapControlsOptions.rotateSpeed;
     }
+  }
+
+  private _checkInitialized(): void {
+    if (!this.initialized) {
+      throw new Error('Controller not initialized. Call initialize() first.');
+    }
+    if (this.disposed) {
+      throw new Error('Controller has been disposed');
+    }
+  }
+
+  /**
+   * Enable or disable edit mode (FR-006, FR-027)
+   * When disabled, deactivates any active tool and resets tool state
+   *
+   * @param enabled - True to enable edit mode, false to disable
+   */
+  setEditMode(enabled: boolean): void {
+    this._checkInitialized();
+
+    if (this.editMode === enabled) return; // No changge
+    this.editMode = enabled;
+
+    if (!enabled) {
+      // Disable edit mode - deactivate active tool if any
+      if (this.activeTool !== null) {
+        const previousTool = this.activeTool;
+        const tool = this.tools.get(previousTool);
+
+        if (tool) {
+          tool.onDeactivate();
+        }
+        this.activeTool = null;
+        // Emit toolDeactivated event
+        this.emit('toolDeactivated', { toolType: previousTool });
+      }
+    }
+  }
+
+  /**
+   * Clean up all WebGL resources
+   */
+  dispose(): void {
+    this._checkInitialized();
+    try {
+      this.setEditMode(false); // Ensure edit mode is disabled
+
+      this._removeAllVisuals();
+      // Clear tracking maps
+      this.componentObject3Ds.clear();
+      this.wireObject3Ds.clear();
+      this.enodeObject3Ds.clear();
+
+      // Dispose MapControls
+      if (this.mapControls) {
+        // Remove 'change' event listener (Phase 4)
+        if (this.mapControlsChangeHandler) {
+          this.mapControls.removeEventListener('change', this.mapControlsChangeHandler);
+          this.mapControlsChangeHandler = null;
+        }
+        this.mapControls.dispose();
+        this.mapControls = null;
+      }
+
+      // Dispose HoverManager and SelectionManager
+      if (this.selectionManager) {
+        this.selectionManager.dispose();
+        this.selectionManager = null;
+      }
+      if (this.hoverManager) {
+        this.hoverManager.dispose();
+        this.hoverManager = null;
+      }
+      this.wireVisualManager.dispose();
+
+      // Remove DOM event listeners (Phase 3)
+      if (this.container) {
+        if (this.mouseMoveHandler) {
+          this.container.removeEventListener('mousemove', this.mouseMoveHandler);
+          this.mouseMoveHandler = null;
+        }
+        if (this.mouseLeaveHandler) {
+          this.container.removeEventListener('mouseleave', this.mouseLeaveHandler);
+          this.mouseLeaveHandler = null;
+        }
+      }
+
+      // Clear event listeners
+      this.removeAllListeners();
+
+      this.disposed = true;
+      this.initialized = false;
+    } catch (error) {
+      const err = error as Error;
+      this.emit('error', { message: err.message, error: err });
+      throw error;
+    }
+  }
+
+  /**
+   * getters and setters
+   */
+
+  /**
+   * Get the current circuit being visualized
+   */
+  getCircuit(): Circuit | null{
+    return this.circuit;
+  }
+
+  /**
+   * Loads a new circuit to visualize or null for clearing the scene
+   * @param circuit
+   */
+  setCircuit(circuit: Circuit | null): void {
+    if(!this.initialized) {
+        throw new Error('Cannot set circuit on uninitialized controller');
+    }
+    if (circuit === this.circuit) return; // TODO : implement hash and equals methods in circuit to perform value equality check
+    if (!!this.circuit) {
+      // Clear all existing visuals
+      this._removeAllVisuals();
+      const oldCircuitName = this.circuit.metadata.name || 'Unnamed Circuit';
+      this.circuit = null;
+      this.emit('circuitCleared', {name: oldCircuitName});
+    }
+
+    if (circuit !== null) {
+      // Perform full update with new circuit
+      this.circuit = circuit;
+      this.scene!.name = this.circuit!.metadata.name || 'Circuit Scene';
+      this._fullUpdate();
+      this.emit('circuitLoaded', {name: this.circuit.metadata.name || 'Unnamed Circuit'});
+    }
+  }
+
+  /**
+   * Get the Three.js scene for rendering
+   *
+   * @returns Scene
+   */
+  getScene(): THREE.Scene {
+    this._checkInitialized();
+    return this.scene!;
+  }
+
+  /**
+   * Get the Three.js camera for rendering
+   *
+   * @returns camera
+   */
+  getCamera(): THREE.PerspectiveCamera {
+    this._checkInitialized();
+    return this.camera!;
+  }
+
+  /**
+   * Get the HTML Element container, if not throws error
+   * @returns HTMLElement
+   */
+  getContainer(): HTMLElement {
+    this._checkInitialized();
+    if (!this.container) {
+      throw new Error('Container not initialized');
+    }
+    return this.container!;
+  }
+
+  /**
+   * Get the SelectionManager instance for direct manipulation
+   * @returns SelectionManager
+   */
+  getSelectionManager(): SelectionManager {
+    this._checkInitialized();
+    if (!this.selectionManager) {
+      throw new Error('SelectionManager not initialized');
+    }
+    return this.selectionManager!;
+  }
+
+  /**
+   * Get the WireVisualManager instance for direct manipulation
+   * @returns WireVisualManager
+   */
+  getWireVisualManager(): WireVisualManager {
+    return this.wireVisualManager!;
+  }
+
+  /**
+   * Get the CircuitEditionManager instance for calls by tools
+   */
+  getCircuitEditionManager(): CircuitEditionManager {
+    return this.circuitEditionManager;
+  }
+
+  /**
+   * Get the BranchingPointVisualFactory for creating/Updating branching point visuals
+   */
+  getBranchingPointVisualFactory(): BranchingPointVisualFactory {
+    return this.branchingPointVisualFactory;
+  }
+
+  /**
+   * Get the MapControls instance for direct manipulation
+   *
+   * @returns MapControls instance or null if not initialized
+   */
+  getControls(): MapControls | null {
+    return this.mapControls;
+  }
+
+  /**
+   * Get the FactoryRegistry for component visual factories
+   *
+   * @returns IFactoryRegistry instance
+   */
+  getFactoryRegistry(): IFactoryRegistry {
+    return this.factoryRegistry;
+  }
+
+  getComponentObject3Ds(): Map<string, THREE.Object3D> {
+    return this.componentObject3Ds;
+  }
+
+  getEnodeObject3Ds(): Map<string, THREE.Object3D> {
+    return this.enodeObject3Ds;
+  }
+
+  getWireObject3Ds(): Map<string, Line2> {
+    return this.wireObject3Ds;
+  }
+
+  /**
+   * get the object3D (Group for components and enodes, Line2 for wires) by hoverable type and id
+   * @param type
+   * @param id
+   */
+  getObject3D(type: HoverableType, id: UUID): THREE.Object3D | undefined {
+    switch (type) {
+      case 'component':
+        return this.componentObject3Ds.get(id);
+      case 'enode':
+        return this.enodeObject3Ds.get(id);
+      case 'wire':
+        return this.wireObject3Ds.get(id);
+      default:
+        return undefined;
+    }
+  }
+
+  /**
+   * Check if hover detection is enabled
+   *
+   * @returns true if hover detection is enabled
+   */
+  isHoverEnabled(): boolean {
+    return this.hoverManager?.isEnabled() ?? false;
+  }
+
+  /**
+   * Enable or disable hover detection
+   *
+   * @param enabled - Whether to enable hover detection
+   */
+  setHoverEnabled(enabled: boolean): void {
+    if (this.hoverManager) {
+      this.hoverManager.setEnabled(enabled);
+    }
+  }
+
+  /**
+   * Get the currently hovered element
+   *
+   * @returns HoveredElement if something is hovered, null otherwise
+   */
+  getHoveredElement() {
+    return this.hoverManager?.getHoveredElement() ?? null;
   }
 
   /**
@@ -429,7 +695,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     this.container.addEventListener('mousemove', this.mouseMoveHandler);
 
     // Setup mouseleave event listener
-    this.mouseLeaveHandler = (event: MouseEvent) => {
+    this.mouseLeaveHandler = (_event: MouseEvent) => {
       if (this.hoverManager) {
         this.hoverManager.clear();
       }
@@ -577,31 +843,6 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     this.container.addEventListener('pointerdown', this.handlePointerDown);
   }
 
-  getCircuit(): Circuit | null | undefined {
-    return this.circuit;
-  }
-
-  /**
-   * Update the circuit to visualize or indicate no circuit loaded
-   * @param circuit
-   */
-  setCircuit(circuit: Circuit | null): void {
-    if (circuit === this.circuit) return; // No change
-    // TODO reset changedData ?
-    if (!!this.circuit && this.initialized) {
-      // Clear existing visuals
-      this._removeAllVisuals();
-      return;
-    }
-
-    this.circuit = circuit;
-    if (circuit !== null && this.initialized) {
-      // Perform full update with new circuit
-      this.scene!.name = this.circuit!.metadata.name || 'Circuit Scene';
-      this._fullUpdate();
-    }
-  }
-
   /**
    * event handler when the container size changes
    * Can override the container boundingClientRect size by providing width and height
@@ -624,489 +865,10 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     this.wireVisualManager.setResolution(width, height);
   }
 
-  /**
-   * Update visualization based on circuit changes
-   *
-   * @param changedData - Optional incremental update specification
-   */
-  update(changedData?: ChangedData): void {
-    this._checkInitialized();
-
-    try {
-      if (!changedData) {
-        // Full update - rebuild all visuals
-        this._fullUpdate();
-      } else {
-        // Incremental update
-        this._incrementalUpdate(changedData);
-      }
-    } catch (error) {
-      const err = error as Error;
-      this.emit('error', { message: err.message, error: err });
-      throw error;
-    }
-  }
 
   /**
-   * Clear visuals but don't dispose completely renderer - may be used for next circuit
+   * Tool System Methods
    */
-  clearVisuals() {
-    if (!this.initialized) {
-      throw new Error('Cannot clear unitialized renderer');
-    }
-    this._removeAllVisuals();
-  }
-
-  /**
-   * Render one frame (called by external animation loop)
-   */
-  render(): void {
-    this._checkInitialized();
-
-    try {
-      // Update MapControls if damping is enabled
-      if (this.mapControls) {
-        this.mapControls.update();
-      }
-
-      // In CircuitSceneManager, render() is mostly a no-op
-      // Scene updates are done in update()
-      // Consumer handles actual WebGL rendering via getScene()
-    } catch (error) {
-      const err = error as Error;
-      this.emit('error', { message: err.message, error: err });
-      throw error;
-    }
-  }
-
-  /**
-   * Get the Three.js scene for rendering
-   *
-   * @returns Scene
-   */
-  getScene(): THREE.Scene {
-    this._checkInitialized();
-    return this.scene!;
-  }
-
-  /**
-   * Get the Three.js camera for rendering
-   *
-   * @returns camera
-   */
-  getCamera(): THREE.PerspectiveCamera {
-    this._checkInitialized();
-    return this.camera!;
-  }
-
-  /**
-   * Get the HTML Element container, if not throws error
-   * @returns HTMLElement
-   */
-  getContainer(): HTMLElement {
-    this._checkInitialized();
-    if (!this.container) {
-      throw new Error('Container not initialized');
-    }
-    return this.container!;
-  }
-
-  /**
-   * Get the SelectionManager instance for direct manipulation
-   * @returns SelectionManager
-   */
-  getSelectionManager(): SelectionManager {
-    this._checkInitialized();
-    if (!this.selectionManager) {
-      throw new Error('SelectionManager not initialized');
-    }
-    return this.selectionManager!;
-  }
-
-  /**
-   * Get the WireVisualManager instance for direct manipulation
-   * @returns WireVisualManager
-   */
-  getWireVisualManager(): WireVisualManager {
-    return this.wireVisualManager!;
-  }
-
-  /**
-   * Get the CircuitEditionManager instance for calls by tools
-   */
-  getCircuitEditionManager(): CircuitEditionManager {
-    return this.circuitEditionManager;
-  }
-
-  /**
-   * Get the BranchingPointVisualFactory for creating/Updating branching point visuals
-   */
-  getBranchingPointVisualFactory(): BranchingPointVisualFactory {
-    return this.branchingPointVisualFactory;
-  }
-
-  /**
-   * Get the MapControls instance for direct manipulation
-   *
-   * @returns MapControls instance or null if not initialized
-   */
-  getControls(): MapControls | null {
-    return this.mapControls;
-  }
-
-  /**
-   * Get the FactoryRegistry for component visual factories
-   *
-   * @returns IFactoryRegistry instance
-   */
-  getFactoryRegistry(): IFactoryRegistry {
-    return this.factoryRegistry;
-  }
-
-  getComponentObject3Ds(): Map<string, THREE.Object3D> {
-    return this.componentObject3Ds;
-  }
-
-  getEnodeObject3Ds(): Map<string, THREE.Object3D> {
-    return this.enodeObject3Ds;
-  }
-
-  getWireObject3Ds(): Map<string, Line2> {
-    return this.wireObject3Ds;
-  }
-
-  /**
-   * get the object3D (Group for components and enodes, Line2 for wires) by hoverable type and id
-   * @param type
-   * @param id
-   */
-  getObject3D(type: HoverableType, id: UUID): THREE.Object3D | undefined {
-    switch (type) {
-      case 'component':
-        return this.componentObject3Ds.get(id);
-      case 'enode':
-        return this.enodeObject3Ds.get(id);
-      case 'wire':
-        return this.wireObject3Ds.get(id);
-      default:
-        return undefined;
-    }
-  }
-
-  /**
-   * Get current positions of selected objects
-   * @param selection
-   */
-  getSelectionPositions(
-    selection: SelectionData
-  ): Map<UUID, { type: HoverableType; position: THREE.Vector3 }> {
-    const selectionPositions = new Map<UUID, { type: HoverableType; position: THREE.Vector3 }>();
-    if (selection.kind === 'mono') {
-      const object = this.getObject3D(selection.type, selection.id);
-      if (object) {
-        selectionPositions.set(selection.id as UUID, {
-          type: selection.type,
-          position: object.position.clone(),
-        });
-      }
-    } else {
-      const multiSelection = selection as MultiSelectionData;
-      if (multiSelection.components) {
-        for (const id of multiSelection.components.keys()) {
-          const object = this.getObject3D('component', id);
-          if (object) {
-            selectionPositions.set(id, { type: 'component', position: object.position.clone() });
-          }
-        }
-      }
-      // TODO: implement for wires and enodes later
-    }
-    return selectionPositions;
-  }
-
-  /**
-   * Update MapControls options at runtime
-   *
-   * @param options - Partial options to update
-   */
-  updateControlsOptions(options: Partial<MapControlsOptions>): void {
-    this._checkInitialized();
-
-    if (!this.mapControls) {
-      throw new Error('MapControls not initialized');
-    }
-
-    // Merge new options with existing
-    this.mapControlsOptions = { ...this.mapControlsOptions, ...options };
-
-    // Apply updated options to MapControls
-    if (options.enablePan !== undefined) {
-      this.mapControls.enablePan = options.enablePan;
-    }
-    if (options.enableZoom !== undefined) {
-      this.mapControls.enableZoom = options.enableZoom;
-    }
-    if (options.enableRotate !== undefined) {
-      this.mapControls.enableRotate = options.enableRotate;
-    }
-    if (options.enableDamping !== undefined) {
-      this.mapControls.enableDamping = options.enableDamping;
-    }
-    if (options.dampingFactor !== undefined) {
-      this.mapControls.dampingFactor = options.dampingFactor;
-    }
-    if (options.minDistance !== undefined) {
-      this.mapControls.minDistance = options.minDistance;
-    }
-    if (options.maxDistance !== undefined) {
-      this.mapControls.maxDistance = options.maxDistance;
-    }
-    if (options.panSpeed !== undefined) {
-      this.mapControls.panSpeed = options.panSpeed;
-    }
-    if (options.zoomSpeed !== undefined) {
-      this.mapControls.zoomSpeed = options.zoomSpeed;
-    }
-    if (options.rotateSpeed !== undefined) {
-      this.mapControls.rotateSpeed = options.rotateSpeed;
-    }
-  }
-
-  /**
-   * Reset camera to default position
-   *
-   * @param animate - Whether to animate the transition (default: true)
-   */
-  resetCamera(animate: boolean = true): void {
-    this._checkInitialized();
-
-    if (!this.camera || !this.mapControls) {
-      throw new Error('Camera and MapControls must be initialized');
-    }
-
-    // Reset to default camera position (top-down view of circuit)
-    const target = new THREE.Vector3(0, 0, 0);
-    const position = new THREE.Vector3(0, 10, 10);
-
-    if (animate && this.mapControls.enableDamping) {
-      // Smoothly transition by updating target and position
-      this.mapControls.target.copy(target);
-      this.camera.position.copy(position);
-      this.mapControls.update();
-    } else {
-      // Instant reset
-      this.mapControls.target.copy(target);
-      this.camera.position.copy(position);
-      this.mapControls.update();
-    }
-  }
-
-  /**
-   * Focus camera on a specific element
-   *
-   * @param elementId - UUID of the element to focus on
-   * @param animate - Whether to animate the transition (default: true)
-   * @throws {Error} If element is not found in scene
-   */
-  focusOnElement(elementId: UUID, animate: boolean = true): void {
-    this._checkInitialized();
-
-    if (!this.camera || !this.mapControls) {
-      throw new Error('Camera and MapControls must be initialized');
-    }
-
-    // Find the element in the scene
-    let targetObject: THREE.Object3D | null = null;
-
-    // Check components
-    if (this.componentObject3Ds.has(elementId)) {
-      targetObject = this.componentObject3Ds.get(elementId)!;
-    }
-    // Check wires
-    else if (this.wireObject3Ds.has(elementId)) {
-      targetObject = this.wireObject3Ds.get(elementId)!;
-    }
-    // Check enodes
-    else if (this.enodeObject3Ds.has(elementId)) {
-      targetObject = this.enodeObject3Ds.get(elementId)!;
-    }
-
-    if (!targetObject) {
-      throw new Error(`Element ${elementId} not found in scene`);
-    }
-
-    // Get the element's world position
-    const position = new THREE.Vector3();
-    targetObject.getWorldPosition(position);
-
-    // Update MapControls target
-    if (animate && this.mapControls.enableDamping) {
-      // Smooth transition via damping
-      this.mapControls.target.copy(position);
-      this.mapControls.update();
-    } else {
-      // Instant focus
-      this.mapControls.target.copy(position);
-      this.mapControls.update();
-    }
-  }
-
-  // ==========================================
-  // HoverManager API (Phase 3)
-  // ==========================================
-
-  /**
-   * Get the currently hovered element
-   *
-   * @returns HoveredElement if something is hovered, null otherwise
-   */
-  getHoveredElement() {
-    return this.hoverManager?.getHoveredElement() ?? null;
-  }
-
-  /**
-   * Enable or disable hover detection
-   *
-   * @param enabled - Whether to enable hover detection
-   */
-  setHoverEnabled(enabled: boolean): void {
-    if (this.hoverManager) {
-      this.hoverManager.setEnabled(enabled);
-    }
-  }
-
-  /**
-   * Check if hover detection is enabled
-   *
-   * @returns true if hover detection is enabled
-   */
-  isHoverEnabled(): boolean {
-    return this.hoverManager?.isEnabled() ?? false;
-  }
-
-  /**
-   * Clean up all WebGL resources
-   */
-  dispose(): void {
-    if (this.disposed) {
-      throw new Error('Renderer already disposed');
-    }
-
-    if (!this.initialized) {
-      throw new Error('Cannot dispose uninitialized renderer');
-    }
-
-    try {
-      // Dispose all geometries and materials
-      this.scene!.traverse((obj) => {
-        if (obj instanceof THREE.Mesh) {
-          obj.geometry.dispose();
-          if (Array.isArray(obj.material)) {
-            obj.material.forEach((mat) => mat.dispose());
-          } else {
-            obj.material.dispose();
-          }
-        } else if (obj instanceof THREE.Line) {
-          obj.geometry.dispose();
-          if (Array.isArray(obj.material)) {
-            obj.material.forEach((mat) => mat.dispose());
-          } else {
-            obj.material.dispose();
-          }
-        }
-      });
-
-      // Remove all objects from scene
-      while (this.scene!.children.length > 0) {
-        this.scene!.remove(this.scene!.children[0]);
-      }
-
-      // Clear tracking maps
-      this.componentObject3Ds.clear();
-      this.wireObject3Ds.clear();
-      this.enodeObject3Ds.clear();
-
-      // Dispose MapControls
-      if (this.mapControls) {
-        // Remove 'change' event listener (Phase 4)
-        if (this.mapControlsChangeHandler) {
-          this.mapControls.removeEventListener('change', this.mapControlsChangeHandler);
-          this.mapControlsChangeHandler = null;
-        }
-        this.mapControls.dispose();
-        this.mapControls = null;
-      }
-
-      // Dispose HoverManager (Phase 3)
-      if (this.hoverManager) {
-        this.hoverManager.dispose();
-        this.hoverManager = null;
-      }
-
-      // Dispose WireVisualManager (Phase 3 - User Story 3)
-      this.wireVisualManager.dispose();
-
-      // Remove DOM event listeners (Phase 3)
-      if (this.container) {
-        if (this.mouseMoveHandler) {
-          this.container.removeEventListener('mousemove', this.mouseMoveHandler);
-          this.mouseMoveHandler = null;
-        }
-        if (this.mouseLeaveHandler) {
-          this.container.removeEventListener('mouseleave', this.mouseLeaveHandler);
-          this.mouseLeaveHandler = null;
-        }
-      }
-
-      // Clear event listeners
-      this.removeAllListeners();
-
-      this.disposed = true;
-      this.initialized = false;
-    } catch (error) {
-      const err = error as Error;
-      this.emit('error', { message: err.message, error: err });
-      throw error;
-    }
-  }
-
-  /**
-   * Tool System Methods (Phase 5)
-   */
-
-  /**
-   * Enable or disable edit mode (FR-006, FR-027)
-   * When disabled, deactivates any active tool and resets tool state
-   *
-   * @param enabled - True to enable edit mode, false to disable
-   */
-  setEditMode(enabled: boolean): void {
-    this._checkInitialized();
-
-    if (this.editMode === enabled) {
-      return; // No change
-    }
-
-    this.editMode = enabled;
-
-    if (!enabled) {
-      // Disable edit mode - deactivate active tool if any
-      if (this.activeTool !== null) {
-        const previousTool = this.activeTool;
-        const tool = this.tools.get(previousTool);
-
-        if (tool) {
-          tool.onDeactivate();
-        }
-
-        this.activeTool = null;
-        this.toolState = null;
-
-        // Emit toolDeactivated event
-        this.emit('toolDeactivated', { toolType: previousTool });
-      }
-    }
-  }
 
   /**
    * Convenience method that toggle a tool on if it is off (possibly deactivating previous tool), or off if it is on
@@ -1142,6 +904,39 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     this.activeTool = null;
     // Emit toolDeactivated event
     this.emit('toolDeactivated', { toolType: previousTool });
+  }
+
+  /**
+   * Get the list of available component types for the AddComponent tool
+   */
+  getAvailableComponentTypes(): ComponentType[] {
+    return this.factoryRegistry.getRegisteredTypes();
+  }
+
+  /**
+   * Set the component type for the AddComponent tool
+   * @param componentType
+   */
+  setAddComponentType(componentType: ComponentType | null): void {
+    if (!this.editMode || this.activeTool !== 'addComponent') {
+      throw new Error(
+        'Edit mode must be enabled and AddComponent tool must be active to set component type'
+      );
+    }
+    const tool = this.tools.get('addComponent') as AddComponentTool;
+    if (!tool) {
+      throw new Error('AddComponent tool not found');
+    }
+    tool.setComponentType(componentType);
+  }
+
+  /**
+   * Get the currently active tool (FR-028)
+   *
+   * @returns Current tool type or null if no tool is active
+   */
+  getActiveTool(): ToolType | null {
+    return this.activeTool;
   }
 
   /**
@@ -1183,52 +978,6 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
   }
 
   /**
-   * Get the list of available component types for the AddComponent tool
-   */
-  getAvailableComponentTypes(): ComponentType[] {
-    return this.factoryRegistry.getRegisteredTypes();
-  }
-
-  /**
-   * Set the component type for the AddComponent tool
-   * @param componentType
-   */
-  setAddComponentType(componentType: ComponentType | null): void {
-    if (!this.editMode || this.activeTool !== 'addComponent') {
-      throw new Error(
-        'Edit mode must be enabled and AddComponent tool must be active to set component type'
-      );
-    }
-    const tool = this.tools.get('addComponent') as AddComponentTool;
-    if (!tool) {
-      throw new Error('AddComponent tool not found');
-    }
-    tool.setComponentType(componentType);
-  }
-
-  /**
-   * Get the currently active tool (FR-028)
-   *
-   * @returns Current tool type or null if no tool is active
-   */
-  getActiveTool(): ToolType | null {
-    return this.activeTool;
-  }
-
-  /**
-   * Private helper methods
-   */
-
-  private _checkInitialized(): void {
-    if (this.disposed) {
-      throw new Error('Renderer has been disposed');
-    }
-    if (!this.initialized) {
-      throw new Error('Renderer not initialized. Call initialize() first.');
-    }
-  }
-
-  /**
    * Initialize editing tools
    * @private
    */
@@ -1240,16 +989,14 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
   }
 
   /**
-   * Perform a full update of all circuit visuals : if no circuit, clear scene
+   * recreate all visuals based on circuit data
+   * Should be called on an already cleared scene
    * @private
    */
   private _fullUpdate(): void {
-    // Remove all existing visual objects
-    this._removeAllVisuals();
+    this._checkInitialized();
 
-    if (!this.circuit) {
-      return;
-    }
+    if (!this.circuit) return;
 
     // 1. Add circuit sized grid
     this.grid = createGridHelper(this.circuit.metadata.size, this.circuit.metadata.divisions);
@@ -1274,66 +1021,6 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     }
     for (const wire of wires) {
       this._createWireObject3D(wire);
-    }
-  }
-
-  private _incrementalUpdate(changedData: ChangedData): void {
-    // Remove deleted objects
-    if (changedData.removedComponents) {
-      for (const id of changedData.removedComponents) {
-        this._removeComponentObject3D(id);
-      }
-    }
-
-    if (changedData.removedWires) {
-      for (const id of changedData.removedWires) {
-        this._removeWireObject3D(id);
-      }
-    }
-
-    if (changedData.removedENodes) {
-      for (const id of changedData.removedENodes) {
-        this._removeEnodeObject3D(id);
-      }
-    }
-
-    // Add new objects
-    if (changedData.addedComponents) {
-      for (const id of changedData.addedComponents) {
-        const component = this.circuit.getComponent(id);
-        if (component) {
-          this._createComponentObject3D(component);
-        }
-      }
-    }
-
-    if (changedData.addedWires) {
-      for (const id of changedData.addedWires) {
-        const wire = this.circuit.getWire(id);
-        if (wire) {
-          this._createWireObject3D(wire);
-        }
-      }
-    }
-
-    if (changedData.addedENodes) {
-      for (const id of changedData.addedENodes) {
-        const enode = this.circuit.getENode(id);
-        if (enode) {
-          this._createEnodeObject3D(enode);
-        }
-      }
-    }
-
-    // Update modified objects
-    if (changedData.modifiedComponents) {
-      for (const id of changedData.modifiedComponents) {
-        this._removeComponentObject3D(id);
-        const component = this.circuit.getComponent(id);
-        if (component) {
-          this._createComponentObject3D(component);
-        }
-      }
     }
   }
 
@@ -1610,21 +1297,18 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
   }
 
   private _removeAllVisuals(): void {
-    // Remove all component meshes
-    for (const id of Array.from(this.componentObject3Ds.keys())) {
-      this._removeComponentObject3D(id);
-    }
-
     // Remove all wire meshes
     for (const id of Array.from(this.wireObject3Ds.keys())) {
       this._removeWireObject3D(id);
     }
-
     // Remove all enode meshes
     for (const id of Array.from(this.enodeObject3Ds.keys())) {
       this._removeEnodeObject3D(id);
     }
-
+    // Remove all component meshes
+    for (const id of Array.from(this.componentObject3Ds.keys())) {
+      this._removeComponentObject3D(id);
+    }
     // remove grid
     if (this.grid) {
       this.scene!.remove(this.grid);

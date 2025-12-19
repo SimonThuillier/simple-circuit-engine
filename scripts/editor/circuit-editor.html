@@ -473,6 +473,8 @@
       }
 
       const sceneManager = new window.CircuitSceneManager(window.componentsFactoryRegistry);
+      sceneManager.on('ready', (e) => console.log(e));
+      sceneManager.on('error', (e) => console.error(e));
       sceneManager.initialize(viewerContainer);
       sceneManager.getScene().add(window.axesHelper);
       sceneManager.getCamera().layers.enable(1); // enode hover layer
@@ -513,18 +515,6 @@
       resizeRenderer();
       window.addEventListener('resize', resizeRenderer);
 
-      sceneManager.on('hover', (e) => {
-        //console.log('hover', e);
-      });
-      sceneManager.on('unhover', (e) => {
-        //console.log('unhover', e);
-      });
-      sceneManager.on('select', (e) => {
-        //console.log('select', e);
-      });
-      sceneManager.on('deselect', (e) => {
-        //console.log('deselect', e);
-      });
       sceneManager.on('toolActivated', (e) => {
         console.log('toolActivated', e);
       });
@@ -618,7 +608,7 @@
       });
 
       document.getElementById('clear-btn').addEventListener('click', () => {
-        sceneManager.clearVisuals();
+        sceneManager.setCircuit(null);
         document.getElementById('circuit-input').value = '';
         document.getElementById('error-display').classList.add('hidden');
         resizeRenderer();

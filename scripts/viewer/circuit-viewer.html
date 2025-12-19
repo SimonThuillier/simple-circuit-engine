@@ -484,7 +484,7 @@
       });
 
       document.getElementById('clear-btn').addEventListener('click', () => {
-        sceneManager.clearVisuals();
+        sceneManager.setCircuit(null);
         document.getElementById('circuit-input').value = '';
         document.getElementById('error-display').classList.add('hidden');
         resizeRenderer();
