@@ -614,11 +614,13 @@ export class Circuit {
    * Split an existing wire at a position, creating a branching point.
    * The original wire is removed and replaced with two new wires
    * connecting through the new branching point.
+   * NB : in the special case where targetEnode belongs to a component where the wire is already connected
+   * only one new wire will be created as this method don't allow a wire directly connecting two pins of the same component.
    *
    * @param wireId - Wire to split
    * @param position - Position for the new branching point : no effect if targetEnodeId provided
    * @param targetEnodeId - if provided, the existing enode to split the wire at
-   * @returns Object containing the new branching point and two wires
+   * @returns Object containing the new branching point and an array of the two new wires
    * @throws Error if wireId not found
    */
   splitWire(
@@ -627,8 +629,7 @@ export class Circuit {
     targetEnodeId: UUID | null = null
   ): {
     branchingPoint: ENode;
-    wire1: Wire;
-    wire2: Wire;
+    wires: Array<Wire>;
   } {
     const wire = this.wires.get(wireId);
 
@@ -659,29 +660,48 @@ export class Circuit {
     enode1.wires.delete(wireId);
     enode2.wires.delete(wireId);
 
-    let branchingPoint: ENode;
+    let eNode: ENode;
     if (targetEnodeId) {
       if (!this.enodes.get(targetEnodeId)) {
         throw new Error(`Target ENode ${targetEnodeId} does not exist`);
       } else {
-        branchingPoint = this.enodes.get(targetEnodeId)!;
+        eNode = this.enodes.get(targetEnodeId)!;
       }
     } else {
       // Create new branching point ENode at specified position
-      branchingPoint = this.addBranchingPoint(position);
+      eNode = this.addBranchingPoint(position);
     }
 
-    const newWire1 = this.addWire(enode1.id, branchingPoint.id, [...positionsWire1]);
-    const newWire2 = this.addWire(branchingPoint.id, enode2.id, [...positionsWire2]);
+    const newWires = [];
 
-    if (newWire1 instanceof Error || newWire2 instanceof Error) {
-      throw new Error('Failed to create wires after split');
+    if (
+      (!eNode.component || enode1.component !== eNode.component) &&
+      !this.hasWireBetween(enode1.id, eNode.id)
+    ) {
+      const result = this.addWire(enode1.id, eNode.id, positionsWire1);
+      if (result instanceof Wire) {
+        this.simplifyWireIntermediatePositions(result.id);
+        newWires.push(result);
+      } else {
+        console.warn(`Failure to create wire at split : ${result.message}`);
+      }
+    }
+    if (
+      (!eNode.component || enode2.component !== eNode.component) &&
+      !this.hasWireBetween(enode2.id, eNode.id)
+    ) {
+      const result = this.addWire(eNode.id, enode2.id, positionsWire2);
+      if (result instanceof Wire) {
+        this.simplifyWireIntermediatePositions(result.id);
+        newWires.push(result);
+      } else {
+        console.warn(`Failure to create wire at split : ${result.message}`);
+      }
     }
 
     return {
-      branchingPoint,
-      wire1: newWire1,
-      wire2: newWire2,
+      branchingPoint: eNode,
+      wires: newWires,
     };
   }
 

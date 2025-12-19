@@ -60,7 +60,7 @@ sceneManager.setActiveTool('addComponent');
 
 #### Before
 ```typescript
-type ToolType = 'position' | 'addComponent' | 'wire' | 'branchingPoint' | 'delete';
+type ToolType = 'position' | 'addComponent' | 'wire' | 'eNode' | 'delete';
 ```
 
 #### After
@@ -72,7 +72,7 @@ type ToolType = 'build' | 'addComponent';
 - `'position'` → `'build'`
 - `'wire'` → `'build'`
 - `'delete'` → `'build'`
-- `'branchingPoint'` → `'build'`
+- `'eNode'` → `'build'`
 - `'addComponent'` → `'addComponent'` (unchanged)
 
 ### Code Search & Replace
@@ -82,7 +82,7 @@ type ToolType = 'build' | 'addComponent';
 grep -r "setActiveTool\('position'" src/
 grep -r "setActiveTool\('wire'" src/
 grep -r "setActiveTool\('delete'" src/
-grep -r "setActiveTool\('branchingPoint'" src/
+grep -r "setActiveTool\('eNode'" src/
 
 # Find all ToolType checks
 grep -r "tool.type === 'position'" src/

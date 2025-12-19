@@ -73,3 +73,85 @@ export function worldToGridRotation(rotation: THREE.Euler): Rotation {
 export function gridToWorldRotation(rotation: Rotation): THREE.Euler {
   return new THREE.Euler(0, THREE.MathUtils.degToRad(-rotation.angle), 0);
 }
+
+/**
+ * Get the bounding box of a Three.js object in world space
+ *
+ * @param object - The Three.js object to get bounds for
+ * @returns Box3 representing the world-space bounding box
+ */
+export function getObjectBoundingBox(object: THREE.Object3D): THREE.Box3 {
+  const box = new THREE.Box3();
+  box.setFromObject(object);
+  return box;
+}
+
+/**
+ * Project a 3D world position to 2D screen coordinates
+ *
+ * @param worldPosition - Position in world space
+ * @param camera - Camera to use for projection
+ * @param width - Viewport width in pixels
+ * @param height - Viewport height in pixels
+ * @returns Screen coordinates {x, y} where (0,0) is top-left
+ */
+export function worldToScreenPosition(
+  worldPosition: THREE.Vector3,
+  camera: THREE.Camera,
+  width: number,
+  height: number
+): { x: number; y: number } {
+  const vector = worldPosition.clone();
+  vector.project(camera);
+
+  const x = ((vector.x + 1) / 2) * width;
+  const y = ((-vector.y + 1) / 2) * height;
+
+  return { x, y };
+}
+
+/**
+ * Check if a 3D point (projected to screen space) is inside a 2D screen rectangle
+ *
+ * @param worldPosition - Position in world space
+ * @param camera - Camera to use for projection
+ * @param width - Viewport width in pixels
+ * @param height - Viewport height in pixels
+ * @param rect - Screen rectangle with min/max coordinates
+ * @returns true if the projected point is inside the rectangle
+ */
+export function isPointInScreenRect(
+  worldPosition: THREE.Vector3,
+  camera: THREE.Camera,
+  width: number,
+  height: number,
+  rect: { minX: number; minY: number; maxX: number; maxY: number }
+): boolean {
+  const screen = worldToScreenPosition(worldPosition, camera, width, height);
+  return (
+    screen.x >= rect.minX && screen.x <= rect.maxX && screen.y >= rect.minY && screen.y <= rect.maxY
+  );
+}
+
+/**
+ * Check if an object's center point is inside a screen rectangle
+ * Used for rectangle selection of components and branching points
+ *
+ * @param object - The Three.js object to check
+ * @param camera - Camera to use for projection
+ * @param width - Viewport width in pixels
+ * @param height - Viewport height in pixels
+ * @param rect - Screen rectangle with min/max coordinates
+ * @returns true if object's center is inside the rectangle
+ */
+export function isObjectInScreenRect(
+  object: THREE.Object3D,
+  camera: THREE.Camera,
+  width: number,
+  height: number,
+  rect: { minX: number; minY: number; maxX: number; maxY: number }
+): boolean {
+  const worldPosition = new THREE.Vector3();
+  object.getWorldPosition(worldPosition);
+  return isPointInScreenRect(worldPosition, camera, width, height, rect);
+}

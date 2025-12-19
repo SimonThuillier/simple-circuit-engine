@@ -51,7 +51,7 @@ This document consolidates findings from codebase exploration to resolve impleme
 
 **Rationale**: Circuit class manages all model mutations. Need to add:
 - `addBranchingPoint(position: Position, sourceType?: ENodeSourceType): ENode`
-- `splitWire(wireId: UUID, position: Position): { branchingPoint: ENode, wires: [Wire, Wire] }`
+- `splitWire(wireId: UUID, position: Position): { eNode: ENode, wires: [Wire, Wire] }`
 - `updateWireIntermediatePositions(wireId: UUID, positions: Position[]): Wire`
 - `updateENodeSourceType(enodeId: UUID, sourceType: ENodeSourceType | null): void`
 
@@ -226,7 +226,7 @@ handleDblClick(event: MouseEvent): void {
 interface WireDragState {
   wireId: UUID;
   dragTarget:
-    | { type: 'branchingPoint'; enodeId: UUID; originalPosition: Position }
+    | { type: 'eNode'; enodeId: UUID; originalPosition: Position }
     | { type: 'intermediatePoint'; index: number; originalPosition: Position; isNew: boolean }
     | { type: 'newIntermediatePoint'; insertIndex: number };
   startMousePosition: THREE.Vector3;

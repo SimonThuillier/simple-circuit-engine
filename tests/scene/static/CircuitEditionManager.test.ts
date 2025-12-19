@@ -290,8 +290,8 @@ describe('CircuitEditionManager', () => {
       const result = manager.saveSplitWire(wireId, worldPosition);
 
       expect(result.branchingPoint).toBeDefined();
-      expect(result.wire1).toBeDefined();
-      expect(result.wire2).toBeDefined();
+      expect(result.wires).toBeDefined();
+      expect(result.wires.length).toBe(2);
       expect(result.branchingPoint.type).toBe(ENodeType.BranchingPoint);
     });
 
@@ -764,8 +764,8 @@ describe('CircuitEditionManager', () => {
       const splitResult = manager.saveSplitWire(wire.id, new THREE.Vector3(5, 0, 0));
 
       expect(splitResult.branchingPoint).toBeDefined();
-      expect(splitResult.wire1).toBeDefined();
-      expect(splitResult.wire2).toBeDefined();
+      expect(splitResult.wires).toBeDefined();
+      expect(splitResult.wires.length).toBe(2);
       expect(circuit.getWire(wire.id)).toBeUndefined(); // Original wire deleted
       expect(circuit.getAllWires().length).toBe(2); // Two new wires
       expect(circuit.getAllENodes().length).toBe(3); // Original 2 + new BP

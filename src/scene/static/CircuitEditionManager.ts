@@ -209,7 +209,7 @@ export class CircuitEditionManager {
     wireId: UUID,
     worldPosition: Vector3,
     targetEnodeId: UUID | null = null
-  ): { branchingPoint: ENode; wire1: Wire; wire2: Wire } {
+  ): { branchingPoint: ENode; wires: Wire[] } {
     const circuit = this._sceneManager.getCircuit();
     if (!circuit) {
       throw new Error('No circuit available in the scene manager.');
@@ -217,6 +217,7 @@ export class CircuitEditionManager {
     // Convert world position to grid position
     const gridPosition = worldToGridPosition(worldPosition);
     const result = circuit.splitWire(wireId, gridPosition, targetEnodeId);
+    console.log(result);
 
     this._sceneManager.emit('circuitElementAction', {
       type: 'wire',
@@ -230,16 +231,13 @@ export class CircuitEditionManager {
         id: result.branchingPoint.id,
       });
     }
-    this._sceneManager.emit('circuitElementAction', {
-      type: 'wire',
-      action: 'add',
-      id: result.wire2.id,
-    });
-    this._sceneManager.emit('circuitElementAction', {
-      type: 'wire',
-      action: 'add',
-      id: result.wire2.id,
-    });
+    for (const wire of result.wires) {
+      this._sceneManager.emit('circuitElementAction', {
+        type: 'wire',
+        action: 'add',
+        id: wire.id,
+      });
+    }
     return result;
   }
 

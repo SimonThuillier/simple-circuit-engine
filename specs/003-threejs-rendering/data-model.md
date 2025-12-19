@@ -294,7 +294,7 @@ interface IEditingTool {
 ```
 
 **Contract**:
-- `type`: Unique identifier for the tool ('position', 'addComponent', 'wire', 'branchingPoint', 'delete')
+- `type`: Unique identifier for the tool ('position', 'addComponent', 'wire', 'eNode', 'delete')
 - `onActivate()`: Called when tool becomes active (setup state, show previews)
 - `onDeactivate()`: Called when tool is deactivated (cleanup state, hide previews)
 - `getCursorType()`: Returns current cursor style for this tool
@@ -315,14 +315,14 @@ interface IEditingTool {
 
 **Type Definition**:
 ```typescript
-type ToolType = 'position' | 'addComponent' | 'wire' | 'branchingPoint' | 'delete';
+type ToolType = 'position' | 'addComponent' | 'wire' | 'eNode' | 'delete';
 ```
 
 **Values**:
 - `position`: Select/move/rotate components
 - `addComponent`: Place new components with preview
 - `wire`: Create wires between pins/branching points
-- `branchingPoint`: Insert branching points on wires
+- `eNode`: Insert branching points on wires
 - `delete`: Delete components/wires/branching points
 
 ---

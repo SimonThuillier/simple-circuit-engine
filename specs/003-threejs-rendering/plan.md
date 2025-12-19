@@ -197,7 +197,7 @@ tests/
 6. **SceneManagerCallback**: Function signature for event callbacks
 7. **ChangedData**: Optional parameter type for incremental updates
 8. **IEditingTool**: Interface defining tool contract (onActivate, onDeactivate, getCursorType, getPreviewState)
-9. **ToolType**: Union type of available tools ('position' | 'addComponent' | 'wire' | 'branchingPoint' | 'delete')
+9. **ToolType**: Union type of available tools ('position' | 'addComponent' | 'wire' | 'eNode' | 'delete')
 10. **ToolState**: Runtime state for active tool (operation tracking, preview objects, tool-specific data)
 11. **CursorType**: Union type for cursor styles ('default' | 'pointer' | 'crosshair' | 'move' | 'not-allowed' | 'grab' | 'grabbing')
 
@@ -260,7 +260,7 @@ tests/
    - `ChangedData`: Object type for incremental updates
    - `SceneManagerOptions`: Optional configuration
    - **Tool System Types**:
-   - `ToolType`: 'position' | 'addComponent' | 'wire' | 'branchingPoint' | 'delete'
+   - `ToolType`: 'position' | 'addComponent' | 'wire' | 'eNode' | 'delete'
    - `CursorType`: 'default' | 'pointer' | 'crosshair' | 'move' | 'not-allowed' | 'grab' | 'grabbing'
    - `IEditingTool`: Tool interface with lifecycle methods
    - `CircuitSceneObjectType`: 'component' | 'wire' | 'enode'
