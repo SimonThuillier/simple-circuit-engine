@@ -209,7 +209,7 @@ export class CircuitEditionManager {
     wireId: UUID,
     worldPosition: Vector3,
     targetEnodeId: UUID | null = null
-  ): { branchingPoint: ENode; wires: Wire[]} {
+  ): { branchingPoint: ENode; wires: Wire[] } {
     const circuit = this._sceneManager.getCircuit();
     if (!circuit) {
       throw new Error('No circuit available in the scene manager.');
@@ -231,7 +231,7 @@ export class CircuitEditionManager {
         id: result.branchingPoint.id,
       });
     }
-    for(const wire of result.wires) {
+    for (const wire of result.wires) {
       this._sceneManager.emit('circuitElementAction', {
         type: 'wire',
         action: 'add',

@@ -129,10 +129,7 @@ export function isPointInScreenRect(
 ): boolean {
   const screen = worldToScreenPosition(worldPosition, camera, width, height);
   return (
-    screen.x >= rect.minX &&
-    screen.x <= rect.maxX &&
-    screen.y >= rect.minY &&
-    screen.y <= rect.maxY
+    screen.x >= rect.minX && screen.x <= rect.maxX && screen.y >= rect.minY && screen.y <= rect.maxY
   );
 }
 

@@ -672,32 +672,36 @@ export class Circuit {
       eNode = this.addBranchingPoint(position);
     }
 
-    const newWires = []
+    const newWires = [];
 
-    if((!eNode.component || enode1.component !== eNode.component) && !this.hasWireBetween(enode1.id, eNode.id)){
+    if (
+      (!eNode.component || enode1.component !== eNode.component) &&
+      !this.hasWireBetween(enode1.id, eNode.id)
+    ) {
       const result = this.addWire(enode1.id, eNode.id, positionsWire1);
-      if(result instanceof Wire){
+      if (result instanceof Wire) {
         this.simplifyWireIntermediatePositions(result.id);
         newWires.push(result);
-      }
-      else {
+      } else {
         console.warn(`Failure to create wire at split : ${result.message}`);
       }
     }
-    if((!eNode.component || enode2.component !== eNode.component) && !this.hasWireBetween(enode2.id, eNode.id)){
+    if (
+      (!eNode.component || enode2.component !== eNode.component) &&
+      !this.hasWireBetween(enode2.id, eNode.id)
+    ) {
       const result = this.addWire(eNode.id, enode2.id, positionsWire2);
-      if(result instanceof Wire){
+      if (result instanceof Wire) {
         this.simplifyWireIntermediatePositions(result.id);
         newWires.push(result);
-      }
-      else {
+      } else {
         console.warn(`Failure to create wire at split : ${result.message}`);
       }
     }
 
     return {
       branchingPoint: eNode,
-      wires: newWires
+      wires: newWires,
     };
   }
 

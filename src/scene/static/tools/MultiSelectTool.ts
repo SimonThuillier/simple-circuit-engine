@@ -3,19 +3,20 @@
  * @module scene/static/tools/MultiSelectTool
  */
 
-import type {
-  IEditingTool,
-  CursorType,
-} from '../../shared/types';
+import type { IEditingTool, CursorType } from '../../shared/types';
 import type { CircuitSceneManager } from '../CircuitSceneManager';
 import type { UUID } from '../../../core/types/Identifier';
+import type { ComponentType } from '../../../core/types/ComponentType';
 import * as THREE from 'three';
+import { Position } from '../../../core/types/Position';
 import {
   gridToWorldPosition,
+  gridToWorldRotation,
   isPointInScreenRect,
   nearestWorldSnapPosition,
-  worldToGridPosition
+  worldToGridPosition,
 } from '../../shared/GeometryUtils';
+import { Rotation } from '@/core/types/Rotation';
 
 /**
  * Operating modes for the MultiSelectTool
@@ -55,6 +56,60 @@ export interface BulkDragState {
 /** Minimum selection rectangle size in pixels to distinguish from click */
 const MIN_SELECTION_RECT_SIZE = 5;
 
+// =============================================================================
+// Clipboard Interfaces (T038)
+// =============================================================================
+
+/**
+ * Complete clipboard data structure for copy/paste
+ */
+export interface ClipboardData {
+  /** Center of selection bounding box in grid coordinates */
+  anchor: { x: number; y: number };
+  /** Copied component definitions */
+  components: ClipboardComponent[];
+  /** Copied branching point definitions */
+  branchingPoints: ClipboardBranchingPoint[];
+  /** Copied wire definitions (only wires with both endpoints in selection) */
+  wires: ClipboardWire[];
+}
+
+/**
+ * Component data within clipboard
+ */
+export interface ClipboardComponent {
+  /** Component type identifier */
+  type: string;
+  /** Position relative to clipboard anchor */
+  relativePosition: { x: number; y: number };
+  /** Rotation angle in degrees */
+  rotation: number;
+  /** Original element ID for wire remapping during paste */
+  originalId: UUID;
+}
+
+/**
+ * Branching point data within clipboard
+ */
+export interface ClipboardBranchingPoint {
+  /** Position relative to clipboard anchor */
+  relativePosition: { x: number; y: number };
+  /** Original element ID for wire remapping during paste */
+  originalId: UUID;
+}
+
+/**
+ * Wire data within clipboard
+ */
+export interface ClipboardWire {
+  /** Original ID of first endpoint (component pin or branching point) */
+  node1OriginalId: UUID;
+  /** Original ID of second endpoint */
+  node2OriginalId: UUID;
+  /** Intermediate positions relative to clipboard anchor */
+  relativeIntermediatePositions: Array<{ x: number; y: number }>;
+}
+
 /**
  * MultiSelectTool implementation
  *
@@ -75,6 +130,13 @@ export class MultiSelectTool implements IEditingTool {
 
   // Bulk drag state (Phase 4)
   private bulkDragState: BulkDragState | null = null;
+
+  // Clipboard state (Phase 6)
+  private clipboardData: ClipboardData | null = null;
+  // Maps pin IDs to their parent component IDs for wire reconstruction during paste
+  private clipboardPinToComponent: Map<UUID, UUID> = new Map();
+  // Maps pin IDs to their index within their parent component
+  private clipboardPinIndices: Map<UUID, number> = new Map();
 
   // Bound event handlers for stable references
   private handlePointerDown: (event: PointerEvent) => void;
@@ -207,33 +269,37 @@ export class MultiSelectTool implements IEditingTool {
 
         // T020: Shift-click adds to selection
         if (shiftHeld) {
-          if(hoveredElement.type === 'wire') return; // Wires cannot be individually added/removed from selection
+          if (hoveredElement.type === 'wire') return; // Wires cannot be individually added/removed from selection
           if (!isSelected) {
             selectionManager.addToSelection(hoveredElement.type, hoveredElement.id);
             // TODO: also add wires connected to this element (need some refactoring on SelectionManager)
-          }
-          else {
+          } else {
             // If already selected toggle => remove from the selection with deselecting cascade
             selectionManager.removeFromSelection(hoveredElement.type, hoveredElement.id);
-            if(hoveredElement.type === 'component') {
-              const circuitComponent = this.sceneManager.getCircuit()!.getComponent(hoveredElement.id);
-                if(circuitComponent) {
-                  // Also remove its pins and connected wires from selection
-                  for (const pinId of circuitComponent.pins) {
-                    selectionManager.removeFromSelection('enode', pinId);
-                    const enode = this.sceneManager.getCircuit()!.getENode(pinId);
-                    if(enode) {
-                      for (const wireId of enode.wires) {
-                        selectionManager.removeFromSelection('wire', wireId);
-                      }
+            if (hoveredElement.type === 'component') {
+              const circuitComponent = this.sceneManager
+                .getCircuit()!
+                .getComponent(hoveredElement.id);
+              if (circuitComponent) {
+                // Also remove its pins and connected wires from selection
+                for (const pinId of circuitComponent.pins) {
+                  selectionManager.removeFromSelection('enode', pinId);
+                  const enode = this.sceneManager.getCircuit()!.getENode(pinId);
+                  if (enode) {
+                    for (const wireId of enode.wires) {
+                      selectionManager.removeFromSelection('wire', wireId);
                     }
                   }
                 }
+              }
             }
             // enode without componentId means branching point
-            else if (hoveredElement.type === 'enode' && !hoveredElement.object3D.userData.componentId) {
+            else if (
+              hoveredElement.type === 'enode' &&
+              !hoveredElement.object3D.userData.componentId
+            ) {
               const enode = this.sceneManager.getCircuit()!.getENode(hoveredElement.id);
-              if(enode) {
+              if (enode) {
                 for (const wireId of enode.wires) {
                   selectionManager.removeFromSelection('wire', wireId);
                 }
@@ -244,7 +310,10 @@ export class MultiSelectTool implements IEditingTool {
         }
 
         // T019: Single click selects element (clears previous)
-        if (!isSelected && !(hoveredElement.type === 'enode' && !!hoveredElement.object3D.userData.componentId)) {
+        if (
+          !isSelected &&
+          !(hoveredElement.type === 'enode' && !!hoveredElement.object3D.userData.componentId)
+        ) {
           selectionManager.selectOne(hoveredElement.type, hoveredElement.id);
           return;
         }
@@ -329,9 +398,12 @@ export class MultiSelectTool implements IEditingTool {
   }
 
   /**
-   * Handle keyboard events (T017, T030, T034)
+   * Handle keyboard events (T017, T030, T034, T043, T048, T053)
    * - Escape: cancel current operation
    * - Delete/Backspace: delete selection
+   * - Ctrl+C/Cmd+C: copy selection
+   * - Ctrl+V/Cmd+V: paste clipboard
+   * - Ctrl+X/Cmd+X: cut selection
    */
   private _handleKeyDown(event: KeyboardEvent): void {
     // T017, T030: Escape cancels rectangle selection or bulk drag
@@ -351,6 +423,36 @@ export class MultiSelectTool implements IEditingTool {
       if (this.mode === 'idle') {
         this.deleteSelection();
       }
+      return;
+    }
+
+    // Detect Ctrl (Windows/Linux) or Cmd (Mac)
+    const ctrlOrCmd = event.ctrlKey || event.metaKey;
+
+    if (!ctrlOrCmd) return;
+
+    // T043: Ctrl+C / Cmd+C - Copy selection
+    if (event.key === 'c' || event.key === 'C') {
+      if (this.mode === 'idle') {
+        this.copySelection();
+      }
+      return;
+    }
+
+    // T048: Ctrl+V / Cmd+V - Paste clipboard
+    if (event.key === 'v' || event.key === 'V') {
+      if (this.mode === 'idle') {
+        this.pasteAtCursor();
+      }
+      return;
+    }
+
+    // T053: Ctrl+X / Cmd+X - Cut selection
+    if (event.key === 'x' || event.key === 'X') {
+      if (this.mode === 'idle') {
+        this.cutSelection();
+      }
+      return;
     }
   }
 
@@ -499,10 +601,10 @@ export class MultiSelectTool implements IEditingTool {
           for (const pinId of component.pins) {
             selectedEnodeIds.add(pinId);
             const enode = circuit.getENode(pinId);
-            if(!enode) continue;
+            if (!enode) continue;
             for (const wireId of enode.wires) {
-                const currentCount = wireEnodeSelectionCount.get(wireId) || 0;
-                wireEnodeSelectionCount.set(wireId, currentCount + 1);
+              const currentCount = wireEnodeSelectionCount.get(wireId) || 0;
+              wireEnodeSelectionCount.set(wireId, currentCount + 1);
             }
           }
         }
@@ -525,7 +627,7 @@ export class MultiSelectTool implements IEditingTool {
         result.enodes.push(enodeId);
         selectedEnodeIds.add(enodeId);
         const enode = circuit.getENode(enodeId);
-        if(!enode) continue;
+        if (!enode) continue;
         for (const wireId of enode.wires) {
           const currentCount = wireEnodeSelectionCount.get(wireId) || 0;
           wireEnodeSelectionCount.set(wireId, currentCount + 1);
@@ -669,7 +771,8 @@ export class MultiSelectTool implements IEditingTool {
     // Capture branching point positions
     for (const enodeId of selectedIds.enodes) {
       const object3D = this.sceneManager.getEnodeObject3Ds().get(enodeId);
-      if (object3D && !object3D.userData.componentId) { // Only branching points
+      if (object3D && !object3D.userData.componentId) {
+        // Only branching points
         initialPositions.set(enodeId, object3D.position.clone());
       }
     }
@@ -712,9 +815,7 @@ export class MultiSelectTool implements IEditingTool {
       const wire = circuit.getWire(wireId);
       if (wire && wire.intermediatePositions.length > 0) {
         // Clone all intermediate positions
-        const positions = wire.intermediatePositions.map(pos =>
-          gridToWorldPosition(pos)
-        );
+        const positions = wire.intermediatePositions.map((pos) => gridToWorldPosition(pos));
         initialWireIntermediatePositions.set(wireId, positions);
       }
     }
@@ -752,7 +853,8 @@ export class MultiSelectTool implements IEditingTool {
   private _updateBulkDrag(worldPosition: THREE.Vector3): void {
     if (!this.bulkDragState) return;
 
-    const { dragStartWorld, initialPositions, affectedWireIds, initialWireIntermediatePositions } = this.bulkDragState;
+    const { dragStartWorld, initialPositions, affectedWireIds, initialWireIntermediatePositions } =
+      this.bulkDragState;
 
     // Calculate delta
     const delta = new THREE.Vector3().subVectors(worldPosition, dragStartWorld);
@@ -768,7 +870,9 @@ export class MultiSelectTool implements IEditingTool {
         componentObject3D.position.copy(snappedPosition);
 
         // Update component in circuit model
-        this.sceneManager.getCircuitEditionManager().saveEditComponent(elementId, componentObject3D);
+        this.sceneManager
+          .getCircuitEditionManager()
+          .saveEditComponent(elementId, componentObject3D);
         continue;
       }
 
@@ -786,7 +890,7 @@ export class MultiSelectTool implements IEditingTool {
     const editionManager = this.sceneManager.getCircuitEditionManager();
     for (const [wireId, initialIntermediatePositions] of initialWireIntermediatePositions) {
       // Apply delta to each intermediate position
-      const updatedPositions = initialIntermediatePositions.map(pos => {
+      const updatedPositions = initialIntermediatePositions.map((pos) => {
         const newPos = new THREE.Vector3().addVectors(pos, delta);
         return worldToGridPosition(newPos);
       });
@@ -817,7 +921,6 @@ export class MultiSelectTool implements IEditingTool {
     // Calculate final delta
     const delta = new THREE.Vector3().subVectors(currentPosition, dragStartWorld);
     const gridDelta = worldToGridPosition(delta);
-
 
     // T032: Emit completion event
     this.sceneManager.emit('toolOperationCompleted', {
@@ -850,14 +953,17 @@ export class MultiSelectTool implements IEditingTool {
   private _cancelBulkDrag(): void {
     if (!this.bulkDragState) return;
 
-    const { initialPositions, affectedWireIds, initialWireIntermediatePositions } = this.bulkDragState;
+    const { initialPositions, affectedWireIds, initialWireIntermediatePositions } =
+      this.bulkDragState;
 
     // Revert all elements to initial positions
     for (const [elementId, initialPos] of initialPositions) {
       const componentObject3D = this.sceneManager.getComponentObject3Ds().get(elementId);
       if (componentObject3D) {
         componentObject3D.position.copy(initialPos);
-        this.sceneManager.getCircuitEditionManager().saveEditComponent(elementId, componentObject3D);
+        this.sceneManager
+          .getCircuitEditionManager()
+          .saveEditComponent(elementId, componentObject3D);
         continue;
       }
 
@@ -871,7 +977,7 @@ export class MultiSelectTool implements IEditingTool {
     // Revert intermediate positions of selected wires
     const editionManager = this.sceneManager.getCircuitEditionManager();
     for (const [wireId, initialIntermediatePositions] of initialWireIntermediatePositions) {
-      const positions = initialIntermediatePositions.map(pos => worldToGridPosition(pos));
+      const positions = initialIntermediatePositions.map((pos) => worldToGridPosition(pos));
       editionManager.saveEditWirePositions(wireId, positions, false);
     }
 
@@ -902,6 +1008,339 @@ export class MultiSelectTool implements IEditingTool {
   }
 
   // ==========================================================================
+  // Copy/Paste Operations (T039-T051) - Phase 6
+  // ==========================================================================
+
+  /**
+   * Check if clipboard has content (T050)
+   */
+  hasClipboardContent(): boolean {
+    return this.clipboardData !== null;
+  }
+
+  /**
+   * Copy current selection to clipboard (T039, T040, T041, T042, T051)
+   * @returns true if copy succeeded (non-empty selection)
+   */
+  copySelection(): boolean {
+    const circuit = this.sceneManager.getCircuit();
+    if (!circuit) return false;
+
+    const selectionManager = this.sceneManager.getSelectionManager();
+    const selectedIds = selectionManager.getSelectedIds();
+
+    // Empty selection - no-op
+    if (
+      selectedIds.components.length === 0 &&
+      selectedIds.enodes.length === 0 &&
+      selectedIds.wires.length === 0
+    ) {
+      return false;
+    }
+
+    // T040: Calculate anchor (center of selection bounding box)
+    const bounds = {
+      minX: Infinity,
+      maxX: -Infinity,
+      minY: Infinity,
+      maxY: -Infinity,
+    };
+
+    // Gather component positions
+    for (const componentId of selectedIds.components) {
+      const component = circuit.getComponent(componentId);
+      if (component) {
+        const pos = component.position;
+        bounds.minX = Math.min(bounds.minX, pos.x);
+        bounds.maxX = Math.max(bounds.maxX, pos.x);
+        bounds.minY = Math.min(bounds.minY, pos.y);
+        bounds.maxY = Math.max(bounds.maxY, pos.y);
+      }
+    }
+
+    // Gather branching point positions
+    for (const enodeId of selectedIds.enodes) {
+      const enode = circuit.getENode(enodeId);
+      if (enode && enode.position) {
+        const pos = enode.position;
+        bounds.minX = Math.min(bounds.minX, pos.x);
+        bounds.maxX = Math.max(bounds.maxX, pos.x);
+        bounds.minY = Math.min(bounds.minY, pos.y);
+        bounds.maxY = Math.max(bounds.maxY, pos.y);
+      }
+    }
+
+    const anchor = {
+      x: (bounds.minX + bounds.maxX) / 2,
+      y: (bounds.minY + bounds.maxY) / 2,
+    };
+
+    // T041: Serialize components with relative positions
+    const clipboardComponents: ClipboardComponent[] = [];
+    for (const componentId of selectedIds.components) {
+      const component = circuit.getComponent(componentId);
+      if (component) {
+        const pos = component.position;
+        clipboardComponents.push({
+          type: component.type,
+          relativePosition: {
+            x: pos.x - anchor.x,
+            y: pos.y - anchor.y,
+          },
+          rotation: component.rotation.angle,
+          originalId: componentId,
+        });
+      }
+    }
+
+    // T041: Serialize branching points with relative positions
+    const clipboardBranchingPoints: ClipboardBranchingPoint[] = [];
+    for (const enodeId of selectedIds.enodes) {
+      const enode = circuit.getENode(enodeId);
+      if (enode && enode.position) {
+        const pos = enode.position;
+        clipboardBranchingPoints.push({
+          relativePosition: {
+            x: pos.x - anchor.x,
+            y: pos.y - anchor.y,
+          },
+          originalId: enodeId,
+        });
+      }
+    }
+
+    // T042: Serialize wires (only wires with both endpoints in selection)
+    // Create set of all selected endpoint IDs (component pins + branching points)
+    const selectedEndpointIds = new Set<UUID>();
+
+    // Also build pin-to-component mapping and pin indices for paste operation
+    this.clipboardPinToComponent.clear();
+    this.clipboardPinIndices.clear();
+
+    // Add component pins
+    for (const componentId of selectedIds.components) {
+      const component = circuit.getComponent(componentId);
+      if (component) {
+        for (let i = 0; i < component.pins.length; i++) {
+          const pinId = component.pins[i];
+          if (pinId) {
+            selectedEndpointIds.add(pinId);
+            this.clipboardPinToComponent.set(pinId, componentId);
+            this.clipboardPinIndices.set(pinId, i);
+          }
+        }
+      }
+    }
+
+    // Add branching points
+    for (const enodeId of selectedIds.enodes) {
+      selectedEndpointIds.add(enodeId);
+    }
+
+    const clipboardWires: ClipboardWire[] = [];
+    for (const wireId of selectedIds.wires) {
+      const wire = circuit.getWire(wireId);
+      if (!wire) continue;
+
+      // Only include wire if both endpoints are in selection
+      if (selectedEndpointIds.has(wire.node1) && selectedEndpointIds.has(wire.node2)) {
+        // Calculate relative intermediate positions
+        const relativeIntermediatePositions = wire.intermediatePositions.map((pos) => ({
+          x: pos.x - anchor.x,
+          y: pos.y - anchor.y,
+        }));
+
+        clipboardWires.push({
+          node1OriginalId: wire.node1,
+          node2OriginalId: wire.node2,
+          relativeIntermediatePositions,
+        });
+      }
+    }
+
+    // Store clipboard data
+    this.clipboardData = {
+      anchor,
+      components: clipboardComponents,
+      branchingPoints: clipboardBranchingPoints,
+      wires: clipboardWires,
+    };
+
+    // T051: Emit copy completed event
+    this.sceneManager.emit('toolOperationCompleted', {
+      toolType: this.type,
+      mode: 'copy',
+      operationData: {
+        componentCount: clipboardComponents.length,
+        branchingPointCount: clipboardBranchingPoints.length,
+        wireCount: clipboardWires.length,
+      },
+      changedData: {},
+    });
+
+    return true;
+  }
+
+  /**
+   * Paste clipboard content at cursor position (T044, T045, T046, T047, T049, T051)
+   * @returns true if paste succeeded (non-empty clipboard)
+   */
+  pasteAtCursor(): boolean {
+    if (!this.clipboardData) return false;
+
+    const circuit = this.sceneManager.getCircuit();
+    if (!circuit) return false;
+
+    const cursorPosition = this.sceneManager.cursorGroundPlanePosition();
+    const gridCursor = worldToGridPosition(cursorPosition);
+
+    // Map from original IDs to newly created element IDs for wire remapping (T047)
+    const idRemap = new Map<UUID, UUID>();
+
+    // T045: Create components from clipboard
+    const createdComponentIds: UUID[] = [];
+    for (const clipComponent of this.clipboardData.components) {
+      const newGridPos = new Position(
+        Math.round(gridCursor.x + clipComponent.relativePosition.x),
+        Math.round(gridCursor.y + clipComponent.relativePosition.y)
+      );
+
+      const worldPos = gridToWorldPosition(newGridPos);
+      const rotation = gridToWorldRotation(new Rotation(clipComponent.rotation));
+
+      try {
+        const newComponent = this.sceneManager.addComponent(
+          clipComponent.type as ComponentType,
+          worldPos,
+          rotation
+        );
+        createdComponentIds.push(newComponent.id);
+
+        // Map original component ID → new component ID
+        idRemap.set(clipComponent.originalId, newComponent.id);
+
+        // Map original pin IDs → new pin IDs using stored pin indices
+        // This works even after cut (when original component no longer exists)
+        for (const [originalPinId, originalComponentId] of this.clipboardPinToComponent) {
+          if (originalComponentId === clipComponent.originalId) {
+            const pinIndex = this.clipboardPinIndices.get(originalPinId);
+            if (pinIndex !== undefined && pinIndex < newComponent.pins.length) {
+              const newPinId = newComponent.pins[pinIndex];
+              if (newPinId) {
+                idRemap.set(originalPinId, newPinId);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to paste component:', error);
+      }
+    }
+
+    // T046: Create branching points from clipboard
+    const createdBranchingPointIds: UUID[] = [];
+    for (const clipBP of this.clipboardData.branchingPoints) {
+      const newGridPos = new Position(
+        Math.round(gridCursor.x + clipBP.relativePosition.x),
+        Math.round(gridCursor.y + clipBP.relativePosition.y)
+      );
+
+      const worldPos = gridToWorldPosition(newGridPos);
+
+      try {
+        const newEnode = this.sceneManager.addBranchingPoint(worldPos);
+        createdBranchingPointIds.push(newEnode.id);
+
+        // Map original BP ID → new BP ID
+        idRemap.set(clipBP.originalId, newEnode.id);
+      } catch (error) {
+        console.error('Failed to paste branching point:', error);
+      }
+    }
+
+    // T047: Create wires with ID remapping
+    const createdWireIds: UUID[] = [];
+    for (const clipWire of this.clipboardData.wires) {
+      const newNode1 = idRemap.get(clipWire.node1OriginalId);
+      const newNode2 = idRemap.get(clipWire.node2OriginalId);
+
+      // Only create wire if both endpoints were successfully created
+      if (newNode1 && newNode2) {
+        try {
+          const newWire = this.sceneManager.addWire(newNode1, newNode2);
+          createdWireIds.push(newWire.id);
+
+          // Update intermediate positions if any
+          if (clipWire.relativeIntermediatePositions.length > 0) {
+            const absolutePositions = clipWire.relativeIntermediatePositions.map((relPos) => ({
+              x: Math.round(gridCursor.x + relPos.x),
+              y: Math.round(gridCursor.y + relPos.y),
+            }));
+
+            this.sceneManager
+              .getCircuitEditionManager()
+              .saveEditWirePositions(newWire.id, absolutePositions, true);
+            this.sceneManager.getWireVisualManager().updateWireById(newWire.id);
+          }
+        } catch (error) {
+          console.error('Failed to paste wire:', error);
+        }
+      }
+    }
+
+    // T049: Select pasted elements
+    const selectionManager = this.sceneManager.getSelectionManager();
+    const componentsMap = new Map<UUID, string | null>();
+    const enodesMap = new Map<UUID, string | null>();
+    const wiresMap = new Map<UUID, string | null>();
+
+    for (const id of createdComponentIds) {
+      componentsMap.set(id, null);
+    }
+    for (const id of createdBranchingPointIds) {
+      enodesMap.set(id, null);
+    }
+    for (const id of createdWireIds) {
+      wiresMap.set(id, null);
+    }
+
+    selectionManager.selectMultiple(componentsMap, enodesMap, wiresMap);
+
+    // T051: Emit paste completed event
+    this.sceneManager.emit('toolOperationCompleted', {
+      toolType: this.type,
+      mode: 'paste',
+      operationData: {
+        componentCount: createdComponentIds.length,
+        branchingPointCount: createdBranchingPointIds.length,
+        wireCount: createdWireIds.length,
+        position: { x: gridCursor.x, y: gridCursor.y },
+      },
+      changedData: {},
+    });
+
+    return true;
+  }
+
+  // ==========================================================================
+  // Cut/Paste Operations (T052-T053) - Phase 7
+  // ==========================================================================
+
+  /**
+   * Cut current selection (copy + delete) (T052)
+   * @returns true if cut succeeded
+   */
+  cutSelection(): boolean {
+    // Copy first
+    const copySuccess = this.copySelection();
+    if (!copySuccess) return false;
+
+    // Then delete
+    this.deleteSelection();
+    return true;
+  }
+
+  // ==========================================================================
   // Bulk Delete Operations (T033-T037) - Phase 5
   // ==========================================================================
 
@@ -918,9 +1357,7 @@ export class MultiSelectTool implements IEditingTool {
     const selectedIds = selectionManager.getSelectedIds();
 
     const totalCount =
-      selectedIds.components.length +
-      selectedIds.enodes.length +
-      selectedIds.wires.length;
+      selectedIds.components.length + selectedIds.enodes.length + selectedIds.wires.length;
 
     // No selection to delete
     if (totalCount === 0) {

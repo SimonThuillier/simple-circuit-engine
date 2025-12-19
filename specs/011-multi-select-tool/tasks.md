@@ -115,20 +115,20 @@
 
 ### Implementation for User Story 4
 
-- [ ] T038 [US4] Define ClipboardData, ClipboardComponent, ClipboardBranchingPoint, ClipboardWire interfaces in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T039 [US4] Implement copySelection() method to serialize selection to ClipboardData in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T040 [US4] Implement anchor calculation (center of selection bounding box) for clipboard in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T041 [US4] Implement relative position calculation for all elements in clipboard in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T042 [US4] Implement wire filtering (only wires with both endpoints in selection) for clipboard in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T043 [US4] Implement handleKeyDown for Ctrl+C (Cmd+C on Mac) to trigger copy in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T044 [US4] Implement pasteAtCursor() method to deserialize ClipboardData at cursor position in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T045 [US4] Implement component creation from clipboard with position offset in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T046 [US4] Implement branching point creation from clipboard with position offset in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T047 [US4] Implement wire creation with ID remapping (original → new element IDs) in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T048 [US4] Implement handleKeyDown for Ctrl+V (Cmd+V on Mac) to trigger paste in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T049 [US4] Implement selection of pasted elements after paste operation in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T050 [US4] Implement hasClipboardContent() method in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T051 [US4] Emit copyCompleted and pasteCompleted events in src/scene/static/tools/MultiSelectTool.ts
+- [X] T038 [US4] Define ClipboardData, ClipboardComponent, ClipboardBranchingPoint, ClipboardWire interfaces in src/scene/static/tools/MultiSelectTool.ts
+- [X] T039 [US4] Implement copySelection() method to serialize selection to ClipboardData in src/scene/static/tools/MultiSelectTool.ts
+- [X] T040 [US4] Implement anchor calculation (center of selection bounding box) for clipboard in src/scene/static/tools/MultiSelectTool.ts
+- [X] T041 [US4] Implement relative position calculation for all elements in clipboard in src/scene/static/tools/MultiSelectTool.ts
+- [X] T042 [US4] Implement wire filtering (only wires with both endpoints in selection) for clipboard in src/scene/static/tools/MultiSelectTool.ts
+- [X] T043 [US4] Implement handleKeyDown for Ctrl+C (Cmd+C on Mac) to trigger copy in src/scene/static/tools/MultiSelectTool.ts
+- [X] T044 [US4] Implement pasteAtCursor() method to deserialize ClipboardData at cursor position in src/scene/static/tools/MultiSelectTool.ts
+- [X] T045 [US4] Implement component creation from clipboard with position offset in src/scene/static/tools/MultiSelectTool.ts
+- [X] T046 [US4] Implement branching point creation from clipboard with position offset in src/scene/static/tools/MultiSelectTool.ts
+- [X] T047 [US4] Implement wire creation with ID remapping (original → new element IDs) in src/scene/static/tools/MultiSelectTool.ts
+- [X] T048 [US4] Implement handleKeyDown for Ctrl+V (Cmd+V on Mac) to trigger paste in src/scene/static/tools/MultiSelectTool.ts
+- [X] T049 [US4] Implement selection of pasted elements after paste operation in src/scene/static/tools/MultiSelectTool.ts
+- [X] T050 [US4] Implement hasClipboardContent() method in src/scene/static/tools/MultiSelectTool.ts
+- [X] T051 [US4] Emit copyCompleted and pasteCompleted events in src/scene/static/tools/MultiSelectTool.ts
 
 **Checkpoint**: At this point, User Stories 1-4 should all work independently
 
@@ -142,8 +142,8 @@
 
 ### Implementation for User Story 5
 
-- [ ] T052 [US5] Implement cutSelection() method (copy + delete) in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T053 [US5] Implement handleKeyDown for Ctrl+X (Cmd+X on Mac) to trigger cut in src/scene/static/tools/MultiSelectTool.ts
+- [X] T052 [US5] Implement cutSelection() method (copy + delete) in src/scene/static/tools/MultiSelectTool.ts
+- [X] T053 [US5] Implement handleKeyDown for Ctrl+X (Cmd+X on Mac) to trigger cut in src/scene/static/tools/MultiSelectTool.ts
 
 **Checkpoint**: All user stories should now be independently functional
 
@@ -153,12 +153,12 @@
 
 **Purpose**: Cleanup, tool lifecycle, and integration refinements
 
-- [ ] T054 [P] Implement activate() lifecycle method (initialize state, register keyboard listeners) in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T055 [P] Implement deactivate() lifecycle method (cleanup overlay, remove listeners) in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T056 [P] Implement cancelOperation() method to cleanly abort any in-progress operation in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T057 Implement camera controls lock during drag operations in src/scene/static/tools/MultiSelectTool.ts
-- [ ] T058 Run quickstart.md validation scenarios
-- [ ] T059 Run npm test && npm run lint to verify no regressions
+- [X] T054 [P] Implement activate() lifecycle method (initialize state, register keyboard listeners) in src/scene/static/tools/MultiSelectTool.ts
+- [X] T055 [P] Implement deactivate() lifecycle method (cleanup overlay, remove listeners) in src/scene/static/tools/MultiSelectTool.ts
+- [X] T056 [P] Implement cancelOperation() method to cleanly abort any in-progress operation in src/scene/static/tools/MultiSelectTool.ts
+- [X] T057 Implement camera controls lock during drag operations in src/scene/static/tools/MultiSelectTool.ts
+- [X] T058 Run quickstart.md validation scenarios
+- [X] T059 Run npm test && npm run lint to verify no regressions
 
 ---
 

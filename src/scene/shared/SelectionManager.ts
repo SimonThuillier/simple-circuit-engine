@@ -225,12 +225,10 @@ export class SelectionManager {
     enodes?: Map<UUID, string | null>,
     wires?: Map<UUID, string | null>
   ): void {
-
     const previousSelection = this.selection;
 
     // Check if all maps are empty - treat as deselect
-    const totalCount =
-      (components?.size ?? 0) + (enodes?.size ?? 0) + (wires?.size ?? 0);
+    const totalCount = (components?.size ?? 0) + (enodes?.size ?? 0) + (wires?.size ?? 0);
 
     if (totalCount === 0) {
       this.deselect();

@@ -3,6 +3,7 @@
 Auto-generated from all feature plans. Last updated: 2025-11-28
 
 ## Active Technologies
+
 - TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (for 3D scene interaction and selection rectangle rendering) (011-multi-select-tool)
 - N/A (in-memory circuit model, clipboard is session-only) (011-multi-select-tool)
 
@@ -81,11 +82,11 @@ function badExample(input: number | null): string {
 ```
 
 ## Recent Changes
+
 - 011-multi-select-tool: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (for 3D scene interaction and selection rectangle rendering)
 
 - 010-build-tool-merge: Added TypeScript (strict mode), targeting ES2022 + Three.js 0.181+ (for 3D scene interaction)
 - 009-add-component-tool: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (already installed)
-
 
 <!-- MANUAL ADDITIONS START -->
 

@@ -1473,7 +1473,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     }
 
     // 4: Add new wire visuals to scene
-    for(const wire of result.wires){
+    for (const wire of result.wires) {
       this.wireVisualManager.createOrUpdateWire(wire);
     }
 
