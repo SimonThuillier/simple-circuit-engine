@@ -5,7 +5,7 @@
 
 ## Summary
 
-Add Ctrl+click interaction to cycle enode sourceType (none → Voltage → Current → none) on branching points and component pins in BuildTool. Visual feedback via color change (white/red/blue) updates immediately. Leverages existing `ENode.source` attribute, `CircuitEditionManager.saveEditENodeSourceType()`, and `BranchingPointVisualFactory.updateSourceType()`. Requires extending `ComponentVisualFactory` with pin color updates and relaxing `Circuit.updateENodeSourceType()` to support component pins.
+Add Ctrl+click interaction to cycle enode sourceType (none → Voltage → Current → none) on branching points and component pins in BuildTool. Visual feedback via color change (white/red/blue) updates immediately. Leverages existing `ENode.source` attribute, `CircuitWriter.saveEditENodeSourceType()`, and `BranchingPointVisualFactory.updateSourceType()`. Requires extending `ComponentVisualFactory` with pin color updates and relaxing `Circuit.updateENodeSourceType()` to support component pins.
 
 ## Technical Context
 
@@ -69,7 +69,7 @@ src/
     └── static/
         ├── tools/
         │   └── BuildTool.ts                     # UPDATE: Add Ctrl+click handler
-        └── CircuitEditionManager.ts             # NO CHANGE: saveEditENodeSourceType() exists
+        └── CircuitWriter.ts             # NO CHANGE: saveEditENodeSourceType() exists
 
 tests/
 └── scene/

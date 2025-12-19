@@ -67,7 +67,7 @@ export class EventEmitter<EventMap extends Record<string, any>> {
 
   /**
    * Emit an event to all registered listeners
-   * This method is public so that tools may emit events directly on behalf of the EventEmitter owner (SceneManager).
+   * This method is public so that tools may emit events directly on behalf of the EventEmitter owner (controller).
    *
    * @param event - Event name to emit
    * @param payload - Event-specific payload

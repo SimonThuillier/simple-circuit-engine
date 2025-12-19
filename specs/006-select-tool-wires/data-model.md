@@ -8,7 +8,7 @@
 
 This feature primarily operates at the scene/visualization layer, not the core data model. The core `Circuit`, `Component`, `Wire`, and `ENode` classes already support all required data. This document focuses on the new state and structures needed in the scene module.
 
-**Key Architecture**: Selection behavior is centralized in CircuitSceneManager (via SelectionManager), while the PositionTool handles drag/move operations on selected elements.
+**Key Architecture**: Selection behavior is centralized in CircuitController (via SelectionManager), while the PositionTool handles drag/move operations on selected elements.
 
 ## Existing Core Entities (No Changes Required)
 
@@ -157,11 +157,11 @@ interface PinWorldPosition {
 
 **Derivation**: Read from Three.js Object3D hierarchy via `pinGroup.getWorldPosition(target)`
 
-### CircuitEditionManager
+### CircuitWriter
 
 Manages synchronization between the scene layer (Three.js visual representation) and the core circuit model. Acts as a bridge for editing operations.
 
-**Location**: `src/scene/static/CircuitEditionManager.ts`
+**Location**: `src/scene/static/CircuitWriter.ts`
 
 **Primary Responsibility**: Convert visual space coordinates and rotations to model space, then update the core Circuit entities.
 
@@ -198,14 +198,14 @@ interface CircuitElementActionEvent {
 **Usage Example**:
 ```typescript
 // Visual component at (10, 0, -15) with rotation -π/2
-manager.saveComponentAction(componentId, 'edit', componentGroup);
+controllerType.saveComponentAction(componentId, 'edit', componentGroup);
 // → Updates circuit model to position (10, 15), rotation 90°
 // → Emits circuitElementAction event with success/error
 ```
 
 ## State Transitions
 
-### Selection State Machine (CircuitSceneManager)
+### Selection State Machine (CircuitController)
 
 ```
 [Nothing Selected]
@@ -224,7 +224,7 @@ manager.saveComponentAction(componentId, 'edit', componentGroup);
     └── press Escape ────► [Element Selected] (position reverted, selection preserved)
 ```
 
-**Note**: Selection is managed by CircuitSceneManager.handlePointerDown(), not by individual tools. The PositionTool only handles drag operations on already-selected elements.
+**Note**: Selection is managed by CircuitController.handlePointerDown(), not by individual tools. The PositionTool only handles drag operations on already-selected elements.
 
 ### Drag State Machine (PositionTool)
 
@@ -279,7 +279,7 @@ SelectionState ─── references ──► Component (0..1)
 DragState ─── references ──► Component (0..1)
 WirePath ─── derived from ──► Wire + ENode positions
 
-CircuitEditionManager ─── updates ──► Circuit Model
+CircuitWriter ─── updates ──► Circuit Model
                       └── reads from ──► THREE.Object3D (visual layer)
 ```
 

@@ -174,10 +174,10 @@ BuildTool operates in multiple modes with clear state transitions:
 
 ### Integration Points
 
-- **CircuitSceneManager**: Tool registration and scene access
+- **CircuitController**: Tool registration and scene access
 - **SelectionManager**: Element selection state
 - **WireVisualManager**: Wire geometry updates
-- **CircuitEditionManager**: Model persistence
+- **CircuitWriter**: Model persistence
 - **HoverManager**: Element hover detection
 
 ### Testing

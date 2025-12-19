@@ -3,7 +3,7 @@
  * @module scene/shared/SelectionManager
  *
  * Manages component selection state in the circuit scene.
- * However SceneManager handles applying or not visuals for selection, based on current toolState.
+ * However controller handles applying or not visuals for selection, based on current toolState.
  * Follows a similar pattern as HoverManager for consistency.
  */
 

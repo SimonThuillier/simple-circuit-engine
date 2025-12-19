@@ -8,7 +8,7 @@
 
 This guide provides a quick reference for implementing the Position Tool and wire visual improvements. Follow these steps in order for the smoothest implementation path.
 
-**Architecture Note**: Selection behavior (click to select/deselect) is centralized in CircuitSceneManager via SelectionManager. The PositionTool handles only drag/move operations on already-selected elements.
+**Architecture Note**: Selection behavior (click to select/deselect) is centralized in CircuitController via SelectionManager. The PositionTool handles only drag/move operations on already-selected elements.
 
 ## Implementation Order
 
@@ -20,7 +20,7 @@ This guide provides a quick reference for implementing the Position Tool and wir
    - Implement `getPinWorldPosition()` - traverse component group to find pin by enodeId
    - Implement `createOrUpdateWire()` - create Line with proper geometry
 
-2. **Update CircuitSceneManager wire rendering**
+2. **Update CircuitController wire rendering**
    - Replace `_createWireMesh()` to use WireVisualManager
    - Wire endpoints now target pin positions, not component centers
 
@@ -31,11 +31,11 @@ This guide provides a quick reference for implementing the Position Tool and wir
    - Implement `selectOne()`, `deselect()`, `isSelected()`, `hasSelection()`
    - Manage callbacks via `onSelectionChange()`
 
-4. **Integrate SelectionManager into CircuitSceneManager** ✅
+4. **Integrate SelectionManager into CircuitController** ✅
    - Create SelectionManager instance in `_initializeSelectionManager()`
    - Wire up selection change callbacks to apply/remove visuals via factory
 
-5. **Implement selection click handling in CircuitSceneManager** ✅
+5. **Implement selection click handling in CircuitController** ✅
    - `handlePointerDown()` handles all selection behavior centrally
    - Given a hovered unselected element, click → selectOne() and emit 'select'
    - Given hovering on nothing with selection, click → deselect() and emit 'deselect'
@@ -43,7 +43,7 @@ This guide provides a quick reference for implementing the Position Tool and wir
 ### Phase 3: Position Tool Core (P1 stories) 🔄 IN PROGRESS
 
 6. **PositionTool handles drag only** (`src/scene/static/tools/PositionTool.ts`)
-   - Selection is handled by CircuitSceneManager, NOT PositionTool
+   - Selection is handled by CircuitController, NOT PositionTool
    - PositionTool registers its own event listeners in `onActivate()`
 
 7. **Implement PositionTool drag handling** ✅
@@ -64,7 +64,7 @@ This guide provides a quick reference for implementing the Position Tool and wir
    - Update wire visuals for rotated pin positions
 
 10. **Deselection behavior** ✅ PARTIALLY COMPLETE
-    - Empty space click deselection: Handled in CircuitSceneManager.handlePointerDown()
+    - Empty space click deselection: Handled in CircuitController.handlePointerDown()
     - Escape key: Cancels drag and restores position (selection preserved)
 
 ### Phase 5: Multi-Line Wire Rendering (P2 stories)
@@ -178,7 +178,7 @@ computeWirePath(wire: Wire, circuit: Circuit): WirePath {
 | `src/scene/shared/SelectionManager.ts` | CREATED | ✅ Done |
 | `src/scene/shared/types.ts` | MODIFIED | ✅ Done (SelectionData types) |
 | `src/scene/shared/components/ComponentVisualFactory.ts` | MODIFIED | ✅ Done |
-| `src/scene/static/CircuitSceneManager.ts` | MODIFIED | ✅ Done |
+| `src/scene/static/CircuitController.ts` | MODIFIED | ✅ Done |
 | `src/scene/static/tools/PositionTool.ts` | MODIFIED | 🔄 In Progress |
 | `tests/scene/shared/WireVisualManager.test.ts` | CREATED | ✅ Done |
 | `tests/scene/shared/SelectionManager.test.ts` | CREATED | ✅ Done |

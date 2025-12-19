@@ -1,7 +1,7 @@
 /**
  * Event Contracts for Select Tool & Wire Improvements
  *
- * Extends the existing SceneManagerEventMap with selection and drag events.
+ * Extends the existing ControllerEventMap with selection and drag events.
  */
 
 import type { UUID } from '../../../src/core/types/UUID';

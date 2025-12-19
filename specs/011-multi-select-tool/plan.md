@@ -67,8 +67,8 @@ src/
     │   ├── GeometryUtils.ts    # Add bounding box utilities
     │   └── WireVisualManager.ts # Batch wire updates (existing)
     └── static/
-        ├── CircuitSceneManager.ts  # Tool registration (existing)
-        ├── CircuitEditionManager.ts # Bulk operations (extend)
+        ├── CircuitController.ts  # Tool registration (existing)
+        ├── CircuitWriter.ts # Bulk operations (extend)
         └── tools/
             ├── BuildTool.ts      # Reference implementation (existing)
             ├── AddComponentTool.ts # Reference implementation (existing)

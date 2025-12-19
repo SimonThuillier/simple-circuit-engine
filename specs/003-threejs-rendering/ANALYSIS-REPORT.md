@@ -1,4 +1,4 @@
-# Specification Analysis Report: 3D Circuit Scene Managers
+# Specification Analysis Report: 3D Circuit Controllers
 
 **Feature**: 003-threejs-rendering
 **Analysis Date**: 2025-12-08
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-The 3D Circuit Scene Managers specification has been analyzed for consistency, coverage, and alignment with project constitution. **The MVP is ready for implementation** with 85 active tasks across Phases 1-5. Phases 6 (Performance Optimization) and Phase 7 (Polish & Documentation) have been dismissed as premature work, with 22 tasks deferred to post-MVP validation.
+The 3D Circuit Controllers specification has been analyzed for consistency, coverage, and alignment with project constitution. **The MVP is ready for implementation** with 85 active tasks across Phases 1-5. Phases 6 (Performance Optimization) and Phase 7 (Polish & Documentation) have been dismissed as premature work, with 22 tasks deferred to post-MVP validation.
 
 ### Key Findings
 
@@ -56,7 +56,7 @@ The 3D Circuit Scene Managers specification has been analyzed for consistency, c
 
 | Gate | Status | Notes |
 |------|--------|-------|
-| Framework Agnosticism | ✅ PASS | SceneManagers accept HTMLElement, no framework deps |
+| Framework Agnosticism | ✅ PASS | Controllers accept HTMLElement, no framework deps |
 | Modular Separation | ✅ PASS | Code in `src/scene/`, depends only on core + Three.js |
 | Public API Shape | ✅ PASS | Event-based communication via EventEmitter |
 | Resource Management | ✅ PASS | dispose() methods implemented |
@@ -70,9 +70,9 @@ The 3D Circuit Scene Managers specification has been analyzed for consistency, c
 
 ### FR-016: CircuitWorkspace Bridge (Deferred)
 
-**Requirement**: Bridge class to manage switching between CircuitSceneManager and CircuitRunnerSceneManager.
+**Requirement**: Bridge class to manage switching between CircuitController and CircuitRunnerController.
 
-**Why Deferred**: Core scene managers are functional without this bridge. Applications can implement their own switching logic for MVP. Real-world usage will inform the optimal design for this bridge class.
+**Why Deferred**: Core Controllers are functional without this bridge. Applications can implement their own switching logic for MVP. Real-world usage will inform the optimal design for this bridge class.
 
 **Future Implementation**: Create `src/scene/workspace/CircuitWorkspace.ts` with lifecycle management, switching logic, and unified API.
 
@@ -98,13 +98,13 @@ The 3D Circuit Scene Managers specification has been analyzed for consistency, c
 
 ### What's Included (85 Tasks)
 
-- ✅ **Two Scene Manager Classes**: CircuitSceneManager (static/editing), CircuitRunnerSceneManager (live simulation)
+- ✅ **Two Controller Classes**: CircuitController (static/editing), CircuitRunnerController (live simulation)
 - ✅ **Shared Utilities Module**: Component factories, geometry/material/lighting utils, camera management, state interpolation
 - ✅ **Complete Tool System**: 5 editing tools (Select, PlaceComponent, Wire, BranchingPoint, Delete) with preview rendering, validation, and event emission
 - ✅ **Static Visualization**: Circuit topology rendering, component/wire/enode display, hover/selection support
 - ✅ **Live Simulation Visualization**: Real-time state updates, interpolated animations, current flow visualization
 - ✅ **Event-Driven API**: Hookable callbacks via EventEmitter, no framework dependencies
-- ✅ **Scene Manager Reusability**: setCircuit() method enables switching circuits without re-initialization
+- ✅ **Controller Reusability**: setCircuit() method enables switching circuits without re-initialization
 - ✅ **Comprehensive Unit Tests**: All core functionality tested with mocked Three.js (TS-001 through TS-008)
 
 ### What's Deferred
@@ -192,10 +192,10 @@ The 3D Circuit Scene Managers specification has been analyzed for consistency, c
 
 **Status**: ✅ **APPROVED FOR IMPLEMENTATION**
 
-The 3D Circuit Scene Managers specification is well-designed, comprehensive, and ready for implementation. The decision to dismiss performance optimization (Phase 6) and polish work (Phase 7) is sound engineering judgment - these tasks are genuinely premature at this stage.
+The 3D Circuit Controllers specification is well-designed, comprehensive, and ready for implementation. The decision to dismiss performance optimization (Phase 6) and polish work (Phase 7) is sound engineering judgment - these tasks are genuinely premature at this stage.
 
-The MVP delivers complete, functional scene managers with:
-- Two independent scene managers for static and simulation visualization
+The MVP delivers complete, functional Controllers with:
+- Two independent Controllers for static and simulation visualization
 - Complete editing tool system with 5 tools
 - Event-driven, framework-agnostic API
 - Comprehensive unit test coverage

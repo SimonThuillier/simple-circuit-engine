@@ -102,9 +102,9 @@ line = new Line2(geometry, this.wireMaterial);
 this.wireMaterial.dispose();
 ```
 
-### Step 3: Update CircuitSceneManager
+### Step 3: Update CircuitController
 
-**File**: `src/scene/static/CircuitSceneManager.ts`
+**File**: `src/scene/static/CircuitController.ts`
 
 1. Call `setResolution()` after initializing WireVisualManager:
 ```typescript

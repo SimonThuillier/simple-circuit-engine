@@ -17,7 +17,7 @@ import type { Circuit } from '../../core/Circuit';
 import type { Wire } from '../../core/Wire';
 import { ENodeType } from '../../core/types/ENodeType';
 import { createLine2Material } from './MaterialUtils';
-import type { CircuitSceneManager } from '../static/CircuitSceneManager';
+import type { CircuitController } from '../static/CircuitController';
 import type { WireMaterialState } from './types';
 import { HitboxLayers } from './LayerConstants';
 import { gridToWorldPosition } from './GeometryUtils';
@@ -34,7 +34,7 @@ export interface WirePath {
 }
 
 /**
- * Delegation of CircuitSceneManager which handles wire visual rendering with proper pin targeting and dynamic updates.
+ * Delegation of CircuitController which handles wire visual rendering with proper pin targeting and dynamic updates.
  *
  * Key responsibilities:
  * - Create wire visuals with endpoints at actual pin positions
@@ -58,14 +58,14 @@ export class WireVisualManager {
   private containerWidth: number = 500;
   private containerHeight: number = 500;
 
-  private _sceneManager: CircuitSceneManager;
+  private _controller: CircuitController;
   /** Shared LineMaterials for all wires (memory efficient, consistent styling) */
   private wireMaterials: Map<WireMaterialState, LineMaterial> = new Map();
   /** Preview wire for wire creation mode */
   private previewWire: Line2 | null = null;
 
-  constructor(sceneManager: CircuitSceneManager) {
-    this._sceneManager = sceneManager;
+  constructor(controller: CircuitController) {
+    this._controller = controller;
     // Create shared LineMaterial with default white color and 2px width
     this.wireMaterials = new Map([
       ['idle', createLine2Material(0xffffff, 2)],
@@ -107,7 +107,7 @@ export class WireVisualManager {
    * @returns Line2 or undefined if not found
    */
   getWireLine(wireId: UUID): Line2 | undefined {
-    return this._sceneManager.getWireObject3Ds().get(wireId);
+    return this._controller.wireObject3Ds.get(wireId);
   }
 
   /**
@@ -117,16 +117,16 @@ export class WireVisualManager {
    * @returns true if wire visual exists
    */
   hasWire(wireId: UUID): boolean {
-    return this._sceneManager.getWireObject3Ds().has(wireId);
+    return this._controller.wireObject3Ds.has(wireId);
   }
 
   /**
-   * Get all wire IDs managed by this manager
+   * Get all wire IDs managed by this controllerType
    *
    * @returns Array of wire UUIDs
    */
   getWireIds(): UUID[] {
-    return Array.from(this._sceneManager.getWireObject3Ds().keys());
+    return Array.from(this._controller.wireObject3Ds.keys());
   }
 
   /**
@@ -138,7 +138,7 @@ export class WireVisualManager {
   createOrUpdateWire(wire: Wire): Line2 {
     const wirePath = this.computeWirePath(wire);
 
-    let line = this._sceneManager.getWireObject3Ds().get(wire.id);
+    let line = this._controller.wireObject3Ds.get(wire.id);
 
     if (line) {
       // Update existing line geometry
@@ -157,9 +157,9 @@ export class WireVisualManager {
       };
       // Enable wire hitbox layer
       line.layers.enable(HitboxLayers.WIRE);
-      this._sceneManager.getWireObject3Ds().set(wire.id, line);
+      this._controller.wireObject3Ds.set(wire.id, line);
       // Adding to scene is directly done here
-      this._sceneManager.getScene().add(line);
+      this._controller.getScene().add(line);
     }
     return line;
   }
@@ -170,7 +170,7 @@ export class WireVisualManager {
    * @param wireId - Wire ID to update
    */
   updateWireById(wireId: UUID): void {
-    const circuit = this._sceneManager.getCircuit()!; // TODO handle null circuit
+    const circuit = this._controller.getCircuit()!; // TODO handle null circuit
 
     const wire = circuit.getWire(wireId);
     if (wire) {
@@ -186,7 +186,7 @@ export class WireVisualManager {
    * @param componentId - Component that moved
    */
   updateWiresForComponent(componentId: UUID): void {
-    const circuit = this._sceneManager.getCircuit()!; // TODO handle null circuit
+    const circuit = this._controller.getCircuit()!; // TODO handle null circuit
 
     const component = circuit.getComponent(componentId);
     if (!component) return;
@@ -218,7 +218,7 @@ export class WireVisualManager {
    * @param wireId
    */
   applyHoveredVisual(wireId: UUID): void {
-    const line = this._sceneManager.getWireObject3Ds().get(wireId);
+    const line = this._controller.wireObject3Ds.get(wireId);
     if (!line) return;
     if (line.material === this.wireMaterials.get('selected')) return;
 
@@ -226,7 +226,7 @@ export class WireVisualManager {
   }
 
   removeHoveredVisual(wireId: UUID): void {
-    const line = this._sceneManager.getWireObject3Ds().get(wireId);
+    const line = this._controller.wireObject3Ds.get(wireId);
     if (!line) return;
     if (line.material !== this.wireMaterials.get('hovered')) return;
 
@@ -234,13 +234,13 @@ export class WireVisualManager {
   }
 
   applySelectedVisual(wireId: UUID): void {
-    const line = this._sceneManager.getWireObject3Ds().get(wireId);
+    const line = this._controller.wireObject3Ds.get(wireId);
     if (!line) return;
     line.material = this.wireMaterials.get('selected')!;
   }
 
   removeSelectedVisual(wireId: UUID): void {
-    const line = this._sceneManager.getWireObject3Ds().get(wireId);
+    const line = this._controller.wireObject3Ds.get(wireId);
     if (!line) return;
     if (line.material !== this.wireMaterials.get('selected')) return;
 
@@ -257,8 +257,8 @@ export class WireVisualManager {
    * @param wireId - Wire ID to remove
    */
   removeWire(wireId: UUID): void {
-    const wireLines = this._sceneManager.getWireObject3Ds();
-    const scene = this._sceneManager.getScene();
+    const wireLines = this._controller.wireObject3Ds;
+    const scene = this._controller.getScene();
 
     const line = wireLines.get(wireId);
     if (line) {
@@ -273,8 +273,8 @@ export class WireVisualManager {
    * Clean up all managed wire visuals
    */
   dispose(): void {
-    const wireLines = this._sceneManager.getWireObject3Ds();
-    const scene = this._sceneManager.getScene();
+    const wireLines = this._controller.wireObject3Ds;
+    const scene = this._controller.getScene();
     for (const [_wireId, line] of wireLines) {
       scene.remove(line);
       line.geometry.dispose();
@@ -329,7 +329,7 @@ export class WireVisualManager {
       startPosition: startPosition.clone(),
     };
 
-    this._sceneManager.getScene().add(previewLine);
+    this._controller.getScene().add(previewLine);
 
     return previewLine;
   }
@@ -355,7 +355,7 @@ export class WireVisualManager {
    */
   removePreviewWire(): void {
     if (this.previewWire) {
-      this._sceneManager.getScene().remove(this.previewWire);
+      this._controller.getScene().remove(this.previewWire);
       this.previewWire.geometry.dispose();
       (this.previewWire.material as LineMaterial).dispose();
       this.previewWire = null;
@@ -403,7 +403,7 @@ export class WireVisualManager {
    * @returns Index where new point should be inserted
    */
   getInsertIndexForPosition(wireId: UUID, worldPosition: THREE.Vector3): number {
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     if (!circuit) return 0;
 
     const wire = circuit.getWire(wireId);
@@ -458,7 +458,7 @@ export class WireVisualManager {
     clientPos: THREE.Vector2,
     thresholdPx: number = 10
   ): { pointIndex: number; distance: number } | null {
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     if (!circuit) return null;
 
     const wire = circuit.getWire(wireId);
@@ -499,8 +499,8 @@ export class WireVisualManager {
    * @returns WirePath with array of Vector3 points from start to end
    */
   computeWirePath(wire: Wire): WirePath {
-    const circuit = this._sceneManager.getCircuit()!; // TODO handle null circuit
-    const componentObject3Ds = this._sceneManager.getComponentObject3Ds();
+    const circuit = this._controller.getCircuit()!; // TODO handle null circuit
+    const componentObject3Ds = this._controller.componentObject3Ds;
 
     const node1 = circuit.getENode(wire.node1);
     const node2 = circuit.getENode(wire.node2);
@@ -594,7 +594,7 @@ export class WireVisualManager {
    * @returns Screen position as Vector2
    */
   private worldToScreen(worldPosition: THREE.Vector3): THREE.Vector2 {
-    const camera = this._sceneManager.getCamera();
+    const camera = this._controller.getCamera();
 
     const vector = worldPosition.clone();
     vector.project(camera);
@@ -624,7 +624,7 @@ export class WireVisualManager {
    * @returns Position relative to the container's top-left corner
    */
   private clientToContainerCoords(clientPos: THREE.Vector2): THREE.Vector2 {
-    const container = this._sceneManager.getContainer();
+    const container = this._controller.getContainer();
     const rect = container.getBoundingClientRect();
 
     return new THREE.Vector2(clientPos.x - rect.left, clientPos.y - rect.top);

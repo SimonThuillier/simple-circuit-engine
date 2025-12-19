@@ -25,7 +25,7 @@ Updated `spec.md` to incorporate comprehensive tool system requirements based on
 
 **FR-019** (Expanded)
 - **Before**: Listed 7 core public API methods
-- **After**: Added 7 tool-related methods for CircuitSceneManager: setEditMode(), setActiveTool(), getActiveTool(), cancelCurrentToolOperation(), handleToolClick(), handleToolHover(), handleToolScroll()
+- **After**: Added 7 tool-related methods for CircuitController: setEditMode(), setActiveTool(), getActiveTool(), cancelCurrentToolOperation(), handleToolClick(), handleToolHover(), handleToolScroll()
 
 **FR-021** (Clarified)
 - **Before**: Stated renderers MUST NOT implement event listeners
@@ -82,7 +82,7 @@ Updated `spec.md` to incorporate comprehensive tool system requirements based on
 
 **FR-033**: Tool-Circuit Integration
 - Tools delegate all circuit topology modifications to core Circuit API
-- SceneManager MUST NOT implement circuit logic
+- Controller MUST NOT implement circuit logic
 - After successful operation, calls update(changedData) with delta
 
 #### Tool Events and Feedback (FR-034 to FR-037)
@@ -128,7 +128,7 @@ Updated `spec.md` to incorporate comprehensive tool system requirements based on
 - Delete tool: component cascade, wire, branching point deletion
 
 **TS-004** (Updated)
-- Added verification of CircuitSceneManager tool-related methods (per FR-019)
+- Added verification of CircuitController tool-related methods (per FR-019)
 
 ---
 
@@ -159,7 +159,7 @@ Updated `spec.md` to incorporate comprehensive tool system requirements based on
 
 ### Updated Entities
 
-**Circuit SceneManager (Static)**
+**Circuit Controller (Static)**
 - Added note: "Manages tool system for editing operations (FR-025 to FR-037)"
 
 ---
@@ -169,11 +169,11 @@ Updated `spec.md` to incorporate comprehensive tool system requirements based on
 The following contract files will need updates (per analysis.md):
 
 ### types.ts
-- Extend `SceneManagerEvent` type with 6 new tool-related events
-- Add to `SceneManagerEventMap` with proper payloads
+- Extend `ControllerEvent` type with 6 new tool-related events
+- Add to `ControllerEventMap` with proper payloads
 - Add new types: `ToolType`, `CursorType`, `IEditingTool` interface
 
-### CircuitSceneManager.ts
+### CircuitController.ts
 - Add 7 new method signatures:
   - `setEditMode(enabled: boolean): void`
   - `setActiveTool(toolType: ToolType): void`
@@ -231,7 +231,7 @@ All 5 gates PASS with tool system additions:
 
 ✅ **Gate 1: Framework Agnosticism** - Tool system maintains separation: consumer implements event listeners, renderer exposes tool APIs. Three.js remains only rendering dependency.
 
-✅ **Gate 2: Modular Separation** - Tools are part of CircuitSceneManager module, not core. Clear boundary: tools handle UI interaction, core handles circuit validation.
+✅ **Gate 2: Modular Separation** - Tools are part of CircuitController module, not core. Clear boundary: tools handle UI interaction, core handles circuit validation.
 
 ✅ **Gate 3: Public API Shape** - FR-019 updated with complete tool API surface
 
@@ -244,7 +244,7 @@ All 5 gates PASS with tool system additions:
 ## Next Steps
 
 1. ✅ **Spec Updated** - spec.md now includes FR-025 to FR-037
-2. ⏭️ **Update Contracts** - Update types.ts and CircuitSceneManager.ts with tool APIs
+2. ⏭️ **Update Contracts** - Update types.ts and CircuitController.ts with tool APIs
 3. ⏭️ **Regenerate Tasks** - Replace Phase 5 tasks (T055-T063) with ~18 new tool-focused tasks
 4. ⏭️ **Update Plan** - Update plan.md to include tool system in implementation approach
 5. ⏭️ **Update Quickstart** - Add tool system usage examples to quickstart.md
@@ -260,7 +260,7 @@ All 5 gates PASS with tool system additions:
 ## Files Pending Updates
 
 - ⏭️ `specs/003-threejs-rendering/contracts/types.ts` - Add tool-related types and events
-- ⏭️ `specs/003-threejs-rendering/contracts/CircuitSceneManager.ts` - Add tool-related method signatures
+- ⏭️ `specs/003-threejs-rendering/contracts/CircuitController.ts` - Add tool-related method signatures
 - ⏭️ `specs/003-threejs-rendering/tasks.md` - Regenerate Phase 5 tasks
 - ⏭️ `specs/003-threejs-rendering/plan.md` - Add tool system to implementation approach
 - ⏭️ `specs/003-threejs-rendering/quickstart.md` - Add tool system usage examples
@@ -293,22 +293,22 @@ After implementing a proof-of-concept for Phases 1-3, we refined the architectur
 
 ### 2. Class Renames
 
-- `StaticCircuitRenderer` → `CircuitSceneManager`
-- `SimulationCircuitSceneManager` → `CircuitRunnerSceneManager`
+- `StaticCircuitRenderer` → `CircuitController`
+- `SimulationCircuitController` → `CircuitRunnerController`
 
-**Rationale**: "SceneManager" more accurately describes responsibility. Avoids confusion with Three.js WebGLRenderer.
+**Rationale**: "Controller" more accurately describes responsibility. Avoids confusion with Three.js WebGLRenderer.
 
 ### 3. API Change: Circuit Provided After Initialization
 
-**Old**: `new CircuitSceneManager(circuit, factoryRegistry)`
-**New**: `new CircuitSceneManager(factoryRegistry)` + `setCircuit(circuit)`
+**Old**: `new CircuitController(circuit, factoryRegistry)`
+**New**: `new CircuitController(factoryRegistry)` + `setCircuit(circuit)`
 
 **New Methods**:
 - `setCircuit(circuit: Circuit | null)` - Set/change circuit, enables reusability
 - `clearVisuals()` - Clear visuals without disposing
 - `getCamera()` - Direct camera access
 
-**Rationale**: Enables scene manager reuse across multiple circuits without re-initialization.
+**Rationale**: Enables scene controllerType reuse across multiple circuits without re-initialization.
 
 ### 4. Rendering Delegation to Consumer
 
@@ -317,7 +317,7 @@ After implementing a proof-of-concept for Phases 1-3, we refined the architectur
 - Animation loop (`requestAnimationFrame`)
 - Calling `renderer.render(scene, camera)` each frame
 
-**SceneManager Owns**:
+**Controller Owns**:
 - `THREE.Scene` management (objects, lighting)
 - `THREE.Camera` setup and exposure
 - Scene state updates based on circuit changes
@@ -331,13 +331,13 @@ After implementing a proof-of-concept for Phases 1-3, we refined the architectur
 ### Specification Documents
 - ✅ `spec.md` - All FRs updated, new session 2025-12-04 clarifications added
 - ✅ `plan.md` - Structure, API contracts, data model updated
-- ✅ `contracts/CircuitSceneManager.ts` - New methods added, examples updated
+- ✅ `contracts/CircuitController.ts` - New methods added, examples updated
 - ✅ `contracts/types.ts` - Module path updated
 - ✅ `ARCHITECTURAL_CHANGES.md` - New comprehensive migration guide created
 
 ### Implementation Files
 - ✅ `src/scene/` - Module renamed
-- ✅ `src/scene/static/CircuitSceneManager.ts` - Implemented with new API
+- ✅ `src/scene/static/CircuitController.ts` - Implemented with new API
 - ✅ `src/scene/index.ts` - Exports updated
 
 ### Pending Updates
@@ -358,17 +358,17 @@ renderer.initialize(container);
 
 ### New API:
 ```typescript
-import { CircuitSceneManager } from 'simple-circuit-engine/scene';
+import { CircuitController } from 'simple-circuit-engine/scene';
 import * as THREE from 'three';
 
-const sceneManager = new CircuitSceneManager(registry);
-sceneManager.initialize(container);
-sceneManager.setCircuit(circuit);
+const Controller = new CircuitController(registry);
+Controller.initialize(container);
+Controller.setCircuit(circuit);
 
 const webglRenderer = new THREE.WebGLRenderer();
 function animate() {
-  sceneManager.render();
-  webglRenderer.render(sceneManager.getScene(), sceneManager.getCamera());
+  Controller.render();
+  webglRenderer.render(Controller.getScene(), Controller.getCamera());
   requestAnimationFrame(animate);
 }
 animate();
@@ -376,9 +376,9 @@ animate();
 
 ### Circuit Reusability:
 ```typescript
-sceneManager.setCircuit(circuit1);  // Load first circuit
+Controller.setCircuit(circuit1);  // Load first circuit
 // ... work ...
-sceneManager.setCircuit(circuit2);  // Switch without re-init
+Controller.setCircuit(circuit2);  // Switch without re-init
 ```
 
 ---
@@ -403,9 +403,9 @@ sceneManager.setCircuit(circuit2);  // Switch without re-init
 ## Rationale Summary
 
 These changes emerged from POC implementation revealing:
-1. Naming clarity - "Scene Manager" vs "Renderer" more accurate
+1. Naming clarity - "Controller" vs "Renderer" more accurate
 2. Flexibility - Circuit separation enables reusability
-3. Separation of concerns - Consumer controls rendering, scene manager controls scene
+3. Separation of concerns - Consumer controls rendering, scene controllerType controls scene
 4. Three.js alignment - Matches Three.js architecture patterns
 
 All changes improve architecture without added complexity.

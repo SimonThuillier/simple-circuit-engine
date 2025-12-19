@@ -25,14 +25,14 @@
 **Decision**: Create a dedicated SelectionManager class following the existing HoverManager pattern
 
 **Rationale**:
-- Separates concerns: SelectionManager owns selection state, CircuitSceneManager and tools request selection changes
+- Separates concerns: SelectionManager owns selection state, CircuitController and tools request selection changes
 - Consistent with existing architecture (HoverManager handles hover, SelectionManager handles selection)
 - Enables centralized event emission for selection changes
 - Allows future extension to multi-position without changing tool implementations
 
 **Alternatives Considered**:
 - Store selection in PositionTool directly: Rejected - selection state should persist across tool switches
-- Store selection in CircuitSceneManager: Rejected - bloats the already large manager class; better to delegate
+- Store selection in CircuitController: Rejected - bloats the already large controllerType class; better to delegate
 - Global state: Rejected - violates constitution's "no global state" rule
 - Have SelectionManager trigger visual changes through visual factories: Rejected - violates separation of concerns and mixes visual logic into pure selection management
 
@@ -130,7 +130,7 @@
 - `ComponentVisualFactoryBase.applyHover/removeHover` - Pattern for visual state changes
 - `createWirePathGeometry()` in GeometryUtils.ts - Already supports waypoint arrays
 - `IEditingTool` interface - Defines tool contract (handleClick, handleGridPositionMove, etc.)
-- `CircuitSceneManager._createWireMesh` - Current wire rendering to enhance
+- `CircuitController._createWireMesh` - Current wire rendering to enhance
 
 ### New Capabilities Required
 - Drag events (handleDragStart, handleDragMove, handleDragEnd) on IEditingTool interface

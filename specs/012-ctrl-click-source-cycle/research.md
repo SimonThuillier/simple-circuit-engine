@@ -101,13 +101,13 @@ if ((event.ctrlKey || event.metaKey) && event.key === 'c') {
 
 **Findings**:
 
-**CircuitEditionManager** (`src/scene/static/CircuitEditionManager.ts:340-356`):
+**CircuitWriter** (`src/scene/static/CircuitWriter.ts:340-356`):
 ```typescript
 saveEditENodeSourceType(enodeId: UUID, sourceType: ENodeSourceType | null): void {
-  const circuit = this._sceneManager.getCircuit();
+  const circuit = this._Controller.getCircuit();
   circuit.updateENodeSourceType(enodeId, sourceType);
 
-  this._sceneManager.emit('enodeSourceTypeChanged', {
+  this._Controller.emit('enodeSourceTypeChanged', {
     enodeId,
     sourceType,
   });

@@ -199,9 +199,9 @@ expect(line).toBeInstanceOf(Line2);
 
 ---
 
-## 10. Integration with CircuitSceneManager
+## 10. Integration with CircuitController
 
-**Decision**: CircuitSceneManager must provide renderer resolution to WireVisualManager
+**Decision**: CircuitController must provide renderer resolution to WireVisualManager
 
 **Options Evaluated**:
 
@@ -239,7 +239,7 @@ class WireVisualManager {
 }
 ```
 
-CircuitSceneManager calls `wireVisualManager.setResolution()` on init and resize.
+CircuitController calls `wireVisualManager.setResolution()` on init and resize.
 
 ---
 

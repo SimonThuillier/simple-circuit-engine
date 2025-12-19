@@ -61,7 +61,7 @@ _This phase is empty because the feature modifies existing files only, requiring
 - [X] T008 [US1] Add cycleEnodeSourceType() private method in src/scene/static/tools/BuildTool.ts
 - [X] T009 [US1] Add updateEnodeVisual() private method in src/scene/static/tools/BuildTool.ts
 - [X] T010 [US1] Add Ctrl+click check in handlePointerDown() before wire creation logic in src/scene/static/tools/BuildTool.ts
-- [X] T011 [US1] Verify enodeSourceTypeChanged event is emitted correctly via CircuitEditionManager
+- [X] T011 [US1] Verify enodeSourceTypeChanged event is emitted correctly via CircuitWriter
 - [X] T012 [US1] Run all User Story 1 tests to verify branching point cycling works end-to-end
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - Ctrl+click cycles branching point sourceType with visual feedback

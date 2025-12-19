@@ -35,7 +35,7 @@ type CursorType = 'default' | 'pointer' | 'crosshair' | 'grab' | 'grabbing' | 'n
 ### Constructor
 
 ```typescript
-constructor(sceneManager: CircuitSceneManager)
+constructor(Controller: CircuitController)
 ```
 
 ### State Types
@@ -73,7 +73,7 @@ handlePointerUp(event: MouseEvent): void;     // Wire creation complete, drag co
 handleDblClick(event: MouseEvent): void;      // Create branching point, cycle source type
 handleKeyDown(event: KeyboardEvent): void;    // Escape (cancel), Delete/Backspace (remove)
 
-// Scene Manager Event Handlers
+// Controller Event Handlers
 handleGridPositionMove(position: THREE.Vector3): void; // Update preview/drag position
 ```
 
@@ -309,9 +309,9 @@ computeWirePath(wire: Wire): { points: THREE.Vector3[] };
 
 ---
 
-## CircuitSceneManager Extensions
+## CircuitController Extensions
 
-**Location**: `src/scene/static/CircuitSceneManager.ts`
+**Location**: `src/scene/static/CircuitController.ts`
 
 These methods are called by WireTool to modify the circuit model and update visuals.
 
@@ -347,10 +347,10 @@ removeBranchingPoint(enodeId: UUID): void;
 
 ## Event Types
 
-### SceneManager Events (Existing + New)
+### Controller Events (Existing + New)
 
 ```typescript
-interface SceneManagerEventMap {
+interface ControllerEventMap {
   // Existing events...
 
   // Tool lifecycle events (shared by all tools)

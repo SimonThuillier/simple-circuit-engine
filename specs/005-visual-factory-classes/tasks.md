@@ -69,8 +69,8 @@
 - [X] T018 [US1] Convert smallLedFactory function to SmallLEDVisualFactory class extending ComponentVisualFactoryBase in src/scene/shared/components/SmallLEDVisualFactory.ts
 - [X] T019 [US1] Export factory classes from individual files in src/scene/shared/components/ (Kept deprecated function exports for backward compatibility)
 - [X] T020 [US1] Update src/scene/index.ts exports to include new factory classes and interfaces
-- [X] T021 [US1] Update CircuitSceneManager._createComponentMesh to use factory.createVisual(component) in src/scene/static/CircuitSceneManager.ts (Supports both function and class-based factories)
-- [X] T022 [US1] Update CircuitRunnerSceneManager._createComponentMesh to use factory.createVisual(component) in src/scene/simulation/CircuitRunnerSceneManager.ts (Supports both function and class-based factories)
+- [X] T021 [US1] Update CircuitController._createComponentMesh to use factory.createVisual(component) in src/scene/static/CircuitController.ts (Supports both function and class-based factories)
+- [X] T022 [US1] Update CircuitRunnerController._createComponentMesh to use factory.createVisual(component) in src/scene/simulation/CircuitRunnerController.ts (Supports both function and class-based factories)
 - [X] T023 [US1] Update scripts/viewer/src/main.ts to register class instances instead of function factories
 - [X] T024 [US1] Run all tests and verify no regressions: npm test (526 tests passing, 21 pre-existing failures in unrelated tests)
 
@@ -94,10 +94,10 @@
 
 - [X] T028 [US2] Implement applyHover method in ComponentVisualFactoryBase with emissive glow effect in src/scene/shared/components/ComponentVisualFactory.ts (Already implemented)
 - [X] T029 [US2] Implement removeHover method in ComponentVisualFactoryBase to restore original materials in src/scene/shared/components/ComponentVisualFactory.ts (Already implemented)
-- [X] T030 [US2] Add factory reference storage to component mesh userData in CircuitSceneManager._createComponentMesh in src/scene/static/CircuitSceneManager.ts
-- [X] T031 [US2] Implement hover callback in CircuitSceneManager to call factory.applyHover/removeHover on component hover in src/scene/static/CircuitSceneManager.ts
-- [X] T032 [US2] Add factory reference storage to component mesh userData in CircuitRunnerSceneManager._createComponentMesh in src/scene/simulation/CircuitRunnerSceneManager.ts
-- [X] T033 [US2] Implement hover callback in CircuitRunnerSceneManager to call factory.applyHover/removeHover on component hover in src/scene/simulation/CircuitRunnerSceneManager.ts
+- [X] T030 [US2] Add factory reference storage to component mesh userData in CircuitController._createComponentMesh in src/scene/static/CircuitController.ts
+- [X] T031 [US2] Implement hover callback in CircuitController to call factory.applyHover/removeHover on component hover in src/scene/static/CircuitController.ts
+- [X] T032 [US2] Add factory reference storage to component mesh userData in CircuitRunnerController._createComponentMesh in src/scene/simulation/CircuitRunnerController.ts
+- [X] T033 [US2] Implement hover callback in CircuitRunnerController to call factory.applyHover/removeHover on component hover in src/scene/simulation/CircuitRunnerController.ts
 - [X] T034 [US2] Run all tests and verify hover functionality: npm test (550 tests passing, 21 pre-existing failures in unrelated tests)
 
 **Checkpoint**: At this point, hovering over components triggers visual feedback in both static and simulation modes ✅
@@ -123,8 +123,8 @@
 - [X] T040 [US3] Add findLedMesh private helper method to SmallLEDVisualFactory in src/scene/shared/components/SmallLEDVisualFactory.ts
 - [X] T041 [US3] Override updateAnimation in SwitchVisualFactory with contactor rotation based on SwitchState.isClosed in src/scene/shared/components/SwitchVisualFactory.ts
 - [X] T042 [US3] Add findContactorGroup private helper method to SwitchVisualFactory in src/scene/shared/components/SwitchVisualFactory.ts
-- [X] T043 [US3] Update _updateComponentStates method in CircuitRunnerSceneManager to call factory.updateAnimation for each component in src/scene/simulation/CircuitRunnerSceneManager.ts
-- [X] T044 [US3] Integrate updateAnimation into CircuitRunnerSceneManager's simulation state update loop (already in _updateComponentStates) in src/scene/simulation/CircuitRunnerSceneManager.ts
+- [X] T043 [US3] Update _updateComponentStates method in CircuitRunnerController to call factory.updateAnimation for each component in src/scene/simulation/CircuitRunnerController.ts
+- [X] T044 [US3] Integrate updateAnimation into CircuitRunnerController's simulation state update loop (already in _updateComponentStates) in src/scene/simulation/CircuitRunnerController.ts
 - [X] T045 [US3] Run all tests and verify animation functionality: npm test (27 tests passing in ComponentVisualFactory.test.ts)
 
 **Checkpoint**: At this point, LED and Switch components animate based on simulation state
@@ -181,7 +181,7 @@ Phase 4: User Story 2 (P2)          Phase 5: User Story 3 (P3)
 
 - Tests MUST be written first
 - Foundation classes before concrete implementations
-- Core implementation before scene manager integration
+- Core implementation before scene controllerType integration
 - Story complete before moving to next priority
 
 ### Parallel Opportunities
@@ -199,13 +199,13 @@ Phase 4: User Story 2 (P2)          Phase 5: User Story 3 (P3)
 **Phase 3 (US1):**
 - T010-T015 (all tests) can run in parallel
 - T016, T017, T018 (factory classes) can run in parallel after tests
-- T021, T022 (scene manager updates) can run in parallel
+- T021, T022 (scene controllerType updates) can run in parallel
 - T023 after T016-T018
 
 **Phase 4 (US2):**
 - T025-T027 (tests) can run in parallel
 - T028, T029 are sequential (applyHover before removeHover)
-- T030-T031, T032-T033 (two scene managers) can run in parallel
+- T030-T031, T032-T033 (two Controllers) can run in parallel
 
 **Phase 5 (US3):**
 - T035-T038 (tests) can run in parallel

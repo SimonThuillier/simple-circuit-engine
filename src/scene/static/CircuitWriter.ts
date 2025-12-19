@@ -1,7 +1,7 @@
-import type { CircuitSceneManager } from './CircuitSceneManager';
+import type { CircuitController } from './CircuitController';
 import { Euler, Object3D, Vector3 } from 'three';
 import { Position } from '@/core/types/Position';
-import type { SceneManagerEventMap } from '../shared/types';
+import type { ControllerEventMap } from '../shared/types';
 import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
 import type { UUID } from '@/core/types/Identifier';
 import type { ENode } from '@/core/ENode';
@@ -13,11 +13,11 @@ import { worldToGridPosition, worldToGridRotation } from '../shared/GeometryUtil
 /**
  * Manages editing operations of 3D models from the circuit scene into the core circuit model.
  */
-export class CircuitEditionManager {
-  private _sceneManager: CircuitSceneManager;
+export class CircuitWriter {
+  private _controller: CircuitController;
 
-  constructor(sceneManager: CircuitSceneManager) {
-    this._sceneManager = sceneManager;
+  constructor(controller: CircuitController) {
+    this._controller = controller;
   }
 
   /**
@@ -27,16 +27,16 @@ export class CircuitEditionManager {
    * @return The circuit enode
    */
   saveAddBranchingPoint(position: Vector3) {
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     try {
       if (!circuit) {
-        throw new Error('No circuit available in the scene manager.');
+        throw new Error('No circuit available in the scene controllerType.');
       }
 
       const modelPosition = worldToGridPosition(position);
       const circuitEnode = circuit.addBranchingPoint(modelPosition);
 
-      const event: SceneManagerEventMap['circuitElementAction'] = {
+      const event: ControllerEventMap['circuitElementAction'] = {
         type: 'enode',
         action: 'add',
         id: circuitEnode.id,
@@ -45,17 +45,17 @@ export class CircuitEditionManager {
           position: modelPosition,
         },
       };
-      this._sceneManager.emit('circuitElementAction', event);
+      this._controller.emit('circuitElementAction', event);
       return circuitEnode;
     } catch (error) {
-      const event: SceneManagerEventMap['circuitElementAction'] = {
+      const event: ControllerEventMap['circuitElementAction'] = {
         type: 'enode',
         action: 'add',
         id: undefined,
         error: error as Error,
         data: null,
       };
-      this._sceneManager.emit('circuitElementAction', event);
+      this._controller.emit('circuitElementAction', event);
       throw new Error((error as Error).message);
     }
   }
@@ -68,10 +68,10 @@ export class CircuitEditionManager {
    * @return The circuit enode
    */
   saveEditBranchingPoint(branchingPoint: Object3D, emit: boolean = false) {
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     try {
       if (!circuit) {
-        throw new Error('No circuit available in the scene manager.');
+        throw new Error('No circuit available in the scene controllerType.');
       }
       const circuitEnode = circuit.getENode(branchingPoint.userData.enodeId);
       if (!circuitEnode) {
@@ -86,7 +86,7 @@ export class CircuitEditionManager {
       circuitEnode.setSourceType(sourceType);
 
       if (emit) {
-        this._sceneManager.emit('circuitElementAction', {
+        this._controller.emit('circuitElementAction', {
           type: 'enode',
           action: 'edit',
           id: circuitEnode.id,
@@ -99,14 +99,14 @@ export class CircuitEditionManager {
       }
       return circuitEnode;
     } catch (error) {
-      const event: SceneManagerEventMap['circuitElementAction'] = {
+      const event: ControllerEventMap['circuitElementAction'] = {
         type: 'enode',
         action: 'edit',
         id: branchingPoint.userData.id,
         error: error as Error,
         data: null,
       };
-      this._sceneManager.emit('circuitElementAction', event);
+      this._controller.emit('circuitElementAction', event);
       throw new Error((error as Error).message);
     }
   }
@@ -122,14 +122,14 @@ export class CircuitEditionManager {
     mergedWires?: UUID[] | undefined;
     newWire?: Wire | undefined;
   } {
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     try {
       if (!circuit) {
-        throw new Error('No circuit available in the scene manager.');
+        throw new Error('No circuit available in the scene controllerType.');
       }
       const result = circuit.removeBranchingPoint(enodeId);
 
-      const event: SceneManagerEventMap['circuitElementAction'] = {
+      const event: ControllerEventMap['circuitElementAction'] = {
         type: 'enode',
         action: 'delete',
         id: enodeId,
@@ -138,17 +138,17 @@ export class CircuitEditionManager {
           ...result,
         },
       };
-      this._sceneManager.emit('circuitElementAction', event);
+      this._controller.emit('circuitElementAction', event);
       return result;
     } catch (error) {
-      const event: SceneManagerEventMap['circuitElementAction'] = {
+      const event: ControllerEventMap['circuitElementAction'] = {
         type: 'enode',
         action: 'delete',
         id: enodeId,
         error: error as Error,
         data: null,
       };
-      this._sceneManager.emit('circuitElementAction', event);
+      this._controller.emit('circuitElementAction', event);
       throw new Error((error as Error).message);
     }
   }
@@ -161,17 +161,17 @@ export class CircuitEditionManager {
    * @return The circuit wire
    */
   saveAddWire(sourceEnodeId: UUID, targetEnodeId: UUID) {
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     try {
       if (!circuit) {
-        throw new Error('No circuit available in the scene manager.');
+        throw new Error('No circuit available in the scene controllerType.');
       }
       const addResult = circuit.addWire(sourceEnodeId, targetEnodeId);
       if (addResult instanceof Error) {
         throw new Error(addResult.message);
       }
       const wire = addResult as Wire;
-      const event: SceneManagerEventMap['circuitElementAction'] = {
+      const event: ControllerEventMap['circuitElementAction'] = {
         type: 'wire',
         action: 'add',
         id: wire.id,
@@ -181,17 +181,17 @@ export class CircuitEditionManager {
           node2: wire.node2,
         },
       };
-      this._sceneManager.emit('circuitElementAction', event);
+      this._controller.emit('circuitElementAction', event);
       return wire;
     } catch (error) {
-      const event: SceneManagerEventMap['circuitElementAction'] = {
+      const event: ControllerEventMap['circuitElementAction'] = {
         type: 'wire',
         action: 'add',
         id: undefined,
         error: error as Error,
         data: null,
       };
-      this._sceneManager.emit('circuitElementAction', event);
+      this._controller.emit('circuitElementAction', event);
       throw new Error((error as Error).message);
     }
   }
@@ -210,29 +210,29 @@ export class CircuitEditionManager {
     worldPosition: Vector3,
     targetEnodeId: UUID | null = null
   ): { branchingPoint: ENode; wires: Wire[] } {
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     if (!circuit) {
-      throw new Error('No circuit available in the scene manager.');
+      throw new Error('No circuit available in the scene controllerType.');
     }
     // Convert world position to grid position
     const gridPosition = worldToGridPosition(worldPosition);
     const result = circuit.splitWire(wireId, gridPosition, targetEnodeId);
     console.log(result);
 
-    this._sceneManager.emit('circuitElementAction', {
+    this._controller.emit('circuitElementAction', {
       type: 'wire',
       action: 'delete',
       id: wireId,
     });
     if (!targetEnodeId) {
-      this._sceneManager.emit('circuitElementAction', {
+      this._controller.emit('circuitElementAction', {
         type: 'enode',
         action: 'add',
         id: result.branchingPoint.id,
       });
     }
     for (const wire of result.wires) {
-      this._sceneManager.emit('circuitElementAction', {
+      this._controller.emit('circuitElementAction', {
         type: 'wire',
         action: 'add',
         id: wire.id,
@@ -248,30 +248,30 @@ export class CircuitEditionManager {
    * @return The circuit wire
    */
   saveDeleteWire(wireId: UUID): void {
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     try {
       if (!circuit) {
-        throw new Error('No circuit available in the scene manager.');
+        throw new Error('No circuit available in the scene controllerType.');
       }
       circuit.removeWire(wireId);
-      const event: SceneManagerEventMap['circuitElementAction'] = {
+      const event: ControllerEventMap['circuitElementAction'] = {
         type: 'wire',
         action: 'delete',
         id: wireId,
         error: null,
         data: null,
       };
-      this._sceneManager.emit('circuitElementAction', event);
+      this._controller.emit('circuitElementAction', event);
       return;
     } catch (error) {
-      const event: SceneManagerEventMap['circuitElementAction'] = {
+      const event: ControllerEventMap['circuitElementAction'] = {
         type: 'wire',
         action: 'delete',
         id: wireId,
         error: error as Error,
         data: null,
       };
-      this._sceneManager.emit('circuitElementAction', event);
+      this._controller.emit('circuitElementAction', event);
     }
   }
 
@@ -288,7 +288,7 @@ export class CircuitEditionManager {
     positions: Array<{ x: number; y: number }>,
     emit: boolean = false
   ): Wire | undefined {
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     if (!circuit) return;
     const wire = circuit.getWire(wireId);
     if (!wire) return;
@@ -298,7 +298,7 @@ export class CircuitEditionManager {
 
     if (emit) {
       circuit.simplifyWireIntermediatePositions(wireId);
-      this._sceneManager.emit('circuitElementAction', {
+      this._controller.emit('circuitElementAction', {
         type: 'wire',
         action: 'edit',
         id: wireId,
@@ -318,13 +318,13 @@ export class CircuitEditionManager {
    * @return The circuit wire
    */
   saveSimplifyWirePositions(wireId: UUID): Wire | undefined {
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     if (!circuit) return;
     const wire = circuit.getWire(wireId);
     if (!wire) return;
 
     circuit.simplifyWireIntermediatePositions(wireId);
-    this._sceneManager.emit('circuitElementAction', {
+    this._controller.emit('circuitElementAction', {
       type: 'wire',
       action: 'edit',
       id: wireId,
@@ -342,14 +342,14 @@ export class CircuitEditionManager {
    * @param sourceType - New sourceType value
    */
   saveEditENodeSourceType(enodeId: UUID, sourceType: ENodeSourceType | null): void {
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     if (!circuit) {
-      throw new Error('No circuit available in the scene manager.');
+      throw new Error('No circuit available in the scene controllerType.');
     }
 
     circuit.updateENodeSourceType(enodeId, sourceType);
 
-    this._sceneManager.emit('circuitElementAction', {
+    this._controller.emit('circuitElementAction', {
       type: 'enode',
       action: 'edit',
       id: enodeId,
@@ -370,17 +370,17 @@ export class CircuitEditionManager {
    * @throws Error if circuit is not available or component creation fails
    */
   saveAddComponent(type: ComponentType, position: Vector3, rotation: Euler): Component {
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     try {
       if (!circuit) {
-        throw new Error('No circuit available in the scene manager.');
+        throw new Error('No circuit available in the scene controllerType.');
       }
       // convert 3D world position to 2D grid position with Grid snapping
       const modelPosition = worldToGridPosition(position);
       const modelRotation = worldToGridRotation(rotation);
       const component = circuit.addComponent(type, modelPosition, modelRotation);
 
-      const event: SceneManagerEventMap['circuitElementAction'] = {
+      const event: ControllerEventMap['circuitElementAction'] = {
         type: 'component',
         action: 'add',
         id: component.id,
@@ -392,17 +392,17 @@ export class CircuitEditionManager {
           rotation: modelRotation,
         },
       };
-      this._sceneManager.emit('circuitElementAction', event);
+      this._controller.emit('circuitElementAction', event);
       return component;
     } catch (error) {
-      const event: SceneManagerEventMap['circuitElementAction'] = {
+      const event: ControllerEventMap['circuitElementAction'] = {
         type: 'component',
         action: 'add',
         id: undefined,
         error: error as Error,
         data: null,
       };
-      this._sceneManager.emit('circuitElementAction', event);
+      this._controller.emit('circuitElementAction', event);
       throw new Error((error as Error).message);
     }
   }
@@ -415,9 +415,9 @@ export class CircuitEditionManager {
    */
   saveEditComponent(componentId: UUID, visual: Object3D, emit: boolean = false): Component {
     // Logic to save the current state of the scene component into the core model
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     if (!circuit) {
-      throw new Error('No circuit available in the scene manager.');
+      throw new Error('No circuit available in the scene controllerType.');
     }
     const component = circuit.getComponent(componentId);
     if (!component) {
@@ -430,7 +430,7 @@ export class CircuitEditionManager {
     component.setPosition(modelPosition);
 
     if (emit) {
-      this._sceneManager.emit('circuitElementAction', {
+      this._controller.emit('circuitElementAction', {
         type: 'component',
         action: 'edit',
         id: componentId,
@@ -455,10 +455,10 @@ export class CircuitEditionManager {
     deletedWires: UUID[];
     deletedENodes: UUID[];
   } {
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     try {
       if (!circuit) {
-        throw new Error('No circuit available in the scene manager.');
+        throw new Error('No circuit available in the scene controllerType.');
       }
 
       const component = circuit.getComponent(componentId);
@@ -470,25 +470,25 @@ export class CircuitEditionManager {
       const result: { deletedWires: UUID[]; deletedENodes: UUID[] } =
         circuit.removeComponent(componentId);
 
-      const event: SceneManagerEventMap['circuitElementAction'] = {
+      const event: ControllerEventMap['circuitElementAction'] = {
         type: 'component',
         action: 'delete',
         id: componentId,
         error: null,
         data: { ...result },
       };
-      this._sceneManager.emit('circuitElementAction', event);
+      this._controller.emit('circuitElementAction', event);
 
       return result;
     } catch (error) {
-      const event: SceneManagerEventMap['circuitElementAction'] = {
+      const event: ControllerEventMap['circuitElementAction'] = {
         type: 'component',
         action: 'delete',
         id: componentId,
         error: error as Error,
         data: null,
       };
-      this._sceneManager.emit('circuitElementAction', event);
+      this._controller.emit('circuitElementAction', event);
       throw new Error((error as Error).message);
     }
   }

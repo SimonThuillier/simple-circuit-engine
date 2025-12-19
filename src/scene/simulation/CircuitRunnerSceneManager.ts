@@ -1,6 +1,6 @@
 /**
- * Simulation Circuit Scene Manager
- * @module scene/simulation/CircuitRunnerSceneManager
+ * Simulation Circuit Controller
+ * @module scene/simulation/CircuitRunnercontroller
  *
  * Renders live circuit simulation with real-time state updates and animated current flow.
  * Provides smooth interpolation between discrete simulation ticks for fluid animation.
@@ -17,11 +17,11 @@ import { ENodeType } from '../../core/types/ENodeType';
 import { EventEmitter } from '../shared/EventEmitter';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
 import type {
-  SceneManagerEvent,
-  SceneManagerEventMap,
-  SceneManagerCallback,
+  ControllerEvent,
+  ControllerEventMap,
+  ControllerCallback,
   ChangedData,
-  SceneManagerOptions,
+  ControllerOptions,
   MapControlsOptions,
 } from '../shared/types';
 import { createPerspectiveCamera, setupCameraFromMetadata } from '../shared/CameraUtils';
@@ -32,13 +32,13 @@ import { InterpolationController } from '../shared/InterpolationController';
 import { HoverManager } from '../shared/HoverManager';
 
 /**
- * Simulation Circuit Scene Manager Implementation
+ * Simulation Circuit Controller Implementation
  *
  * Manages Three.js scene for live circuit simulation visualization.
  * Provides smooth interpolation between simulation ticks for 60fps rendering.
  * Animates current flow through wires and component state changes.
  */
-export class CircuitRunnerSceneManager extends EventEmitter<SceneManagerEventMap> {
+export class CircuitRunnercontroller extends EventEmitter<ControllerEventMap> {
   public readonly factoryRegistry: IFactoryRegistry;
 
   private circuitRunner: CircuitRunner | null = null;
@@ -69,7 +69,7 @@ export class CircuitRunnerSceneManager extends EventEmitter<SceneManagerEventMap
   private mapControlsChangeHandler: (() => void) | null = null;
 
   /**
-   * Create a new Simulation Circuit Scene Manager
+   * Create a new Simulation Circuit Controller
    *
    * @param factoryRegistry - Component visual factory registry
    * @throws {TypeError} If factoryRegistry is null/undefined
@@ -85,19 +85,19 @@ export class CircuitRunnerSceneManager extends EventEmitter<SceneManagerEventMap
   }
 
   /**
-   * Initialize the scene manager with a DOM container
+   * Initialize the scene controllerType with a DOM container
    *
    * Creates Scene, Camera, lights, and InterpolationController.
    * Does NOT create circuit visuals yet - call setCircuit() after initialization.
    *
    * @param container - HTMLElement for container reference
-   * @param options - Optional scene manager configuration
+   * @param options - Optional scene controllerType configuration
    * @throws {Error} If already initialized
    * @throws {TypeError} If container is not valid HTMLElement
    */
-  initialize(container: HTMLElement, options?: SceneManagerOptions): void {
+  initialize(container: HTMLElement, options?: ControllerOptions): void {
     if (this.initialized) {
-      throw new Error('SceneManager already initialized');
+      throw new Error('controller already initialized');
     }
 
     if (!container || !(container instanceof HTMLElement)) {
@@ -188,8 +188,8 @@ export class CircuitRunnerSceneManager extends EventEmitter<SceneManagerEventMap
   /**
    * Clear all circuit visuals from the scene
    *
-   * Removes all visual objects but does not dispose the scene manager.
-   * SceneManager can be reused by calling setCircuit() with a new circuit.
+   * Removes all visual objects but does not dispose the scene controllerType.
+   * controller can be reused by calling setCircuit() with a new circuit.
    *
    * @throws {Error} If not initialized
    */
@@ -238,7 +238,7 @@ export class CircuitRunnerSceneManager extends EventEmitter<SceneManagerEventMap
 
     // Handle case where no circuit is set
     if (!this.circuitRunner) {
-      console.warn('CircuitRunnerSceneManager.render() called without circuit set');
+      console.warn('CircuitRunnercontroller.render() called without circuit set');
       return;
     }
 
@@ -331,11 +331,11 @@ export class CircuitRunnerSceneManager extends EventEmitter<SceneManagerEventMap
    */
   dispose(): void {
     if (this.disposed) {
-      throw new Error('SceneManager already disposed');
+      throw new Error('controller already disposed');
     }
 
     if (!this.initialized) {
-      throw new Error('Cannot dispose uninitialized scene manager');
+      throw new Error('Cannot dispose uninitialized scene controllerType');
     }
 
     try {
@@ -1047,10 +1047,10 @@ export class CircuitRunnerSceneManager extends EventEmitter<SceneManagerEventMap
 
     // Capture wire states (current flow)
     for (const [wireId, line] of this.wireMeshes) {
-      // Get electrical state from circuit runner state manager
-      // This is a placeholder - actual implementation depends on state manager API
+      // Get electrical state from circuit runner state controllerType
+      // This is a placeholder - actual implementation depends on state controllerType API
       state.wires[wireId] = {
-        currentFlow: 0, // Would read from state manager
+        currentFlow: 0, // Would read from state controllerType
       };
     }
 

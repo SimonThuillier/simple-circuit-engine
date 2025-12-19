@@ -2,7 +2,7 @@
  * SelectionManager Contract
  *
  * Manages selection state in the circuit scene.
- * Selection behavior (click to select/deselect) is handled by CircuitSceneManager.
+ * Selection behavior (click to select/deselect) is handled by CircuitController.
  * SelectionManager is the single source of truth for selection state.
  *
  * Supports both mono-selection (single element) and multi-selection (multiple elements).

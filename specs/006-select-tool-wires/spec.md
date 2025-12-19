@@ -5,7 +5,7 @@
 **Status**: In Progress
 **Input**: User description: "The first circuit edit tool, Position which allows to position, drag/move, and rotate components on the scene must be implemented. In the same time wires visual management must be improved, first to target their pins (instead of the component currently) and to follow those pins as components move/rotate, and also to support multi lines wires (to handle intermediatePositions)"
 
-**Architecture Note**: Selection behavior (click to select/deselect) is handled by CircuitSceneManager as a common behavior across all tools. The PositionTool specifically handles drag/move and rotation operations on selected elements.
+**Architecture Note**: Selection behavior (click to select/deselect) is handled by CircuitController as a common behavior across all tools. The PositionTool specifically handles drag/move and rotation operations on selected elements.
 
 ## User Scenarios & Testing _(mandatory)_
 
@@ -120,7 +120,7 @@ A user needs to deselect a currently selected component to stop editing it or to
 
 ### Functional Requirements
 
-- **FR-001**: System MUST allow users to select a component, enode, or wire by clicking on it (handled by CircuitSceneManager)
+- **FR-001**: System MUST allow users to select a component, enode, or wire by clicking on it (handled by CircuitController)
 - **FR-002**: System MUST provide visual feedback indicating which element is currently selected using orange emissive glow (#ff8800) at 0.8 intensity, distinct from the blue hover glow (#4488ff at 0.6 intensity)
 - **FR-003**: System MUST allow users to drag a selected component to a new grid position (Position tool)
 - **FR-004**: System MUST snap dragged components to the nearest grid cell when released
@@ -131,7 +131,7 @@ A user needs to deselect a currently selected component to stop editing it or to
 - **FR-009**: System MUST update wire visuals in real-time when connected components are moved
 - **FR-010**: System MUST update wire visuals when connected components are rotated
 - **FR-011**: System MUST render wires with intermediate positions as connected multi-segment lines through all waypoints
-- **FR-012**: System MUST allow users to deselect by clicking on empty space (handled by CircuitSceneManager)
+- **FR-012**: System MUST allow users to deselect by clicking on empty space (handled by CircuitController)
 - **FR-013**: System MUST cancel in-progress drag operations when user presses Escape key (Position tool)
 - **FR-014**: System MUST support single-element selection for this feature (multi-selection types prepared but not implemented)
 - **FR-015**: System MUST distinguish between hover state (temporary) and selected state (persistent until deselected), with selection visual taking precedence over hover

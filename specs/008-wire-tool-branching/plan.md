@@ -77,8 +77,8 @@ src/
 │       ├── tools/
 │       │   ├── WireTool.ts                   # EXTEND: Full implementation
 │       │   └── BranchingPointTool.ts         # May merge into WireTool or keep separate
-│       ├── CircuitSceneManager.ts            # Scene orchestration (minor updates)
-│       └── CircuitEditionManager.ts          # Model persistence (extend for wires)
+│       ├── CircuitController.ts            # Scene orchestration (minor updates)
+│       └── CircuitWriter.ts          # Model persistence (extend for wires)
 
 tests/
 ├── scene/

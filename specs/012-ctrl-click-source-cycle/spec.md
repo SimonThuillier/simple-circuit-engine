@@ -54,7 +54,7 @@ A user wants to designate a component pin (enode) as a voltage or current source
 - **FR-001**: System MUST cycle enode sourceType when user Ctrl+clicks on a branching point: null → Voltage → Current → null
 - **FR-002**: System MUST cycle enode sourceType when user Ctrl+clicks on a component pin: null → Voltage → Current → null
 - **FR-003**: System MUST update the visual representation immediately after sourceType change (white/red/blue color for both branching points and component pins)
-- **FR-004**: System MUST persist the sourceType change to the circuit model via CircuitEditionManager
+- **FR-004**: System MUST persist the sourceType change to the circuit model via CircuitWriter
 - **FR-005**: System MUST NOT cycle sourceType on regular click (without Ctrl held)
 - **FR-006**: System MUST ignore Ctrl+click sourceType cycling during active operations (wire creation, component drag, etc.)
 - **FR-007**: Ctrl+click on enode MUST take precedence over wire creation initiation when Ctrl is held

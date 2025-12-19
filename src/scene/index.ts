@@ -1,25 +1,24 @@
 /**
- * 3D Circuit Scene Managers Module
+ * 3D Circuit Controllers Module
  * @module scene
  *
- * Provides Three.js-based scene managers for circuit visualization:
- * - CircuitSceneManager: Static circuit visualization with editing capabilities
- * - CircuitRunnerSceneManager: Live simulation visualization with animation
+ * Provides Three.js-based Controllers for circuit visualization:
+ * - CircuitController: Static circuit visualization with editing capabilities
+ * - CircuitRunnerController: Live simulation visualization with animation
  *
  * @example
  * ```typescript
- * import { CircuitSceneManager, FactoryRegistry } from 'simple-circuit-engine/scene';
+ * import { CircuitController, FactoryRegistry } from 'simple-circuit-engine/scene';
  *
  * const registry = new FactoryRegistry(defaultFactory);
- * const sceneManager = new CircuitSceneManager(registry);
- * sceneManager.initialize(container);
- * sceneManager.setCircuit(circuit);
+ * const controller = new CircuitController(registry);
+ * controller.initialize(container);
+ * controller.setCircuit(circuit);
  * ```
  */
 
-// Scene Manager classes
-export { CircuitSceneManager } from './static/CircuitSceneManager';
-export { CircuitRunnerSceneManager } from './simulation/CircuitRunnerSceneManager';
+// Controller classes
+export { CircuitController } from './static/CircuitController';
 
 // Editing Tools
 export { BuildTool } from './static/tools/BuildTool';
@@ -37,12 +36,11 @@ export { HoverManager } from './shared/HoverManager';
 
 // Types
 export type {
-  SceneManagerEvent,
-  SceneManagerEventMap,
-  SceneManagerCallback,
+  ControllerEvent,
+  ControllerEventMap,
+  ControllerCallback,
   CircuitSceneObjectType,
-  ChangedData,
-  SceneManagerOptions,
+  ControllerOptions,
   MapControlsOptions,
   HoverableType,
   HoveredElement,
@@ -56,7 +54,6 @@ export type {
 } from './shared/types';
 
 export type {
-  ComponentVisualFactory,
   IComponentVisualFactory,
   IFactoryRegistry,
 } from './shared/components/ComponentVisualFactory';

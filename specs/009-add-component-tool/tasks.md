@@ -16,7 +16,7 @@
 **Purpose**: Verify project structure is ready for AddComponentTool implementation
 
 - [x] T001 Verify IEditingTool interface in src/scene/shared/types.ts has required methods
-- [x] T002 Verify CircuitSceneManager has getFactoryRegistry(), getCircuit(), getControls() methods
+- [x] T002 Verify CircuitController has getFactoryRegistry(), getCircuit(), getControls() methods
 - [x] T003 Verify SelectionManager exists and has required selection methods
 
 ---
@@ -27,11 +27,11 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [x] T004 Add saveAddComponent() method to CircuitEditionManager in src/scene/static/CircuitEditionManager.ts
-- [x] T005 Add saveDeleteComponent() method to CircuitEditionManager in src/scene/static/CircuitEditionManager.ts
-- [x] T006 Add addComponent() wrapper method to CircuitSceneManager in src/scene/static/CircuitSceneManager.ts
-- [x] T007 Add removeComponent() wrapper method to CircuitSceneManager in src/scene/static/CircuitSceneManager.ts
-- [x] T008 Add getFactoryRegistry() public method to CircuitSceneManager in src/scene/static/CircuitSceneManager.ts (if not already public)
+- [x] T004 Add saveAddComponent() method to CircuitWriter in src/scene/static/CircuitWriter.ts
+- [x] T005 Add saveDeleteComponent() method to CircuitWriter in src/scene/static/CircuitWriter.ts
+- [x] T006 Add addComponent() wrapper method to CircuitController in src/scene/static/CircuitController.ts
+- [x] T007 Add removeComponent() wrapper method to CircuitController in src/scene/static/CircuitController.ts
+- [x] T008 Add getFactoryRegistry() public method to CircuitController in src/scene/static/CircuitController.ts (if not already public)
 
 **Checkpoint**: Foundation ready - user story implementation can now begin ✅
 
@@ -53,7 +53,7 @@
 - [x] T014 [US1] Implement applyGhostEffect() method - traverse Object3D and set material.opacity = 0.5 and material.transparent = true in src/scene/static/tools/AddComponentTool.ts
 - [x] T015 [US1] Implement getPreviewObjects() to return [ghostPreview] when preview exists in src/scene/static/tools/AddComponentTool.ts
 - [x] T016 [US1] Implement handleGridPositionMove() method - update previewPosition with grid snapping in src/scene/static/tools/AddComponentTool.ts
-- [x] T017 [US1] Implement handleClick() method - call addComponent() on CircuitSceneManager when clicking empty space in src/scene/static/tools/AddComponentTool.ts
+- [x] T017 [US1] Implement handleClick() method - call addComponent() on CircuitController when clicking empty space in src/scene/static/tools/AddComponentTool.ts
 - [x] T018 [US1] Implement getCursorType() - return 'crosshair' by default in src/scene/static/tools/AddComponentTool.ts
 - [x] T019 [US1] Emit toolOperationCompleted event with component details after successful placement in src/scene/static/tools/AddComponentTool.ts
 - [x] T020 [US1] Add JSDoc documentation for all public methods in src/scene/static/tools/AddComponentTool.ts
@@ -112,7 +112,7 @@
 
 - [x] T035 [US4] Implement handleKeyDown() method to handle Delete and Backspace keys in src/scene/static/tools/AddComponentTool.ts
 - [x] T036 [US4] Get current selection from SelectionManager in handleKeyDown() in src/scene/static/tools/AddComponentTool.ts
-- [x] T037 [US4] Call removeComponent() on CircuitSceneManager when selection is component and Delete pressed in src/scene/static/tools/AddComponentTool.ts
+- [x] T037 [US4] Call removeComponent() on CircuitController when selection is component and Delete pressed in src/scene/static/tools/AddComponentTool.ts
 - [x] T038 [US4] Clear selection via SelectionManager.clearSelection() after deletion in src/scene/static/tools/AddComponentTool.ts
 - [x] T039 [US4] Emit toolOperationCompleted event with action:'delete' and componentId after deletion in src/scene/static/tools/AddComponentTool.ts
 - [x] T040 [US4] Attach 'keydown' event listener in onActivate() to call handleKeyDown() in src/scene/static/tools/AddComponentTool.ts
@@ -131,9 +131,9 @@
 - [x] T044 [P] Add edge case handling - emit toolValidationError when no component type selected and user tries to place in src/scene/static/tools/AddComponentTool.ts
 - [x] T045 [P] Ensure ghost preview is removed when tool is deactivated in onDeactivate() in src/scene/static/tools/AddComponentTool.ts
 - [x] T046 [P] Clone materials in applyGhostEffect() to avoid affecting placed components in src/scene/static/tools/AddComponentTool.ts
-- [x] T047 [P] Add component deletion support to CircuitEditionManager.saveDeleteComponent() - remove from circuit and emit events in src/scene/static/CircuitEditionManager.ts
-- [x] T048 [P] Add component deletion support to CircuitSceneManager.removeComponent() - remove visual and call edition manager in src/scene/static/CircuitSceneManager.ts
-- [x] T049 [P] Update AddComponentTool registration in CircuitSceneManager._initializeTools() if needed in src/scene/static/CircuitSceneManager.ts
+- [x] T047 [P] Add component deletion support to CircuitWriter.saveDeleteComponent() - remove from circuit and emit events in src/scene/static/CircuitWriter.ts
+- [x] T048 [P] Add component deletion support to CircuitController.removeComponent() - remove visual and call edition controllerType in src/scene/static/CircuitController.ts
+- [x] T049 [P] Update AddComponentTool registration in CircuitController._initializeTools() if needed in src/scene/static/CircuitController.ts
 - [x] T050 Update quickstart.md with usage examples and keyboard shortcuts in specs/009-add-component-tool/quickstart.md
 - [x] T051 Code review - verify strict typing, no 'any' types, all methods documented
 - [x] T052 Verify constitution compliance - framework agnosticism, event-based communication
@@ -187,7 +187,7 @@
 ```bash
 # Launch setup tasks together:
 Task: "Verify IEditingTool interface..."
-Task: "Verify CircuitSceneManager has..."
+Task: "Verify CircuitController has..."
 Task: "Verify SelectionManager exists..."
 
 # After US1 core is done, these can run together:
@@ -202,7 +202,7 @@ Task: "Implement getCursorType()..."
 ### MVP First (User Story 1 Only)
 
 1. Complete Phase 1: Setup (verify infrastructure)
-2. Complete Phase 2: Foundational (add CircuitEditionManager methods)
+2. Complete Phase 2: Foundational (add CircuitWriter methods)
 3. Complete Phase 3: User Story 1 (basic placement)
 4. **STOP and VALIDATE**: Test basic placement independently
 5. Demo/validate before proceeding to overlap detection

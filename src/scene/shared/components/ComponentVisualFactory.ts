@@ -48,7 +48,7 @@ export interface IComponentVisualFactory {
    * - Set `object.userData.componentType = component.type`
    * - Create component hitbox on HitboxLayers.COMPONENT layer
    * - Create pin groups with enodes on HitboxLayers.ENODE layer
-   * - Return objects positioned at origin (scene manager handles placement)
+   * - Return objects positioned at origin (scene controllerType handles placement)
    */
   createVisual(component: Component): THREE.Object3D;
 
@@ -60,7 +60,7 @@ export interface IComponentVisualFactory {
    * @remarks
    * - Should store original material state in userData for restoration
    * - Default implementation: emissive glow effect (light blue, 0.5 intensity)
-   * - Called by scene manager when component is hovered
+   * - Called by scene controllerType when component is hovered
    * - Should be idempotent (safe to call multiple times)
    */
   applyHover(object3D: THREE.Object3D): void;
@@ -72,7 +72,7 @@ export interface IComponentVisualFactory {
    *
    * @remarks
    * - Should restore original material state from userData
-   * - Called by scene manager when hover ends
+   * - Called by scene controllerType when hover ends
    * - Should be safe to call even if not currently hovered
    */
   removeHover(object3D: THREE.Object3D): void;
@@ -128,7 +128,7 @@ export interface IComponentVisualFactory {
    * @param state - The component's current simulation state
    *
    * @remarks
-   * - Called by CircuitRunnerSceneManager during simulation
+   * - Called by CircuitRunnercontroller during simulation
    * - Animation visual updates have priority over hover effects
    * - Default implementation: no-op (static components)
    * - Subclasses override for component-specific animation

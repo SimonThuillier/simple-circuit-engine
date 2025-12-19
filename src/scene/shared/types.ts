@@ -14,7 +14,7 @@ import type { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 export type { Line2, LineGeometry, LineMaterial };
 
 /**
- * Object types that can be interacted within the scene manager to render
+ * Object types that can be interacted within the scene controllerType to render
  */
 export type CircuitSceneObjectType =
   | 'componentGroup'
@@ -33,9 +33,9 @@ export type HoverableType = 'component' | 'enode' | 'wire';
 export type ModelEditAction = 'edit' | 'add' | 'delete';
 
 /**
- * Supported scene manager event types (includes tool system events)
+ * Supported scene controllerType event types (includes tool system events)
  */
-export type SceneManagerEvent =
+export type ControllerEvent =
   | 'ready'
   | 'error'
   | 'circuitLoaded'
@@ -58,8 +58,8 @@ export type SceneManagerEvent =
 /**
  * Event payload map for type-safe event emission
  */
-export interface SceneManagerEventMap {
-  ready: { manager: 'static' | 'simulation' };
+export interface ControllerEventMap {
+  ready: { controllerType: 'static' | 'simulation' };
   error: { message: string; error?: Error };
   circuitLoaded: { name: string };
   circuitCleared: { name: string };
@@ -105,16 +105,16 @@ export interface SceneManagerEventMap {
 }
 
 /**
- * Callback function type for scene manager events
+ * Callback function type for scene controllerType events
  */
-export type SceneManagerCallback<T = any> = (payload: T) => void;
+export type ControllerCallback<T = any> = (payload: T) => void;
 
 
 
 /**
- * Optional configuration for scene manager initialization
+ * Optional configuration for scene controllerType initialization
  */
-export interface SceneManagerOptions {
+export interface ControllerOptions {
   /** Background color for the scene (default: 0x000000) */
   backgroundColor?: number;
   /** Enable anti-aliasing (default: true) */
@@ -140,7 +140,7 @@ export interface SceneManagerOptions {
  *
  * @example
  * ```typescript
- * manager.initialize(container, {
+ * controllerType.initialize(container, {
  *   mapControls: {
  *     enableRotate: false,  // Disable rotation for 2D-only view
  *     maxDistance: 50,      // Limit zoom out
@@ -275,7 +275,7 @@ export type CursorType =
  * Interface defining contract for editing tool implementations
  *
  * All editing tools must implement this interface to integrate with
- * CircuitSceneManager's tool system.
+ * CircuitController's tool system.
  *
  * @example
  * ```typescript

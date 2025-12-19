@@ -381,18 +381,18 @@
       // Remplace 'container' par 'viewerContainer' pour plus de clarté
       const viewerContainer = document.getElementById('viewer-container');
 
-      if (typeof window.CircuitSceneManager !== 'function') {
-        console.error('CircuitSceneManager is not a constructor!');
-        alert('ERROR: CircuitSceneManager failed to load. Check browser console for details.');
+      if (typeof window.CircuitController !== 'function') {
+        console.error('CircuitController is not a constructor!');
+        alert('ERROR: CircuitController failed to load. Check browser console for details.');
       }
 
-      const sceneManager = new window.CircuitSceneManager(window.componentsFactoryRegistry);
-      sceneManager.initialize(viewerContainer);
-      sceneManager.getScene().add(window.axesHelper);
-      sceneManager.getCamera().layers.enable(1); // enode hover layer
-      sceneManager.getCamera().layers.enable(2); // component hover layer
+      const circuitController = new window.CircuitController(window.componentsFactoryRegistry);
+      circuitController.initialize(viewerContainer);
+      circuitController.getScene().add(window.axesHelper);
+      circuitController.getCamera().layers.enable(1); // enode hover layer
+      circuitController.getCamera().layers.enable(2); // component hover layer
 
-      window.renderer.render(sceneManager.getScene(), sceneManager.getCamera());
+      window.renderer.render(circuitController.getScene(), circuitController.getCamera());
       viewerContainer.appendChild(window.renderer.domElement);
 
       // Redimensionner le renderer pour remplir la hauteur disponible jusqu'en bas de la page,
@@ -420,31 +420,31 @@
           window.renderer.setSize(w, h);
           window.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
         }
-        sceneManager.onContainerResize(w, h);
+        circuitController.onContainerResize(w, h);
       }
       // initial resize
       resizeRenderer();
       window.addEventListener('resize', resizeRenderer);
 
-      sceneManager.on('hover', (e) => {
+      circuitController.on('hover', (e) => {
         //console.log('hover', e);
       });
-      sceneManager.on('unhover', (e) => {
+      circuitController.on('unhover', (e) => {
         //console.log('unhover', e);
       });
-      sceneManager.on('select', (e) => {
+      circuitController.on('select', (e) => {
         console.log('select', e);
       });
-      sceneManager.on('deselect', (e) => {
+      circuitController.on('deselect', (e) => {
         console.log('deselect', e);
       });
 
-      sceneManager.getControls().update();
+      circuitController.getControls().update();
 
       function animate() {
         requestAnimationFrame(animate);
-        sceneManager.getControls().update();
-        renderer.render(sceneManager.getScene(), sceneManager.getCamera());
+        circuitController.getControls().update();
+        renderer.render(circuitController.getScene(), circuitController.getCamera());
       }
       animate();
 
@@ -464,8 +464,8 @@
         try {
           const circuitData = JSON.parse(json);
           const circuit = window.Circuit.fromJSON(circuitData);
-          sceneManager.setCircuit(circuit);
-          window.renderer.render(sceneManager.getScene(), sceneManager.getCamera());
+          circuitController.setCircuit(circuit);
+          window.renderer.render(circuitController.getScene(), circuitController.getCamera());
           errorDisplay.classList.add('hidden');
           resizeRenderer();
         } catch (error) {
@@ -484,7 +484,7 @@
       });
 
       document.getElementById('clear-btn').addEventListener('click', () => {
-        sceneManager.setCircuit(null);
+        circuitController.setCircuit(null);
         document.getElementById('circuit-input').value = '';
         document.getElementById('error-display').classList.add('hidden');
         resizeRenderer();

@@ -1,19 +1,19 @@
 # Three.js Rendering Library Research Document
 
-## 1. Three.js SceneManager Pattern for Library Context
+## 1. Three.js Controller Pattern for Library Context
 
-**Decision**: Expose Scene and Camera as public readonly properties while allowing consumer to own and manage WebGLSceneManager lifecycle. Provide `initialize(container: HTMLElement)` and `dispose()` methods in the renderer classes.
+**Decision**: Expose Scene and Camera as public readonly properties while allowing consumer to own and manage WebGLController lifecycle. Provide `initialize(container: HTMLElement)` and `dispose()` methods in the renderer classes.
 
 **Rationale**:
-- Three.js WebGLSceneManager requires a container element and manages GPU resources that must be explicitly cleaned up via `dispose()` method
-- Since the consumer owns the animation loop and calls `render()` each frame, they should also own the WebGLSceneManager instance to control its creation timing and lifecycle
+- Three.js WebGLController requires a container element and manages GPU resources that must be explicitly cleaned up via `dispose()` method
+- Since the consumer owns the animation loop and calls `render()` each frame, they should also own the WebGLController instance to control its creation timing and lifecycle
 - Exposing Scene and Camera as readonly properties maintains encapsulation while allowing the consumer to add custom objects, lights, or helpers if needed
 - This follows the "consumer-controlled lifecycle" pattern seen in Web Components integration with Three.js, where lifecycle callbacks control initialization and cleanup
 - The "Updatables" pattern from the Three.js community allows each object to manage its own updates while the consumer manages the overall render loop
 
 **Alternatives Considered**:
-- **Create and hide WebGLSceneManager internally**: Rejected because it requires the library to manage DOM manipulation and timing, which conflicts with consumer control over the canvas element and initialization timing. Also makes it harder for consumers to configure renderer settings.
-- **Pass WebGLSceneManager as constructor parameter**: Rejected because it forces consumers to understand Three.js renderer construction before using the library, increasing the learning curve.
+- **Create and hide WebGLController internally**: Rejected because it requires the library to manage DOM manipulation and timing, which conflicts with consumer control over the canvas element and initialization timing. Also makes it harder for consumers to configure renderer settings.
+- **Pass WebGLController as constructor parameter**: Rejected because it forces consumers to understand Three.js renderer construction before using the library, increasing the learning curve.
 - **Provide complete animation loop**: Rejected because the spec explicitly states that consumers own the animation loop, and this would conflict with consumer's existing animation systems.
 
 ## 2. Component Visual Factory Pattern
@@ -69,14 +69,14 @@
 
 ## 5. Testing Strategy for Three.js Code
 
-**Decision**: Use Vitest with manual vi.mock() to replace WebGLSceneManager, Scene, Camera, and other WebGL-dependent classes with simple mock objects. Focus unit tests on scene graph structure, object properties, and method calls rather than visual output. Use a test helper factory pattern to create mock Three.js objects.
+**Decision**: Use Vitest with manual vi.mock() to replace WebGLController, Scene, Camera, and other WebGL-dependent classes with simple mock objects. Focus unit tests on scene graph structure, object properties, and method calls rather than visual output. Use a test helper factory pattern to create mock Three.js objects.
 
 **Rationale**:
 - Manual mocking with `vi.mock('three', ...)` allows precise control over what methods are tested without needing a WebGL context
 - Vitest is already configured in the project (confirmed in package.json), providing Jest-compatible API with better performance
 - Mock objects return spies/stubs for render(), setSize(), and other methods, allowing verification of correct calls
 - Since WebGL1 was deprecated in Three.js v0.163.0, headless-gl no longer works for testing, making mocking the only practical approach
-- Test helper pattern encapsulates mock creation: `createMockSceneManager()`, `createMockScene()` provides reusable test utilities
+- Test helper pattern encapsulates mock creation: `createMockController()`, `createMockScene()` provides reusable test utilities
 
 **Alternatives Considered**:
 - **headless-gl package**: Rejected because it doesn't support WebGL2, which Three.js now requires.
@@ -91,12 +91,12 @@
 
 Based on this research, the following patterns will be used in implementation:
 
-1. **SceneManager Initialization**: Both renderers expose `initialize(container)` method that creates Three.js Scene, Camera, and necessary objects, attaching the scene to the container's data attributes for consumer access.
+1. **Controller Initialization**: Both renderers expose `initialize(container)` method that creates Three.js Scene, Camera, and necessary objects, attaching the scene to the container's data attributes for consumer access.
 
 2. **Factory Registry**: Create a `FactoryRegistry` class with `register(type, factory)`, `get(type)`, and `has(type)` methods. Require fallback factory in constructor.
 
 3. **Interpolation Module**: Create `InterpolationController` class in shared utilities with methods for tracking state transitions and computing interpolated values with easing.
 
-4. **Event System**: Create `EventEmitter<SceneManagerEventMap>` base class in shared utilities, extended by both renderer classes.
+4. **Event System**: Create `EventEmitter<ControllerEventMap>` base class in shared utilities, extended by both renderer classes.
 
 5. **Test Utilities**: Create `tests/scene/__mocks__/three.ts` with mock factory functions and `tests/unit/scene/helpers.ts` with test setup utilities.

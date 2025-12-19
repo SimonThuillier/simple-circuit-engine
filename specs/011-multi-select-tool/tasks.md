@@ -34,7 +34,7 @@
 - [X] T006 Implement removeFromSelection() method in src/scene/shared/SelectionManager.ts
 - [X] T007 Implement getSelectionCount() method in src/scene/shared/SelectionManager.ts
 - [X] T008 Implement getSelectedIds() method in src/scene/shared/SelectionManager.ts
-- [X] T009 Register MultiSelectTool in CircuitSceneManager.ts tool initialization
+- [X] T009 Register MultiSelectTool in CircuitController.ts tool initialization
 
 **Checkpoint**: Foundation ready - user story implementation can now begin
 

@@ -541,7 +541,7 @@ describe('BuildTool', () => {
         // - Detect component target
         // - Rotate component by -PI/2 radians
         // - Emit componentRotated event
-        // - Save to model via CircuitEditionManager
+        // - Save to model via CircuitWriter
         expect(true).toBe(true); // Test needs BuildTool instance
       });
 
@@ -609,7 +609,7 @@ describe('BuildTool', () => {
         // - Rotate component by -PI/2 radians (90° clockwise)
         // - Update component.rotation in circuit model
         // - Emit componentRotated event with componentId and newRotation
-        // - Save to model via CircuitEditionManager.saveComponentAction()
+        // - Save to model via CircuitWriter.saveComponentAction()
         expect(true).toBe(true); // Test needs BuildTool instance
       });
 
@@ -656,9 +656,9 @@ describe('BuildTool', () => {
         expect(true).toBe(true); // Test needs BuildTool instance
       });
 
-      it('should save rotation to model via CircuitEditionManager', () => {
+      it('should save rotation to model via CircuitWriter', () => {
         // Migrated from PositionTool.test.ts
-        // After rotation, CircuitEditionManager.saveComponentAction() should be called
+        // After rotation, CircuitWriter.saveComponentAction() should be called
         // with (componentId, 'edit', componentObject3D)
         expect(true).toBe(true); // Test needs BuildTool instance
       });
@@ -716,7 +716,7 @@ describe('BuildTool', () => {
         // BuildTool.handleKeyDown() with key === 'Delete' or 'Backspace' should:
         // - Check if selection exists and type is 'component'
         // - Call deleteSelectedElement() which routes to component deletion
-        // - Remove component via CircuitEditionManager
+        // - Remove component via CircuitWriter
         // - Emit toolOperationCompleted with removedComponents
         expect(true).toBe(true); // Test needs BuildTool instance
       });

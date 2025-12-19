@@ -7,7 +7,7 @@
 
 ## Summary
 
-Implement the Position tool enabling users to drag/move and rotate selected elements on the 3D scene. Selection behavior (click to select/deselect) is handled centrally by CircuitSceneManager. Concurrently improve wire visual management to target actual pin positions (not component centers), follow pins during component movement/rotation, and support multi-segment rendering via intermediatePositions waypoints.
+Implement the Position tool enabling users to drag/move and rotate selected elements on the 3D scene. Selection behavior (click to select/deselect) is handled centrally by CircuitController. Concurrently improve wire visual management to target actual pin positions (not component centers), follow pins during component movement/rotation, and support multi-segment rendering via intermediatePositions waypoints.
 
 ## Technical Context
 
@@ -33,7 +33,7 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 | Modular Separation | ✅ PASS | PositionTool lives in `scene/static/tools/`; wire rendering in `scene/`; no core/ contamination |
 | Module Import Rules | ✅ PASS | scene/ imports only core/ and three; no playback/ dependencies |
 | Public API Shape | ✅ PASS | Event-based communication (position/deselect events already defined) |
-| Resource Management | ✅ PASS | Selection state scoped to scene manager instance |
+| Resource Management | ✅ PASS | Selection state scoped to scene controllerType instance |
 | No `any` Types | ✅ PASS | Will use strict TypeScript throughout |
 | Test Coverage | ✅ PASS | Scene module requires 60% minimum; will add tests for new functionality |
 
@@ -51,7 +51,7 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 ### Architecture Note
 
-Selection behavior is centralized in CircuitSceneManager via SelectionManager integration. The PositionTool does not handle click-to-select; it only handles drag/move operations on already-selected elements. This allows consistent selection behavior across all tools.
+Selection behavior is centralized in CircuitController via SelectionManager integration. The PositionTool does not handle click-to-select; it only handles drag/move operations on already-selected elements. This allows consistent selection behavior across all tools.
 
 ## Project Structure
 
@@ -86,7 +86,7 @@ src/
 │   │   └── types.ts                       # MODIFIED: SelectionData, HoverableType types added
 │   │
 │   └── static/
-│       ├── CircuitSceneManager.ts         # MODIFIED: SelectionManager integration, wire updates
+│       ├── CircuitController.ts         # MODIFIED: SelectionManager integration, wire updates
 │       └── tools/
 │           └── PositionTool.ts            # MODIFIED: Drag/move functionality (selection in CSM)
 │
@@ -102,7 +102,7 @@ tests/
 
 **Structure Decision**: Single library project following existing patterns. New functionality integrates into existing `scene/` module hierarchy. SelectionManager and WireVisualManager are new shared utilities. PositionTool extends the existing tool system in `scene/static/tools/`.
 
-**Architecture Note**: Selection behavior (click-to-select/deselect) is handled in CircuitSceneManager._initializeSelectionManager() and handlePointerDown(), not in PositionTool. This centralizes selection logic for consistency across all tools.
+**Architecture Note**: Selection behavior (click-to-select/deselect) is handled in CircuitController._initializeSelectionManager() and handlePointerDown(), not in PositionTool. This centralizes selection logic for consistency across all tools.
 
 ## Complexity Tracking
 

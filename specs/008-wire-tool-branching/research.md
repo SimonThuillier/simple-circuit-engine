@@ -19,7 +19,7 @@ This document consolidates findings from codebase exploration to resolve impleme
 - `gridPositionMove` event subscription for position updates
 - Escape key handling for cancellation
 - Double-click handling for secondary actions
-- Integration with CircuitSceneManager for model updates
+- Integration with CircuitController for model updates
 
 **Alternatives Considered**:
 - New tool abstraction layer → Rejected: Over-engineering for single tool
@@ -102,7 +102,7 @@ const SELECTED_EMISSIVE = 0x444444; // more brightening
 
 **Usage in WireTool**:
 ```typescript
-const hovered = this._sceneManager.getHoverManager().getHoveredElement();
+const hovered = this._Controller.getHoverManager().getHoveredElement();
 if (hovered?.type === 'wire') {
   // Wire interaction
 } else if (hovered?.type === 'enode') {
@@ -237,9 +237,9 @@ interface WireDragState {
 
 ## 10. Event Emission
 
-**Decision**: Use existing SceneManager event types
+**Decision**: Use existing Controller event types
 
-**Rationale**: CircuitSceneManager already emits events for tool operations:
+**Rationale**: CircuitController already emits events for tool operations:
 - `toolOperationStarted` - Wire creation started
 - `toolOperationCompleted` - Wire created successfully
 - `toolOperationCancelled` - Operation cancelled via Escape
@@ -268,9 +268,9 @@ interface WireDragState {
 - Three.js ConeGeometry, MeshStandardMaterial
 - Line2, LineGeometry, LineMaterial (already imported)
 - HoverManager, SelectionManager, WireVisualManager
-- CircuitEditionManager for model persistence
+- CircuitWriter for model persistence
 
 **New internal dependencies**:
-- BranchingPointVisualFactory → used by CircuitSceneManager
-- Circuit.addBranchingPoint() → used by CircuitEditionManager
-- Circuit.splitWire() → used by CircuitEditionManager
+- BranchingPointVisualFactory → used by CircuitController
+- Circuit.addBranchingPoint() → used by CircuitWriter
+- Circuit.splitWire() → used by CircuitWriter

@@ -14,7 +14,7 @@ Based on the spec's user story priorities and dependencies:
    - Hitbox on ENODE layer
    - Hover/selection feedback
 
-2. **CircuitSceneManager integration** - Register factory, render existing branching points
+2. **CircuitController integration** - Register factory, render existing branching points
 
 ### Phase 2: Wire Creation (P1 Story 1)
 
@@ -60,8 +60,8 @@ tests/scene/tools/WireTool.test.ts
 src/core/Circuit.ts                    # Add branching point methods
 src/scene/static/tools/WireTool.ts     # Full implementation
 src/scene/shared/WireVisualManager.ts  # Preview wire, geometry refresh
-src/scene/static/CircuitSceneManager.ts # Branching point visual integration
-src/scene/static/CircuitEditionManager.ts # Wire/branching point persistence
+src/scene/static/CircuitController.ts # Branching point visual integration
+src/scene/static/CircuitWriter.ts # Wire/branching point persistence
 ```
 
 ---
@@ -183,7 +183,7 @@ describe('WireTool', () => {
 - [ ] Implement hover feedback (emissive shift)
 - [ ] Implement selection feedback (emissive shift)
 - [ ] Set userData for raycasting identification
-- [ ] Register with CircuitSceneManager
+- [ ] Register with CircuitController
 
 ### Circuit Class Extensions
 - [ ] Implement `addBranchingPoint()`
@@ -210,7 +210,7 @@ describe('WireTool', () => {
 - [ ] Implement `removePreviewWire()`
 - [ ] Implement `refreshWireGeometry()`
 
-### CircuitEditionManager Extensions
+### CircuitWriter Extensions
 - [ ] Wire creation persistence
 - [ ] Branching point creation persistence
 - [ ] Wire split persistence

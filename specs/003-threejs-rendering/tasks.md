@@ -1,4 +1,4 @@
-# Tasks: 3D Circuit Scene Managers
+# Tasks: 3D Circuit Controllers
 
 **Input**: Design documents from `/specs/003-threejs-rendering/`
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/, quickstart.md
@@ -21,7 +21,7 @@
 **MVP Status**: Phases 1-5 complete (85 tasks). Phases 6-7 dismissed as premature optimization and polish work.
 
 **Deferred Requirements**:
-- FR-016 (CircuitWorkspace bridge): Needed for production but deferred to post-MVP. Will enable seamless switching between static and simulation scene managers at application level.
+- FR-016 (CircuitWorkspace bridge): Needed for production but deferred to post-MVP. Will enable seamless switching between static and simulation Controllers at application level.
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -52,7 +52,7 @@
 
 **⚠️ CRITICAL**: No user story renderer implementation can begin until this phase is complete
 
-- [x] T005 [P] Create src/scene/shared/types.ts with SceneManagerEvent, SceneManagerEventMap, ChangedData, SceneManagerOptions types per contracts/types.ts
+- [x] T005 [P] Create src/scene/shared/types.ts with ControllerEvent, ControllerEventMap, ChangedData, ControllerOptions types per contracts/types.ts
 - [x] T006 [P] Implement EventEmitter<EventMap> class in src/scene/shared/EventEmitter.ts with on(), off(), emit() methods per research.md decision on type-safe event pattern
 - [x] T007 [P] Create src/scene/shared/ComponentVisualFactory.ts with ComponentVisualFactory type and IFactoryRegistry interface per contracts/ComponentVisualFactory.ts
 - [x] T008 [P] Implement FactoryRegistry class in src/scene/shared/FactoryRegistry.ts with register(), get(), has(), unregister(), getRegisteredTypes() methods
@@ -82,27 +82,27 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [x] T020 [P] [US1] Unit test for CircuitSceneManager constructor in tests/unit/scene/static/CircuitSceneManager.test.ts verifying factoryRegistry assignment (no circuit parameter) per TS-004
-- [x] T021 [P] [US1] Unit test for CircuitSceneManager.initialize() in tests/unit/scene/static/CircuitSceneManager.test.ts verifying scene creation, camera setup, and 'ready' event emission per TS-004
-- [x] T022 [P] [US1] Unit test for CircuitSceneManager.setCircuit() and update() in tests/unit/scene/static/CircuitSceneManager.test.ts verifying all circuit elements create corresponding Three.js objects per TS-001 and TS-004
-- [x] T023 [P] [US1] Unit test for CircuitSceneManager.getScene() and getCamera() in tests/unit/scene/static/CircuitSceneManager.test.ts verifying scene and camera access per FR-004
-- [x] T024 [P] [US1] Unit test for CircuitSceneManager.clearVisuals() and dispose() in tests/unit/scene/static/CircuitSceneManager.test.ts verifying geometry/material cleanup and state reset per TS-001
+- [x] T020 [P] [US1] Unit test for CircuitController constructor in tests/unit/scene/static/CircuitController.test.ts verifying factoryRegistry assignment (no circuit parameter) per TS-004
+- [x] T021 [P] [US1] Unit test for CircuitController.initialize() in tests/unit/scene/static/CircuitController.test.ts verifying scene creation, camera setup, and 'ready' event emission per TS-004
+- [x] T022 [P] [US1] Unit test for CircuitController.setCircuit() and update() in tests/unit/scene/static/CircuitController.test.ts verifying all circuit elements create corresponding Three.js objects per TS-001 and TS-004
+- [x] T023 [P] [US1] Unit test for CircuitController.getScene() and getCamera() in tests/unit/scene/static/CircuitController.test.ts verifying scene and camera access per FR-004
+- [x] T024 [P] [US1] Unit test for CircuitController.clearVisuals() and dispose() in tests/unit/scene/static/CircuitController.test.ts verifying geometry/material cleanup and state reset per TS-001
 
 ### Implementation for User Story 1
 
-- [x] T025 [US1] Create src/scene/static/CircuitSceneManager.ts with class skeleton: constructor(factoryRegistry), fields (scene, camera, container, circuit, etc.) per contracts/CircuitSceneManager.ts - circuit NOT in constructor per FR-020
-- [x] T026 [US1] Implement CircuitSceneManager.initialize(container, options) in src/scene/static/CircuitSceneManager.ts: create Scene, Camera (using CameraUtils), lights (using LightingUtils), emit 'ready' event per FR-019 - does NOT create circuit visuals yet
-- [x] T027 [US1] Implement CircuitSceneManager.setCircuit(circuit) in src/scene/static/CircuitSceneManager.ts: clear existing visuals if present, set circuit reference, call _fullUpdate() to create all visuals per FR-019b
-- [x] T028 [US1] Implement CircuitSceneManager.clearVisuals() in src/scene/static/CircuitSceneManager.ts: remove all circuit visuals from scene without disposing scene manager per FR-019c
-- [x] T029 [US1] Implement _createComponentMesh(component) private method in src/scene/static/CircuitSceneManager.ts using factoryRegistry.get() and positioning component at circuit location per FR-003
-- [x] T030 [US1] Implement _createWireMesh(wire) private method in src/scene/static/CircuitSceneManager.ts using GeometryUtils.createWireGeometry() and MaterialUtils.createLineMaterial() per FR-003
-- [x] T031 [US1] Implement _createEnodeMesh(enode) private method in src/scene/static/CircuitSceneManager.ts using GeometryUtils.createEnodeGeometry() for branching points (skip pin enodes) per FR-003
-- [x] T032 [US1] Implement CircuitSceneManager.update() and _fullUpdate() in src/scene/static/CircuitSceneManager.ts: iterate circuit.getAllComponents/Wires/ENodes, create meshes, add to scene, store in maps per FR-019a
-- [x] T033 [US1] Implement CircuitSceneManager.render() in src/scene/static/CircuitSceneManager.ts (currently no-op, scene updates done in update()) per FR-022
-- [x] T034 [US1] Implement CircuitSceneManager.dispose() in src/scene/static/CircuitSceneManager.ts: dispose all geometries/materials, clear maps, remove scene objects, clear event listeners per FR-018
-- [x] T035 [US1] Implement CircuitSceneManager.getScene() and getCamera() in src/scene/static/CircuitSceneManager.ts returning scene and camera per FR-004 and FR-004a
-- [x] T036 [US1] Add error handling to CircuitSceneManager: throw on initialization/constructor errors, emit 'error' events for runtime errors, console.warn for degraded rendering per FR-018
-- [x] T037 [US1] Export CircuitSceneManager from src/scene/index.ts
+- [x] T025 [US1] Create src/scene/static/CircuitController.ts with class skeleton: constructor(factoryRegistry), fields (scene, camera, container, circuit, etc.) per contracts/CircuitController.ts - circuit NOT in constructor per FR-020
+- [x] T026 [US1] Implement CircuitController.initialize(container, options) in src/scene/static/CircuitController.ts: create Scene, Camera (using CameraUtils), lights (using LightingUtils), emit 'ready' event per FR-019 - does NOT create circuit visuals yet
+- [x] T027 [US1] Implement CircuitController.setCircuit(circuit) in src/scene/static/CircuitController.ts: clear existing visuals if present, set circuit reference, call _fullUpdate() to create all visuals per FR-019b
+- [x] T028 [US1] Implement CircuitController.clearVisuals() in src/scene/static/CircuitController.ts: remove all circuit visuals from scene without disposing scene controllerType per FR-019c
+- [x] T029 [US1] Implement _createComponentMesh(component) private method in src/scene/static/CircuitController.ts using factoryRegistry.get() and positioning component at circuit location per FR-003
+- [x] T030 [US1] Implement _createWireMesh(wire) private method in src/scene/static/CircuitController.ts using GeometryUtils.createWireGeometry() and MaterialUtils.createLineMaterial() per FR-003
+- [x] T031 [US1] Implement _createEnodeMesh(enode) private method in src/scene/static/CircuitController.ts using GeometryUtils.createEnodeGeometry() for branching points (skip pin enodes) per FR-003
+- [x] T032 [US1] Implement CircuitController.update() and _fullUpdate() in src/scene/static/CircuitController.ts: iterate circuit.getAllComponents/Wires/ENodes, create meshes, add to scene, store in maps per FR-019a
+- [x] T033 [US1] Implement CircuitController.render() in src/scene/static/CircuitController.ts (currently no-op, scene updates done in update()) per FR-022
+- [x] T034 [US1] Implement CircuitController.dispose() in src/scene/static/CircuitController.ts: dispose all geometries/materials, clear maps, remove scene objects, clear event listeners per FR-018
+- [x] T035 [US1] Implement CircuitController.getScene() and getCamera() in src/scene/static/CircuitController.ts returning scene and camera per FR-004 and FR-004a
+- [x] T036 [US1] Add error handling to CircuitController: throw on initialization/constructor errors, emit 'error' events for runtime errors, console.warn for degraded rendering per FR-018
+- [x] T037 [US1] Export CircuitController from src/scene/index.ts
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - static circuits render with all elements visible
 
@@ -120,31 +120,31 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [x] T038 [P] [US3] Unit test for CircuitRunnerSceneManager constructor in tests/unit/scene/simulation/CircuitRunnerSceneManager.test.ts verifying factoryRegistry assignment (no circuitRunner parameter) per TS-004
-- [x] T039 [P] [US3] Unit test for CircuitRunnerSceneManager.initialize() in tests/unit/scene/simulation/CircuitRunnerSceneManager.test.ts verifying scene creation, interpolation controller setup, 'ready' event per TS-004
-- [x] T040 [P] [US3] Unit test for CircuitRunnerSceneManager.setCircuit() in tests/unit/scene/simulation/CircuitRunnerSceneManager.test.ts verifying circuitRunner assignment and initial visual creation per TS-004
-- [x] T041 [P] [US3] Unit test for CircuitRunnerSceneManager.render() interpolation in tests/unit/scene/simulation/CircuitRunnerSceneManager.test.ts verifying state interpolation between simulation ticks per FR-011 and TS-001
-- [x] T042 [P] [US3] Unit test for CircuitRunnerSceneManager.setInterpolationDuration() in tests/unit/scene/simulation/CircuitRunnerSceneManager.test.ts verifying duration update and validation
-- [x] T043 [P] [US3] Unit test for CircuitRunnerSceneManager wire animation in tests/unit/scene/simulation/CircuitRunnerSceneManager.test.ts verifying current flow visual updates per FR-010
+- [x] T038 [P] [US3] Unit test for CircuitRunnerController constructor in tests/unit/scene/simulation/CircuitRunnerController.test.ts verifying factoryRegistry assignment (no circuitRunner parameter) per TS-004
+- [x] T039 [P] [US3] Unit test for CircuitRunnerController.initialize() in tests/unit/scene/simulation/CircuitRunnerController.test.ts verifying scene creation, interpolation controller setup, 'ready' event per TS-004
+- [x] T040 [P] [US3] Unit test for CircuitRunnerController.setCircuit() in tests/unit/scene/simulation/CircuitRunnerController.test.ts verifying circuitRunner assignment and initial visual creation per TS-004
+- [x] T041 [P] [US3] Unit test for CircuitRunnerController.render() interpolation in tests/unit/scene/simulation/CircuitRunnerController.test.ts verifying state interpolation between simulation ticks per FR-011 and TS-001
+- [x] T042 [P] [US3] Unit test for CircuitRunnerController.setInterpolationDuration() in tests/unit/scene/simulation/CircuitRunnerController.test.ts verifying duration update and validation
+- [x] T043 [P] [US3] Unit test for CircuitRunnerController wire animation in tests/unit/scene/simulation/CircuitRunnerController.test.ts verifying current flow visual updates per FR-010
 
 ### Implementation for User Story 3
 
-- [x] T044 [US3] Create src/scene/simulation/CircuitRunnerSceneManager.ts with class skeleton: constructor(factoryRegistry), fields (scene, camera, circuitRunner, interpolationController, lastSimulationTick, lastRenderTime) per contracts/CircuitRunnerSceneManager.ts
-- [x] T045 [US3] Implement CircuitRunnerSceneManager.initialize(container, options) in src/scene/simulation/CircuitRunnerSceneManager.ts: create Scene, Camera, lights, instantiate InterpolationController, emit 'ready' per FR-019 - does NOT create visuals yet
-- [x] T046 [US3] Implement CircuitRunnerSceneManager.setCircuit(circuitRunner) in src/scene/simulation/CircuitRunnerSceneManager.ts: clear existing visuals, set circuitRunner reference, create initial visuals from CircuitRunner.stateManager per FR-019b
-- [x] T047 [US3] Implement CircuitRunnerSceneManager.clearVisuals() in src/scene/simulation/CircuitRunnerSceneManager.ts per FR-019c
-- [x] T048 [US3] Implement _createComponentMesh(component) in src/scene/simulation/CircuitRunnerSceneManager.ts using factoryRegistry with state-aware materials per FR-009
-- [x] T049 [US3] Implement _createWireMesh(wire) in src/scene/simulation/CircuitRunnerSceneManager.ts with animation support (store animation state in userData) per FR-010
-- [x] T050 [US3] Implement _createEnodeMesh(enode) in src/scene/simulation/CircuitRunnerSceneManager.ts (similar to Static but state-aware)
-- [x] T051 [US3] Implement _updateComponentState(componentId) private method in src/scene/simulation/CircuitRunnerSceneManager.ts: read ComponentState from circuitRunner.stateManager, update material colors/emissive per FR-009
-- [x] T052 [US3] Implement _updateWireAnimation(wireId) private method in src/scene/simulation/CircuitRunnerSceneManager.ts: animate current flow direction/magnitude based on NodeElectricalState per FR-010
-- [x] T053 [US3] Implement CircuitRunnerSceneManager.render() in src/scene/simulation/CircuitRunnerSceneManager.ts: poll current simulation tick, call interpolationController.getInterpolatedState(), update all visual elements, animate wires per FR-011
-- [x] T054 [US3] Implement CircuitRunnerSceneManager.update(changedData) in src/scene/simulation/CircuitRunnerSceneManager.ts for incremental updates (rare, only for topology changes during simulation) per FR-019a
-- [x] T055 [US3] Implement CircuitRunnerSceneManager.setInterpolationDuration(durationMs) in src/scene/simulation/CircuitRunnerSceneManager.ts delegating to interpolationController per contract
-- [x] T056 [US3] Implement CircuitRunnerSceneManager.dispose() in src/scene/simulation/CircuitRunnerSceneManager.ts: cleanup geometries/materials/interpolation state per FR-018
-- [x] T057 [US3] Implement CircuitRunnerSceneManager.getScene() and getCamera() in src/scene/simulation/CircuitRunnerSceneManager.ts per FR-004 and FR-004a
-- [x] T058 [US3] Add error handling to CircuitRunnerSceneManager per FR-018
-- [x] T059 [US3] Export CircuitRunnerSceneManager from src/scene/index.ts
+- [x] T044 [US3] Create src/scene/simulation/CircuitRunnerController.ts with class skeleton: constructor(factoryRegistry), fields (scene, camera, circuitRunner, interpolationController, lastSimulationTick, lastRenderTime) per contracts/CircuitRunnerController.ts
+- [x] T045 [US3] Implement CircuitRunnerController.initialize(container, options) in src/scene/simulation/CircuitRunnerController.ts: create Scene, Camera, lights, instantiate InterpolationController, emit 'ready' per FR-019 - does NOT create visuals yet
+- [x] T046 [US3] Implement CircuitRunnerController.setCircuit(circuitRunner) in src/scene/simulation/CircuitRunnerController.ts: clear existing visuals, set circuitRunner reference, create initial visuals from CircuitRunner.stateManager per FR-019b
+- [x] T047 [US3] Implement CircuitRunnerController.clearVisuals() in src/scene/simulation/CircuitRunnerController.ts per FR-019c
+- [x] T048 [US3] Implement _createComponentMesh(component) in src/scene/simulation/CircuitRunnerController.ts using factoryRegistry with state-aware materials per FR-009
+- [x] T049 [US3] Implement _createWireMesh(wire) in src/scene/simulation/CircuitRunnerController.ts with animation support (store animation state in userData) per FR-010
+- [x] T050 [US3] Implement _createEnodeMesh(enode) in src/scene/simulation/CircuitRunnerController.ts (similar to Static but state-aware)
+- [x] T051 [US3] Implement _updateComponentState(componentId) private method in src/scene/simulation/CircuitRunnerController.ts: read ComponentState from circuitRunner.stateManager, update material colors/emissive per FR-009
+- [x] T052 [US3] Implement _updateWireAnimation(wireId) private method in src/scene/simulation/CircuitRunnerController.ts: animate current flow direction/magnitude based on NodeElectricalState per FR-010
+- [x] T053 [US3] Implement CircuitRunnerController.render() in src/scene/simulation/CircuitRunnerController.ts: poll current simulation tick, call interpolationController.getInterpolatedState(), update all visual elements, animate wires per FR-011
+- [x] T054 [US3] Implement CircuitRunnerController.update(changedData) in src/scene/simulation/CircuitRunnerController.ts for incremental updates (rare, only for topology changes during simulation) per FR-019a
+- [x] T055 [US3] Implement CircuitRunnerController.setInterpolationDuration(durationMs) in src/scene/simulation/CircuitRunnerController.ts delegating to interpolationController per contract
+- [x] T056 [US3] Implement CircuitRunnerController.dispose() in src/scene/simulation/CircuitRunnerController.ts: cleanup geometries/materials/interpolation state per FR-018
+- [x] T057 [US3] Implement CircuitRunnerController.getScene() and getCamera() in src/scene/simulation/CircuitRunnerController.ts per FR-004 and FR-004a
+- [x] T058 [US3] Add error handling to CircuitRunnerController per FR-018
+- [x] T059 [US3] Export CircuitRunnerController from src/scene/index.ts
 
 **Checkpoint**: At this point, User Stories 1 AND 3 (both P1) are complete - both static and simulation rendering work independently
 
@@ -156,7 +156,7 @@
 
 **Independent Test**: Enable edit mode, activate tool, programmatically trigger tool interactions (click, hover, scroll), verify tool events, preview rendering, validation, and circuit updates.
 
-**Note**: This story depends on US1 (CircuitSceneManager) being complete.
+**Note**: This story depends on US1 (CircuitController) being complete.
 
 ### Tool System Architecture Tests
 
@@ -186,10 +186,10 @@
 ### Tool System Implementation
 
 - [X] T072 [US2] Create IEditingTool interface in src/scene/static/tools/IEditingTool.ts: define onActivate(), onDeactivate(), getCursorType(), getPreviewObjects() per FR-025
-- [X] T073 [US2] Add tool system fields to CircuitSceneManager in src/scene/static/CircuitSceneManager.ts: editMode, tools Map, activeTool, toolState, previewObjects per data-model.md
-- [X] T074 [US2] Implement setEditMode() in src/scene/static/CircuitSceneManager.ts: activate/deactivate tool system, reset tool state on disable per FR-006, FR-027
-- [X] T075 [US2] Implement setActiveTool(), getActiveTool() in src/scene/static/CircuitSceneManager.ts: enforce single active tool, emit events per FR-026, FR-028, FR-034
-- [X] T076 [US2] Implement cancelCurrentToolOperation() in src/scene/static/CircuitSceneManager.ts: cancel multi-step tool operations, emit 'toolOperationCancelled' per FR-031
+- [X] T073 [US2] Add tool system fields to CircuitController in src/scene/static/CircuitController.ts: editMode, tools Map, activeTool, toolState, previewObjects per data-model.md
+- [X] T074 [US2] Implement setEditMode() in src/scene/static/CircuitController.ts: activate/deactivate tool system, reset tool state on disable per FR-006, FR-027
+- [X] T075 [US2] Implement setActiveTool(), getActiveTool() in src/scene/static/CircuitController.ts: enforce single active tool, emit events per FR-026, FR-028, FR-034
+- [X] T076 [US2] Implement cancelCurrentToolOperation() in src/scene/static/CircuitController.ts: cancel multi-step tool operations, emit 'toolOperationCancelled' per FR-031
 
 ### Individual Tool Implementations
 
@@ -201,10 +201,10 @@
 
 ### Tool Operations Implementation
 
-- [X] T082 [US2] Implement tool preview rendering in src/scene/static/CircuitSceneManager.ts: render preview objects semi-transparently, update on hover per FR-030
-- [X] T083 [US2] Implement tool validation feedback in src/scene/static/CircuitSceneManager.ts: highlight conflicts, show error preview (red tint), emit 'toolValidationError' per FR-036
-- [X] T084 [US2] Implement tool interaction handlers in src/scene/static/CircuitSceneManager.ts: handleToolClick(), handleToolHover(), handleToolScroll() delegate to active tool per FR-019
-- [X] T085 [US2] Implement tool-circuit integration in tool classes: delegate to Circuit API, construct ChangedData, call sceneManager.update(), complete within 100ms per FR-033, FR-037
+- [X] T082 [US2] Implement tool preview rendering in src/scene/static/CircuitController.ts: render preview objects semi-transparently, update on hover per FR-030
+- [X] T083 [US2] Implement tool validation feedback in src/scene/static/CircuitController.ts: highlight conflicts, show error preview (red tint), emit 'toolValidationError' per FR-036
+- [X] T084 [US2] Implement tool interaction handlers in src/scene/static/CircuitController.ts: handleToolClick(), handleToolHover(), handleToolScroll() delegate to active tool per FR-019
+- [X] T085 [US2] Implement tool-circuit integration in tool classes: delegate to Circuit API, construct ChangedData, call Controller.update(), complete within 100ms per FR-033, FR-037
 
 **Checkpoint**: At this point, User Stories 1, 2, AND 3 work independently - static rendering supports full editing with 5 tools, simulation rendering animates
 
@@ -226,17 +226,17 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] ~~T086 [P] [US4] Performance test for CircuitSceneManager with 500 components in tests/unit/scene/static/CircuitSceneManager.test.ts verifying render time <33ms per frame~~ **DISMISSED**
-- [ ] ~~T087 [P] [US4] Performance test for CircuitRunnerSceneManager with 500 components in tests/unit/scene/simulation/CircuitRunnerSceneManager.test.ts verifying render time <33ms per frame~~ **DISMISSED**
-- [ ] ~~T088 [P] [US4] Unit test for incremental update performance in tests/unit/scene/static/CircuitSceneManager.test.ts verifying only changed elements are updated~~ **DISMISSED**
+- [ ] ~~T086 [P] [US4] Performance test for CircuitController with 500 components in tests/unit/scene/static/CircuitController.test.ts verifying render time <33ms per frame~~ **DISMISSED**
+- [ ] ~~T087 [P] [US4] Performance test for CircuitRunnerController with 500 components in tests/unit/scene/simulation/CircuitRunnerController.test.ts verifying render time <33ms per frame~~ **DISMISSED**
+- [ ] ~~T088 [P] [US4] Unit test for incremental update performance in tests/unit/scene/static/CircuitController.test.ts verifying only changed elements are updated~~ **DISMISSED**
 
 ### Implementation for User Story 4
 
 - [ ] ~~T089 [P] [US4] Implement DirtyTracker class in src/scene/shared/DirtyTracker.ts with markDirty(objectId), clearDirty(), getDirtyObjects() methods per performance optimization pattern~~ **DISMISSED**
-- [ ] ~~T090 [US4] Integrate DirtyTracker into CircuitSceneManager.update() in src/scene/static/CircuitSceneManager.ts: track changed objects, only update dirty elements per FR-012~~ **DISMISSED**
-- [ ] ~~T091 [US4] Integrate DirtyTracker into CircuitRunnerSceneManager.render() in src/scene/simulation/CircuitRunnerSceneManager.ts: only update visuals for components/wires with state changes~~ **DISMISSED**
+- [ ] ~~T090 [US4] Integrate DirtyTracker into CircuitController.update() in src/scene/static/CircuitController.ts: track changed objects, only update dirty elements per FR-012~~ **DISMISSED**
+- [ ] ~~T091 [US4] Integrate DirtyTracker into CircuitRunnerController.render() in src/scene/simulation/CircuitRunnerController.ts: only update visuals for components/wires with state changes~~ **DISMISSED**
 - [ ] ~~T092 [P] [US4] Implement LOD (Level of Detail) system in src/scene/shared/LODManager.ts: reduce geometry detail for distant objects (optional enhancement)~~ **DISMISSED**
-- [ ] ~~T093 [US4] Add frustum culling optimization in CircuitSceneManager.render() in src/scene/static/CircuitSceneManager.ts: skip updates for off-screen objects (optional, Three.js does this by default)~~ **DISMISSED**
+- [ ] ~~T093 [US4] Add frustum culling optimization in CircuitController.render() in src/scene/static/CircuitController.ts: skip updates for off-screen objects (optional, Three.js does this by default)~~ **DISMISSED**
 - [ ] ~~T094 [US4] Add object pooling for frequently created/destroyed meshes in src/scene/shared/ObjectPool.ts: reuse geometries/materials (optional enhancement)~~ **DISMISSED**
 
 **Checkpoint**: ~~All user stories complete - renderers work independently and perform well at scale~~ **PHASE DISMISSED - MVP complete after Phase 5**
@@ -253,15 +253,15 @@
 
 **Purpose**: Improvements that affect multiple user stories, documentation, final validation
 
-- [ ] ~~T095 [P] Add JSDoc comments to all public methods in src/scene/static/CircuitSceneManager.ts per FR-019 and constitution quality standards~~ **DISMISSED**
-- [ ] ~~T096 [P] Add JSDoc comments to all public methods in src/scene/simulation/CircuitRunnerSceneManager.ts per FR-019 and constitution quality standards~~ **DISMISSED**
+- [ ] ~~T095 [P] Add JSDoc comments to all public methods in src/scene/static/CircuitController.ts per FR-019 and constitution quality standards~~ **DISMISSED**
+- [ ] ~~T096 [P] Add JSDoc comments to all public methods in src/scene/simulation/CircuitRunnerController.ts per FR-019 and constitution quality standards~~ **DISMISSED**
 - [ ] ~~T097 [P] Add JSDoc comments to all shared utility functions in src/scene/shared/ files~~ **DISMISSED**
 - [ ] ~~T098 [P] Unit test for FactoryRegistry with unregistered component types in tests/unit/scene/FactoryRegistry.test.ts verifying fallback to default factory per TS-006~~ **DISMISSED**
-- [ ] ~~T099 [P] Unit test for error handling in tests/unit/scene/CircuitSceneManager.test.ts verifying initialization errors throw, runtime errors emit events per FR-018 and TS-002~~ **DISMISSED**
-- [ ] ~~T100 [P] Unit test for error handling in tests/unit/scene/CircuitRunnerSceneManager.test.ts verifying error emission per FR-018~~ **DISMISSED**
+- [ ] ~~T099 [P] Unit test for error handling in tests/unit/scene/CircuitController.test.ts verifying initialization errors throw, runtime errors emit events per FR-018 and TS-002~~ **DISMISSED**
+- [ ] ~~T100 [P] Unit test for error handling in tests/unit/scene/CircuitRunnerController.test.ts verifying error emission per FR-018~~ **DISMISSED**
 - [ ] ~~T101 Validate quickstart.md examples in specs/003-threejs-rendering/quickstart.md: ensure all code samples compile and run with new API~~ **DISMISSED**
-- [ ] ~~T102 Create example usage in demo/ directory: static scene manager example with simple circuit showing new API pattern~~ **DISMISSED**
-- [ ] ~~T103 Create example usage in demo/ directory: simulation scene manager example with animated circuit showing CircuitRunner integration~~ **DISMISSED**
+- [ ] ~~T102 Create example usage in demo/ directory: static scene controllerType example with simple circuit showing new API pattern~~ **DISMISSED**
+- [ ] ~~T103 Create example usage in demo/ directory: simulation scene controllerType example with animated circuit showing CircuitRunner integration~~ **DISMISSED**
 - [ ] ~~T104 Run `npm test` to verify all unit tests pass with >80% coverage per constitution~~ **DISMISSED**
 - [ ] ~~T105 Run `npm run lint` to verify TypeScript strict mode compliance per constitution~~ **DISMISSED**
 - [ ] ~~T106 Update main README.md with scene module usage section referencing quickstart.md~~ **DISMISSED**
@@ -277,7 +277,7 @@
 - **Foundational (Phase 2)**: Depends on Setup completion - BLOCKS all user stories
 - **User Story 1 (Phase 3)**: Depends on Foundational phase - Can start after Phase 2
 - **User Story 3 (Phase 4)**: Depends on Foundational phase - Can start after Phase 2 (parallel with US1 if staffed)
-- **User Story 2 (Phase 5)**: Depends on User Story 1 completion (builds on CircuitSceneManager)
+- **User Story 2 (Phase 5)**: Depends on User Story 1 completion (builds on CircuitController)
 - **User Story 4 (Phase 6)**: Depends on all previous user stories (optimization of existing code)
 - **Polish (Phase 7)**: Depends on all user stories being complete
 
@@ -285,14 +285,14 @@
 
 - **User Story 1 (P1)**: Can start after Foundational (Phase 2) - No dependencies on other stories
 - **User Story 3 (P1)**: Can start after Foundational (Phase 2) - No dependencies on other stories (CAN run parallel with US1)
-- **User Story 2 (P2)**: Depends on User Story 1 completion - Adds edit feedback to CircuitSceneManager
+- **User Story 2 (P2)**: Depends on User Story 1 completion - Adds edit feedback to CircuitController
 - **User Story 4 (P3)**: Depends on User Stories 1, 2, 3 - Optimizes all existing renderers
 
 ### Within Each User Story
 
 - Tests MUST be written and FAIL before implementation
 - Shared utilities before renderer classes
-- SceneManager class skeleton before methods
+- Controller class skeleton before methods
 - Core rendering methods (initialize, update, render) before helper methods
 - Helper methods before error handling
 - Error handling before exports
@@ -317,7 +317,7 @@
 
 ```bash
 # Phase 2: Launch all foundational utilities together:
-Task: "Create src/scene/shared/types.ts with SceneManagerEvent types"
+Task: "Create src/scene/shared/types.ts with ControllerEvent types"
 Task: "Implement EventEmitter class in src/scene/shared/EventEmitter.ts"
 Task: "Create src/scene/shared/ComponentVisualFactory.ts"
 Task: "Implement FactoryRegistry class"
@@ -325,11 +325,11 @@ Task: "Create CameraUtils, GeometryUtils, MaterialUtils, LightingUtils"
 Task: "Create InterpolationController"
 
 # Phase 3: Launch all tests for User Story 1 together:
-Task: "Unit test for CircuitSceneManager constructor (factoryRegistry only)"
-Task: "Unit test for CircuitSceneManager.initialize()"
-Task: "Unit test for CircuitSceneManager.setCircuit() and update()"
-Task: "Unit test for CircuitSceneManager.getScene() and getCamera()"
-Task: "Unit test for CircuitSceneManager.clearVisuals() and dispose()"
+Task: "Unit test for CircuitController constructor (factoryRegistry only)"
+Task: "Unit test for CircuitController.initialize()"
+Task: "Unit test for CircuitController.setCircuit() and update()"
+Task: "Unit test for CircuitController.getScene() and getCamera()"
+Task: "Unit test for CircuitController.clearVisuals() and dispose()"
 ```
 
 ---
@@ -340,20 +340,20 @@ Task: "Unit test for CircuitSceneManager.clearVisuals() and dispose()"
 # After Foundational phase completes, split team:
 
 # Developer A: User Story 1 - Static Circuit Visualization
-Task: "Create src/scene/static/CircuitSceneManager.ts with class skeleton"
-Task: "Implement CircuitSceneManager.initialize() - creates scene/camera only"
-Task: "Implement CircuitSceneManager.setCircuit() and clearVisuals()"
+Task: "Create src/scene/static/CircuitController.ts with class skeleton"
+Task: "Implement CircuitController.initialize() - creates scene/camera only"
+Task: "Implement CircuitController.setCircuit() and clearVisuals()"
 Task: "Implement _createComponentMesh(), _createWireMesh(), _createEnodeMesh()"
-Task: "Implement CircuitSceneManager.update(), render(), dispose()"
-Task: "Implement CircuitSceneManager.getScene() and getCamera()"
+Task: "Implement CircuitController.update(), render(), dispose()"
+Task: "Implement CircuitController.getScene() and getCamera()"
 
 # Developer B: User Story 3 - Live Simulation Visualization (parallel)
-Task: "Create src/scene/simulation/CircuitRunnerSceneManager.ts with class skeleton"
-Task: "Implement CircuitRunnerSceneManager.initialize() - creates scene/camera only"
-Task: "Implement CircuitRunnerSceneManager.setCircuit(circuitRunner)"
+Task: "Create src/scene/simulation/CircuitRunnerController.ts with class skeleton"
+Task: "Implement CircuitRunnerController.initialize() - creates scene/camera only"
+Task: "Implement CircuitRunnerController.setCircuit(circuitRunner)"
 Task: "Implement _createComponentMesh(), _createWireMesh(), _createEnodeMesh() with state"
 Task: "Implement _updateComponentState(), _updateWireAnimation()"
-Task: "Implement CircuitRunnerSceneManager.render() with interpolation"
+Task: "Implement CircuitRunnerController.render() with interpolation"
 ```
 
 ---
@@ -406,4 +406,4 @@ With 2+ developers:
 - Stop at any checkpoint to validate story independently
 - Constitution requires: No `any` types, JSDoc on public APIs, strict TypeScript mode
 - All renderers use Three.js 0.181+ (already in project dependencies)
-- SceneManagers are stateless - state resides in Circuit/CircuitRunner instances
+- Controllers are stateless - state resides in Circuit/CircuitRunner instances

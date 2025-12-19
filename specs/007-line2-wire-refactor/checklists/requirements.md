@@ -33,5 +33,5 @@
 
 - All checklist items pass validation
 - Specification is ready for `/speckit.clarify` or `/speckit.plan`
-- The refactor scope is intentionally limited to WireVisualManager and static scene rendering; CircuitRunnerSceneManager may need a follow-up feature
+- The refactor scope is intentionally limited to WireVisualManager and static scene rendering; CircuitRunnerController may need a follow-up feature
 - Three.js addon paths (three/addons/lines/*) are mentioned as they are the required external dependency, not implementation details

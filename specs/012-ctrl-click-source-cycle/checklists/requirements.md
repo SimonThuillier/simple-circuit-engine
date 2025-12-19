@@ -32,5 +32,5 @@
 ## Notes
 
 - Spec is complete and ready for `/speckit.clarify` or `/speckit.plan`
-- Feature builds on existing infrastructure: ENode.source, BranchingPointVisualFactory, CircuitEditionManager.saveEditENodeSourceType
+- Feature builds on existing infrastructure: ENode.source, BranchingPointVisualFactory, CircuitWriter.saveEditENodeSourceType
 - Two user stories cover branching points (P1) and component pins (P2) independently

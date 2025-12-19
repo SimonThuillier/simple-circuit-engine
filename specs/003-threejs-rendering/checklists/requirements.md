@@ -1,4 +1,4 @@
-# Specification Quality Checklist: Three.js Circuit SceneManagers
+# Specification Quality Checklist: Three.js Circuit Controllers
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2025-12-02

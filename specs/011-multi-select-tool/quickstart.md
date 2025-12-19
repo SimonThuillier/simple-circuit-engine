@@ -9,17 +9,17 @@ The MultiSelectTool enables users to select multiple circuit elements at once an
 
 ## Prerequisites
 
-- Existing `CircuitSceneManager` instance with a loaded circuit
+- Existing `CircuitController` instance with a loaded circuit
 - Understanding of the existing tool system (`BuildTool`, `AddComponentTool`)
 
 ## Integration
 
 ### 1. Tool Registration
 
-The MultiSelectTool will be automatically registered when `CircuitSceneManager` is initialized:
+The MultiSelectTool will be automatically registered when `CircuitController` is initialized:
 
 ```typescript
-// In CircuitSceneManager.ts - no user action required
+// In CircuitController.ts - no user action required
 // Tool is registered alongside existing tools
 this.tools.set('multiSelect', new MultiSelectTool(this));
 ```
@@ -27,14 +27,14 @@ this.tools.set('multiSelect', new MultiSelectTool(this));
 ### 2. Activating the Tool
 
 ```typescript
-import { CircuitSceneManager } from 'simple-circuit-engine/scene';
+import { CircuitController } from 'simple-circuit-engine/scene';
 
-const sceneManager = new CircuitSceneManager(factoryRegistry);
-sceneManager.initialize(container);
-sceneManager.setCircuit(circuit);
+const Controller = new CircuitController(factoryRegistry);
+Controller.initialize(container);
+Controller.setCircuit(circuit);
 
 // Activate multi-select tool
-sceneManager.setActiveTool('multiSelect');
+Controller.setActiveTool('multiSelect');
 ```
 
 ### 3. Tool Switching
@@ -43,13 +43,13 @@ Users can switch between tools as needed:
 
 ```typescript
 // Switch to multi-select for bulk operations
-sceneManager.setActiveTool('multiSelect');
+Controller.setActiveTool('multiSelect');
 
 // Switch back to build tool for single-element editing
-sceneManager.setActiveTool('build');
+Controller.setActiveTool('build');
 
 // Switch to add component tool
-sceneManager.setActiveTool('addComponent');
+Controller.setActiveTool('addComponent');
 ```
 
 ## User Interactions
@@ -106,14 +106,14 @@ Hold **Shift** while drawing a rectangle to ADD to existing selection:
 Listen for multi-select operations:
 
 ```typescript
-sceneManager.on('toolOperationCompleted', (event) => {
+Controller.on('toolOperationCompleted', (event) => {
   if (event.toolType === 'multiSelect') {
     console.log('Operation:', event.mode);
     console.log('Data:', event.operationData);
   }
 });
 
-sceneManager.on('selectionChange', (event) => {
+Controller.on('selectionChange', (event) => {
   const { newSelection, previousSelection } = event;
   if (newSelection?.kind === 'multi') {
     const count = (newSelection.components?.size ?? 0) +
@@ -129,7 +129,7 @@ sceneManager.on('selectionChange', (event) => {
 Access current selection via SelectionManager:
 
 ```typescript
-const selection = sceneManager.getSelectionManager().getSelection();
+const selection = Controller.getSelectionManager().getSelection();
 
 if (selection?.kind === 'multi') {
   // Multi-selection active
@@ -146,12 +146,12 @@ if (selection?.kind === 'multi') {
 
 ```typescript
 // 1. Activate multi-select tool
-sceneManager.setActiveTool('multiSelect');
+Controller.setActiveTool('multiSelect');
 
 // 2. User draws selection rectangle (handled by tool)
 
 // 3. Listen for paste to know when new elements created
-sceneManager.on('toolOperationCompleted', (event) => {
+Controller.on('toolOperationCompleted', (event) => {
   if (event.mode === 'paste') {
     const { componentCount, wireCount } = event.operationData;
     console.log(`Pasted ${componentCount} components, ${wireCount} wires`);

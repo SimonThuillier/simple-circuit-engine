@@ -3,7 +3,7 @@
 **Feature Branch**: `004-map-controls-hovering`
 **Created**: 2025-12-08
 **Status**: Draft
-**Input**: User description: "I need to integrate a MapControls in CircuitSceneManager and CircuitRunnerSceneManager and implement hovering detection which will be foundational for future tools and user edition/interaction capabilities. Hovering should follow the priority enode > component > wire and should be optimized."
+**Input**: User description: "I need to integrate a MapControls in CircuitController and CircuitRunnerController and implement hovering detection which will be foundational for future tools and user edition/interaction capabilities. Hovering should follow the priority enode > component > wire and should be optimized."
 
 ## User Scenarios & Testing _(mandatory)_
 
@@ -17,9 +17,9 @@ Users need to pan, zoom, and navigate the circuit visualization using intuitive 
 
 **Acceptance Scenarios**:
 
-1. **Given** a circuit is loaded in the scene manager, **When** the user clicks and drags on the canvas, **Then** the camera pans smoothly following the drag direction
-2. **Given** a circuit is loaded in the scene manager, **When** the user scrolls the mouse wheel, **Then** the camera zooms in or out centered on the cursor position
-3. **Given** a circuit is loaded in the scene manager, **When** the user right-click, **Then** mouse positions changes rotate the camera around the current center point
+1. **Given** a circuit is loaded in the scene controllerType, **When** the user clicks and drags on the canvas, **Then** the camera pans smoothly following the drag direction
+2. **Given** a circuit is loaded in the scene controllerType, **When** the user scrolls the mouse wheel, **Then** the camera zooms in or out centered on the cursor position
+3. **Given** a circuit is loaded in the scene controllerType, **When** the user right-click, **Then** mouse positions changes rotate the camera around the current center point
 4. **Given** map controls are active, **When** the user stops interacting, **Then** the camera smoothly decelerates with damping
 
 NB : this is the default beahvior of already installed three/addons/controls/MapControls.js, no need to re-implement it, just integrate and configure it properly.
@@ -92,7 +92,7 @@ The hover detection system must perform efficiently, even for circuits with many
 ### Functional Requirements
 
 **Map Controls:**
-- **FR-001**: Both CircuitSceneManager and CircuitRunnerSceneManager MUST integrate MapControls for camera navigation
+- **FR-001**: Both CircuitController and CircuitRunnerController MUST integrate MapControls for camera navigation
 - **FR-002**: MapControls MUST support panning (click-and-drag), zooming (scroll wheel), and rotation (right-click drag)
 - **FR-003**: MapControls MUST provide damping (smooth deceleration) for natural-feeling navigation
 - **FR-004**: System MUST provide configuration options to enable/disable specific controls (pan, zoom, rotate)
@@ -116,7 +116,7 @@ The hover detection system must perform efficiently, even for circuits with many
 - **FR-018**: Hover detection MUST update on mouse move events and after camera changes
 
 **Lifecycle:**
-- **FR-019**: System MUST dispose MapControls and hover detection listeners on scene manager disposal
+- **FR-019**: System MUST dispose MapControls and hover detection listeners on scene controllerType disposal
 - **FR-020**: Hitbox meshes MUST be created/removed in sync with their parent visual elements
 
 ### Key Entities
@@ -144,7 +144,7 @@ The hover detection system must perform efficiently, even for circuits with many
 
 - Three.js MapControls addon is available and suitable for the project's Three.js version (0.181+)
 - Circuit elements (components, wires, enodes) already have appropriate Three.js meshes with userData containing element IDs
-- The existing event system (EventEmitter with SceneManagerEventMap) is sufficient for hover events
+- The existing event system (EventEmitter with ControllerEventMap) is sufficient for hover events
 - The existing types.ts hover/unhover events are sufficient; no new event types are needed
 - Three.js layers 1, 2, 3 are available and not used by other systems (will be assigned to enode, component, wire hitboxes respectively)
 - Layer 0 remains the default layer for visual rendering

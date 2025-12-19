@@ -2,7 +2,7 @@
  * Static Circuit Renderer
  * @module rendering/static/StaticCircuitRenderer
  *
- * Renders static circuit topology in 3D space with support for editing tools.
+ * Manages static circuit THREE.js scene with support for editing tools.
  */
 
 import * as THREE from 'three';
@@ -17,8 +17,8 @@ import { ENodeType } from '../../core/types/ENodeType';
 import { EventEmitter } from '../shared/EventEmitter';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
 import type {
-  SceneManagerEventMap,
-  SceneManagerOptions,
+  ControllerEventMap,
+  ControllerOptions,
   MapControlsOptions,
   ToolType,
   HitboxUserData,
@@ -45,19 +45,19 @@ import { HoverManager } from '../shared/HoverManager';
 import { SelectionManager } from '../shared/SelectionManager';
 import { WireVisualManager } from '../shared/WireVisualManager';
 import type { ComponentType } from '@/core/types/ComponentType';
-import { CircuitEditionManager } from './CircuitEditionManager';
+import { CircuitWriter } from './CircuitWriter';
 import { BranchingPointVisualFactory } from '../shared/components/BranchingPointVisualFactory';
 import type { Euler } from 'three';
 import type {ENodeSourceType} from "@/core/types/ENodeSourceType";
 
 /**
- * Static Circuit Scene Manager Implementation
+ * Static Circuit Controller Implementation
  *
  * Manager providing a bidirectional interface between a Circuit and a Three.js scene/camera ready to be rendered.
  * Supports view manipulation and editing via integrated tool system.
  * Provides event hooks for error handling and state changes.
  */
-export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
+export class CircuitController extends EventEmitter<ControllerEventMap> {
   // Container and Three.js core objects
   private container: HTMLElement | null = null;
   private scene: THREE.Scene | null = null;
@@ -73,12 +73,12 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
 
   // Circuit and Circuit repository
   private circuit: Circuit | null = null;
-  public readonly circuitEditionManager: CircuitEditionManager;
+  public readonly circuitWriter: CircuitWriter;
 
   // Scene objects tracking
-  private componentObject3Ds: Map<UUID, THREE.Object3D> = new Map();
-  private enodeObject3Ds: Map<UUID, THREE.Object3D> = new Map();
-  private wireObject3Ds: Map<UUID, Line2> = new Map();
+  public readonly componentObject3Ds: Map<UUID, THREE.Object3D> = new Map();
+  public readonly enodeObject3Ds: Map<UUID, THREE.Object3D> = new Map();
+  public readonly wireObject3Ds: Map<UUID, Line2> = new Map();
 
   // Hover and Selection managers
   private hoverManager: HoverManager | null = null;
@@ -118,7 +118,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     this.factoryRegistry = factoryRegistry;
     this.branchingPointVisualFactory = new BranchingPointVisualFactory();
     this.wireVisualManager = new WireVisualManager(this);
-    this.circuitEditionManager = new CircuitEditionManager(this);
+    this.circuitWriter = new CircuitWriter(this);
 
     this.handlePointerDown = this.handlePointerDown.bind(this);
     this.onContainerResize = this.onContainerResize.bind(this);
@@ -130,7 +130,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
    * @param container - HTMLElement to attach scene to
    * @param options - Optional configuration
    */
-  initialize(container: HTMLElement, options?: SceneManagerOptions): void {
+  initialize(container: HTMLElement, options?: ControllerOptions): void {
     if (this.initialized) return; // already initialized to this container
     if (!container || !(container instanceof HTMLElement)) {
       const error = new TypeError('Container must be a valid HTMLElement');
@@ -167,7 +167,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
 
       // Emit ready event
       this.initialized = true;
-      this.emit('ready', { manager: 'static' });
+      this.emit('ready', { controllerType: 'static' });
     } catch (error) {
       const err = error as Error;
       this.emit('error', { message: err.message, error: err });
@@ -403,55 +403,12 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
   }
 
   /**
-   * Get the WireVisualManager instance for direct manipulation
-   * @returns WireVisualManager
-   */
-  getWireVisualManager(): WireVisualManager {
-    return this.wireVisualManager!;
-  }
-
-  /**
-   * Get the CircuitEditionManager instance for calls by tools
-   */
-  getCircuitEditionManager(): CircuitEditionManager {
-    return this.circuitEditionManager;
-  }
-
-  /**
-   * Get the BranchingPointVisualFactory for creating/Updating branching point visuals
-   */
-  getBranchingPointVisualFactory(): BranchingPointVisualFactory {
-    return this.branchingPointVisualFactory;
-  }
-
-  /**
    * Get the MapControls instance for direct manipulation
    *
    * @returns MapControls instance or null if not initialized
    */
   getControls(): MapControls | null {
     return this.mapControls;
-  }
-
-  /**
-   * Get the FactoryRegistry for component visual factories
-   *
-   * @returns IFactoryRegistry instance
-   */
-  getFactoryRegistry(): IFactoryRegistry {
-    return this.factoryRegistry;
-  }
-
-  getComponentObject3Ds(): Map<string, THREE.Object3D> {
-    return this.componentObject3Ds;
-  }
-
-  getEnodeObject3Ds(): Map<string, THREE.Object3D> {
-    return this.enodeObject3Ds;
-  }
-
-  getWireObject3Ds(): Map<string, Line2> {
-    return this.wireObject3Ds;
   }
 
   /**
@@ -1135,7 +1092,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
   }
 
   addBranchingPoint(worldPosition: THREE.Vector3): ENode {
-    const branchingPoint = this.circuitEditionManager.saveAddBranchingPoint(worldPosition);
+    const branchingPoint = this.circuitWriter.saveAddBranchingPoint(worldPosition);
     // Create and add bp visual to scene
     this._createEnodeObject3D(branchingPoint);
     return branchingPoint;
@@ -1154,8 +1111,8 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
     worldPosition: THREE.Vector3,
     targetEnodeId: UUID | null = null
   ): { branchingPoint: ENode; wires: Wire[] } {
-    // 1: Call CircuitEditionManager to split the wire and create branching point
-    const result = this.circuitEditionManager.saveSplitWire(wireId, worldPosition, targetEnodeId);
+    // 1: Call CircuitWriter to split the wire and create branching point
+    const result = this.circuitWriter.saveSplitWire(wireId, worldPosition, targetEnodeId);
     // 2: Remove old wire visual from scene
     this.wireVisualManager.removeWire(wireId);
     // 3: add new Branching point visual to the scene (only if not targetEnodeId)
@@ -1176,7 +1133,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
    * @param enodeId
    */
   removeBranchingPoint(enodeId: UUID) {
-    const result = this.getCircuitEditionManager().saveDeleteBranchingPoint(enodeId);
+    const result = this.circuitWriter.saveDeleteBranchingPoint(enodeId);
     if (!result) return;
     this._removeEnodeObject3D(enodeId);
     this.enodeObject3Ds.delete(enodeId);
@@ -1215,7 +1172,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
    * @param targetEnodeId
    */
   addWire(sourceEnodeId: UUID, targetEnodeId: UUID): Wire {
-    const wire = this.circuitEditionManager.saveAddWire(sourceEnodeId, targetEnodeId);
+    const wire = this.circuitWriter.saveAddWire(sourceEnodeId, targetEnodeId);
     this.wireVisualManager.createOrUpdateWire(wire);
     return wire;
   }
@@ -1230,7 +1187,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
    */
   addComponent(type: ComponentType, worldPosition: THREE.Vector3, rotation: Euler): Component {
     // Create component in circuit model
-    const component = this.circuitEditionManager.saveAddComponent(type, worldPosition, rotation);
+    const component = this.circuitWriter.saveAddComponent(type, worldPosition, rotation);
     // Create and add visual to scene
     this._createComponentObject3D(component);
     return component;
@@ -1243,7 +1200,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
    */
   removeComponent(componentId: UUID): void {
     // Remove from circuit model (also removes connected wires)
-    const result = this.circuitEditionManager.saveDeleteComponent(componentId);
+    const result = this.circuitWriter.saveDeleteComponent(componentId);
     // Remove visuals for wires that were connected to the component
     for (const wireId of result.deletedWires) {
       this._removeWireObject3D(wireId);
@@ -1262,11 +1219,11 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
       enodeId: UUID,
       sourceType: ENodeSourceType | null
   ): void {
-    const object3D = this.getEnodeObject3Ds().get(enodeId);
+    const object3D = this.enodeObject3Ds.get(enodeId);
     if (!object3D) return;
     if(object3D.userData.lockedSourceType) return; // do not update locked source types
 
-    this.circuitEditionManager.saveEditENodeSourceType(
+    this.circuitWriter.saveEditENodeSourceType(
         enodeId, sourceType
     );
 
@@ -1275,8 +1232,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
           .updatePinSourceType(object3D, sourceType ?? null);
     }
     else {
-      this.getBranchingPointVisualFactory()
-          .updateSourceType(object3D, sourceType ?? null);
+      this.branchingPointVisualFactory.updateSourceType(object3D, sourceType ?? null);
     }
   }
 
@@ -1285,7 +1241,7 @@ export class CircuitSceneManager extends EventEmitter<SceneManagerEventMap> {
    * @param wireId
    */
   removeWire(wireId: UUID) {
-    this.getCircuitEditionManager().saveDeleteWire(wireId);
+    this.circuitWriter.saveDeleteWire(wireId);
     this._removeWireObject3D(wireId);
   }
 

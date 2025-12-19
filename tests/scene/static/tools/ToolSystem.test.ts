@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CircuitSceneManager } from '../../../../src/scene/static/CircuitSceneManager';
+import { CircuitController } from '../../../../src/scene/static/CircuitController';
 import { FactoryRegistry } from '../../../../src/scene/shared/FactoryRegistry';
 import type { ToolType } from '../../../../src/scene/shared/types';
 import { DefaultVisualFactory } from '../../../../src/scene';
@@ -18,13 +18,13 @@ vi.mock('three', async (importOriginal) => {
 });
 
 describe('Tool System Architecture (T060-T063)', () => {
-  let sceneManager: CircuitSceneManager;
+  let controller: CircuitController;
   let factoryRegistry: FactoryRegistry;
   let containerElement: HTMLElement;
 
   beforeEach(() => {
     factoryRegistry = new FactoryRegistry(new DefaultVisualFactory());
-    sceneManager = new CircuitSceneManager(factoryRegistry);
+    controller = new CircuitController(factoryRegistry);
 
     // Create mock container
     containerElement = document.createElement('div');
@@ -32,62 +32,62 @@ describe('Tool System Architecture (T060-T063)', () => {
     containerElement.style.height = '600px';
     document.body.appendChild(containerElement);
 
-    sceneManager.initialize(containerElement);
+    controller.initialize(containerElement);
   });
 
   describe('T060: Basic tool system methods', () => {
     it('should have setEditMode() method', () => {
-      expect(typeof sceneManager.setEditMode).toBe('function');
+      expect(typeof controller.setEditMode).toBe('function');
     });
 
     it('should have setActiveTool() method', () => {
-      expect(typeof sceneManager.setActiveTool).toBe('function');
+      expect(typeof controller.setActiveTool).toBe('function');
     });
 
     it('should have getActiveTool() method', () => {
-      expect(typeof sceneManager.getActiveTool).toBe('function');
+      expect(typeof controller.getActiveTool).toBe('function');
     });
 
     it('should enable edit mode when setEditMode(true) is called', () => {
-      sceneManager.setEditMode(true);
+      controller.setEditMode(true);
       // Edit mode is enabled, should be able to set a tool
-      expect(() => sceneManager.setActiveTool('position')).not.toThrow();
+      expect(() => controller.setActiveTool('position')).not.toThrow();
     });
 
     it('should disable edit mode when setEditMode(false) is called', () => {
-      sceneManager.setEditMode(true);
-      sceneManager.setEditMode(false);
+      controller.setEditMode(true);
+      controller.setEditMode(false);
       // Edit mode disabled, setting tool should throw
-      expect(() => sceneManager.setActiveTool('position')).toThrow('Edit mode must be enabled');
+      expect(() => controller.setActiveTool('position')).toThrow('Edit mode must be enabled');
     });
   });
 
   describe('T061: Single active tool constraint', () => {
     beforeEach(() => {
-      sceneManager.setEditMode(true);
+      controller.setEditMode(true);
     });
 
     it('should allow activating a tool when no tool is active', () => {
-      expect(sceneManager.getActiveTool()).toBeNull();
-      sceneManager.setActiveTool('position');
-      expect(sceneManager.getActiveTool()).toBe('position');
+      expect(controller.getActiveTool()).toBeNull();
+      controller.setActiveTool('position');
+      expect(controller.getActiveTool()).toBe('position');
     });
 
     it('should only have one tool active at a time', () => {
-      sceneManager.setActiveTool('position');
-      expect(sceneManager.getActiveTool()).toBe('position');
+      controller.setActiveTool('position');
+      expect(controller.getActiveTool()).toBe('position');
 
-      sceneManager.setActiveTool('addComponent');
-      expect(sceneManager.getActiveTool()).toBe('addComponent');
-      expect(sceneManager.getActiveTool()).not.toBe('position');
+      controller.setActiveTool('addComponent');
+      expect(controller.getActiveTool()).toBe('addComponent');
+      expect(controller.getActiveTool()).not.toBe('position');
     });
 
     it('should deactivate previous tool when switching to a new tool', () => {
       const toolDeactivatedSpy = vi.fn();
-      sceneManager.on('toolDeactivated', toolDeactivatedSpy);
+      controller.on('toolDeactivated', toolDeactivatedSpy);
 
-      sceneManager.setActiveTool('position');
-      sceneManager.setActiveTool('wire');
+      controller.setActiveTool('position');
+      controller.setActiveTool('wire');
 
       expect(toolDeactivatedSpy).toHaveBeenCalledWith(
         expect.objectContaining({ toolType: 'position' })
@@ -98,29 +98,29 @@ describe('Tool System Architecture (T060-T063)', () => {
       const tools: ToolType[] = ['position', 'addComponent', 'wire', 'branchingPoint', 'delete'];
 
       tools.forEach((toolType) => {
-        sceneManager.setActiveTool(toolType);
-        expect(sceneManager.getActiveTool()).toBe(toolType);
+        controller.setActiveTool(toolType);
+        expect(controller.getActiveTool()).toBe(toolType);
       });
     });
   });
 
   describe('T062: Tool state management', () => {
     it('should reset tool state when edit mode is disabled', () => {
-      sceneManager.setEditMode(true);
-      sceneManager.setActiveTool('position');
-      expect(sceneManager.getActiveTool()).toBe('position');
+      controller.setEditMode(true);
+      controller.setActiveTool('position');
+      expect(controller.getActiveTool()).toBe('position');
 
-      sceneManager.setEditMode(false);
-      expect(sceneManager.getActiveTool()).toBeNull();
+      controller.setEditMode(false);
+      expect(controller.getActiveTool()).toBeNull();
     });
 
     it('should deactivate active tool when edit mode is disabled', () => {
       const toolDeactivatedSpy = vi.fn();
-      sceneManager.on('toolDeactivated', toolDeactivatedSpy);
+      controller.on('toolDeactivated', toolDeactivatedSpy);
 
-      sceneManager.setEditMode(true);
-      sceneManager.setActiveTool('wire');
-      sceneManager.setEditMode(false);
+      controller.setEditMode(true);
+      controller.setActiveTool('wire');
+      controller.setEditMode(false);
 
       expect(toolDeactivatedSpy).toHaveBeenCalledWith(
         expect.objectContaining({ toolType: 'wire' })
@@ -128,29 +128,29 @@ describe('Tool System Architecture (T060-T063)', () => {
     });
 
     it('should clear tool state when switching tools', () => {
-      sceneManager.setEditMode(true);
+      controller.setEditMode(true);
 
       // Activate first tool
-      sceneManager.setActiveTool('addComponent');
+      controller.setActiveTool('addComponent');
 
       // Switch to second tool - should clear first tool's state
-      sceneManager.setActiveTool('delete');
+      controller.setActiveTool('delete');
 
       // Tool state should be reset (tested implicitly by successful switch)
-      expect(sceneManager.getActiveTool()).toBe('delete');
+      expect(controller.getActiveTool()).toBe('delete');
     });
   });
 
   describe('T063: Tool event emission', () => {
     beforeEach(() => {
-      sceneManager.setEditMode(true);
+      controller.setEditMode(true);
     });
 
     it('should emit toolActivated event when a tool is activated', () => {
       const toolActivatedSpy = vi.fn();
-      sceneManager.on('toolActivated', toolActivatedSpy);
+      controller.on('toolActivated', toolActivatedSpy);
 
-      sceneManager.setActiveTool('build');
+      controller.setActiveTool('build');
 
       expect(toolActivatedSpy).toHaveBeenCalledWith({
         toolType: 'build',
@@ -159,10 +159,10 @@ describe('Tool System Architecture (T060-T063)', () => {
 
     it('should emit toolDeactivated event when a tool is deactivated', () => {
       const toolDeactivatedSpy = vi.fn();
-      sceneManager.on('toolDeactivated', toolDeactivatedSpy);
+      controller.on('toolDeactivated', toolDeactivatedSpy);
 
-      sceneManager.setActiveTool('build');
-      sceneManager.setActiveTool('addComponent');
+      controller.setActiveTool('build');
+      controller.setActiveTool('addComponent');
 
       expect(toolDeactivatedSpy).toHaveBeenCalledWith({
         toolType: 'build',
@@ -171,9 +171,9 @@ describe('Tool System Architecture (T060-T063)', () => {
 
     it('should emit cursorChangeRequested event when tool is activated', () => {
       const cursorChangeSpy = vi.fn();
-      sceneManager.on('cursorChangeRequested', cursorChangeSpy);
+      controller.on('cursorChangeRequested', cursorChangeSpy);
 
-      sceneManager.setActiveTool('build');
+      controller.setActiveTool('build');
 
       expect(cursorChangeSpy).toHaveBeenCalled();
     });
@@ -181,13 +181,13 @@ describe('Tool System Architecture (T060-T063)', () => {
     it('should emit events in correct order: deactivate old, activate new', () => {
       const events: string[] = [];
 
-      sceneManager.on('toolDeactivated', () => events.push('deactivated'));
-      sceneManager.on('toolActivated', () => events.push('activated'));
+      controller.on('toolDeactivated', () => events.push('deactivated'));
+      controller.on('toolActivated', () => events.push('activated'));
 
-      sceneManager.setActiveTool('build');
+      controller.setActiveTool('build');
       events.length = 0; // Clear initial activation
 
-      sceneManager.setActiveTool('addComponent');
+      controller.setActiveTool('addComponent');
 
       expect(events).toEqual(['deactivated', 'activated']);
     });
@@ -196,10 +196,10 @@ describe('Tool System Architecture (T060-T063)', () => {
       const listener1 = vi.fn();
       const listener2 = vi.fn();
 
-      sceneManager.on('toolActivated', listener1);
-      sceneManager.on('toolActivated', listener2);
+      controller.on('toolActivated', listener1);
+      controller.on('toolActivated', listener2);
 
-      sceneManager.setActiveTool('build');
+      controller.setActiveTool('build');
 
       expect(listener1).toHaveBeenCalled();
       expect(listener2).toHaveBeenCalled();
@@ -208,11 +208,11 @@ describe('Tool System Architecture (T060-T063)', () => {
 
   describe('Error handling', () => {
     it('should throw error when trying to activate tool without edit mode', () => {
-      expect(() => sceneManager.setActiveTool('position')).toThrow('Edit mode must be enabled');
+      expect(() => controller.setActiveTool('position')).toThrow('Edit mode must be enabled');
     });
 
     it('should throw error when trying to use tool methods before initialization', () => {
-      const uninitializedManager = new CircuitSceneManager(factoryRegistry);
+      const uninitializedManager = new CircuitController(factoryRegistry);
 
       expect(() => uninitializedManager.setEditMode(true)).toThrow('not initialized');
     });

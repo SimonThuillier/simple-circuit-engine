@@ -49,11 +49,11 @@ class WireVisualManager {
 **After (Refactored)**:
 ```typescript
 class WireVisualManager {
-  private _sceneManager: Map<UUID, Line2>;       // One Line2 per wire
+  private _Controller: Map<UUID, Line2>;       // One Line2 per wire
   private wireMaterials: Map<WireVisualState, LineMaterial>; // Shared material for all wires in the same state
 }
 ```
-NB : the WireVisualManager references its parent SceneManager to get access to the THREE.Scene and component groups avoiding duplication of references to the same objects.
+NB : the WireVisualManager references its parent Controller to get access to the THREE.Scene and component groups avoiding duplication of references to the same objects.
 
 ### Key Differences
 

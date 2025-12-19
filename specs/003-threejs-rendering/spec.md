@@ -1,49 +1,49 @@
-# Feature Specification: 3D Circuit Scene Managers
+# Feature Specification: 3D Circuit Controllers
 
 **Feature Branch**: `003-threejs-rendering`
 **Created**: 2025-12-02
 **Updated**: 2025-12-08 (MVP Complete - Phases 6-7 Deferred)
 **Status**: ✅ MVP COMPLETE (Phases 1-5 Done, Phases 6-7 Dismissed)
-**Input**: User description: "I need two three.js scene managers : one for Circuit specialized for managing circuit scene and editing, one for CircuitRunner providing an animation optimized scene for live simulated circuits. These should be two well separated submodules in src/scene with a third shared utilities module."
+**Input**: User description: "I need two three.js Controllers : one for Circuit specialized for managing circuit scene and editing, one for CircuitRunner providing an animation optimized scene for live simulated circuits. These should be two well separated submodules in src/scene with a third shared utilities module."
 
 ## Clarifications
 
 ### Session 2025-12-02
 
-- Q: What is the exact scope boundary for these scene manager classes? → A: SceneManagers handle 3D scene construction and expose hookable callbacks for interactions, but don't implement actual mouse/keyboard event listeners or rendering orchestration.
-- Q: What exactly should unit tests validate for these scene manager classes? → A: Test that scene managers correctly create/update 3D scene objects, materials, and geometries based on circuit data (mock Three.js).
-- Q: What are the essential public methods each scene manager must provide? → A: constructor(factoryRegistry), initialize(container), setCircuit(circuit), update(), render(), dispose(), on(event, callback), getScene(), getCamera().
-- Q: Who owns the animation frame loop and WebGLRenderer? → A: External consumer owns both the Three.js WebGLRenderer instance and the animation loop. SceneManager only manages the Scene and Camera. Consumer calls renderer.render(scene, camera) each frame.
-- Q: Where does the component visual factory registry live and how is it structured? → A: Registry is injected into scene manager constructors; consumers build and pass their own registry instance.
-- Q: How should scene manager classes handle and communicate errors? → A: Throw for initialization/constructor errors; emit error events via callbacks for runtime errors; log warnings for non-critical issues.
-- Q: How does the simulation scene manager synchronize discrete simulation ticks with smooth real-time animation? → A: SceneManager interpolates visual state between simulation ticks based on elapsed real-time for smooth animations.
+- Q: What is the exact scope boundary for these scene controllerType classes? → A: Controllers handle 3D scene construction and expose hookable callbacks for interactions, but don't implement actual mouse/keyboard event listeners or rendering orchestration.
+- Q: What exactly should unit tests validate for these scene controllerType classes? → A: Test that Controllers correctly create/update 3D scene objects, materials, and geometries based on circuit data (mock Three.js).
+- Q: What are the essential public methods each scene controllerType must provide? → A: constructor(factoryRegistry), initialize(container), setCircuit(circuit), update(), render(), dispose(), on(event, callback), getScene(), getCamera().
+- Q: Who owns the animation frame loop and WebGLRenderer? → A: External consumer owns both the Three.js WebGLRenderer instance and the animation loop. Controller only manages the Scene and Camera. Consumer calls renderer.render(scene, camera) each frame.
+- Q: Where does the component visual factory registry live and how is it structured? → A: Registry is injected into scene controllerType constructors; consumers build and pass their own registry instance.
+- Q: How should scene controllerType classes handle and communicate errors? → A: Throw for initialization/constructor errors; emit error events via callbacks for runtime errors; log warnings for non-critical issues.
+- Q: How does the simulation scene controllerType synchronize discrete simulation ticks with smooth real-time animation? → A: Controller interpolates visual state between simulation ticks based on elapsed real-time for smooth animations.
 - Q: How do consumers control the camera? → A: Consumers directly access Three.js camera via getCamera() method.
-- Q: What specific event types must scene managers support through the callback interface? → A: Core event set: 'hover', 'unhover', 'position', 'deselect', 'error', 'ready'.
+- Q: What specific event types must Controllers support through the callback interface? → A: Core event set: 'hover', 'unhover', 'position', 'deselect', 'error', 'ready'.
 - Q: What parameters does the update() method accept and when should it be called? → A: update(changedData?: object) with optional parameter for incremental updates; called when circuit topology or state changes.
 
 ### Session 2025-12-04 (Phase 1-3 POC)
 
-- Q: Can scene managers be reused for multiple different circuits? → A: Yes, initialize once with container, then use setCircuit(circuit) to switch between circuits without re-initialization.
-- Q: When is the Circuit/CircuitRunner provided to the scene manager? → A: After initialization via setCircuit() method, not in constructor. This allows scene manager reusability.
-- Q: Who manages the Three.js WebGLRenderer instance? → A: Consumer creates and owns the WebGLRenderer. SceneManager only provides Scene and Camera via getScene()/getCamera(). Consumer calls webglRenderer.render(scene, camera) in their animation loop.
+- Q: Can Controllers be reused for multiple different circuits? → A: Yes, initialize once with container, then use setCircuit(circuit) to switch between circuits without re-initialization.
+- Q: When is the Circuit/CircuitRunner provided to the scene controllerType? → A: After initialization via setCircuit() method, not in constructor. This allows scene controllerType reusability.
+- Q: Who manages the Three.js WebGLRenderer instance? → A: Consumer creates and owns the WebGLRenderer. Controller only provides Scene and Camera via getScene()/getCamera(). Consumer calls webglRenderer.render(scene, camera) in their animation loop.
 
 ## Deliverable Scope
 
-**IMPORTANT**: This specification defines the requirements for **scene manager class modules only**, not complete interactive web pages or applications. The deliverables are:
+**IMPORTANT**: This specification defines the requirements for **scene controllerType class modules only**, not complete interactive web pages or applications. The deliverables are:
 
-- Two TypeScript/JavaScript scene manager classes (CircuitSceneManager, CircuitRunnerSceneManager)
+- Two TypeScript/JavaScript scene controllerType classes (CircuitController, CircuitRunnerController)
 - One shared utilities module (scene helpers, factory registry, common geometry/materials/lighting/camera utils)
-- Unit tests for all scene manager logic (mocking Three.js, no integration tests)
+- Unit tests for all scene controllerType logic (mocking Three.js, no integration tests)
 
-The scene manager classes expose programmatic APIs and hookable callbacks but **do NOT implement**:
+The scene controllerType classes expose programmatic APIs and hookable callbacks but **do NOT implement**:
 - User interaction event handling (mouse/keyboard listeners)
 - WebGL rendering orchestration (Three.js WebGLRenderer management)
 - Animation loop control (requestAnimationFrame)
 
-These responsibilities are delegated to the consumer. SceneManagers manage the Scene and Camera; consumers create their own WebGLRenderer, handle DOM events, and call renderer.render(scene, camera) in their animation loop.
-Event emitter system is provided for consumers to hook into scene manager events.
+These responsibilities are delegated to the consumer. Controllers manage the Scene and Camera; consumers create their own WebGLRenderer, handle DOM events, and call renderer.render(scene, camera) in their animation loop.
+Event emitter system is provided for consumers to hook into scene controllerType events.
 
-The user stories below describe the **end-user experience** that these scene managers will enable when integrated into a complete application. They define the visual behaviors and interaction patterns the scene managers must support through their APIs, not what the scene manager classes directly implement.
+The user stories below describe the **end-user experience** that these Controllers will enable when integrated into a complete application. They define the visual behaviors and interaction patterns the Controllers must support through their APIs, not what the scene controllerType classes directly implement.
 
 ## User Scenarios & Testing _(mandatory)_
 
@@ -137,54 +137,54 @@ Users working with large circuits (hundreds of components) need responsive visua
 
 ### Functional Requirements
 
-- **FR-001**: System MUST provide two independent scene manager modules: one for static circuits at build and one for live circuits
-- **FR-002**: System MUST maintain a shared utilities module containing common scene construction functionality used by both scene managers
-- **FR-003**: Static scene manager MUST display all circuit components in 3D space based on their topology definitions
-- **FR-004**: SceneManagers MUST expose the Three.js camera via getCamera() method for direct consumer manipulation (rotation, zoom, pan)
-- **FR-004a**: SceneManagers MUST expose the Three.js scene via getScene() method. Consumer is responsible for creating and managing their own WebGLRenderer instance and calling renderer.render(scene, camera) in their animation loop.
-- **FR-005**: Static scene manager MUST provide interactive component selection and highlighting
-- **FR-006**: Static scene manager MUST support read-only view AND edit mode through a editMode flag. When edit mode is enabled, the scene manager activates the tool system (FR-025) allowing topology manipulation. When edit mode is disabled, all tools are deactivated and tool state is reset.
-- **FR-007**: Static scene manager tools (FR-029) MUST perform tool-specific validation (FR-032) before operations. For circuit-specific validation (e.g., pin connection rules, electrical constraints), scene manager MUST delegate to core Circuit API methods. SceneManager MUST NOT implement circuit domain logic.
-- **FR-008**: Simulation scene manager MUST display real-time state changes for all circuit elements during simulation
-- **FR-009**: Simulation scene manager MUST visually distinguish between different component states (e.g., active/inactive, high/low voltage)
-- **FR-010**: Simulation scene manager MUST animate current flow through wires and connections
-- **FR-011**: Simulation scene manager MUST synchronize visualization updates with simulation step timing by interpolating visual state between discrete simulation ticks based on elapsed real-time for smooth animations
-- **FR-012**: Both scene managers MUST handle circuit topology changes without requiring full re-initialization. SceneManagers support circuit switching via setCircuit(circuit | null) method after initialization.
-- **FR-013**: Both scene managers MUST maintain consistent visual styling for the same component types
-- **FR-014**: System MUST organize scene managers as separate submodules under `src/scene` directory structure
+- **FR-001**: System MUST provide two independent scene controllerType modules: one for static circuits at build and one for live circuits
+- **FR-002**: System MUST maintain a shared utilities module containing common scene construction functionality used by both Controllers
+- **FR-003**: Static scene controllerType MUST display all circuit components in 3D space based on their topology definitions
+- **FR-004**: Controllers MUST expose the Three.js camera via getCamera() method for direct consumer manipulation (rotation, zoom, pan)
+- **FR-004a**: Controllers MUST expose the Three.js scene via getScene() method. Consumer is responsible for creating and managing their own WebGLRenderer instance and calling renderer.render(scene, camera) in their animation loop.
+- **FR-005**: Static scene controllerType MUST provide interactive component selection and highlighting
+- **FR-006**: Static scene controllerType MUST support read-only view AND edit mode through a editMode flag. When edit mode is enabled, the scene controllerType activates the tool system (FR-025) allowing topology manipulation. When edit mode is disabled, all tools are deactivated and tool state is reset.
+- **FR-007**: Static scene controllerType tools (FR-029) MUST perform tool-specific validation (FR-032) before operations. For circuit-specific validation (e.g., pin connection rules, electrical constraints), scene controllerType MUST delegate to core Circuit API methods. Controller MUST NOT implement circuit domain logic.
+- **FR-008**: Simulation scene controllerType MUST display real-time state changes for all circuit elements during simulation
+- **FR-009**: Simulation scene controllerType MUST visually distinguish between different component states (e.g., active/inactive, high/low voltage)
+- **FR-010**: Simulation scene controllerType MUST animate current flow through wires and connections
+- **FR-011**: Simulation scene controllerType MUST synchronize visualization updates with simulation step timing by interpolating visual state between discrete simulation ticks based on elapsed real-time for smooth animations
+- **FR-012**: Both Controllers MUST handle circuit topology changes without requiring full re-initialization. Controllers support circuit switching via setCircuit(circuit | null) method after initialization.
+- **FR-013**: Both Controllers MUST maintain consistent visual styling for the same component types
+- **FR-014**: System MUST organize Controllers as separate submodules under `src/scene` directory structure
 - **FR-015**: Shared utilities module MUST provide common geometry, material, and camera utilities
 - **FR-016**: A CircuitWorkspace allowing to bridge between both renderers should be created
-- **FR-017**: SceneManagers MUST support seamless switching between static and simulation views of the same circuit
-- **FR-018**: SceneManagers MUST throw exceptions for initialization and constructor errors (fail-fast); emit error events via on('error', callback) for runtime rendering errors; log console warnings for non-critical degraded rendering
-- **FR-019**: Both scene manager classes MUST expose the following public API methods: constructor(factoryRegistry), initialize(container, options?), setCircuit(circuit | null), clearVisuals(), update(changedData?), render(), dispose(), on(event, callback), getScene(), getCamera(). Additionally, CircuitSceneManager MUST expose tool-related methods: setEditMode(enabled), setActiveTool(toolType), getActiveTool(), cancelCurrentToolOperation(), handleToolClick(cursorGroundPlanePosition), handleToolHover(cursorGroundPlanePosition), handleToolScroll(delta).
-- **FR-019a**: The update() method MUST accept an optional changedData parameter for incremental updates; if no parameter provided, scene manager MUST perform full update from source circuit data
-- **FR-019b**: The setCircuit(circuit | null) method allows switching between circuits without re-initialization. Passing null clears the current circuit. This enables scene manager reusability across multiple circuits.
-- **FR-019c**: The clearVisuals() method removes all circuit visuals from the scene but does not dispose the scene manager, allowing it to be reused with a different circuit via setCircuit().
-- **FR-020**: SceneManager constructors MUST accept ONLY a component visual factory registry instance as a parameter. Circuit/CircuitRunner are provided after initialization via setCircuit() method, not in constructor. This separation enables scene manager reusability.
-- **FR-021**: SceneManagers MUST expose hookable callbacks for the following events via on(event, callback): 'hover', 'unhover', 'position', 'deselect', 'error', 'ready'; scene managers MUST NOT implement mouse/keyboard event listeners. Note: Consumer implements event listeners and translates them to scene manager tool API calls (FR-028). SceneManager exposes tool interaction methods and emits tool-related events (FR-034).
-- **FR-022**: SceneManagers MUST be callable from external animation loops (render() method called by consumer); scene managers MUST NOT manage their own requestAnimationFrame loops OR WebGLRenderer instances
+- **FR-017**: Controllers MUST support seamless switching between static and simulation views of the same circuit
+- **FR-018**: Controllers MUST throw exceptions for initialization and constructor errors (fail-fast); emit error events via on('error', callback) for runtime rendering errors; log console warnings for non-critical degraded rendering
+- **FR-019**: Both scene controllerType classes MUST expose the following public API methods: constructor(factoryRegistry), initialize(container, options?), setCircuit(circuit | null), clearVisuals(), update(changedData?), render(), dispose(), on(event, callback), getScene(), getCamera(). Additionally, CircuitController MUST expose tool-related methods: setEditMode(enabled), setActiveTool(toolType), getActiveTool(), cancelCurrentToolOperation(), handleToolClick(cursorGroundPlanePosition), handleToolHover(cursorGroundPlanePosition), handleToolScroll(delta).
+- **FR-019a**: The update() method MUST accept an optional changedData parameter for incremental updates; if no parameter provided, scene controllerType MUST perform full update from source circuit data
+- **FR-019b**: The setCircuit(circuit | null) method allows switching between circuits without re-initialization. Passing null clears the current circuit. This enables scene controllerType reusability across multiple circuits.
+- **FR-019c**: The clearVisuals() method removes all circuit visuals from the scene but does not dispose the scene controllerType, allowing it to be reused with a different circuit via setCircuit().
+- **FR-020**: Controller constructors MUST accept ONLY a component visual factory registry instance as a parameter. Circuit/CircuitRunner are provided after initialization via setCircuit() method, not in constructor. This separation enables scene controllerType reusability.
+- **FR-021**: Controllers MUST expose hookable callbacks for the following events via on(event, callback): 'hover', 'unhover', 'position', 'deselect', 'error', 'ready'; Controllers MUST NOT implement mouse/keyboard event listeners. Note: Consumer implements event listeners and translates them to scene controllerType tool API calls (FR-028). Controller exposes tool interaction methods and emits tool-related events (FR-034).
+- **FR-022**: Controllers MUST be callable from external animation loops (render() method called by consumer); Controllers MUST NOT manage their own requestAnimationFrame loops OR WebGLRenderer instances
 - **FR-023**: Shared utilities module MUST provide a component visual factory registry interface and default placeholder factory
 - **FR-024**: Component visual factory registry MUST return a default placeholder geometry/material (e.g., 1-unit cube) for unregistered component types
 - **FR-025**: System MUST provide a tool registry interface that allows consumers to register editing tool implementations. Each tool MUST implement a common interface defining: onActivate() (called when tool becomes active), onDeactivate() (called when tool is deactivated), getCursorType() (returns cursor style for this tool), getPreviewState() (returns current preview objects if any).
-- **FR-026**: Static scene manager MUST enforce that only one editing tool can be active at a time. When a new tool is activated, the previously active tool MUST be deactivated first.
-- **FR-027**: Static scene manager MUST maintain tool state (active tool reference, tool-specific operation state) and provide methods to query current tool state. Tool state MUST be reset when edit mode is disabled.
-- **FR-028**: Static scene manager MUST expose setActiveTool(toolType) method for consumers to activate tools programmatically. SceneManager MUST emit 'toolActivated' event with tool type when activation succeeds. Only tools can be activated when edit mode is enabled (FR-006). Switching tools is allowed when the active tool is idle (no operation in progress).
-- **FR-029**: Static scene manager MUST provide built-in implementations for 5 core editing tools: Select (click to position, drag to move, double-click to rotate), PlaceComponent (palette choose type, click to place, scroll to rotate before placement), Wire (click source pin/branching point, click target, Escape to cancel), BranchingPoint (click on wire to split and insert branching point), Delete (click component/wire/branching point to delete). Each tool MUST implement the interface defined in FR-025.
-- **FR-030**: Static scene manager MUST render visual previews for tools that require them: PlaceComponent (ghost preview with rotation), Wire (path preview from source to cursor). Preview objects MUST be visually distinct from actual circuit elements (e.g., semi-transparent, different color).
-- **FR-031**: Tools that support multi-step operations (Wire: click source, click target) MUST support cancellation. SceneManager MUST expose tool cancellation through a consumer-triggered method (e.g., cancelCurrentToolOperation()). Wire tool MUST cancel mid-wire operations when cancellation is triggered.
+- **FR-026**: Static scene controllerType MUST enforce that only one editing tool can be active at a time. When a new tool is activated, the previously active tool MUST be deactivated first.
+- **FR-027**: Static scene controllerType MUST maintain tool state (active tool reference, tool-specific operation state) and provide methods to query current tool state. Tool state MUST be reset when edit mode is disabled.
+- **FR-028**: Static scene controllerType MUST expose setActiveTool(toolType) method for consumers to activate tools programmatically. Controller MUST emit 'toolActivated' event with tool type when activation succeeds. Only tools can be activated when edit mode is enabled (FR-006). Switching tools is allowed when the active tool is idle (no operation in progress).
+- **FR-029**: Static scene controllerType MUST provide built-in implementations for 5 core editing tools: Select (click to position, drag to move, double-click to rotate), PlaceComponent (palette choose type, click to place, scroll to rotate before placement), Wire (click source pin/branching point, click target, Escape to cancel), BranchingPoint (click on wire to split and insert branching point), Delete (click component/wire/branching point to delete). Each tool MUST implement the interface defined in FR-025.
+- **FR-030**: Static scene controllerType MUST render visual previews for tools that require them: PlaceComponent (ghost preview with rotation), Wire (path preview from source to cursor). Preview objects MUST be visually distinct from actual circuit elements (e.g., semi-transparent, different color).
+- **FR-031**: Tools that support multi-step operations (Wire: click source, click target) MUST support cancellation. Controller MUST expose tool cancellation through a consumer-triggered method (e.g., cancelCurrentToolOperation()). Wire tool MUST cancel mid-wire operations when cancellation is triggered.
 - **FR-032**: Each tool MUST validate its operations before applying changes: PlaceComponent (bounding box overlap check on X/Y axis per Edge Case definition), Wire (endpoint must be valid pin or branching point), BranchingPoint (target must be valid wire), Delete (component deletion must cascade to pins). Tool validation failures MUST emit 'toolValidationError' event with error details but MUST NOT throw exceptions.
-- **FR-033**: Tools MUST delegate all circuit topology modifications to core Circuit API methods. SceneManager MUST NOT implement circuit logic directly. After successful tool operation, scene manager MUST call update(changedData) with appropriate delta to refresh visualization.
-- **FR-034**: CircuitSceneManager MUST emit the following tool-related events via on(event, callback): 'toolActivated' ({ toolType: string }), 'toolDeactivated' ({ toolType: string }), 'toolOperationStarted' ({ toolType: string, operationData: object }), 'toolOperationCompleted' ({ toolType: string, operationData: object, changedData: ChangedData }), 'toolOperationCancelled' ({ toolType: string }), 'toolValidationError' ({ toolType: string, errorMessage: string }).
-- **FR-035**: When a tool is activated, scene manager MUST emit 'cursorChangeRequested' event with cursor type (e.g., 'pointer', 'crosshair', 'move', 'not-allowed'). SceneManager MUST emit cursor changes during tool operations (e.g., 'not-allowed' when hovering over invalid placement location).
-- **FR-036**: When tool validation prevents an operation (per FR-032), scene manager MUST provide visual feedback by: briefly highlighting the conflicting elements (e.g., overlapping component), showing preview in error state (e.g., red tint), emitting 'toolValidationError' event for consumer to show UI message.
-- **FR-037**: After a tool successfully completes an operation that modifies circuit topology, scene manager MUST: (1) Apply the change via core Circuit API, (2) Construct appropriate ChangedData delta object, (3) Call internal update(changedData) to refresh visualization, (4) Emit 'toolOperationCompleted' event. This update MUST complete within 100ms to meet SC-005 performance target.
+- **FR-033**: Tools MUST delegate all circuit topology modifications to core Circuit API methods. Controller MUST NOT implement circuit logic directly. After successful tool operation, scene controllerType MUST call update(changedData) with appropriate delta to refresh visualization.
+- **FR-034**: CircuitController MUST emit the following tool-related events via on(event, callback): 'toolActivated' ({ toolType: string }), 'toolDeactivated' ({ toolType: string }), 'toolOperationStarted' ({ toolType: string, operationData: object }), 'toolOperationCompleted' ({ toolType: string, operationData: object, changedData: ChangedData }), 'toolOperationCancelled' ({ toolType: string }), 'toolValidationError' ({ toolType: string, errorMessage: string }).
+- **FR-035**: When a tool is activated, scene controllerType MUST emit 'cursorChangeRequested' event with cursor type (e.g., 'pointer', 'crosshair', 'move', 'not-allowed'). Controller MUST emit cursor changes during tool operations (e.g., 'not-allowed' when hovering over invalid placement location).
+- **FR-036**: When tool validation prevents an operation (per FR-032), scene controllerType MUST provide visual feedback by: briefly highlighting the conflicting elements (e.g., overlapping component), showing preview in error state (e.g., red tint), emitting 'toolValidationError' event for consumer to show UI message.
+- **FR-037**: After a tool successfully completes an operation that modifies circuit topology, scene controllerType MUST: (1) Apply the change via core Circuit API, (2) Construct appropriate ChangedData delta object, (3) Call internal update(changedData) to refresh visualization, (4) Emit 'toolOperationCompleted' event. This update MUST complete within 100ms to meet SC-005 performance target.
 
 ### Testing Strategy
 
-- **TS-001**: Unit tests MUST validate that scene managers correctly create and update 3D scene objects, materials, and geometries based on circuit data
-- **TS-002**: Unit tests MUST mock Three.js dependencies to test scene manager logic in isolation
+- **TS-001**: Unit tests MUST validate that Controllers correctly create and update 3D scene objects, materials, and geometries based on circuit data
+- **TS-002**: Unit tests MUST mock Three.js dependencies to test scene controllerType logic in isolation
 - **TS-003**: Unit tests MUST NOT perform integration testing with actual rendering output or browser DOM
-- **TS-004**: Unit tests MUST verify all public API methods (constructor, initialize, setCircuit, clearVisuals, update, render, dispose, on, getScene, getCamera, and CircuitSceneManager tool-related methods per FR-019)
+- **TS-004**: Unit tests MUST verify all public API methods (constructor, initialize, setCircuit, clearVisuals, update, render, dispose, on, getScene, getCamera, and CircuitController tool-related methods per FR-019)
 - **TS-005**: Unit tests MUST verify callback registration and invocation through the on(event, callback) interface
 - **TS-006**: Unit tests MUST verify component factory registry injection and fallback to placeholder geometry
 - **TS-007**: Unit tests MUST verify tool system functionality: tool activation/deactivation (FR-026), single-active-tool constraint (FR-026), tool state management (FR-027), tool preview rendering (FR-030), tool operation cancellation (FR-031), tool-specific validation (FR-032), and tool event emission (FR-034)
@@ -192,13 +192,13 @@ Users working with large circuits (hundreds of components) need responsive visua
 
 ### Key Entities
 
-- **CircuitSceneManager (Static)**: Responsible for visualizing circuit topology in a non-simulated state, supporting view manipulation and editing interactions. Circuit instances are provided via setCircuit() after initialization, not in constructor. Accepts component factory registry via constructor. Exposes hookable callbacks but does not implement event listeners or manage WebGLRenderer. Manages tool system for editing operations (FR-025 to FR-037). Can be reused across multiple circuits via setCircuit().
-- **CircuitRunnerSceneManager**: Responsible for visualizing circuit state during active simulation, displaying real-time updates, animations, and state changes. CircuitRunner instances are provided via setCircuit() after initialization. Accepts component factory registry via constructor. Exposes hookable callbacks but does not implement event listeners or manage WebGLRenderer.
-- **Component Visual Factory Registry**: Registry of factory functions that create 3D representations for each component type. Injected into scene manager constructors. Provides fallback to default placeholder geometry (1-unit cube) for unregistered component types.
+- **CircuitController (Static)**: Responsible for visualizing circuit topology in a non-simulated state, supporting view manipulation and editing interactions. Circuit instances are provided via setCircuit() after initialization, not in constructor. Accepts component factory registry via constructor. Exposes hookable callbacks but does not implement event listeners or manage WebGLRenderer. Manages tool system for editing operations (FR-025 to FR-037). Can be reused across multiple circuits via setCircuit().
+- **CircuitRunnerController**: Responsible for visualizing circuit state during active simulation, displaying real-time updates, animations, and state changes. CircuitRunner instances are provided via setCircuit() after initialization. Accepts component factory registry via constructor. Exposes hookable callbacks but does not implement event listeners or manage WebGLRenderer.
+- **Component Visual Factory Registry**: Registry of factory functions that create 3D representations for each component type. Injected into scene controllerType constructors. Provides fallback to default placeholder geometry (1-unit cube) for unregistered component types.
 - **Editing Tool**: Abstraction for circuit editing operations (Select, PlaceComponent, Wire, BranchingPoint, Delete). Each tool implements common interface (onActivate, onDeactivate, getCursorType, getPreviewState) and manages tool-specific operation state. Tools delegate circuit modifications to core Circuit API.
 - **Tool State**: Runtime state for active tool including operation-in-progress tracking, preview objects, and tool-specific data (e.g., wire source endpoint, component placement rotation). Reset when edit mode is disabled.
-- **Shared Scene Utilities**: Common functionality including camera management, geometry generation, material definitions, lighting setups, scene utilities, and the component factory registry interface. Shared across both scene manager types.
-- **Three.js Scene**: The 3D visualization environment containing camera, lights, and rendered circuit elements. Each scene manager maintains its own Scene and Camera. External consumers create WebGLRenderer and call renderer.render(scene, camera) each frame; scene managers do not manage rendering orchestration.
+- **Shared Scene Utilities**: Common functionality including camera management, geometry generation, material definitions, lighting setups, scene utilities, and the component factory registry interface. Shared across both scene controllerType types.
+- **Three.js Scene**: The 3D visualization environment containing camera, lights, and rendered circuit elements. Each scene controllerType maintains its own Scene and Camera. External consumers create WebGLRenderer and call renderer.render(scene, camera) each frame; Controllers do not manage rendering orchestration.
 - **Visual Component**: The 3D representation of a circuit component, including geometry, materials, and state-dependent visual properties. Created by component factory functions.
 - **Connection Visual**: The 3D representation of circuit connections (wires), including path geometry and optional animation state for current flow.
 - **Tool Preview**: Visual representation of tool operations in progress (PlaceComponent ghost preview, Wire path preview). Rendered semi-transparently and visually distinct from actual circuit elements. Updated on tool hover interactions.
@@ -238,9 +238,9 @@ The following requirements and user stories are deferred to future iterations af
 ### Deferred Requirements
 
 **FR-016 - CircuitWorkspace Bridge** (Priority: Medium)
-- **What**: A CircuitWorkspace class to bridge between CircuitSceneManager and CircuitRunnerSceneManager, ensuring only one is active at a time and handling scene disposal/initialization during switches.
-- **Why Deferred**: While important for production applications, the core scene managers are functional without this bridge. Applications can implement their own bridging logic for MVP. This will be implemented once real-world usage patterns are understood.
-- **Future Implementation**: Create CircuitWorkspace class in src/scene/workspace/ that manages lifecycle of both scene managers, handles switching logic, and provides unified API for applications.
+- **What**: A CircuitWorkspace class to bridge between CircuitController and CircuitRunnerController, ensuring only one is active at a time and handling scene disposal/initialization during switches.
+- **Why Deferred**: While important for production applications, the core Controllers are functional without this bridge. Applications can implement their own bridging logic for MVP. This will be implemented once real-world usage patterns are understood.
+- **Future Implementation**: Create CircuitWorkspace class in src/scene/workspace/ that manages lifecycle of both Controllers, handles switching logic, and provides unified API for applications.
 
 ### Deferred User Stories
 
@@ -259,13 +259,13 @@ The following requirements and user stories are deferred to future iterations af
 ### MVP Completeness
 
 **What's Included in MVP** (Phases 1-5, 85 tasks):
-- ✅ Two independent scene manager classes (CircuitSceneManager, CircuitRunnerSceneManager)
+- ✅ Two independent scene controllerType classes (CircuitController, CircuitRunnerController)
 - ✅ Shared utilities module (factories, geometry, materials, lighting, camera, interpolation)
 - ✅ Complete tool system with 5 editing tools (Select, PlaceComponent, Wire, BranchingPoint, Delete)
 - ✅ Static circuit visualization with hover/selection
 - ✅ Live simulation visualization with state interpolation and current flow animation
 - ✅ Event-driven API with hookable callbacks
-- ✅ Scene manager reusability via setCircuit() method
+- ✅ Scene controllerType reusability via setCircuit() method
 - ✅ Unit tests for all core functionality (mocked Three.js)
 
 **What's Deferred**:
@@ -275,4 +275,4 @@ The following requirements and user stories are deferred to future iterations af
 - ⏭️ Demo examples and comprehensive documentation
 - ⏭️ Additional error handling test coverage
 
-The MVP delivers complete, functional scene managers ready for integration and real-world validation.
+The MVP delivers complete, functional Controllers ready for integration and real-world validation.

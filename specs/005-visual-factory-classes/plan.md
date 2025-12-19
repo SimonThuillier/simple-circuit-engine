@@ -102,9 +102,9 @@ src/
 │   │   ├── types.ts                    # MAY MODIFY: Add visual state types
 │   │   └── ...
 │   ├── static/
-│   │   └── CircuitSceneManager.ts      # MAY MODIFY: Integrate visual state methods
+│   │   └── CircuitController.ts      # MAY MODIFY: Integrate visual state methods
 │   └── simulation/
-│       └── CircuitRunnerSceneManager.ts # MAY MODIFY: Integrate animation state methods
+│       └── CircuitRunnerController.ts # MAY MODIFY: Integrate animation state methods
 ├── playback/                       # Scenario orchestration (NOT MODIFIED)
 └── ...
 
@@ -117,7 +117,7 @@ tests/
 
 **Structure Decision**: Single TypeScript library. All changes are confined to
 `src/scene/shared/` for the factory classes, with potential integration updates
-in scene managers. Follows existing project architecture.
+in Controllers. Follows existing project architecture.
 
 ## Complexity Tracking
 

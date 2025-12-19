@@ -4,7 +4,7 @@
  */
 
 import type { IEditingTool, CursorType } from '../../shared/types';
-import type { CircuitSceneManager } from '../CircuitSceneManager';
+import type { CircuitController } from '../CircuitController';
 import type { UUID } from '../../../core/types/Identifier';
 import type { ComponentType } from '../../../core/types/ComponentType';
 import * as THREE from 'three';
@@ -123,7 +123,7 @@ export class MultiSelectTool implements IEditingTool {
   readonly type = 'multiSelect' as const;
 
   private mode: MultiSelectToolMode = 'idle';
-  private readonly sceneManager: CircuitSceneManager;
+  private readonly controller: CircuitController;
 
   // Selection rectangle state
   private selectionRectState: SelectionRectState | null = null;
@@ -145,8 +145,8 @@ export class MultiSelectTool implements IEditingTool {
   private handleKeyDown: (event: KeyboardEvent) => void;
   private handleGridPositionMove: (position: THREE.Vector3) => void;
 
-  constructor(sceneManager: CircuitSceneManager) {
-    this.sceneManager = sceneManager;
+  constructor(controller: CircuitController) {
+    this.controller = controller;
 
     // Bind event handlers
     this.handlePointerDown = this._handlePointerDown.bind(this);
@@ -172,7 +172,7 @@ export class MultiSelectTool implements IEditingTool {
     this.bulkDragState = null;
 
     // Register event listeners
-    const container = this.sceneManager.getContainer();
+    const container = this.controller.getContainer();
     container.addEventListener('pointerdown', this.handlePointerDown);
     container.addEventListener('pointermove', this.handlePointerMove);
     container.addEventListener('pointerup', this.handlePointerUp);
@@ -187,12 +187,12 @@ export class MultiSelectTool implements IEditingTool {
     this.cancelOperation();
 
     // Unregister event listeners
-    const container = this.sceneManager.getContainer();
+    const container = this.controller.getContainer();
     container.removeEventListener('pointerdown', this.handlePointerDown);
     container.removeEventListener('pointermove', this.handlePointerMove);
     container.removeEventListener('pointerup', this.handlePointerUp);
     window.removeEventListener('keydown', this.handleKeyDown);
-    this.sceneManager.off('gridPositionMove', this.handleGridPositionMove);
+    this.controller.off('gridPositionMove', this.handleGridPositionMove);
 
     this.mode = 'idle';
     this.selectionRectState = null;
@@ -214,8 +214,8 @@ export class MultiSelectTool implements IEditingTool {
    * Get the current cursor type for this tool (T031)
    */
   getCursorType(): CursorType {
-    const hoveredElement = this.sceneManager.getHoveredElement();
-    const selectionManager = this.sceneManager.getSelectionManager();
+    const hoveredElement = this.controller.getHoveredElement();
+    const selectionManager = this.controller.getSelectionManager();
 
     switch (this.mode) {
       case 'selecting':
@@ -258,8 +258,8 @@ export class MultiSelectTool implements IEditingTool {
   private _handlePointerDown(event: PointerEvent): void {
     if (event.button !== 0) return; // Only left click
 
-    const hoveredElement = this.sceneManager.getHoveredElement();
-    const selectionManager = this.sceneManager.getSelectionManager();
+    const hoveredElement = this.controller.getHoveredElement();
+    const selectionManager = this.controller.getSelectionManager();
     const shiftHeld = event.shiftKey;
 
     if (this.mode === 'idle') {
@@ -277,14 +277,14 @@ export class MultiSelectTool implements IEditingTool {
             // If already selected toggle => remove from the selection with deselecting cascade
             selectionManager.removeFromSelection(hoveredElement.type, hoveredElement.id);
             if (hoveredElement.type === 'component') {
-              const circuitComponent = this.sceneManager
+              const circuitComponent = this.controller
                 .getCircuit()!
                 .getComponent(hoveredElement.id);
               if (circuitComponent) {
                 // Also remove its pins and connected wires from selection
                 for (const pinId of circuitComponent.pins) {
                   selectionManager.removeFromSelection('enode', pinId);
-                  const enode = this.sceneManager.getCircuit()!.getENode(pinId);
+                  const enode = this.controller.getCircuit()!.getENode(pinId);
                   if (enode) {
                     for (const wireId of enode.wires) {
                       selectionManager.removeFromSelection('wire', wireId);
@@ -298,7 +298,7 @@ export class MultiSelectTool implements IEditingTool {
               hoveredElement.type === 'enode' &&
               !hoveredElement.object3D.userData.componentId
             ) {
-              const enode = this.sceneManager.getCircuit()!.getENode(hoveredElement.id);
+              const enode = this.controller.getCircuit()!.getENode(hoveredElement.id);
               if (enode) {
                 for (const wireId of enode.wires) {
                   selectionManager.removeFromSelection('wire', wireId);
@@ -319,14 +319,14 @@ export class MultiSelectTool implements IEditingTool {
         }
 
         // T024: Clicking on already selected element - start bulk drag
-        const worldPosition = this.sceneManager.cursorGroundPlanePosition();
+        const worldPosition = this.controller.cursorGroundPlanePosition();
         this._startBulkDrag(worldPosition);
         return;
       }
 
       // Case 2: T021 - Click on empty space clears selection (if no drag started)
       // Case 3: T011 - Start rectangle selection on empty space
-      const containerRect = this.sceneManager.getContainer().getBoundingClientRect();
+      const containerRect = this.controller.getContainer().getBoundingClientRect();
       const screenX = event.clientX - containerRect.left;
       const screenY = event.clientY - containerRect.top;
 
@@ -341,7 +341,7 @@ export class MultiSelectTool implements IEditingTool {
   private _handlePointerMove(event: PointerEvent): void {
     if (this.mode !== 'selecting' || !this.selectionRectState) return;
 
-    const containerRect = this.sceneManager.getContainer().getBoundingClientRect();
+    const containerRect = this.controller.getContainer().getBoundingClientRect();
     const screenX = event.clientX - containerRect.left;
     const screenY = event.clientY - containerRect.top;
 
@@ -373,7 +373,7 @@ export class MultiSelectTool implements IEditingTool {
       if (width < MIN_SELECTION_RECT_SIZE && height < MIN_SELECTION_RECT_SIZE) {
         // T021: Click on empty space clears selection
         if (!shiftHeld) {
-          this.sceneManager.getSelectionManager().deselect();
+          this.controller.getSelectionManager().deselect();
         }
         this._cancelSelectionRect();
         return;
@@ -473,7 +473,7 @@ export class MultiSelectTool implements IEditingTool {
       pointer-events: none;
       z-index: 1000;
     `;
-    this.sceneManager.getContainer().appendChild(overlayElement);
+    this.controller.getContainer().appendChild(overlayElement);
 
     // Initialize state
     this.selectionRectState = {
@@ -487,13 +487,13 @@ export class MultiSelectTool implements IEditingTool {
     this.mode = 'selecting';
 
     // Lock camera controls
-    const controls = this.sceneManager.getControls();
+    const controls = this.controller.getControls();
     if (controls) {
       controls.enablePan = false;
     }
 
     // T022: Emit event
-    this.sceneManager.emit('toolOperationStarted', {
+    this.controller.emit('toolOperationStarted', {
       toolType: this.type,
       mode: 'selecting',
       operationData: { startScreen: { x: screenX, y: screenY } },
@@ -564,11 +564,11 @@ export class MultiSelectTool implements IEditingTool {
 
     if (!this.selectionRectState) return result;
 
-    const circuit = this.sceneManager.getCircuit();
+    const circuit = this.controller.getCircuit();
     if (!circuit) return result;
 
-    const camera = this.sceneManager.getCamera();
-    const container = this.sceneManager.getContainer();
+    const camera = this.controller.getCamera();
+    const container = this.controller.getContainer();
     const width = container.clientWidth;
     const height = container.clientHeight;
 
@@ -587,7 +587,7 @@ export class MultiSelectTool implements IEditingTool {
     const wireEnodeSelectionCount = new Map<UUID, number>();
 
     // Check components (T014)
-    const componentObject3Ds = this.sceneManager.getComponentObject3Ds();
+    const componentObject3Ds = this.controller.componentObject3Ds;
     for (const [componentId, object3D] of componentObject3Ds) {
       const worldPos = new THREE.Vector3();
       object3D.getWorldPosition(worldPos);
@@ -612,7 +612,7 @@ export class MultiSelectTool implements IEditingTool {
     }
 
     // Check enodes (branching points only - pins are covered by components)
-    const enodeObject3Ds = this.sceneManager.getEnodeObject3Ds();
+    const enodeObject3Ds = this.controller.enodeObject3Ds;
     for (const [enodeId, object3D] of enodeObject3Ds) {
       // Only select standalone branching points
       if (object3D.userData.componentId) continue; // Skip pins
@@ -652,7 +652,7 @@ export class MultiSelectTool implements IEditingTool {
     if (!this.selectionRectState) return;
 
     const elementsInRect = this._getElementsInSelectionRect();
-    const selectionManager = this.sceneManager.getSelectionManager();
+    const selectionManager = this.controller.getSelectionManager();
 
     // Build selection maps
     const components = new Map<UUID, string | null>();
@@ -689,7 +689,7 @@ export class MultiSelectTool implements IEditingTool {
 
     // T022: Emit completion event
     const totalCount = components.size + enodes.size + wires.size;
-    this.sceneManager.emit('toolOperationCompleted', {
+    this.controller.emit('toolOperationCompleted', {
       toolType: this.type,
       mode: 'selecting',
       operationData: {
@@ -704,7 +704,7 @@ export class MultiSelectTool implements IEditingTool {
     this.mode = 'idle';
 
     // Unlock camera controls
-    const controls = this.sceneManager.getControls();
+    const controls = this.controller.getControls();
     if (controls) {
       controls.enablePan = true;
     }
@@ -717,7 +717,7 @@ export class MultiSelectTool implements IEditingTool {
     if (!this.selectionRectState) return;
 
     // Emit cancellation event
-    this.sceneManager.emit('toolOperationCancelled', {
+    this.controller.emit('toolOperationCancelled', {
       toolType: this.type,
       mode: 'selecting',
     });
@@ -727,7 +727,7 @@ export class MultiSelectTool implements IEditingTool {
     this.mode = 'idle';
 
     // Unlock camera controls
-    const controls = this.sceneManager.getControls();
+    const controls = this.controller.getControls();
     if (controls) {
       controls.enablePan = true;
     }
@@ -751,10 +751,10 @@ export class MultiSelectTool implements IEditingTool {
    * Start bulk drag operation (T024, T025, T026, T032)
    */
   private _startBulkDrag(worldPosition: THREE.Vector3): void {
-    const circuit = this.sceneManager.getCircuit();
+    const circuit = this.controller.getCircuit();
     if (!circuit) return;
 
-    const selectionManager = this.sceneManager.getSelectionManager();
+    const selectionManager = this.controller.getSelectionManager();
     const selectedIds = selectionManager.getSelectedIds();
 
     // T025: Capture initial positions for all selected elements
@@ -762,7 +762,7 @@ export class MultiSelectTool implements IEditingTool {
 
     // Capture component positions
     for (const componentId of selectedIds.components) {
-      const object3D = this.sceneManager.getComponentObject3Ds().get(componentId);
+      const object3D = this.controller.componentObject3Ds.get(componentId);
       if (object3D) {
         initialPositions.set(componentId, object3D.position.clone());
       }
@@ -770,7 +770,7 @@ export class MultiSelectTool implements IEditingTool {
 
     // Capture branching point positions
     for (const enodeId of selectedIds.enodes) {
-      const object3D = this.sceneManager.getEnodeObject3Ds().get(enodeId);
+      const object3D = this.controller.enodeObject3Ds.get(enodeId);
       if (object3D && !object3D.userData.componentId) {
         // Only branching points
         initialPositions.set(enodeId, object3D.position.clone());
@@ -831,16 +831,16 @@ export class MultiSelectTool implements IEditingTool {
     this.mode = 'dragging';
 
     // Lock camera controls
-    const controls = this.sceneManager.getControls();
+    const controls = this.controller.getControls();
     if (controls) {
       controls.enablePan = false;
     }
 
     // Register for grid position move events
-    this.sceneManager.on('gridPositionMove', this.handleGridPositionMove);
+    this.controller.on('gridPositionMove', this.handleGridPositionMove);
 
     // T032: Emit event
-    this.sceneManager.emit('toolOperationStarted', {
+    this.controller.emit('toolOperationStarted', {
       toolType: this.type,
       mode: 'dragging',
       operationData: { elementCount: initialPositions.size },
@@ -865,29 +865,29 @@ export class MultiSelectTool implements IEditingTool {
       const snappedPosition = nearestWorldSnapPosition(newPosition);
 
       // Update component visual
-      const componentObject3D = this.sceneManager.getComponentObject3Ds().get(elementId);
+      const componentObject3D = this.controller.componentObject3Ds.get(elementId);
       if (componentObject3D) {
         componentObject3D.position.copy(snappedPosition);
 
         // Update component in circuit model
-        this.sceneManager
-          .getCircuitEditionManager()
+        this.controller
+          .circuitWriter
           .saveEditComponent(elementId, componentObject3D);
         continue;
       }
 
       // Update branching point visual
-      const enodeObject3D = this.sceneManager.getEnodeObject3Ds().get(elementId);
+      const enodeObject3D = this.controller.enodeObject3Ds.get(elementId);
       if (enodeObject3D) {
         enodeObject3D.position.copy(snappedPosition);
 
         // Update branching point in circuit model
-        this.sceneManager.getCircuitEditionManager().saveEditBranchingPoint(enodeObject3D);
+        this.controller.circuitWriter.saveEditBranchingPoint(enodeObject3D);
       }
     }
 
     // Apply delta to intermediate positions of selected wires
-    const editionManager = this.sceneManager.getCircuitEditionManager();
+
     for (const [wireId, initialIntermediatePositions] of initialWireIntermediatePositions) {
       // Apply delta to each intermediate position
       const updatedPositions = initialIntermediatePositions.map((pos) => {
@@ -896,11 +896,11 @@ export class MultiSelectTool implements IEditingTool {
       });
 
       // Update wire intermediate positions in circuit model
-      editionManager.saveEditWirePositions(wireId, updatedPositions, false);
+      this.controller.circuitWriter.saveEditWirePositions(wireId, updatedPositions, false);
     }
 
     // T028: Update wire geometry for all affected wires
-    const wireVisualManager = this.sceneManager.getWireVisualManager();
+    const wireVisualManager = this.controller.wireVisualManager;
     for (const wireId of affectedWireIds) {
       wireVisualManager.updateWireById(wireId);
     }
@@ -912,18 +912,18 @@ export class MultiSelectTool implements IEditingTool {
   private _commitBulkDrag(): void {
     if (!this.bulkDragState) return;
 
-    const circuit = this.sceneManager.getCircuit();
+    const circuit = this.controller.getCircuit();
     if (!circuit) return;
 
     const { dragStartWorld, initialPositions } = this.bulkDragState;
-    const currentPosition = this.sceneManager.cursorGroundPlanePosition();
+    const currentPosition = this.controller.cursorGroundPlanePosition();
 
     // Calculate final delta
     const delta = new THREE.Vector3().subVectors(currentPosition, dragStartWorld);
     const gridDelta = worldToGridPosition(delta);
 
     // T032: Emit completion event
-    this.sceneManager.emit('toolOperationCompleted', {
+    this.controller.emit('toolOperationCompleted', {
       toolType: this.type,
       mode: 'dragging',
       operationData: {
@@ -938,10 +938,10 @@ export class MultiSelectTool implements IEditingTool {
     this.bulkDragState = null;
 
     // Unregister grid position move listener
-    this.sceneManager.off('gridPositionMove', this.handleGridPositionMove);
+    this.controller.off('gridPositionMove', this.handleGridPositionMove);
 
     // Unlock camera controls
-    const controls = this.sceneManager.getControls();
+    const controls = this.controller.getControls();
     if (controls) {
       controls.enablePan = true;
     }
@@ -958,37 +958,36 @@ export class MultiSelectTool implements IEditingTool {
 
     // Revert all elements to initial positions
     for (const [elementId, initialPos] of initialPositions) {
-      const componentObject3D = this.sceneManager.getComponentObject3Ds().get(elementId);
+      const componentObject3D = this.controller.componentObject3Ds.get(elementId);
       if (componentObject3D) {
         componentObject3D.position.copy(initialPos);
-        this.sceneManager
-          .getCircuitEditionManager()
+        this.controller
+          .circuitWriter
           .saveEditComponent(elementId, componentObject3D);
         continue;
       }
 
-      const enodeObject3D = this.sceneManager.getEnodeObject3Ds().get(elementId);
+      const enodeObject3D = this.controller.enodeObject3Ds.get(elementId);
       if (enodeObject3D) {
         enodeObject3D.position.copy(initialPos);
-        this.sceneManager.getCircuitEditionManager().saveEditBranchingPoint(enodeObject3D);
+        this.controller.circuitWriter.saveEditBranchingPoint(enodeObject3D);
       }
     }
 
     // Revert intermediate positions of selected wires
-    const editionManager = this.sceneManager.getCircuitEditionManager();
     for (const [wireId, initialIntermediatePositions] of initialWireIntermediatePositions) {
       const positions = initialIntermediatePositions.map((pos) => worldToGridPosition(pos));
-      editionManager.saveEditWirePositions(wireId, positions, false);
+      this.controller.circuitWriter.saveEditWirePositions(wireId, positions, false);
     }
 
     // Update all affected wires
-    const wireVisualManager = this.sceneManager.getWireVisualManager();
+    const wireVisualManager = this.controller.wireVisualManager;
     for (const wireId of affectedWireIds) {
       wireVisualManager.updateWireById(wireId);
     }
 
     // Emit cancellation event
-    this.sceneManager.emit('toolOperationCancelled', {
+    this.controller.emit('toolOperationCancelled', {
       toolType: this.type,
       mode: 'dragging',
     });
@@ -998,10 +997,10 @@ export class MultiSelectTool implements IEditingTool {
     this.bulkDragState = null;
 
     // Unregister grid position move listener
-    this.sceneManager.off('gridPositionMove', this.handleGridPositionMove);
+    this.controller.off('gridPositionMove', this.handleGridPositionMove);
 
     // Unlock camera controls
-    const controls = this.sceneManager.getControls();
+    const controls = this.controller.getControls();
     if (controls) {
       controls.enablePan = true;
     }
@@ -1023,10 +1022,10 @@ export class MultiSelectTool implements IEditingTool {
    * @returns true if copy succeeded (non-empty selection)
    */
   copySelection(): boolean {
-    const circuit = this.sceneManager.getCircuit();
+    const circuit = this.controller.getCircuit();
     if (!circuit) return false;
 
-    const selectionManager = this.sceneManager.getSelectionManager();
+    const selectionManager = this.controller.getSelectionManager();
     const selectedIds = selectionManager.getSelectedIds();
 
     // Empty selection - no-op
@@ -1167,7 +1166,7 @@ export class MultiSelectTool implements IEditingTool {
     };
 
     // T051: Emit copy completed event
-    this.sceneManager.emit('toolOperationCompleted', {
+    this.controller.emit('toolOperationCompleted', {
       toolType: this.type,
       mode: 'copy',
       operationData: {
@@ -1188,10 +1187,10 @@ export class MultiSelectTool implements IEditingTool {
   pasteAtCursor(): boolean {
     if (!this.clipboardData) return false;
 
-    const circuit = this.sceneManager.getCircuit();
+    const circuit = this.controller.getCircuit();
     if (!circuit) return false;
 
-    const cursorPosition = this.sceneManager.cursorGroundPlanePosition();
+    const cursorPosition = this.controller.cursorGroundPlanePosition();
     const gridCursor = worldToGridPosition(cursorPosition);
 
     // Map from original IDs to newly created element IDs for wire remapping (T047)
@@ -1209,7 +1208,7 @@ export class MultiSelectTool implements IEditingTool {
       const rotation = gridToWorldRotation(new Rotation(clipComponent.rotation));
 
       try {
-        const newComponent = this.sceneManager.addComponent(
+        const newComponent = this.controller.addComponent(
           clipComponent.type as ComponentType,
           worldPos,
           rotation
@@ -1248,7 +1247,7 @@ export class MultiSelectTool implements IEditingTool {
       const worldPos = gridToWorldPosition(newGridPos);
 
       try {
-        const newEnode = this.sceneManager.addBranchingPoint(worldPos);
+        const newEnode = this.controller.addBranchingPoint(worldPos);
         createdBranchingPointIds.push(newEnode.id);
 
         // Map original BP ID → new BP ID
@@ -1267,7 +1266,7 @@ export class MultiSelectTool implements IEditingTool {
       // Only create wire if both endpoints were successfully created
       if (newNode1 && newNode2) {
         try {
-          const newWire = this.sceneManager.addWire(newNode1, newNode2);
+          const newWire = this.controller.addWire(newNode1, newNode2);
           createdWireIds.push(newWire.id);
 
           // Update intermediate positions if any
@@ -1277,10 +1276,10 @@ export class MultiSelectTool implements IEditingTool {
               y: Math.round(gridCursor.y + relPos.y),
             }));
 
-            this.sceneManager
-              .getCircuitEditionManager()
+            this.controller
+              .circuitWriter
               .saveEditWirePositions(newWire.id, absolutePositions, true);
-            this.sceneManager.getWireVisualManager().updateWireById(newWire.id);
+            this.controller.wireVisualManager.updateWireById(newWire.id);
           }
         } catch (error) {
           console.error('Failed to paste wire:', error);
@@ -1289,7 +1288,7 @@ export class MultiSelectTool implements IEditingTool {
     }
 
     // T049: Select pasted elements
-    const selectionManager = this.sceneManager.getSelectionManager();
+    const selectionManager = this.controller.getSelectionManager();
     const componentsMap = new Map<UUID, string | null>();
     const enodesMap = new Map<UUID, string | null>();
     const wiresMap = new Map<UUID, string | null>();
@@ -1307,7 +1306,7 @@ export class MultiSelectTool implements IEditingTool {
     selectionManager.selectMultiple(componentsMap, enodesMap, wiresMap);
 
     // T051: Emit paste completed event
-    this.sceneManager.emit('toolOperationCompleted', {
+    this.controller.emit('toolOperationCompleted', {
       toolType: this.type,
       mode: 'paste',
       operationData: {
@@ -1353,7 +1352,7 @@ export class MultiSelectTool implements IEditingTool {
    * 3. Selected branching points
    */
   deleteSelection(): boolean {
-    const selectionManager = this.sceneManager.getSelectionManager();
+    const selectionManager = this.controller.getSelectionManager();
     const selectedIds = selectionManager.getSelectedIds();
 
     const totalCount =
@@ -1368,21 +1367,21 @@ export class MultiSelectTool implements IEditingTool {
 
     // 1. Delete selected wires
     for (const wireId of selectedIds.wires) {
-      this.sceneManager.removeWire(wireId);
+      this.controller.removeWire(wireId);
     }
 
     // 2. Delete selected components (T035: cascades to connected wires - orphaned cleanup)
     for (const componentId of selectedIds.components) {
-      this.sceneManager.removeComponent(componentId);
+      this.controller.removeComponent(componentId);
     }
 
     // 3. Delete selected branching points
     for (const enodeId of selectedIds.enodes) {
-      this.sceneManager.removeBranchingPoint(enodeId);
+      this.controller.removeBranchingPoint(enodeId);
     }
 
     // T037: Emit bulk delete event
-    this.sceneManager.emit('toolOperationCompleted', {
+    this.controller.emit('toolOperationCompleted', {
       toolType: this.type,
       mode: 'bulk_delete',
       operationData: {

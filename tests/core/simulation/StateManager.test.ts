@@ -13,7 +13,7 @@ import { SimulationState } from '@/core/simulation/SimulationState';
 
 describe('StateManager', () => {
   describe('constructor', () => {
-    it('should create a state manager with history disabled by default', () => {
+    it('should create a state controllerType with history disabled by default', () => {
       const manager = new StateManager();
 
       expect(manager).toBeDefined();
@@ -22,14 +22,14 @@ describe('StateManager', () => {
       expect(manager.getHistory()).toEqual([]);
     });
 
-    it('should create a state manager with history enabled', () => {
+    it('should create a state controllerType with history enabled', () => {
       const manager = new StateManager(true);
 
       expect(manager.isHistoryEnabled()).toBe(true);
       expect(manager.getHistoryLimit()).toBe(1000);
     });
 
-    it('should create a state manager with custom history limit', () => {
+    it('should create a state controllerType with custom history limit', () => {
       const manager = new StateManager(true, 500);
 
       expect(manager.isHistoryEnabled()).toBe(true);

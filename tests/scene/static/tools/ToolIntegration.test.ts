@@ -68,7 +68,7 @@ describe('Tool-Circuit Integration (T071)', () => {
   });
 
   describe.skip('Visual update integration (FR-037)', () => {
-    it('should call sceneManager.update() after Circuit modification', () => {
+    it('should call controller.update() after Circuit modification', () => {
       expect(true).toBe(false);
     });
 

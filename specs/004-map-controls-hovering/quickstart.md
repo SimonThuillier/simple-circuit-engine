@@ -5,7 +5,7 @@
 
 ## Overview
 
-This guide shows how to use MapControls navigation and hover detection in CircuitSceneManager and CircuitRunnerSceneManager.
+This guide shows how to use MapControls navigation and hover detection in CircuitController and CircuitRunnerController.
 
 ---
 
@@ -14,25 +14,25 @@ This guide shows how to use MapControls navigation and hover detection in Circui
 ### 1. Initialize with Default Options
 
 ```typescript
-import { CircuitSceneManager } from 'simple-circuit-engine/scene';
+import { CircuitController } from 'simple-circuit-engine/scene';
 import { FactoryRegistry, createDefaultFactory } from 'simple-circuit-engine/scene';
 
-// Create scene manager
+// Create scene controllerType
 const registry = new FactoryRegistry(createDefaultFactory());
-const manager = new CircuitSceneManager(registry);
+const controllerType = new CircuitController(registry);
 
 // Initialize with container - MapControls and hover are enabled by default
 const container = document.getElementById('circuit-canvas')!;
-manager.initialize(container);
+controllerType.initialize(container);
 
 // Load a circuit
-manager.setCircuit(myCircuit);
+controllerType.setCircuit(myCircuit);
 ```
 
 ### 2. Initialize with Custom Options
 
 ```typescript
-manager.initialize(container, {
+controllerType.initialize(container, {
   // Standard renderer options
   backgroundColor: 0x1a1a2e,
   cameraFov: 60,
@@ -57,7 +57,7 @@ manager.initialize(container, {
 
 ```typescript
 // Subscribe to hover events
-manager.on('hover', ({ objectId, objectType }) => {
+controllerType.on('hover', ({ objectId, objectType }) => {
   console.log(`Hovering ${objectType}: ${objectId}`);
 
   // Handle different element types
@@ -71,7 +71,7 @@ manager.on('hover', ({ objectId, objectType }) => {
 });
 
 // Subscribe to unhover events
-manager.on('unhover', ({ objectId, objectType }) => {
+controllerType.on('unhover', ({ objectId, objectType }) => {
   console.log(`Left ${objectType}: ${objectId}`);
   clearHighlight(objectId);
 });
@@ -81,7 +81,7 @@ manager.on('unhover', ({ objectId, objectType }) => {
 
 ```typescript
 // Get currently hovered element (without events)
-const hovered = manager.getHoveredElement();
+const hovered = controllerType.getHoveredElement();
 
 if (hovered) {
   console.log(`Currently hovering: ${hovered.type} (${hovered.id})`);
@@ -95,13 +95,13 @@ if (hovered) {
 
 ```typescript
 // Disable hover during drag operations
-manager.setHoverEnabled(false);
+controllerType.setHoverEnabled(false);
 
 // Re-enable hover
-manager.setHoverEnabled(true);
+controllerType.setHoverEnabled(true);
 
 // Check if hover is enabled
-if (manager.isHoverEnabled()) {
+if (controllerType.isHoverEnabled()) {
   // Hover detection is active
 }
 ```
@@ -121,36 +121,36 @@ Users can navigate automatically:
 
 ```typescript
 // Reset camera to view entire circuit
-manager.resetCamera();
+controllerType.resetCamera();
 
 // Reset without animation
-manager.resetCamera(false);
+controllerType.resetCamera(false);
 
 // Focus on specific element
-manager.focusOnElement(componentId);
+controllerType.focusOnElement(componentId);
 
 // Focus without animation
-manager.focusOnElement(componentId, false);
+controllerType.focusOnElement(componentId, false);
 ```
 
 ### Update Options at Runtime
 
 ```typescript
 // Disable zoom temporarily
-manager.updateControlsOptions({ enableZoom: false });
+controllerType.updateControlsOptions({ enableZoom: false });
 
 // Change damping
-manager.updateControlsOptions({ dampingFactor: 0.2 });
+controllerType.updateControlsOptions({ dampingFactor: 0.2 });
 
 // Re-enable zoom
-manager.updateControlsOptions({ enableZoom: true });
+controllerType.updateControlsOptions({ enableZoom: true });
 ```
 
 ### Direct MapControls Access
 
 ```typescript
 // Get underlying MapControls for advanced usage
-const controls = manager.getControls();
+const controls = controllerType.getControls();
 
 if (controls) {
   // Access Three.js MapControls directly
@@ -171,11 +171,11 @@ const renderer = new THREE.WebGLRenderer({ canvas });
 function animate() {
   requestAnimationFrame(animate);
 
-  // Scene manager handles MapControls.update() internally in render()
-  manager.render();
+  // Scene controllerType handles MapControls.update() internally in render()
+  controllerType.render();
 
   // Render the scene
-  renderer.render(manager.getScene(), manager.getCamera());
+  renderer.render(controllerType.getScene(), controllerType.getCamera());
 }
 
 animate();
@@ -183,14 +183,14 @@ animate();
 
 ---
 
-## CircuitRunnerSceneManager (Simulation)
+## CircuitRunnerController (Simulation)
 
-Same API applies to simulation scene manager:
+Same API applies to simulation scene controllerType:
 
 ```typescript
-import { CircuitRunnerSceneManager } from 'simple-circuit-engine/scene';
+import { CircuitRunnerController } from 'simple-circuit-engine/scene';
 
-const simManager = new CircuitRunnerSceneManager(registry);
+const simManager = new CircuitRunnerController(registry);
 
 simManager.initialize(container, {
   mapControls: {
@@ -229,13 +229,13 @@ This ensures precise interaction with connection points even when they're near l
 ```typescript
 const tooltip = document.getElementById('tooltip')!;
 
-manager.on('hover', ({ objectId, objectType }) => {
+controllerType.on('hover', ({ objectId, objectType }) => {
   const element = getElementInfo(objectId, objectType);
   tooltip.textContent = element.name;
   tooltip.style.display = 'block';
 });
 
-manager.on('unhover', () => {
+controllerType.on('unhover', () => {
   tooltip.style.display = 'none';
 });
 
@@ -251,7 +251,7 @@ container.addEventListener('mousemove', (e) => {
 ```typescript
 const originalMaterials = new Map<string, THREE.Material>();
 
-manager.on('hover', ({ objectId }) => {
+controllerType.on('hover', ({ objectId }) => {
   const mesh = findVisualMesh(objectId);
   if (mesh && mesh.material) {
     originalMaterials.set(objectId, mesh.material.clone());
@@ -259,7 +259,7 @@ manager.on('hover', ({ objectId }) => {
   }
 });
 
-manager.on('unhover', ({ objectId }) => {
+controllerType.on('unhover', ({ objectId }) => {
   const mesh = findVisualMesh(objectId);
   const original = originalMaterials.get(objectId);
   if (mesh && original) {
@@ -273,7 +273,7 @@ manager.on('unhover', ({ objectId }) => {
 
 ```typescript
 container.addEventListener('click', () => {
-  const hovered = manager.getHoveredElement();
+  const hovered = controllerType.getHoveredElement();
   if (hovered) {
     handleElementClick(hovered.id, hovered.type);
   }
@@ -285,8 +285,8 @@ container.addEventListener('click', () => {
 ## Cleanup
 
 ```typescript
-// Dispose scene manager (cleans up MapControls and hover listeners)
-manager.dispose();
+// Dispose scene controllerType (cleans up MapControls and hover listeners)
+controllerType.dispose();
 ```
 
 ---
@@ -295,10 +295,10 @@ manager.dispose();
 
 | Feature | API |
 |---------|-----|
-| Hover events | `manager.on('hover', ...)`, `manager.on('unhover', ...)` |
-| Query hover | `manager.getHoveredElement()` |
-| Toggle hover | `manager.setHoverEnabled(bool)` |
-| Camera reset | `manager.resetCamera()` |
-| Focus element | `manager.focusOnElement(id)` |
-| Update options | `manager.updateControlsOptions({...})` |
-| Direct access | `manager.getControls()` |
+| Hover events | `controllerType.on('hover', ...)`, `controllerType.on('unhover', ...)` |
+| Query hover | `controllerType.getHoveredElement()` |
+| Toggle hover | `controllerType.setHoverEnabled(bool)` |
+| Camera reset | `controllerType.resetCamera()` |
+| Focus element | `controllerType.focusOnElement(id)` |
+| Update options | `controllerType.updateControlsOptions({...})` |
+| Direct access | `controllerType.getControls()` |

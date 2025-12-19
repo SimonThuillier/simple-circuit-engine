@@ -93,7 +93,7 @@ handlePointerDown(event: PointerEvent): void {
 
   // NEW: Handle Ctrl+click for sourceType cycling
   if ((event.ctrlKey || event.metaKey) && this._mode === 'idle') {
-    const hoverState = this._sceneManager.getHoverManager().getHoverState();
+    const hoverState = this._Controller.getHoverManager().getHoverState();
     if (hoverState?.type === 'enode') {
       this.cycleEnodeSourceType(hoverState.id);
       return;  // Early exit - don't start wire creation
@@ -108,7 +108,7 @@ handlePointerDown(event: PointerEvent): void {
  * Updates both model and visual immediately.
  */
 private cycleEnodeSourceType(enodeId: UUID): void {
-  const circuit = this._sceneManager.getCircuit();
+  const circuit = this._Controller.getCircuit();
   if (!circuit) return;
 
   const enode = circuit.enodes.get(enodeId);
@@ -117,8 +117,8 @@ private cycleEnodeSourceType(enodeId: UUID): void {
   const nextSourceType = getNextSourceType(enode.source);
 
   // Persist change and emit event
-  this._sceneManager
-    .getCircuitEditionManager()
+  this._Controller
+    .getCircuitWriter()
     .saveEditENodeSourceType(enodeId, nextSourceType ?? null);
 
   // Update visual
@@ -130,16 +130,16 @@ private updateEnodeVisual(
   enodeType: ENodeType,
   sourceType: ENodeSourceType | undefined
 ): void {
-  const object3D = this._sceneManager.getEnodeObject3D(enodeId);
+  const object3D = this._Controller.getEnodeObject3D(enodeId);
   if (!object3D) return;
 
   if (enodeType === ENodeType.BranchingPoint) {
-    this._sceneManager
+    this._Controller
       .getBranchingPointVisualFactory()
       .updateSourceType(object3D, sourceType ?? null);
   } else {
     // Component pin
-    const factory = this._sceneManager.getComponentFactory(/* component type */);
+    const factory = this._Controller.getComponentFactory(/* component type */);
     factory.updatePinSourceType(object3D, sourceType ?? null);
   }
 }

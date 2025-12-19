@@ -119,6 +119,7 @@ export class BranchingPointVisualFactory {
    * @param sourceType - New source type
    */
   updateSourceType(object3D: THREE.Object3D, sourceType: ENodeSourceType | null): void {
+    object3D.userData.sourceType = sourceType;
     const visual = object3D.children.find((child) => child.userData.type === 'enode') as
       | THREE.Mesh
       | undefined;

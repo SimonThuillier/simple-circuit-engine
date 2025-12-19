@@ -1,8 +1,8 @@
-# Quickstart Guide: 3D Circuit SceneManagers
+# Quickstart Guide: 3D Circuit Controllers
 
 ## Overview
 
-This guide shows how to use the CircuitSceneManager and CircuitRunnerSceneManager classes to visualize circuits in 3D using Three.js.
+This guide shows how to use the CircuitController and CircuitRunnerController classes to visualize circuits in 3D using Three.js.
 
 ## Installation
 
@@ -80,17 +80,17 @@ registry.register(ComponentType.LED, (component) => {
 });
 ```
 
-### Step 3: Create and Initialize SceneManager
+### Step 3: Create and Initialize Controller
 
 ```typescript
-import { CircuitSceneManager } from 'simple-circuit-engine/scene';
+import { CircuitController } from 'simple-circuit-engine/scene';
 
 // Create renderer
-const renderer = new CircuitSceneManager(circuit, registry);
+const renderer = new CircuitController(circuit, registry);
 
 // Setup event listeners
 renderer.on('ready', () => {
-  console.log('SceneManager initialized');
+  console.log('Controller initialized');
 });
 
 renderer.on('error', ({ message, error }) => {
@@ -110,14 +110,14 @@ renderer.initialize(container, {
 });
 ```
 
-### Step 4: Setup WebGL SceneManager and Animation Loop
+### Step 4: Setup WebGL Controller and Animation Loop
 
 ```typescript
-// Create Three.js WebGLSceneManager
-const webGLSceneManager = new THREE.WebGLSceneManager({ antialias: true });
-webGLSceneManager.setSize(container.clientWidth, container.clientHeight);
-webGLSceneManager.setPixelRatio(window.devicePixelRatio);
-container.appendChild(webGLSceneManager.domElement);
+// Create Three.js WebGLController
+const webGLController = new THREE.WebGLController({ antialias: true });
+webGLController.setSize(container.clientWidth, container.clientHeight);
+webGLController.setPixelRatio(window.devicePixelRatio);
+container.appendChild(webGLController.domElement);
 
 // Get camera from scene
 const scene = renderer.getScene();
@@ -125,14 +125,14 @@ const camera = scene.camera as THREE.PerspectiveCamera;
 
 // Setup camera controls (optional - using OrbitControls)
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-const controls = new OrbitControls(camera, webGLSceneManager.domElement);
+const controls = new OrbitControls(camera, webGLController.domElement);
 controls.enableDamping = true;
 
 // Animation loop
 function animate() {
   controls.update(); // Update camera controls
   renderer.render();  // Update renderer state
-  webGLSceneManager.render(scene, camera); // Render to canvas
+  webGLController.render(scene, camera); // Render to canvas
   requestAnimationFrame(animate);
 }
 
@@ -164,7 +164,7 @@ renderer.update();
 // When done, dispose resources
 function cleanup() {
   renderer.dispose();
-  webGLSceneManager.dispose();
+  webGLController.dispose();
   controls.dispose();
 }
 
@@ -196,22 +196,22 @@ const circuitRunner = new CircuitRunner(circuit, behaviorRegistry, {
 });
 ```
 
-### Step 2: Create CircuitRunner Scene Manager
+### Step 2: Create CircuitRunner Controller
 
 ```typescript
-import { CircuitRunnerSceneManager } from 'simple-circuit-engine/scene';
+import { CircuitRunnerController } from 'simple-circuit-engine/scene';
 
-// Create scene manager (uses same factory registry)
-const simSceneManager = new CircuitRunnerSceneManager(circuitRunner, registry);
+// Create scene controllerType (uses same factory registry)
+const simController = new CircuitRunnerController(circuitRunner, registry);
 
-simSceneManager.on('ready', () => {
-  console.log('Simulation scene manager ready');
+simController.on('ready', () => {
+  console.log('Simulation scene controllerType ready');
 });
 
-simSceneManager.initialize(container);
+simController.initialize(container);
 
 // Optional: Adjust interpolation duration
-simSceneManager.setInterpolationDuration(150); // 150ms transitions
+simController.setInterpolationDuration(150); // 150ms transitions
 ```
 
 ### Step 3: Animation Loop with Simulation
@@ -230,8 +230,8 @@ function animateSimulation() {
   }
 
   // Render (automatically interpolates between ticks)
-  simSceneManager.render();
-  webGLSceneManager.render(simSceneManager.getScene(), camera);
+  simController.render();
+  webGLController.render(simController.getScene(), camera);
 
   requestAnimationFrame(animateSimulation);
 }
@@ -253,33 +253,33 @@ if (switchComponent) {
 }
 ```
 
-## Switching Between SceneManagers
+## Switching Between Controllers
 
 ```typescript
 // Start with static renderer
-const staticSceneManager = new CircuitSceneManager(circuit, registry);
-staticSceneManager.initialize(container);
+const staticController = new CircuitController(circuit, registry);
+staticController.initialize(container);
 
 // Switch to simulation
 function switchToSimulation() {
   // Dispose static renderer
-  staticSceneManager.dispose();
+  staticController.dispose();
 
   // Create and initialize simulation renderer
-  const simSceneManager = new CircuitRunnerSceneManager(circuitRunner, registry);
-  simSceneManager.initialize(container);
+  const simController = new CircuitRunnerController(circuitRunner, registry);
+  simController.initialize(container);
 
-  return simSceneManager;
+  return simController;
 }
 
 // Switch back to static
-function switchToStatic(simSceneManager) {
-  simSceneManager.dispose();
+function switchToStatic(simController) {
+  simController.dispose();
 
-  const staticSceneManager = new CircuitSceneManager(circuit, registry);
-  staticSceneManager.initialize(container);
+  const staticController = new CircuitController(circuit, registry);
+  staticController.initialize(container);
 
-  return staticSceneManager;
+  return staticController;
 }
 ```
 
@@ -312,7 +312,7 @@ renderer.on('position', ({ objectId, objectType }) => {
 ```typescript
 renderer.on('error', ({ message, error }) => {
   // Log error
-  console.error('SceneManager error:', message);
+  console.error('Controller error:', message);
   if (error) {
     console.error('Stack trace:', error.stack);
   }
@@ -404,7 +404,7 @@ registry.register(ComponentType.Switch, (component) => {
 
 ### Issue: Black Screen
 
-- Check WebGL support: `webGLSceneManager.capabilities.isWebGL2`
+- Check WebGL support: `webGLController.capabilities.isWebGL2`
 - Verify camera position: `camera.position.set(0, 0, 50)`
 - Add lights to scene: `scene.add(new THREE.AmbientLight(0xffffff, 0.5))`
 
@@ -419,12 +419,12 @@ registry.register(ComponentType.Switch, (component) => {
 - Reduce circuit size (start with <100 components)
 - Simplify component geometries (fewer vertices)
 - Use Level of Detail (LOD) for distant objects
-- Lower `webGLSceneManager.setPixelRatio(1)` on high-DPI displays
+- Lower `webGLController.setPixelRatio(1)` on high-DPI displays
 
 ### Issue: Memory Leaks
 
 - Always call `renderer.dispose()` before removing
-- Call `webGLSceneManager.dispose()` and `controls.dispose()`
+- Call `webGLController.dispose()` and `controls.dispose()`
 - Remove event listeners manually if needed
 
 ## Next Steps

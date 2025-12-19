@@ -31,7 +31,7 @@ export interface IEditingTool {
 
   /**
    * Get current cursor type based on tool state
-   * Used by CircuitSceneManager to update DOM cursor
+   * Used by CircuitController to update DOM cursor
    */
   getCursorType(): CursorType;
 
@@ -83,7 +83,7 @@ onActivate(): void {
   this.bpDragState = null;
 
   // Attach listeners
-  const container = this._sceneManager.getContainer();
+  const container = this._Controller.getContainer();
   container.addEventListener('pointerdown', this.handlePointerDown);
   container.addEventListener('pointerup', this.handlePointerUp);
   container.addEventListener('dblclick', this.handleDblClick);
@@ -118,8 +118,8 @@ onDeactivate(): void {
   // ... other modes
 
   // Remove listeners
-  const container = this._sceneManager.getContainer();
-  this._sceneManager.off('gridPositionMove', this.handleGridPositionMove);
+  const container = this._Controller.getContainer();
+  this._Controller.off('gridPositionMove', this.handleGridPositionMove);
   container.removeEventListener('pointerdown', this.handlePointerDown);
   container.removeEventListener('pointerup', this.handlePointerUp);
   container.removeEventListener('dblclick', this.handleDblClick);
@@ -133,7 +133,7 @@ onDeactivate(): void {
   this.bpDragState = null;
 
   // Safety: re-enable controls
-  this._sceneManager.getControls()!.enablePan = true;
+  this._Controller.getControls()!.enablePan = true;
 }
 ```
 
@@ -152,7 +152,7 @@ onDeactivate(): void {
 **Cursor Logic**:
 ```typescript
 getCursorType(): CursorType {
-  const hoveredElement = this._sceneManager.getHoveredElement();
+  const hoveredElement = this._Controller.getHoveredElement();
 
   // During wire creation
   if (this.mode === 'wire_creation') {
@@ -173,7 +173,7 @@ getCursorType(): CursorType {
     if (hoveredElement.type === 'enode') {
       return 'pointer'; // Can start wire
     }
-    const selection = this._sceneManager.getSelectionManager().getSelection();
+    const selection = this._Controller.getSelectionManager().getSelection();
     if (selection && hoveredElement.id === selection.id) {
       return 'grab'; // Can drag selected element
     }
@@ -255,11 +255,11 @@ handleGridPositionMove(position: THREE.Vector3): void
 - Unregistered on return to idle
 - Fast execution (<5ms for 60fps)
 
-## CircuitSceneManager Integration Contract
+## CircuitController Integration Contract
 
 ### Tool Registration
 ```typescript
-// In CircuitSceneManager constructor or initialization
+// In CircuitController constructor or initialization
 this.tools = new Map<ToolType, IEditingTool>([
   ['build', new BuildTool(this)],
   ['addComponent', new AddComponentTool(this)]
@@ -267,13 +267,13 @@ this.tools = new Map<ToolType, IEditingTool>([
 ```
 
 **Requirements**:
-- BuildTool receives CircuitSceneManager instance in constructor
+- BuildTool receives CircuitController instance in constructor
 - Tool stored in map keyed by ToolType
-- Tool lifecycle managed by CircuitSceneManager (activate/deactivate)
+- Tool lifecycle managed by CircuitController (activate/deactivate)
 
 ### Tool Activation
 ```typescript
-// CircuitSceneManager.setActiveTool()
+// CircuitController.setActiveTool()
 const previousTool = this.activeTool;
 if (previousTool) {
   previousTool.onDeactivate();
@@ -300,7 +300,7 @@ if (nextTool) {
 4. Test cleanup (no memory leaks)
 
 ### Integration Test Requirements
-1. Test tool activation/deactivation via CircuitSceneManager
+1. Test tool activation/deactivation via CircuitController
 2. Test tool switching (build ↔ addComponent)
 3. Test full operation flows (wire creation, drag, etc.)
 4. Test event emission
@@ -319,16 +319,16 @@ if (nextTool) {
 ### Non-Breaking Changes
 - ✅ IEditingTool interface unchanged
 - ✅ Event payloads unchanged (still emit dragStart, dragEnd, etc.)
-- ✅ CircuitSceneManager API unchanged
+- ✅ CircuitController API unchanged
 
 ### Migration Path
 ```typescript
 // Before
-sceneManager.setActiveTool('position'); // Move components
-sceneManager.setActiveTool('wire');     // Create wires
+Controller.setActiveTool('position'); // Move components
+Controller.setActiveTool('wire');     // Create wires
 
 // After
-sceneManager.setActiveTool('build');    // Do both
+Controller.setActiveTool('build');    // Do both
 ```
 
 ## Validation Checklist
@@ -340,7 +340,7 @@ sceneManager.setActiveTool('build');    // Do both
 - [x] `onDeactivate()` removes all event listeners and cleans state
 - [x] `getCursorType()` returns valid CursorType based on state
 - [x] `getPreviewObjects()` returns array of valid Object3D instances
-- [x] Constructor accepts CircuitSceneManager parameter
+- [x] Constructor accepts CircuitController parameter
 - [x] Event handlers follow naming convention (handle*)
 - [x] All state properly typed (no `any`)
 - [x] JSDoc comments on public methods

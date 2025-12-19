@@ -88,7 +88,7 @@ class ENode {
 | P1 | `enode.source` updated to next cycle state |
 | P2 | Visual color updated immediately |
 | P3 | `enodeSourceTypeChanged` event emitted |
-| P4 | Model persisted via CircuitEditionManager |
+| P4 | Model persisted via CircuitWriter |
 
 ## Event Contracts
 
@@ -96,7 +96,7 @@ class ENode {
 
 ```typescript
 // src/scene/shared/types.ts
-interface SceneManagerEventMap {
+interface ControllerEventMap {
   enodeSourceTypeChanged: {
     enodeId: UUID;
     sourceType: string | null;  // 'Voltage' | 'Current' | null
@@ -104,7 +104,7 @@ interface SceneManagerEventMap {
 }
 ```
 
-**Emitted by**: `CircuitEditionManager.saveEditENodeSourceType()`
+**Emitted by**: `CircuitWriter.saveEditENodeSourceType()`
 **Consumers**: External listeners (undo/redo, UI updates)
 
 ## Color Mapping (Existing Constants)
@@ -156,7 +156,7 @@ protected static readonly DEFAULT_PIN_COLOR = 0xb87333; // bronze
 │     └── Returns: next ENodeSourceType | undefined                      │
 │         │                                                               │
 │         ▼                                                               │
-│  4. CircuitEditionManager.saveEditENodeSourceType(enodeId, newType)  │
+│  4. CircuitWriter.saveEditENodeSourceType(enodeId, newType)  │
 │     ├── circuit.updateENodeSourceType(enodeId, newType)                │
 │     └── emit('enodeSourceTypeChanged', { enodeId, sourceType })        │
 │         │                                                               │
