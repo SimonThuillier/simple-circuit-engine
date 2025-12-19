@@ -9,6 +9,7 @@
 import type { Component } from '@/core/Component';
 import type { ComponentType } from '@/core/types/ComponentType';
 import type { ComponentState } from '@/core/simulation/states/ComponentState';
+import { ENodeSourceType } from '@/core/types/ENodeSourceType';
 import * as THREE from 'three';
 import { HitboxLayers } from '../LayerConstants';
 
@@ -110,6 +111,19 @@ export interface IComponentVisualFactory {
    *   (e.g., LED glow, switch contactor rotation)
    */
   updateAnimation(object3D: THREE.Object3D, state: ComponentState): void;
+
+  /**
+   * Update pin source type visual (optional method)
+   *
+   * @param pinGroup - The THREE.Group containing the pin visual
+   * @param sourceType - The new source type (null for no source)
+   *
+   * @remarks
+   * - Optional method for component factories that support pin source type visualization
+   * - Changes pin color based on source type (bronze/red/blue)
+   * - Default implementation in ComponentVisualFactoryBase
+   */
+  updatePinSourceType?(pinGroup: THREE.Object3D, sourceType: ENodeSourceType | null): void;
 }
 
 /**
@@ -382,6 +396,40 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     };
     hitbox.layers.set(HitboxLayers.COMPONENT);
     return hitbox;
+  }
+
+  /**
+   * Updates the visual color of a component pin based on its source type.
+   *
+   * This method changes the pin's material color to reflect the source type:
+   * - null/undefined: bronze (default pin color)
+   * - Voltage: red
+   * - Current: blue
+   *
+   * @param pinGroup - The THREE.Group containing the pin visual (created by createPinGroup)
+   * @param sourceType - The new source type (null for no source)
+   *
+   * @remarks
+   * - Searches for the child mesh with userData.type === 'enode'
+   * - Updates both color and emissive properties for visual consistency
+   * - If sourceType is null/undefined, restores default bronze pin color
+   * - Color scheme matches BranchingPointVisualFactory for consistency
+   */
+  updatePinSourceType(pinGroup: THREE.Object3D, sourceType: ENodeSourceType | null): void {
+    const visual = pinGroup.children.find(
+      (child) => child.userData.type === 'enode'
+    ) as THREE.Mesh | undefined;
+
+    if (!visual || !(visual.material instanceof THREE.MeshStandardMaterial)) {
+      return;
+    }
+
+    const color = sourceType
+      ? (sourceType === ENodeSourceType.Voltage ? 0xff0000 : 0x0000ff)
+      : ComponentVisualFactoryBase.DEFAULT_PIN_COLOR;
+
+    visual.material.color.setHex(color);
+    visual.material.emissive.setHex(color);
   }
 }
 

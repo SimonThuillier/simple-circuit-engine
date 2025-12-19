@@ -113,6 +113,15 @@
         background-color: #45a049;
       }
 
+      #serialize-btn {
+        background-color: #2196f3;
+        color: white;
+      }
+
+      #serialize-btn:hover {
+        background-color: #0b7dda;
+      }
+
       #clear-btn {
         background-color: #f44336;
         color: white;
@@ -430,6 +439,7 @@
 
           <div class="button-group">
             <button id="visualize-btn">Render Circuit</button>
+            <button id="serialize-btn">Serialize Circuit</button>
             <button id="clear-btn">Clear</button>
           </div>
         </div>
@@ -577,6 +587,31 @@
           } else {
             errorMessage.textContent = `❌ Error: ${error.message}`;
           }
+          errorDisplay.classList.remove('hidden');
+          resizeRenderer();
+        }
+      });
+
+      document.getElementById('serialize-btn').addEventListener('click', () => {
+        const errorDisplay = document.getElementById('error-display');
+        const errorMessage = document.getElementById('error-message');
+        const circuit = sceneManager.getCircuit();
+
+        if (!circuit) {
+          errorMessage.textContent = 'No circuit loaded. Please render a circuit first.';
+          errorDisplay.classList.remove('hidden');
+          resizeRenderer();
+          return;
+        }
+
+        try {
+          const circuitJSON = circuit.toJSON();
+          const formattedJSON = JSON.stringify(circuitJSON, null, 2);
+          document.getElementById('circuit-input').value = formattedJSON;
+          errorDisplay.classList.add('hidden');
+          resizeRenderer();
+        } catch (error) {
+          errorMessage.textContent = `❌ Serialization Error: ${error.message}`;
           errorDisplay.classList.remove('hidden');
           resizeRenderer();
         }

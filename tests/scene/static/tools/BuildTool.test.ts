@@ -1193,4 +1193,138 @@ describe('BuildTool', () => {
       });
     });
   });
+
+  // ============================================================================
+  // USER STORY: Ctrl+Click Source Type Cycling (Feature 012)
+  // ============================================================================
+
+  describe('US1: Ctrl+Click Source Type Cycling on Branching Points', () => {
+    describe.skip('Ctrl+click cycles branching point null → Voltage', () => {
+      it('should update sourceType to Voltage when Ctrl+clicking branching point with no source', () => {
+        expect(true).toBe(false); // TDD: Implement this test
+      });
+
+      it('should update visual cone color to red when sourceType becomes Voltage', () => {
+        expect(true).toBe(false); // TDD: Implement this test
+      });
+
+      it('should emit enodeSourceTypeChanged event with Voltage', () => {
+        expect(true).toBe(false); // TDD: Implement this test
+      });
+    });
+
+    describe.skip('Ctrl+click cycles branching point Voltage → Current', () => {
+      it('should update sourceType to Current when Ctrl+clicking branching point with Voltage source', () => {
+        expect(true).toBe(false); // TDD: Implement this test
+      });
+
+      it('should update visual cone color to blue when sourceType becomes Current', () => {
+        expect(true).toBe(false); // TDD: Implement this test
+      });
+
+      it('should emit enodeSourceTypeChanged event with Current', () => {
+        expect(true).toBe(false); // TDD: Implement this test
+      });
+    });
+
+    describe.skip('Ctrl+click cycles branching point Current → null', () => {
+      it('should update sourceType to null/undefined when Ctrl+clicking branching point with Current source', () => {
+        expect(true).toBe(false); // TDD: Implement this test
+      });
+
+      it('should update visual cone color to white when sourceType becomes null', () => {
+        expect(true).toBe(false); // TDD: Implement this test
+      });
+
+      it('should emit enodeSourceTypeChanged event with null', () => {
+        expect(true).toBe(false); // TDD: Implement this test
+      });
+    });
+
+    describe.skip('Regular click (no Ctrl) preserves sourceType', () => {
+      it('should not cycle sourceType when clicking without Ctrl key', () => {
+        expect(true).toBe(false); // TDD: Implement this test
+      });
+
+      it('should initiate wire creation when clicking enode without Ctrl', () => {
+        expect(true).toBe(false); // TDD: Implement this test
+      });
+
+      it('should preserve existing sourceType after regular click', () => {
+        expect(true).toBe(false); // TDD: Implement this test
+      });
+    });
+
+    describe.skip('Ctrl+click during active wire creation is ignored', () => {
+      it('should ignore Ctrl+click on enode when in wire_creation mode', () => {
+        expect(true).toBe(false); // TDD: Implement this test
+      });
+
+      it('should continue wire creation operation after ignored Ctrl+click', () => {
+        expect(true).toBe(false); // TDD: Implement this test
+      });
+
+      it('should not change sourceType during active wire creation', () => {
+        expect(true).toBe(false); // TDD: Implement this test
+      });
+    });
+  });
+
+  describe('US2: Ctrl+Click Source Type Cycling on Component Pins', () => {
+    describe.skip('Ctrl+click cycles component pin null → Voltage', () => {
+      it('should update sourceType to Voltage when Ctrl+clicking pin with no source', () => {
+        expect(true).toBe(false); // TDD: Implement this test with proper setup
+      });
+
+      it('should update visual pin color to red when sourceType becomes Voltage', () => {
+        expect(true).toBe(false); // TDD: Implement this test
+      });
+
+      it('should emit enodeSourceTypeChanged event with Voltage', () => {
+        expect(true).toBe(false); // TDD: Implement this test
+      });
+    });
+
+    describe.skip('Ctrl+click cycles component pin Voltage → Current', () => {
+      it('should update sourceType to Current when Ctrl+clicking pin with Voltage source', () => {
+        expect(true).toBe(false); // TDD: Implement this test
+      });
+
+      it('should update visual pin color to blue when sourceType becomes Current', () => {
+        expect(true).toBe(false); // TDD: Implement this test
+      });
+
+      it('should emit enodeSourceTypeChanged event with Current', () => {
+        expect(true).toBe(false); // TDD: Implement this test
+      });
+    });
+
+    describe.skip('Ctrl+click cycles component pin Current → null', () => {
+      it('should update sourceType to null/undefined when Ctrl+clicking pin with Current source', () => {
+        expect(true).toBe(false); // TDD: Implement this test
+      });
+
+      it('should update visual pin color to bronze when sourceType becomes null', () => {
+        expect(true).toBe(false); // TDD: Implement this test
+      });
+
+      it('should emit enodeSourceTypeChanged event with null', () => {
+        expect(true).toBe(false); // TDD: Implement this test
+      });
+    });
+
+    describe.skip('Regular click (no Ctrl) on pin preserves sourceType', () => {
+      it('should not cycle sourceType when clicking pin without Ctrl key', () => {
+        expect(true).toBe(false); // TDD: Implement this test
+      });
+
+      it('should initiate wire creation when clicking pin without Ctrl', () => {
+        expect(true).toBe(false); // TDD: Implement this test
+      });
+
+      it('should preserve existing sourceType after regular click', () => {
+        expect(true).toBe(false); // TDD: Implement this test
+      });
+    });
+  });
 });

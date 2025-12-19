@@ -23,6 +23,8 @@ import type {
 } from '../../shared/types';
 import type { CircuitSceneManager } from '../CircuitSceneManager';
 import type { UUID } from '../../../core/types/Identifier';
+import { ENodeSourceType } from '../../../core/types/ENodeSourceType';
+import { ENodeType } from '../../../core/types/ENodeType';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import {
   gridToWorldRotation,
@@ -157,6 +159,19 @@ interface ClipboardData {
    * Rotation of component to paste
    */
   rotation: Euler;
+}
+
+/**
+ * Returns the next sourceType in the cycle: null → Voltage → Current → null
+ * @param current - Current source type
+ * @returns Next source type in the cycle
+ */
+function getNextSourceType(
+  current: ENodeSourceType | undefined
+): ENodeSourceType | undefined {
+  if (!current) return ENodeSourceType.Voltage;
+  if (current === ENodeSourceType.Voltage) return ENodeSourceType.Current;
+  return undefined; // Current → null
 }
 
 /**
@@ -336,6 +351,12 @@ export class BuildTool implements IEditingTool {
     const hoveredElement = this._sceneManager.getHoveredElement();
 
     if (this.mode === 'idle') {
+      // Handle Ctrl+click for sourceType cycling
+      if ((event.ctrlKey || event.metaKey) && hoveredElement && hoveredElement.type === 'enode') {
+        this.cycleEnodeSourceType(hoveredElement.id);
+        return; // Early exit - don't start wire creation
+      }
+
       if (hoveredElement && hoveredElement.type === 'enode') {
         const enodeId = hoveredElement.id;
         // special priority 0 : if a wire creation was just cancelled, and we click again on the same enode within 500ms, we start dragging the branching point instead of starting a new wire creation
@@ -1393,5 +1414,64 @@ export class BuildTool implements IEditingTool {
       worldPosition,
       this.clipboard.rotation
     );
+  }
+
+  /**
+   * Cycles the sourceType of an enode: null → Voltage → Current → null
+   * Updates both model and visual immediately.
+   * @param enodeId - UUID of the enode to cycle
+   */
+  private cycleEnodeSourceType(enodeId: UUID): void {
+    const circuit = this._sceneManager.getCircuit();
+    if (!circuit) return;
+
+    const enode = circuit.getENode(enodeId);
+    if (!enode) return;
+
+    const nextSourceType = getNextSourceType(enode.source);
+
+    // Persist change and emit event
+    this._sceneManager
+      .getCircuitEditionManager()
+      .saveENodeSourceTypeAction(enodeId, nextSourceType ?? null);
+
+    // Update visual
+    this.updateEnodeVisual(enodeId, enode.type, nextSourceType);
+  }
+
+  /**
+   * Updates the visual representation of an enode based on its source type.
+   * @param enodeId - UUID of the enode
+   * @param enodeType - Type of the enode (BranchingPoint or Pin)
+   * @param sourceType - New source type (null for no source)
+   */
+  private updateEnodeVisual(
+    enodeId: UUID,
+    enodeType: ENodeType,
+    sourceType: ENodeSourceType | undefined
+  ): void {
+    const object3D = this._sceneManager.getEnodeObject3Ds().get(enodeId);
+    if (!object3D) return;
+
+    if (enodeType === ENodeType.BranchingPoint) {
+      this._sceneManager
+        .getBranchingPointVisualFactory()
+        .updateSourceType(object3D, sourceType ?? null);
+    } else {
+      // Component pin - get the component factory to update pin color
+      const circuit = this._sceneManager.getCircuit();
+      if (!circuit) return;
+
+      const enode = circuit.getENode(enodeId);
+      if (!enode || !enode.component) return;
+
+      const component = circuit.getComponent(enode.component);
+      if (!component) return;
+
+      const factory = this._sceneManager.getFactoryRegistry().get(component.type);
+      if ('updatePinSourceType' in factory) {
+        factory.updatePinSourceType(object3D, sourceType ?? null);
+      }
+    }
   }
 }
