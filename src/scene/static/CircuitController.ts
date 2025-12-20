@@ -693,6 +693,25 @@ export class CircuitController extends AbstractCircuitController {
     this._removeWireObject3D(wireId);
   }
 
+  /**
+   * Automatically adjust the circuit grid size and divisions based on positions of all core circuit elements.
+   */
+  autoAdjustCircuitGridSize() {
+    this._checkInitialized();
+    if (!this._circuit) return;
+    if(this.circuitWriter.saveAutoAdjustCircuitSize()){
+      // Update halfSize
+      this._gridHalfSize = Math.ceil(this._circuit.metadata.size / 2);
+      // Update grid helper
+      if (this._grid) {
+        this._scene!.remove(this._grid);
+        this._grid.geometry.dispose();
+      }
+      this._grid = createGridHelper(this._circuit.metadata.size, this._circuit.metadata.divisions);
+      this._scene!.add(this._grid);
+    }
+  }
+
   private _removeWireObject3D(id: string): void {
     if (this.wireObject3Ds.has(id)) {
       // Use WireVisualManager to remove wire (handles all disposal and delete from map)

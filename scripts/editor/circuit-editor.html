@@ -524,6 +524,9 @@
       circuitController.on('circuitElementAction', (e) => {
         console.log('circuitElementAction', e);
       });
+      circuitController.on('circuitMetadataEdition', (e) => {
+        console.log('circuitMetadataEdition', e);
+      });
       circuitController.on('toolOperationStarted', (e) => {
         console.log('toolOperationStarted', e);
       });

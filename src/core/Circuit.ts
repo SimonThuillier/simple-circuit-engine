@@ -938,6 +938,30 @@ export class Circuit {
   }
 
   /**
+   * iterate through all components, enodes and wires positions to get the size that allows to enclose all elements.
+   * @param margin - optional margin to add to the size
+   * @returns size that allows to enclose all elements plus margin
+   */
+  getEnclosingSize(margin:number =0): number{
+    let maxPos = 0;
+    for (const component of this.components.values()) {
+      maxPos = Math.max(maxPos, Math.abs(component.position.x), Math.abs(component.position.y));
+    }
+    for (const enode of this.enodes.values()) {
+      if (enode.type === ENodeType.Pin) continue; // handled with components
+      const pos = enode.position;
+      if (!pos) continue;
+      maxPos = Math.max(maxPos, Math.abs(pos.x), Math.abs(pos.y));
+    }
+    for (const wire of this.wires.values()) {
+      for (const pos of wire.intermediatePositions) {
+        maxPos = Math.max(maxPos, Math.abs(pos.x), Math.abs(pos.y));
+      }
+    }
+    return Math.ceil(maxPos*2 + Math.max(margin, 0));
+  }
+
+  /**
    * Serialize circuit to JSON.
    *
    * @returns JSON-serializable object containing all components, enodes, and wires
