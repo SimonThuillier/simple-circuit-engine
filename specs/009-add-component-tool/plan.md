@@ -16,7 +16,7 @@ Implement the AddComponentTool to enable circuit designers to place components o
 **Target Platform**: Modern browsers (ES2022+)
 **Project Type**: Single library project
 **Performance Goals**: Ghost preview updates at 30+ fps, component placement < 100ms
-**Constraints**: Must follow IEditingTool interface pattern, integrate with existing CircuitSceneManager and CircuitEditionManager
+**Constraints**: Must follow IEditingTool interface pattern, integrate with existing CircuitController and CircuitWriter
 
 ## Constitution Check
 
@@ -25,16 +25,16 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 | Principle | Status | Notes |
 |-----------|--------|-------|
 | Framework Agnosticism | PASS | Tool is pure TypeScript, no UI framework dependencies |
-| Modular Separation | PASS | Tool lives in `scene/static/tools/`, uses core Circuit via CircuitSceneManager |
+| Modular Separation | PASS | Tool lives in `scene/static/tools/`, uses core Circuit via CircuitController |
 | Module Import Rules | PASS | Tool imports only from core/ and three, not from playback/ |
 | No `any` types | PASS | Will use strict typing throughout |
 | Public APIs have JSDoc | PASS | Will document all public methods |
-| Event-based communication | PASS | Uses existing SceneManagerEvent system (toolOperationCompleted, etc.) |
+| Event-based communication | PASS | Uses existing ControllerEvent system (toolOperationCompleted, etc.) |
 
 **Post-Phase 1 Re-check**: All gates still PASS. Design artifacts (data-model.md, quickstart.md) confirm:
 - No framework dependencies introduced
-- All new methods follow existing patterns (CircuitEditionManager, CircuitSceneManager)
-- Events use established SceneManagerEventMap types
+- All new methods follow existing patterns (CircuitWriter, CircuitController)
+- Events use established ControllerEventMap types
 - Data model uses existing core types (Position, Rotation, ComponentType)
 
 ## Project Structure
@@ -59,8 +59,8 @@ src/
 │   ├── static/
 │   │   ├── tools/
 │   │   │   └── AddComponentTool.ts    # Main tool implementation (UPDATE)
-│   │   ├── CircuitSceneManager.ts     # Add addComponent() method (UPDATE)
-│   │   └── CircuitEditionManager.ts   # Add saveAddComponent() method (UPDATE)
+│   │   ├── CircuitController.ts     # Add addComponent() method (UPDATE)
+│   │   └── CircuitWriter.ts   # Add saveAddComponent() method (UPDATE)
 │   └── shared/
 │       ├── FactoryRegistry.ts         # Already exists (READ ONLY)
 │       ├── types.ts                   # May need updates for new events (UPDATE)

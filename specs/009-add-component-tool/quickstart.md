@@ -18,14 +18,14 @@ The Add Component Tool enables placing circuit components on the canvas. It prov
 ### Activating the Tool
 
 ```typescript
-// Get the scene manager instance
-const sceneManager: CircuitSceneManager = /* your instance */;
+// Get the scene controllerType instance
+const Controller: CircuitController = /* your instance */;
 
 // Activate the add component tool
-sceneManager.setActiveTool('addComponent');
+Controller.setActiveTool('addComponent');
 
 // Listen for tool activation
-sceneManager.on('toolActivated', (event) => {
+Controller.on('toolActivated', (event) => {
   if (event.toolType === 'addComponent') {
     // Tool is now active, show component type selector UI
   }
@@ -36,11 +36,11 @@ sceneManager.on('toolActivated', (event) => {
 
 ```typescript
 // Get available component types from FactoryRegistry
-const registry = sceneManager.getFactoryRegistry();
+const registry = Controller.getFactoryRegistry();
 const availableTypes: ComponentType[] = registry.getRegisteredTypes();
 
 // Set the component type to place
-const tool = sceneManager.getActiveTool() as AddComponentTool;
+const tool = Controller.getActiveTool() as AddComponentTool;
 tool.setComponentType(ComponentType.Battery);
 ```
 
@@ -54,7 +54,7 @@ Once the tool is active with a component type selected:
 
 ```typescript
 // Listen for component placement
-sceneManager.on('toolOperationCompleted', (event) => {
+Controller.on('toolOperationCompleted', (event) => {
   if (event.toolType === 'addComponent') {
     const { componentId, position, componentType } = event.operationData;
     console.log(`Placed ${componentType} at (${position.x}, ${position.y})`);
@@ -66,7 +66,7 @@ sceneManager.on('toolOperationCompleted', (event) => {
 
 ```typescript
 // Listen for validation errors
-sceneManager.on('toolValidationError', (event) => {
+Controller.on('toolValidationError', (event) => {
   if (event.toolType === 'addComponent') {
     // Show error to user
     showNotification(event.errorMessage);
@@ -81,7 +81,7 @@ sceneManager.on('toolValidationError', (event) => {
 // - Click on existing component to select it
 // - Press Delete or Backspace to remove selected component
 
-sceneManager.on('toolOperationCompleted', (event) => {
+Controller.on('toolOperationCompleted', (event) => {
   if (event.toolType === 'addComponent' && event.operationData.action === 'delete') {
     console.log(`Deleted component ${event.operationData.componentId}`);
   }
@@ -91,37 +91,37 @@ sceneManager.on('toolOperationCompleted', (event) => {
 ## Integration Example
 
 ```typescript
-import { CircuitSceneManager } from 'simple-circuit-engine/scene';
+import { CircuitController } from 'simple-circuit-engine/scene';
 import { ComponentType } from 'simple-circuit-engine/core';
 
-// Initialize scene manager
+// Initialize scene controllerType
 const container = document.getElementById('circuit-canvas');
-const sceneManager = new CircuitSceneManager();
-await sceneManager.initialize(container, circuit);
+const Controller = new CircuitController();
+await Controller.initialize(container, circuit);
 
 // Create component type selector UI
 const typeSelector = document.getElementById('component-types');
-const registry = sceneManager.getFactoryRegistry();
+const registry = Controller.getFactoryRegistry();
 
 registry.getRegisteredTypes().forEach(type => {
   const button = document.createElement('button');
   button.textContent = type;
   button.onclick = () => {
-    sceneManager.setActiveTool('addComponent');
-    const tool = sceneManager.getActiveTool() as AddComponentTool;
+    Controller.setActiveTool('addComponent');
+    const tool = Controller.getActiveTool() as AddComponentTool;
     tool.setComponentType(type);
   };
   typeSelector.appendChild(button);
 });
 
 // Handle events
-sceneManager.on('toolOperationCompleted', (event) => {
+Controller.on('toolOperationCompleted', (event) => {
   if (event.toolType === 'addComponent') {
     console.log('Component operation:', event.operationData);
   }
 });
 
-sceneManager.on('toolValidationError', (event) => {
+Controller.on('toolValidationError', (event) => {
   alert(event.errorMessage);
 });
 ```
@@ -180,10 +180,10 @@ class AddComponentTool implements IEditingTool {
 }
 ```
 
-### New CircuitSceneManager Methods
+### New CircuitController Methods
 
 ```typescript
-class CircuitSceneManager {
+class CircuitController {
   /** Add a component to the circuit and scene */
   addComponent(
     type: ComponentType,

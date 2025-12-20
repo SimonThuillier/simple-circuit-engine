@@ -216,7 +216,7 @@ for (const wireId of affectedWireIds) {
 
 **Rationale**:
 - Follows existing pattern (ToolType = 'build' | 'addComponent')
-- Enables tool registration in CircuitSceneManager
+- Enables tool registration in CircuitController
 - Minimal change to existing code
 
 **Implementation**:
@@ -241,15 +241,15 @@ export type ToolType = 'build' | 'addComponent' | 'multiSelect';
 function bulkDelete(selection: MultiSelectionData): void {
   // 1. Delete selected wires
   for (const wireId of selection.wires?.keys() ?? []) {
-    sceneManager.removeWire(wireId);
+    Controller.removeWire(wireId);
   }
   // 2. Delete selected components (cascades to connected wires)
   for (const componentId of selection.components?.keys() ?? []) {
-    sceneManager.removeComponent(componentId);
+    Controller.removeComponent(componentId);
   }
   // 3. Delete selected branching points
   for (const enodeId of selection.enodes?.keys() ?? []) {
-    sceneManager.removeBranchingPoint(enodeId);
+    Controller.removeBranchingPoint(enodeId);
   }
 }
 ```

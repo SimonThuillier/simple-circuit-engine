@@ -1,30 +1,30 @@
 /**
- * Static Circuit SceneManager Contract
- * @module scene/contracts/CircuitSceneManager
+ * Static Circuit Controller Contract
+ * @module scene/contracts/CircuitController
  *
  * Updated 2025-12-04: Circuit provided via setCircuit() after initialization, not in constructor.
- * SceneManager can be reused for multiple circuits without re-initialization.
+ * Controller can be reused for multiple circuits without re-initialization.
  */
 
 import type { Circuit } from '@/core/Circuit';
 import type { IFactoryRegistry } from './ComponentVisualFactory';
 import type {
-  SceneManagerEvent,
-  SceneManagerCallback,
+  ControllerEvent,
+  ControllerCallback,
   ChangedData,
-  SceneManagerOptions,
+  ControllerOptions,
   ToolType,
 } from './types';
 import type * as THREE from 'three';
 
 /**
- * SceneManager for circuit topology visualization and editing
+ * Controller for circuit topology visualization and editing
  *
  * Manages a THREE.js Scene to visualize circuit topology in a non-simulated state, supporting view manipulation
  * and editing interactions via integrated tool system. Operates on Circuit instances provided via setCircuit().
  *
  * **Lifecycle**:
- * 1. Construct with FactoryRegistry only: `new CircuitSceneManager(factoryRegistry)`
+ * 1. Construct with FactoryRegistry only: `new CircuitController(factoryRegistry)`
  * 2. Call initialize(container) to setup Three.js scene and camera
  * 3. Set circuit: `setCircuit(circuit)` - can be called multiple times to switch circuits
  * 4. Call update() when circuit topology changes
@@ -36,7 +36,7 @@ import type * as THREE from 'three';
  * - 'hover'/'unhover': User hovers over circuit elements
  * - 'position'/'deselect': User selects circuit elements
  * - 'error': scene management errors occurred
- * - 'ready': SceneManager initialization complete
+ * - 'ready': Controller initialization complete
  * - Tool system events: 'toolActivated', 'toolDeactivated', 'toolOperationCompleted', etc.
  *
  * **Tool System** (FR-025 to FR-037):
@@ -50,46 +50,46 @@ import type * as THREE from 'three';
  *
  * **Rendering Orchestration**:
  * Consumer owns the WebGLRenderer instance and animation loop.
- * SceneManager only manages Scene and Camera. Consumer calls:
- * `webGLRenderer.render(sceneManager.getScene(), sceneManager.getCamera())`
+ * Controller only manages Scene and Camera. Consumer calls:
+ * `webGLRenderer.render(Controller.getScene(), Controller.getCamera())`
  *
  * @example
  * ```typescript
  * const registry = new FactoryRegistry(defaultFactory);
- * const sceneManager = new CircuitSceneManager(registry);
+ * const Controller = new CircuitController(registry);
  *
- * sceneManager.on('ready', () => console.log('SceneManager ready'));
- * sceneManager.on('position', ({ objectId, objectType }) => {
+ * Controller.on('ready', () => console.log('Controller ready'));
+ * Controller.on('position', ({ objectId, objectType }) => {
  *   console.log(`Selected ${objectType}: ${objectId}`);
  * });
  *
- * sceneManager.initialize(containerElement);
- * sceneManager.setCircuit(circuit);  // Set circuit AFTER initialization
+ * Controller.initialize(containerElement);
+ * Controller.setCircuit(circuit);  // Set circuit AFTER initialization
  *
  * // Consumer creates and owns WebGLRenderer
  * const webglRenderer = new THREE.WebGLRenderer();
  * document.body.appendChild(webglRenderer.domElement);
  *
  * // Enable editing
- * sceneManager.setEditMode(true);
- * sceneManager.setActiveTool('addComponent');
+ * Controller.setEditMode(true);
+ * Controller.setActiveTool('addComponent');
  *
  * // Consumer handles DOM events
  * canvas.addEventListener('click', (e) => {
  *   const worldPos = screenToWorld(e.clientX, e.clientY);
- *   sceneManager.handleToolClick(worldPos);
+ *   Controller.handleToolClick(worldPos);
  * });
  *
  * // Consumer's animation loop
  * function animate() {
- *   sceneManager.render();  // Updates scene state
- *   webglRenderer.render(sceneManager.getScene(), sceneManager.getCamera());
+ *   Controller.render();  // Updates scene state
+ *   webglRenderer.render(Controller.getScene(), Controller.getCamera());
  *   requestAnimationFrame(animate);
  * }
  * animate();
  * ```
  */
-export interface ICircuitSceneManager {
+export interface ICircuitController {
   /**
    * The circuit topology being visualized (readonly)
    */
@@ -101,14 +101,14 @@ export interface ICircuitSceneManager {
   readonly factoryRegistry: IFactoryRegistry;
 
   /**
-   * Initialize the scene manager with a DOM container
+   * Initialize the scene controllerType with a DOM container
    *
    * Creates Three.js Scene, Camera, and lights. Does NOT create circuit visuals yet.
    * Call setCircuit() after initialization to load and visualize a circuit.
    * Emits 'ready' event when complete.
    *
    * @param container - HTMLElement for container reference
-   * @param options - Optional scene manager configuration (camera settings, etc.)
+   * @param options - Optional scene controllerType configuration (camera settings, etc.)
    * @throws {Error} If already initialized
    * @throws {TypeError} If container is not a valid HTMLElement
    * @throws {Error} If initialization fails (emits 'error' event with details)
@@ -116,9 +116,9 @@ export interface ICircuitSceneManager {
    * @remarks
    * The container is stored for reference but rendering is performed by consumer's WebGLRenderer.
    * Use getScene() and getCamera() to access scene/camera for rendering.
-   * SceneManager can be initialized once and reused for multiple circuits via setCircuit().
+   * Controller can be initialized once and reused for multiple circuits via setCircuit().
    */
-  initialize(container: HTMLElement, options?: SceneManagerOptions): void;
+  initialize(container: HTMLElement, options?: ControllerOptions): void;
 
   /**
    * Set or change the circuit to visualize
@@ -130,15 +130,15 @@ export interface ICircuitSceneManager {
    * @throws {Error} If not initialized
    *
    * @remarks
-   * Enables scene manager reusability - can switch between circuits without re-initialization.
+   * Enables scene controllerType reusability - can switch between circuits without re-initialization.
    * Automatically calls internal update() to create all visual elements.
    *
    * @example
    * ```typescript
-   * sceneManager.setCircuit(circuit1);  // Load first circuit
+   * Controller.setCircuit(circuit1);  // Load first circuit
    * // ... work with circuit1 ...
-   * sceneManager.setCircuit(circuit2);  // Switch to different circuit
-   * sceneManager.setCircuit(null);      // Clear all visuals
+   * Controller.setCircuit(circuit2);  // Switch to different circuit
+   * Controller.setCircuit(null);      // Clear all visuals
    * ```
    */
   setCircuit(circuit: Circuit | null): void;
@@ -146,8 +146,8 @@ export interface ICircuitSceneManager {
   /**
    * Clear all circuit visuals from the scene
    *
-   * Removes all visual objects but does not dispose the scene manager.
-   * SceneManager can be reused by calling setCircuit() with a new circuit.
+   * Removes all visual objects but does not dispose the scene controllerType.
+   * Controller can be reused by calling setCircuit() with a new circuit.
    *
    * @throws {Error} If not initialized
    *
@@ -193,14 +193,14 @@ export interface ICircuitSceneManager {
    * Render one frame (called by external animation loop)
    *
    * Updates visual state, camera, and prepares scene for rendering.
-   * Does NOT perform actual WebGL rendering (consumer calls webGLSceneManager.render()).
+   * Does NOT perform actual WebGL rendering (consumer calls webGLController.render()).
    *
    * @throws {Error} If not initialized
    * @throws {Error} If render fails (emits 'error' event with details)
    *
    * @remarks
    * This method should be called every frame from the consumer's animation loop.
-   * The actual rendering to canvas is performed by consumer's WebGLSceneManager.
+   * The actual rendering to canvas is performed by consumer's WebGLController.
    */
   render(): void;
 
@@ -237,7 +237,7 @@ export interface ICircuitSceneManager {
    * });
    * ```
    */
-  on<E extends SceneManagerEvent>(event: E, callback: SceneManagerCallback): void;
+  on<E extends ControllerEvent>(event: E, callback: ControllerCallback): void;
 
   /**
    * Unregister an event callback
@@ -248,7 +248,7 @@ export interface ICircuitSceneManager {
    * @remarks
    * If callback was registered multiple times, only removes one registration.
    */
-  off<E extends SceneManagerEvent>(event: E, callback: SceneManagerCallback): void;
+  off<E extends ControllerEvent>(event: E, callback: ControllerCallback): void;
 
   /**
    * Get the Three.js scene for rendering
@@ -259,7 +259,7 @@ export interface ICircuitSceneManager {
    * @remarks
    * Consumer uses this to access the scene for rendering:
    * ```typescript
-   * webglRenderer.render(sceneManager.getScene(), sceneManager.getCamera());
+   * webglRenderer.render(Controller.getScene(), Controller.getCamera());
    * ```
    */
   getScene(): THREE.Scene;
@@ -272,17 +272,17 @@ export interface ICircuitSceneManager {
    *
    * @remarks
    * Consumer uses this to:
-   * - Render the scene: `webglRenderer.render(scene, sceneManager.getCamera())`
+   * - Render the scene: `webglRenderer.render(scene, Controller.getCamera())`
    * - Manipulate camera: Set up OrbitControls, change position, etc.
    *
    * @example
    * ```typescript
-   * const camera = sceneManager.getCamera();
+   * const camera = Controller.getCamera();
    * camera.position.set(0, 10, 20);
    * camera.lookAt(0, 0, 0);
    *
    * // Or use with OrbitControls
-   * const controls = new OrbitControls(sceneManager.getCamera(), canvas);
+   * const controls = new OrbitControls(Controller.getCamera(), canvas);
    * ```
    */
   getCamera(): THREE.PerspectiveCamera;

@@ -244,18 +244,18 @@ interface BPDragState {
 
 ## Entity Relationships
 
-### BuildTool → CircuitSceneManager
+### BuildTool → CircuitController
 
 ```typescript
 class BuildTool {
-  private _sceneManager: CircuitSceneManager;
+  private _Controller: CircuitController;
 
-  // BuildTool uses CircuitSceneManager for:
+  // BuildTool uses CircuitController for:
   // - Getting Circuit model
   // - Getting Object3D references
   // - Accessing SelectionManager
   // - Accessing WireVisualManager
-  // - Accessing CircuitEditionManager
+  // - Accessing CircuitWriter
   // - Accessing MapControls (enable/disable pan)
   // - Emitting events
   // - Getting hover state
@@ -266,29 +266,29 @@ class BuildTool {
 
 ```typescript
 // Read selection to determine drag eligibility
-const selection = this._sceneManager.getSelectionManager().getSelection();
+const selection = this._Controller.getSelectionManager().getSelection();
 
 // Modify selection after actions
-this._sceneManager.getSelectionManager().selectOne('wire', wireId);
-this._sceneManager.getSelectionManager().deselect();
+this._Controller.getSelectionManager().selectOne('wire', wireId);
+this._Controller.getSelectionManager().deselect();
 ```
 
 ### BuildTool → Circuit Model
 
 ```typescript
 // Read operations
-const circuit = this._sceneManager.getCircuit();
+const circuit = this._Controller.getCircuit();
 const wire = circuit.getWire(wireId);
 const enode = circuit.getENode(enodeId);
 const component = circuit.getComponent(componentId);
 
-// Write operations (via CircuitEditionManager)
-this._sceneManager.addWire(sourceId, targetId);
-this._sceneManager.removeWire(wireId);
-this._sceneManager.removeComponent(componentId);
-this._sceneManager.removeBranchingPoint(enodeId);
-this._sceneManager.splitWire(wireId, position);
-this._sceneManager.addBranchingPoint(position);
+// Write operations (via CircuitWriter)
+this._Controller.addWire(sourceId, targetId);
+this._Controller.removeWire(wireId);
+this._Controller.removeComponent(componentId);
+this._Controller.removeBranchingPoint(enodeId);
+this._Controller.splitWire(wireId, position);
+this._Controller.addBranchingPoint(position);
 
 // Update operations
 circuit.updateWireIntermediatePositions(wireId, positions, persist);
@@ -299,23 +299,23 @@ circuit.simplifyWireIntermediatePositions(wireId);
 
 ```typescript
 // Get Object3D references
-const object = this._sceneManager.getObject3D('component', id);
-const enodeGroup = this._sceneManager.getEnodeObject3Ds().get(enodeId);
+const object = this._Controller.getObject3D('component', id);
+const enodeGroup = this._Controller.getEnodeObject3Ds().get(enodeId);
 
 // Update wire visuals
-this._sceneManager.getWireVisualManager().updateWireById(wireId);
-this._sceneManager.getWireVisualManager().updateWiresForComponent(componentId);
-this._sceneManager.getWireVisualManager().refreshWireGeometry(wireId);
+this._Controller.getWireVisualManager().updateWireById(wireId);
+this._Controller.getWireVisualManager().updateWiresForComponent(componentId);
+this._Controller.getWireVisualManager().refreshWireGeometry(wireId);
 
 // Wire preview operations
-const previewWire = this._sceneManager.getWireVisualManager().createPreviewWire(startPos);
-this._sceneManager.getWireVisualManager().updatePreviewWire(endPos);
-this._sceneManager.getWireVisualManager().removePreviewWire();
+const previewWire = this._Controller.getWireVisualManager().createPreviewWire(startPos);
+this._Controller.getWireVisualManager().updatePreviewWire(endPos);
+this._Controller.getWireVisualManager().removePreviewWire();
 
 // Wire point operations
-const nearestPoint = this._sceneManager.getWireVisualManager()
+const nearestPoint = this._Controller.getWireVisualManager()
   .findNearestIntermediatePoint(wireId, screenPos);
-const insertIndex = this._sceneManager.getWireVisualManager()
+const insertIndex = this._Controller.getWireVisualManager()
   .getInsertIndexForPosition(wireId, worldPos);
 ```
 
@@ -480,7 +480,7 @@ interface BPDragState {
 class BuildTool implements IEditingTool {
   readonly type: ToolType = 'build';
 
-  private _sceneManager: CircuitSceneManager;
+  private _Controller: CircuitController;
   private mode: BuildToolMode = 'idle';
   private lastCancelledOpTs: number = 0;
 
@@ -544,4 +544,4 @@ class BuildTool implements IEditingTool {
 
 ## Persistence Notes
 
-**BuildTool does not introduce new persistence requirements**. All circuit modifications use existing CircuitEditionManager methods that handle model persistence. BuildTool is stateless between sessions - all state is runtime-only and cleaned up on deactivation.
+**BuildTool does not introduce new persistence requirements**. All circuit modifications use existing CircuitWriter methods that handle model persistence. BuildTool is stateless between sessions - all state is runtime-only and cleaned up on deactivation.

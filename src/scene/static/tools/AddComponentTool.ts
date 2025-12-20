@@ -12,7 +12,7 @@
 import * as THREE from 'three';
 import { Euler } from 'three';
 import type { IEditingTool, ToolType, CursorType } from '../../shared/types';
-import type { CircuitSceneManager } from '../CircuitSceneManager';
+import type { CircuitController } from '../CircuitController';
 import type { ComponentType } from '../../../core/types/ComponentType';
 import { Component } from '../../../core/Component';
 import { Position } from '../../../core/types/Position';
@@ -25,7 +25,7 @@ import { Rotation } from '../../../core/types/Rotation';
 export class AddComponentTool implements IEditingTool {
   readonly type: ToolType = 'addComponent';
 
-  private _sceneManager: CircuitSceneManager;
+  private _controller: CircuitController;
   private _componentType: ComponentType | null = null;
   private _ghostPreview: THREE.Group | null = null;
   private _previewPosition: THREE.Vector3 = new THREE.Vector3();
@@ -38,8 +38,8 @@ export class AddComponentTool implements IEditingTool {
   private _wheelHandler: ((event: WheelEvent) => void) | null = null;
   private _keyDownHandler: ((event: KeyboardEvent) => void) | null = null;
 
-  constructor(sceneManager: CircuitSceneManager) {
-    this._sceneManager = sceneManager;
+  constructor(controller: CircuitController) {
+    this._controller = controller;
   }
 
   /**
@@ -54,7 +54,7 @@ export class AddComponentTool implements IEditingTool {
     this._gridPositionMoveHandler = (position: THREE.Vector3) => {
       this.handleGridPositionMove(position);
     };
-    this._sceneManager.on('gridPositionMove', this._gridPositionMoveHandler);
+    this._controller.on('gridPositionMove', this._gridPositionMoveHandler);
 
     // Attach pointerdown listener for placement
     this._pointerDownHandler = (event: MouseEvent) => {
@@ -63,14 +63,14 @@ export class AddComponentTool implements IEditingTool {
         this.handleClick(this._previewPosition);
       }
     };
-    this._sceneManager.getContainer().addEventListener('pointerdown', this._pointerDownHandler);
+    this._controller.getContainer().addEventListener('pointerdown', this._pointerDownHandler);
 
     // Attach wheel listener for rotation (User Story 3 - will be used in Phase 5)
     this._wheelHandler = (event: WheelEvent) => {
       event.preventDefault();
       this.handleScroll(event.deltaY);
     };
-    this._sceneManager.getContainer().addEventListener('wheel', this._wheelHandler, {
+    this._controller.getContainer().addEventListener('wheel', this._wheelHandler, {
       passive: false,
     });
 
@@ -84,8 +84,8 @@ export class AddComponentTool implements IEditingTool {
     if (this._componentType) {
       this._createGhostPreview();
       // deactivating pan and zoom controls while placing components
-      this._sceneManager.getControls()!.enablePan = false;
-      this._sceneManager.getControls()!.enableZoom = false;
+      this._controller.getControls()!.enablePan = false;
+      this._controller.getControls()!.enableZoom = false;
     }
   }
 
@@ -96,19 +96,17 @@ export class AddComponentTool implements IEditingTool {
   onDeactivate(): void {
     // Remove event listeners
     if (this._gridPositionMoveHandler) {
-      this._sceneManager.off('gridPositionMove', this._gridPositionMoveHandler);
+      this._controller.off('gridPositionMove', this._gridPositionMoveHandler);
       this._gridPositionMoveHandler = null;
     }
 
     if (this._pointerDownHandler) {
-      this._sceneManager
-        .getContainer()
-        .removeEventListener('pointerdown', this._pointerDownHandler);
+      this._controller.getContainer().removeEventListener('pointerdown', this._pointerDownHandler);
       this._pointerDownHandler = null;
     }
 
     if (this._wheelHandler) {
-      this._sceneManager.getContainer().removeEventListener('wheel', this._wheelHandler);
+      this._controller.getContainer().removeEventListener('wheel', this._wheelHandler);
       this._wheelHandler = null;
     }
 
@@ -125,8 +123,8 @@ export class AddComponentTool implements IEditingTool {
     this._hasOverlap = false;
 
     // reactivating pan and zoom controls
-    this._sceneManager.getControls()!.enablePan = true;
-    this._sceneManager.getControls()!.enableZoom = true;
+    this._controller.getControls()!.enablePan = true;
+    this._controller.getControls()!.enableZoom = true;
   }
 
   /**
@@ -144,11 +142,11 @@ export class AddComponentTool implements IEditingTool {
     if (!!this._componentType) {
       this._createGhostPreview();
       // deactivating pan and zoom controls while placing components
-      this._sceneManager.getControls()!.enablePan = false;
-      this._sceneManager.getControls()!.enableZoom = false;
+      this._controller.getControls()!.enablePan = false;
+      this._controller.getControls()!.enableZoom = false;
     } else {
-      this._sceneManager.getControls()!.enablePan = true;
-      this._sceneManager.getControls()!.enableZoom = true;
+      this._controller.getControls()!.enablePan = true;
+      this._controller.getControls()!.enableZoom = true;
     }
   }
 
@@ -163,7 +161,7 @@ export class AddComponentTool implements IEditingTool {
     }
 
     try {
-      const factory = this._sceneManager.getFactoryRegistry().get(this._componentType);
+      const factory = this._controller.factoryRegistry.get(this._componentType);
 
       // Create a temporary component for preview (won't be added to circuit yet)
       const tempComponent = new Component(
@@ -199,7 +197,7 @@ export class AddComponentTool implements IEditingTool {
       this._ghostPreview.rotation.y = (this._previewRotation * Math.PI) / 180;
 
       // add to the scene
-      this._sceneManager.getScene().add(this._ghostPreview);
+      this._controller.getScene().add(this._ghostPreview);
     } catch (error) {
       console.warn(`Failed to create ghost preview for ${this._componentType}:`, error);
       this._ghostPreview = null;
@@ -239,7 +237,7 @@ export class AddComponentTool implements IEditingTool {
   private _disposeGhostPreview(): void {
     if (this._ghostPreview) {
       // remove from the scene
-      this._sceneManager.getScene().remove(this._ghostPreview);
+      this._controller.getScene().remove(this._ghostPreview);
       // Dispose materials and geometry
       this._ghostPreview.traverse((child) => {
         if (child instanceof THREE.Mesh) {
@@ -286,7 +284,7 @@ export class AddComponentTool implements IEditingTool {
     const previewBox = new THREE.Box3().setFromObject(this._ghostPreview);
 
     // Get all placed components
-    const componentObjects = this._sceneManager.getComponentObject3Ds();
+    const componentObjects = this._controller.componentObject3Ds;
 
     // Check each component for overlap
     for (const [_id, componentGroup] of componentObjects) {
@@ -395,10 +393,10 @@ export class AddComponentTool implements IEditingTool {
    */
   handleClick(worldPosition: THREE.Vector3): void {
     // T042: Check if clicking on an existing component
-    const hoveredElement = this._sceneManager.getHoveredElement();
+    const hoveredElement = this._controller.getHoveredElement();
     if (hoveredElement && hoveredElement.type === 'component') {
       // Select the component instead of placing
-      this._sceneManager
+      this._controller
         .getSelectionManager()
         .selectOne(hoveredElement.type, hoveredElement.id, hoveredElement.object3D.userData);
       return;
@@ -406,7 +404,7 @@ export class AddComponentTool implements IEditingTool {
 
     // Validate component type is selected
     if (!this._componentType) {
-      this._sceneManager.emit('toolValidationError', {
+      this._controller.emit('toolValidationError', {
         toolType: this.type,
         mode: 'default',
         errorMessage: 'No component type selected. Use setComponentType() first.',
@@ -416,7 +414,7 @@ export class AddComponentTool implements IEditingTool {
 
     // Check for overlap before placing (T026, T027)
     if (this._hasOverlap) {
-      this._sceneManager.emit('toolValidationError', {
+      this._controller.emit('toolValidationError', {
         toolType: this.type,
         mode: 'default',
         errorMessage: 'Cannot place component: position occupied',
@@ -428,15 +426,11 @@ export class AddComponentTool implements IEditingTool {
       // Convert preview rotation to Euler
       const rotation = new Euler(0, (this._previewRotation * Math.PI) / 180, 0);
 
-      // Place component via CircuitSceneManager
-      const component = this._sceneManager.addComponent(
-        this._componentType,
-        worldPosition,
-        rotation
-      );
+      // Place component via CircuitController
+      const component = this._controller.addComponent(this._componentType, worldPosition, rotation);
 
       // Emit success event (T019)
-      this._sceneManager.emit('toolOperationCompleted', {
+      this._controller.emit('toolOperationCompleted', {
         toolType: this.type,
         mode: 'default',
         operationData: {
@@ -450,7 +444,7 @@ export class AddComponentTool implements IEditingTool {
         },
       });
     } catch (error) {
-      this._sceneManager.emit('toolValidationError', {
+      this._controller.emit('toolValidationError', {
         toolType: this.type,
         mode: 'default',
         errorMessage: `Failed to place component: ${(error as Error).message}`,
@@ -499,7 +493,7 @@ export class AddComponentTool implements IEditingTool {
    */
   handleKeyDown(event: KeyboardEvent): void {
     // T036: Get current selection from SelectionManager
-    const selection = this._sceneManager.getSelectionManager().getSelection();
+    const selection = this._controller.getSelectionManager().getSelection();
 
     // Check if Delete or Backspace key pressed and a component is selected
     if (
@@ -513,14 +507,14 @@ export class AddComponentTool implements IEditingTool {
       const componentId = selection.id;
 
       try {
-        // T037: Call removeComponent() on CircuitSceneManager
-        this._sceneManager.removeComponent(componentId);
+        // T037: Call removeComponent() on CircuitController
+        this._controller.removeComponent(componentId);
 
         // T038: Clear selection after deletion
-        this._sceneManager.getSelectionManager().deselect();
+        this._controller.getSelectionManager().deselect();
 
         // T039: Emit toolOperationCompleted event with action:'delete'
-        this._sceneManager.emit('toolOperationCompleted', {
+        this._controller.emit('toolOperationCompleted', {
           toolType: this.type,
           mode: 'delete',
           operationData: {
@@ -531,7 +525,7 @@ export class AddComponentTool implements IEditingTool {
           },
         });
       } catch (error) {
-        this._sceneManager.emit('toolValidationError', {
+        this._controller.emit('toolValidationError', {
           toolType: this.type,
           mode: 'delete',
           errorMessage: `Failed to delete component: ${(error as Error).message}`,
@@ -551,7 +545,7 @@ export class AddComponentTool implements IEditingTool {
    */
   getCursorType(): CursorType {
     // T043: Return 'pointer' when hovering existing component
-    const hoveredElement = this._sceneManager.getHoveredElement();
+    const hoveredElement = this._controller.getHoveredElement();
     if (hoveredElement && hoveredElement.type === 'component') {
       return 'pointer';
     }

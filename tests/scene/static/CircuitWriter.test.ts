@@ -1,32 +1,31 @@
 /**
- * Unit tests for CircuitEditionManager
- * @module tests/unit/scene/static/CircuitEditionManager.test
+ * Unit tests for CircuitWriter
+ * @module tests/unit/scene/static/CircuitWriter.test
  * @vitest-environment jsdom
  */
 
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 import * as THREE from 'three';
-import { CircuitEditionManager } from '../../../src/scene/static/CircuitEditionManager';
+import { CircuitWriter } from '../../../src/scene/static/CircuitWriter';
 import { Circuit } from '../../../src/core/Circuit';
 import { ComponentType } from '../../../src/core/types/ComponentType';
 import { ENodeType } from '../../../src/core/types/ENodeType';
 import { Position } from '../../../src/core/types/Position';
-import type { CircuitSceneManager } from '../../../src/scene/static/CircuitSceneManager';
-import type { SceneManagerEventMap } from '../../../src/scene/shared/types';
+import type { CircuitController } from '../../../src/scene/static/CircuitController';
 
 /**
- * Create a mock CircuitSceneManager with spied emit method
+ * Create a mock CircuitController with spied emit method
  */
-function createMockSceneManager(circuit: Circuit | null = null): {
-  sceneManager: CircuitSceneManager;
+function createMockController(circuit: Circuit | null = null): {
+  controller: CircuitController;
   emitSpy: Mock;
 } {
   const emitSpy = vi.fn();
-  const sceneManager = {
+  const controller = {
     getCircuit: vi.fn().mockReturnValue(circuit),
     emit: emitSpy,
-  } as unknown as CircuitSceneManager;
-  return { sceneManager, emitSpy };
+  } as unknown as CircuitController;
+  return { controller, emitSpy };
 }
 
 /**
@@ -37,23 +36,23 @@ function createTestCircuit(name: string = 'Test Circuit'): Circuit {
   return circuit;
 }
 
-describe('CircuitEditionManager', () => {
+describe('CircuitWriter', () => {
   let circuit: Circuit;
-  let sceneManager: CircuitSceneManager;
+  let controller: CircuitController;
   let emitSpy: Mock;
-  let manager: CircuitEditionManager;
+  let manager: CircuitWriter;
 
   beforeEach(() => {
     circuit = createTestCircuit();
-    const mock = createMockSceneManager(circuit);
-    sceneManager = mock.sceneManager;
+    const mock = createMockController(circuit);
+    controller = mock.controller;
     emitSpy = mock.emitSpy;
-    manager = new CircuitEditionManager(sceneManager);
+    manager = new CircuitWriter(controller);
   });
 
   describe('Constructor', () => {
-    it('should create an instance with a sceneManager', () => {
-      expect(manager).toBeInstanceOf(CircuitEditionManager);
+    it('should create an instance with a controller', () => {
+      expect(manager).toBeInstanceOf(CircuitWriter);
     });
   });
 
@@ -87,18 +86,18 @@ describe('CircuitEditionManager', () => {
     });
 
     it('should throw error when no circuit is available', () => {
-      const noCircuitManager = createMockSceneManager(null);
-      const managerNoCircuit = new CircuitEditionManager(noCircuitManager.sceneManager);
+      const noCircuitManager = createMockController(null);
+      const managerNoCircuit = new CircuitWriter(noCircuitManager.controller);
       const worldPosition = new THREE.Vector3(5, 0, -3);
 
       expect(() => managerNoCircuit.saveAddBranchingPoint(worldPosition)).toThrow(
-        'No circuit available in the scene manager.'
+        'No circuit available in the scene controllerType.'
       );
     });
 
     it('should emit error event when adding branching point fails', () => {
-      const noCircuitManager = createMockSceneManager(null);
-      const managerNoCircuit = new CircuitEditionManager(noCircuitManager.sceneManager);
+      const noCircuitManager = createMockController(null);
+      const managerNoCircuit = new CircuitWriter(noCircuitManager.controller);
       const worldPosition = new THREE.Vector3(5, 0, -3);
 
       try {
@@ -176,11 +175,11 @@ describe('CircuitEditionManager', () => {
     });
 
     it('should throw error when no circuit is available', () => {
-      const noCircuitManager = createMockSceneManager(null);
-      const managerNoCircuit = new CircuitEditionManager(noCircuitManager.sceneManager);
+      const noCircuitManager = createMockController(null);
+      const managerNoCircuit = new CircuitWriter(noCircuitManager.controller);
 
       expect(() => managerNoCircuit.saveEditBranchingPoint(branchingPointObject3D, false)).toThrow(
-        'No circuit available in the scene manager.'
+        'No circuit available in the scene controllerType.'
       );
     });
   });
@@ -210,11 +209,11 @@ describe('CircuitEditionManager', () => {
     });
 
     it('should throw error when no circuit is available', () => {
-      const noCircuitManager = createMockSceneManager(null);
-      const managerNoCircuit = new CircuitEditionManager(noCircuitManager.sceneManager);
+      const noCircuitManager = createMockController(null);
+      const managerNoCircuit = new CircuitWriter(noCircuitManager.controller);
 
       expect(() => managerNoCircuit.saveDeleteBranchingPoint(enodeId)).toThrow(
-        'No circuit available in the scene manager.'
+        'No circuit available in the scene controllerType.'
       );
     });
   });
@@ -249,11 +248,11 @@ describe('CircuitEditionManager', () => {
     });
 
     it('should throw error when no circuit is available', () => {
-      const noCircuitManager = createMockSceneManager(null);
-      const managerNoCircuit = new CircuitEditionManager(noCircuitManager.sceneManager);
+      const noCircuitManager = createMockController(null);
+      const managerNoCircuit = new CircuitWriter(noCircuitManager.controller);
 
       expect(() => managerNoCircuit.saveAddWire(sourceEnodeId, targetEnodeId)).toThrow(
-        'No circuit available in the scene manager.'
+        'No circuit available in the scene controllerType.'
       );
     });
 
@@ -319,12 +318,12 @@ describe('CircuitEditionManager', () => {
     });
 
     it('should throw error when no circuit is available', () => {
-      const noCircuitManager = createMockSceneManager(null);
-      const managerNoCircuit = new CircuitEditionManager(noCircuitManager.sceneManager);
+      const noCircuitManager = createMockController(null);
+      const managerNoCircuit = new CircuitWriter(noCircuitManager.controller);
       const worldPosition = new THREE.Vector3(5, 0, 0);
 
       expect(() => managerNoCircuit.saveSplitWire(wireId, worldPosition)).toThrow(
-        'No circuit available in the scene manager.'
+        'No circuit available in the scene controllerType.'
       );
     });
   });
@@ -411,8 +410,8 @@ describe('CircuitEditionManager', () => {
     });
 
     it('should return undefined when no circuit is available', () => {
-      const noCircuitManager = createMockSceneManager(null);
-      const managerNoCircuit = new CircuitEditionManager(noCircuitManager.sceneManager);
+      const noCircuitManager = createMockController(null);
+      const managerNoCircuit = new CircuitWriter(noCircuitManager.controller);
       const positions = [{ x: 2, y: 3 }];
 
       const result = managerNoCircuit.saveEditWirePositions(wireId, positions, false);
@@ -461,8 +460,8 @@ describe('CircuitEditionManager', () => {
     });
 
     it('should return undefined when no circuit is available', () => {
-      const noCircuitManager = createMockSceneManager(null);
-      const managerNoCircuit = new CircuitEditionManager(noCircuitManager.sceneManager);
+      const noCircuitManager = createMockController(null);
+      const managerNoCircuit = new CircuitWriter(noCircuitManager.controller);
 
       const result = managerNoCircuit.saveSimplifyWirePositions(wireId);
 
@@ -476,7 +475,7 @@ describe('CircuitEditionManager', () => {
     });
   });
 
-  describe('saveENodeSourceTypeAction', () => {
+  describe('saveEditENodeSourceType', () => {
     let enodeId: string;
 
     beforeEach(() => {
@@ -485,29 +484,39 @@ describe('CircuitEditionManager', () => {
     });
 
     it('should update enode sourceType and emit event', () => {
-      manager.saveENodeSourceTypeAction(enodeId, 'power');
+      manager.saveEditENodeSourceType(enodeId, 'Voltage');
 
-      expect(emitSpy).toHaveBeenCalledWith('enodeSourceTypeChanged', {
-        enodeId,
-        sourceType: 'power',
+      expect(emitSpy).toHaveBeenCalledWith('circuitElementAction', {
+        type: 'enode',
+        action: 'edit',
+        id: enodeId,
+        error: null,
+        data: {
+          sourceType: 'Voltage',
+        },
       });
     });
 
     it('should allow setting sourceType to null', () => {
-      manager.saveENodeSourceTypeAction(enodeId, null);
+      manager.saveEditENodeSourceType(enodeId, null);
 
-      expect(emitSpy).toHaveBeenCalledWith('enodeSourceTypeChanged', {
-        enodeId,
-        sourceType: null,
+      expect(emitSpy).toHaveBeenCalledWith('circuitElementAction', {
+        type: 'enode',
+        action: 'edit',
+        id: enodeId,
+        error: null,
+        data: {
+          sourceType: null,
+        },
       });
     });
 
     it('should throw error when no circuit is available', () => {
-      const noCircuitManager = createMockSceneManager(null);
-      const managerNoCircuit = new CircuitEditionManager(noCircuitManager.sceneManager);
+      const noCircuitManager = createMockController(null);
+      const managerNoCircuit = new CircuitWriter(noCircuitManager.controller);
 
-      expect(() => managerNoCircuit.saveENodeSourceTypeAction(enodeId, 'power')).toThrow(
-        'No circuit available in the scene manager.'
+      expect(() => managerNoCircuit.saveEditENodeSourceType(enodeId, 'power')).toThrow(
+        'No circuit available in the scene controllerType.'
       );
     });
   });
@@ -546,19 +555,19 @@ describe('CircuitEditionManager', () => {
     });
 
     it('should throw error when no circuit is available', () => {
-      const noCircuitManager = createMockSceneManager(null);
-      const managerNoCircuit = new CircuitEditionManager(noCircuitManager.sceneManager);
+      const noCircuitManager = createMockController(null);
+      const managerNoCircuit = new CircuitWriter(noCircuitManager.controller);
       const position = new THREE.Vector3(5, 0, -3);
       const rotation = new THREE.Euler(0, 0, 0);
 
       expect(() =>
         managerNoCircuit.saveAddComponent(ComponentType.Battery, position, rotation)
-      ).toThrow('No circuit available in the scene manager.');
+      ).toThrow('No circuit available in the scene controllerType.');
     });
 
     it('should emit error event when component creation fails', () => {
-      const noCircuitManager = createMockSceneManager(null);
-      const managerNoCircuit = new CircuitEditionManager(noCircuitManager.sceneManager);
+      const noCircuitManager = createMockController(null);
+      const managerNoCircuit = new CircuitWriter(noCircuitManager.controller);
       const position = new THREE.Vector3(5, 0, -3);
       const rotation = new THREE.Euler(0, 0, 0);
 
@@ -627,11 +636,11 @@ describe('CircuitEditionManager', () => {
     });
 
     it('should throw error when no circuit is available', () => {
-      const noCircuitManager = createMockSceneManager(null);
-      const managerNoCircuit = new CircuitEditionManager(noCircuitManager.sceneManager);
+      const noCircuitManager = createMockController(null);
+      const managerNoCircuit = new CircuitWriter(noCircuitManager.controller);
 
       expect(() => managerNoCircuit.saveEditComponent(componentId, componentVisual, false)).toThrow(
-        'No circuit available in the scene manager.'
+        'No circuit available in the scene controllerType.'
       );
     });
 
@@ -682,11 +691,11 @@ describe('CircuitEditionManager', () => {
     });
 
     it('should throw error when no circuit is available', () => {
-      const noCircuitManager = createMockSceneManager(null);
-      const managerNoCircuit = new CircuitEditionManager(noCircuitManager.sceneManager);
+      const noCircuitManager = createMockController(null);
+      const managerNoCircuit = new CircuitWriter(noCircuitManager.controller);
 
       expect(() => managerNoCircuit.saveDeleteComponent(componentId)).toThrow(
-        'No circuit available in the scene manager.'
+        'No circuit available in the scene controllerType.'
       );
     });
 

@@ -1,5 +1,5 @@
 /**
- * CircuitEditionManager Contract
+ * CircuitWriter Contract
  *
  * Manages editing operations from the 3D scene layer to the core circuit model.
  * Handles coordinate system conversion between Three.js visual space and circuit model space.
@@ -41,12 +41,12 @@ export interface CircuitElementActionEvent {
 }
 
 /**
- * CircuitEditionManager interface
+ * CircuitWriter interface
  *
  * Synchronizes visual scene changes to the core circuit model.
  * Acts as a bridge between the scene layer (Three.js) and the data layer (Circuit).
  */
-export interface ICircuitEditionManager {
+export interface ICircuitWriter {
   /**
    * Save a component action (add/edit/delete) to the circuit model
    *
@@ -64,7 +64,7 @@ export interface ICircuitEditionManager {
    * @example
    * ```typescript
    * // Component at visual position (10, 0, -15) with rotation -π/2 (90° clockwise)
-   * manager.saveComponentAction(componentId, 'edit', componentGroup);
+   * controllerType.saveComponentAction(componentId, 'edit', componentGroup);
    * // Updates model: position (10, 15), rotation 90°
    * ```
    */

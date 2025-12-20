@@ -19,7 +19,7 @@ export class StateManager {
   private historyWriteIndex: number;
 
   /**
-   * Create a new state manager.
+   * Create a new state controllerType.
    *
    * @param enableHistory - Whether to store state history (default: false)
    * @param historyLimit - Maximum number of historical states to keep (default: 1000)

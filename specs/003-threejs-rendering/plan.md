@@ -1,14 +1,14 @@
-# Implementation Plan: 3D Circuit Scene Managers
+# Implementation Plan: 3D Circuit Controllers
 
 **Branch**: `003-threejs-rendering` | **Date**: 2025-12-02 | **Updated**: 2025-12-04 (Phase 1-3 POC) | **Spec**: [spec.md](./spec.md)
 
 ## Summary
 
-Implement two independent Three.js-based scene manager classes (CircuitSceneManager for static/editing visualization, CircuitRunnerSceneManager for live simulation visualization) plus a shared utilities module. SceneManagers expose programmatic APIs with hookable callbacks but do not implement DOM event handling or WebGL rendering orchestration. Circuit/CircuitRunner instances are provided AFTER initialization via setCircuit() method, enabling scene manager reusability. External consumers own the WebGLRenderer, animation loop, and call renderer.render(scene, camera) each frame. Component visuals are provided via injected factory registries.
+Implement two independent Three.js-based scene controllerType classes (CircuitController for static/editing visualization, CircuitRunnerController for live simulation visualization) plus a shared utilities module. Controllers expose programmatic APIs with hookable callbacks but do not implement DOM event handling or WebGL rendering orchestration. Circuit/CircuitRunner instances are provided AFTER initialization via setCircuit() method, enabling scene controllerType reusability. External consumers own the WebGLRenderer, animation loop, and call renderer.render(scene, camera) each frame. Component visuals are provided via injected factory registries.
 
-**Update 2025-12-02**: CircuitSceneManager includes integrated tool system for circuit editing operations. Five core editing tools (Select, PlaceComponent, Wire, BranchingPoint, Delete) are built-in, each with distinct interaction patterns, preview rendering, and validation logic. Tools delegate circuit modifications to core Circuit API while providing visual feedback and event emission for consumer integration.
+**Update 2025-12-02**: CircuitController includes integrated tool system for circuit editing operations. Five core editing tools (Select, PlaceComponent, Wire, BranchingPoint, Delete) are built-in, each with distinct interaction patterns, preview rendering, and validation logic. Tools delegate circuit modifications to core Circuit API while providing visual feedback and event emission for consumer integration.
 
-**Update 2025-12-04 (Phase 1-3 POC)**: After POC implementation, refined architecture to completely delegate rendering orchestration to consumers. Renamed module from `rendering/` to `scene/` for clarity. Renamed classes from `*Renderer` to `*SceneManager` to accurately reflect responsibility. Changed API so Circuit/CircuitRunner are set after initialization via setCircuit(), not in constructor, enabling scene manager reuse across multiple circuits.
+**Update 2025-12-04 (Phase 1-3 POC)**: After POC implementation, refined architecture to completely delegate rendering orchestration to consumers. Renamed module from `rendering/` to `scene/` for clarity. Renamed classes from `*Renderer` to `*Controller` to accurately reflect responsibility. Changed API so Circuit/CircuitRunner are set after initialization via setCircuit(), not in constructor, enabling scene controllerType reuse across multiple circuits.
 
 ## Technical Context
 
@@ -28,10 +28,10 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 ### Gate 1: Framework Agnosticism ✅ PASS
 
-**Requirement**: SceneManagers must not depend on any UI framework (React, Vue, Angular). Must accept HTMLElement for mounting and manage own lifecycle.
+**Requirement**: Controllers must not depend on any UI framework (React, Vue, Angular). Must accept HTMLElement for mounting and manage own lifecycle.
 
 **Status**: ✅ **PASS**
-- SceneManagers accept container via `initialize(container: HTMLElement)`
+- Controllers accept container via `initialize(container: HTMLElement)`
 - No framework dependencies introduced
 - Event-driven API via `on(event, callback)`
 - Can be wrapped by any framework's binding layer
@@ -51,7 +51,7 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 **Requirement**: Event-based communication, no callbacks in method signatures, all Three.js internals hidden from consumers
 
 **Status**: ✅ **PASS**
-- SceneManagers use `on(event, callback)` for all events
+- Controllers use `on(event, callback)` for all events
 - Methods return void or simple types (no callback parameters)
 - Three.js internals accessed only via `getScene()` (intentional for camera access per clarifications)
 
@@ -87,8 +87,8 @@ specs/003-threejs-rendering/
 ├── data-model.md        # Phase 1 output (entity model)
 ├── quickstart.md        # Phase 1 output (usage guide)
 └── contracts/           # Phase 1 output (API contracts)
-    ├── CircuitSceneManager.ts
-    ├── SimulationCircuitSceneManager.ts
+    ├── CircuitController.ts
+    ├── SimulationCircuitController.ts
     ├── ComponentVisualFactory.ts
     └── types.ts
 ```
@@ -102,9 +102,9 @@ src/
 │   ├── simulation/CircuitRunner.ts
 │   └── types/
 ├── scene/                          # (NEW - primary work location)
-│   ├── index.ts                    # Exports CircuitSceneManager, CircuitRunnerSceneManager, shared utils
-│   ├── static/                     # Static circuit scene manager module
-│   │   ├── CircuitSceneManager.ts
+│   ├── index.ts                    # Exports CircuitController, CircuitRunnerController, shared utils
+│   ├── static/                     # Static circuit scene controllerType module
+│   │   ├── CircuitController.ts
 │   │   ├── StaticScene.ts
 │   │   ├── EditController.ts
 │   │   └── tools/                  # Editing tool implementations
@@ -114,8 +114,8 @@ src/
 │   │       ├── WireTool.ts         # Wire creation tool
 │   │       ├── BranchingPointTool.ts  # Branching point insertion tool
 │   │       └── DeleteTool.ts       # Deletion tool
-│   ├── simulation/                 # Simulation circuit scene manager module
-│   │   ├── CircuitRunnerSceneManager.ts
+│   ├── simulation/                 # Simulation circuit scene controllerType module
+│   │   ├── CircuitRunnerController.ts
 │   │   ├── SimulationScene.ts
 │   │   └── AnimationController.ts
 │   └── shared/                     # Shared utilities module
@@ -130,9 +130,9 @@ src/
 
 tests/
 ├── unit/
-│   └── scene/                      # (NEW - unit tests for scene managers)
-│       ├── CircuitSceneManager.test.ts
-│       ├── CircuitRunnerSceneManager.test.ts
+│   └── scene/                      # (NEW - unit tests for Controllers)
+│       ├── CircuitController.test.ts
+│       ├── CircuitRunnerController.test.ts
 │       ├── ComponentVisualFactory.test.ts
 │       ├── FactoryRegistry.test.ts
 │       ├── tools/                  # Tool system unit tests
@@ -157,9 +157,9 @@ tests/
 
 ### Research Tasks
 
-1. **Three.js SceneManager Pattern for Library Context**
+1. **Three.js Controller Pattern for Library Context**
    - Research best practices for Three.js renderers in library (non-application) context
-   - How to manage WebGLSceneManager lifecycle when consumer owns animation loop
+   - How to manage WebGLController lifecycle when consumer owns animation loop
    - Pattern for exposing Scene while maintaining encapsulation
 
 2. **Component Visual Factory Pattern**
@@ -178,7 +178,7 @@ tests/
    - Error handling in event callbacks
 
 5. **Testing Strategy for Three.js Code**
-   - Mocking strategies for Three.js classes (Scene, Camera, WebGLSceneManager, etc.)
+   - Mocking strategies for Three.js classes (Scene, Camera, WebGLController, etc.)
    - Unit testing 3D scene construction without actual rendering
    - Verifying object creation, materials, geometries without visual output
 
@@ -189,12 +189,12 @@ tests/
 ### Data Model
 
 **Entities**:
-1. **CircuitSceneManager**: Main class for static/editing visualization with integrated tool system
-2. **CircuitRunnerSceneManager**: Main class for live simulation visualization
+1. **CircuitController**: Main class for static/editing visualization with integrated tool system
+2. **CircuitRunnerController**: Main class for live simulation visualization
 3. **ComponentVisualFactory**: Factory function type for creating component visuals
 4. **FactoryRegistry**: Registry mapping ComponentType → ComponentVisualFactory
-5. **SceneManagerEvent**: Union type of supported event types (includes tool events)
-6. **SceneManagerCallback**: Function signature for event callbacks
+5. **ControllerEvent**: Union type of supported event types (includes tool events)
+6. **ControllerCallback**: Function signature for event callbacks
 7. **ChangedData**: Optional parameter type for incremental updates
 8. **IEditingTool**: Interface defining tool contract (onActivate, onDeactivate, getCursorType, getPreviewState)
 9. **ToolType**: Union type of available tools ('position' | 'addComponent' | 'wire' | 'eNode' | 'delete')
@@ -202,29 +202,29 @@ tests/
 11. **CursorType**: Union type for cursor styles ('default' | 'pointer' | 'crosshair' | 'move' | 'not-allowed' | 'grab' | 'grabbing')
 
 **Relationships**:
-- Both scene managers depend on FactoryRegistry (constructor injection)
-- Both scene managers maintain their own Three.js Scene and Camera
-- CircuitSceneManager operates on Circuit instances (provided via setCircuit() after initialization)
-- CircuitRunnerSceneManager operates on CircuitRunner instances (provided via setCircuit() after initialization)
-- SceneManagers emit SceneManagerEvents to registered SceneManagerCallbacks
+- Both Controllers depend on FactoryRegistry (constructor injection)
+- Both Controllers maintain their own Three.js Scene and Camera
+- CircuitController operates on Circuit instances (provided via setCircuit() after initialization)
+- CircuitRunnerController operates on CircuitRunner instances (provided via setCircuit() after initialization)
+- Controllers emit ControllerEvents to registered ControllerCallbacks
 - Consumer owns WebGLRenderer instance and animation loop
-- **CircuitSceneManager manages collection of IEditingTool instances**
+- **CircuitController manages collection of IEditingTool instances**
 - **Each IEditingTool maintains ToolState and delegates Circuit modifications to core Circuit API**
-- **Tools emit tool-specific events through CircuitSceneManager's event system**
+- **Tools emit tool-specific events through CircuitController's event system**
 
 ### API Contracts
 
 **Public Interfaces** (to be generated in `/contracts/`):
 
-1. **CircuitSceneManager.ts**: Class signature with public methods
+1. **CircuitController.ts**: Class signature with public methods
    - `constructor(factoryRegistry: FactoryRegistry)`
-   - `initialize(container: HTMLElement, options?: SceneManagerOptions): void`
+   - `initialize(container: HTMLElement, options?: ControllerOptions): void`
    - `setCircuit(circuit: Circuit | null): void`
    - `clearVisuals(): void`
    - `update(changedData?: ChangedData): void`
    - `render(): void`
    - `dispose(): void`
-   - `on(event: SceneManagerEvent, callback: SceneManagerCallback): void`
+   - `on(event: ControllerEvent, callback: ControllerCallback): void`
    - `getScene(): THREE.Scene`
    - `getCamera(): THREE.PerspectiveCamera`
    - **Tool System Methods**:
@@ -236,15 +236,15 @@ tests/
    - `handleToolHover(cursorGroundPlanePosition: THREE.Vector3): void`
    - `handleToolScroll(delta: number): void`
 
-2. **CircuitRunnerSceneManager.ts**: Class signature with public methods
+2. **CircuitRunnerController.ts**: Class signature with public methods
    - `constructor(factoryRegistry: FactoryRegistry)`
-   - `initialize(container: HTMLElement, options?: SceneManagerOptions): void`
+   - `initialize(container: HTMLElement, options?: ControllerOptions): void`
    - `setCircuit(circuitRunner: CircuitRunner | null): void`
    - `clearVisuals(): void`
    - `update(changedData?: ChangedData): void`
    - `render(): void`
    - `dispose(): void`
-   - `on(event: SceneManagerEvent, callback: SceneManagerCallback): void`
+   - `on(event: ControllerEvent, callback: ControllerCallback): void`
    - `getScene(): THREE.Scene`
    - `getCamera(): THREE.PerspectiveCamera`
 
@@ -254,11 +254,11 @@ tests/
    - `VisualMesh`: Return type from factories (THREE.Object3D wrapper)
 
 4. **types.ts**: Shared types and enums
-   - `SceneManagerEvent`: 'hover' | 'unhover' | 'position' | 'deselect' | 'error' | 'ready' | 'toolActivated' | 'toolDeactivated' | 'toolOperationStarted' | 'toolOperationCompleted' | 'toolOperationCancelled' | 'toolValidationError' | 'cursorChangeRequested'
-   - `SceneManagerEventMap`: Type-safe event payload mapping
-   - `SceneManagerCallback`: Function signature
+   - `ControllerEvent`: 'hover' | 'unhover' | 'position' | 'deselect' | 'error' | 'ready' | 'toolActivated' | 'toolDeactivated' | 'toolOperationStarted' | 'toolOperationCompleted' | 'toolOperationCancelled' | 'toolValidationError' | 'cursorChangeRequested'
+   - `ControllerEventMap`: Type-safe event payload mapping
+   - `ControllerCallback`: Function signature
    - `ChangedData`: Object type for incremental updates
-   - `SceneManagerOptions`: Optional configuration
+   - `ControllerOptions`: Optional configuration
    - **Tool System Types**:
    - `ToolType`: 'position' | 'addComponent' | 'wire' | 'eNode' | 'delete'
    - `CursorType`: 'default' | 'pointer' | 'crosshair' | 'move' | 'not-allowed' | 'grab' | 'grabbing'

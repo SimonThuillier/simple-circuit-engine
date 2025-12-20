@@ -14,7 +14,7 @@ All technical questions have been resolved. The existing codebase already has fo
 
 ### 1. Three.js MapControls Integration
 
-**Question**: How to properly integrate MapControls with existing scene managers?
+**Question**: How to properly integrate MapControls with existing Controllers?
 
 **Decision**: Use MapControls from `three/addons/controls/MapControls.js`
 
@@ -104,7 +104,7 @@ if (hits.length === 0) {
 **Decision**: Dedicated HoverManager class with state tracking
 
 **Rationale**:
-- Centralizes hover logic for reuse by both scene managers
+- Centralizes hover logic for reuse by both Controllers
 - Tracks `currentlyHovered` to prevent duplicate events
 - Handles edge cases (cursor leave, element removal)
 - Follows existing EventEmitter pattern
@@ -124,7 +124,7 @@ On mouse move:
 **Alternatives Considered**:
 | Alternative | Why Rejected |
 |-------------|--------------|
-| Inline in scene managers | Code duplication; harder to test |
+| Inline in Controllers | Code duplication; harder to test |
 | RxJS observables | Adds dependency; EventEmitter already exists |
 | DOM events only | Loses Three.js object references |
 
@@ -223,8 +223,8 @@ this.mapControls.dispose();
 
 ### Files to Modify
 1. `src/scene/shared/types.ts` - Add HoveredElement type, MapControlsOptions
-2. `src/scene/static/CircuitSceneManager.ts` - Add MapControls, HoverManager
-3. `src/scene/simulation/CircuitRunnerSceneManager.ts` - Add MapControls, HoverManager
+2. `src/scene/static/CircuitController.ts` - Add MapControls, HoverManager
+3. `src/scene/simulation/CircuitRunnerController.ts` - Add MapControls, HoverManager
 4. `src/scene/shared/ComponentVisuals.ts` - Extract LAYERS to shared file
 
 ### Files to Create

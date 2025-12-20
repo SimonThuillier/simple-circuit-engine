@@ -22,13 +22,13 @@ After completing a proof-of-concept implementation of Phases 1-3, we refined the
 
 ### 2. Class Renames
 
-**CircuitSceneManager** (formerly StaticCircuitRenderer):
+**CircuitController** (formerly StaticCircuitRenderer):
 - More accurately describes that it manages a scene, not rendering
 - Aligns with the pattern that Three.js has a dedicated Renderer class
 - Consumer creates their own `WebGLRenderer` instance
 
-**CircuitRunnerSceneManager** (formerly SimulationCircuitSceneManager):
-- Renamed for consistency with CircuitSceneManager
+**CircuitRunnerController** (formerly SimulationCircuitController):
+- Renamed for consistency with CircuitController
 - Also reflects that it manages simulation scenes
 - Emphasizes it operates on CircuitRunner instances
 
@@ -41,26 +41,26 @@ After completing a proof-of-concept implementation of Phases 1-3, we refined the
 
 **Old API**:
 ```typescript
-const sceneManager = new CircuitSceneManager(circuit, factoryRegistry);
-sceneManager.initialize(container);
+const Controller = new CircuitController(circuit, factoryRegistry);
+Controller.initialize(container);
 ```
 
 **New API**:
 ```typescript
-const sceneManager = new CircuitSceneManager(factoryRegistry);
-sceneManager.initialize(container);
-sceneManager.setCircuit(circuit);  // Can be called multiple times
+const Controller = new CircuitController(factoryRegistry);
+Controller.initialize(container);
+Controller.setCircuit(circuit);  // Can be called multiple times
 ```
 
 **Rationale**:
-- Enables scene manager reusability across multiple circuits
+- Enables scene controllerType reusability across multiple circuits
 - Cleaner separation of concerns: construction vs. initialization vs. content
 - Allows switching circuits without recreating Three.js scene
 - More flexible for applications that load circuits dynamically
 
 **New Methods Added**:
 - `setCircuit(circuit: Circuit | null)` - Set or change the circuit to visualize
-- `clearVisuals()` - Clear all visuals without disposing scene manager
+- `clearVisuals()` - Clear all visuals without disposing scene controllerType
 - `getCamera()` - Get camera directly instead of via scene.camera
 
 ### 4. Rendering Orchestration Fully Delegated to Consumer
@@ -70,7 +70,7 @@ sceneManager.setCircuit(circuit);  // Can be called multiple times
 - Manage animation loop (`requestAnimationFrame`)
 - Call `webglRenderer.render(scene, camera)` each frame
 
-**SceneManager Responsibilities**:
+**Controller Responsibilities**:
 - Manage `THREE.Scene` (add/remove objects, lighting)
 - Manage `THREE.PerspectiveCamera` (setup, expose for manipulation)
 - Update scene state based on circuit changes
@@ -84,7 +84,7 @@ sceneManager.setCircuit(circuit);  // Can be called multiple times
 
 - ✅ `spec.md` - All requirements updated with new terminology and API
 - ✅ `plan.md` - Project structure, API contracts, data model updated
-- ✅ `contracts/CircuitSceneManager.ts` - API interface updated with new methods
+- ✅ `contracts/CircuitController.ts` - API interface updated with new methods
 - ✅ `contracts/types.ts` - Module path updated in JSDoc
 - ⏭️ `tasks.md` - All task file paths and descriptions need updates
 - ⏭️ `quickstart.md` - Usage examples need updating
@@ -92,9 +92,9 @@ sceneManager.setCircuit(circuit);  // Can be called multiple times
 ### Implementation Files
 
 - ✅ `src/scene/` - Module renamed from `src/rendering/`
-- ✅ `src/scene/static/CircuitSceneManager.ts` - Renamed from StaticCircuitRenderer
+- ✅ `src/scene/static/CircuitController.ts` - Renamed from StaticCircuitRenderer
 - ✅ `src/scene/index.ts` - Exports updated
-- ⏭️ `src/scene/simulation/CircuitRunnerSceneManager.ts` - Not yet created (Phase 4)
+- ⏭️ `src/scene/simulation/CircuitRunnerController.ts` - Not yet created (Phase 4)
 
 ### Test Files
 
@@ -118,13 +118,13 @@ renderer.render();
 
 ### New Code:
 ```typescript
-import { CircuitSceneManager, FactoryRegistry } from 'simple-circuit-engine/scene';
+import { CircuitController, FactoryRegistry } from 'simple-circuit-engine/scene';
 import * as THREE from 'three';
 
-// Create scene manager (no circuit yet)
-const sceneManager = new CircuitSceneManager(registry);
-sceneManager.initialize(container);
-sceneManager.setCircuit(circuit);
+// Create scene controllerType (no circuit yet)
+const Controller = new CircuitController(registry);
+Controller.initialize(container);
+Controller.setCircuit(circuit);
 
 // Consumer creates and owns WebGLRenderer
 const webglRenderer = new THREE.WebGLRenderer();
@@ -132,8 +132,8 @@ document.body.appendChild(webglRenderer.domElement);
 
 // Consumer's animation loop
 function animate() {
-  sceneManager.render();  // Update scene state
-  webglRenderer.render(sceneManager.getScene(), sceneManager.getCamera());
+  Controller.render();  // Update scene state
+  webglRenderer.render(Controller.getScene(), Controller.getCamera());
   requestAnimationFrame(animate);
 }
 animate();
@@ -141,19 +141,19 @@ animate();
 
 ### Switching Circuits:
 ```typescript
-// Reuse same scene manager for different circuits
-sceneManager.setCircuit(circuit1);
+// Reuse same scene controllerType for different circuits
+Controller.setCircuit(circuit1);
 // ... work with circuit1 ...
-sceneManager.setCircuit(circuit2);  // Switch without re-initialization
+Controller.setCircuit(circuit2);  // Switch without re-initialization
 ```
 
 ## Rationale Summary
 
 These changes emerged from implementing the POC and realizing:
 
-1. **Naming Clarity**: "Scene Manager" more accurately describes what the classes do
+1. **Naming Clarity**: "Controller" more accurately describes what the classes do
 2. **Flexibility**: Separating circuit from construction enables reusability
-3. **Separation of Concerns**: Consumer controls rendering pipeline, scene manager controls scene content
+3. **Separation of Concerns**: Consumer controls rendering pipeline, scene controllerType controls scene content
 4. **Alignment with Three.js**: Aligns with Three.js architecture where Renderer is a separate concept from Scene
 
 All changes maintain constitutional compliance and improve the architecture without adding complexity.

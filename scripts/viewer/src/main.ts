@@ -3,7 +3,7 @@
  * Exports CircuitVisualizer class to window object
  */
 import { IntegrityError, RenderError, ValidationError, VisualizerError } from './errors.js';
-import { CircuitSceneManager } from '@/scene/static/CircuitSceneManager.js';
+import { CircuitController } from '@/scene/static/CircuitController.js';
 import { FactoryRegistry } from '@/scene/shared/FactoryRegistry.js';
 import { DefaultVisualFactory } from '@/scene/shared/components/DefaultVisualFactory.js';
 import { Circuit } from '@/core/Circuit.js';
@@ -23,7 +23,7 @@ declare global {
   interface Window {
     renderer: WebGLRenderer;
     axesHelper: AxesHelper;
-    CircuitSceneManager: typeof CircuitSceneManager;
+    CircuitController: typeof CircuitController;
     componentsFactoryRegistry: FactoryRegistry;
     OrbitControls: typeof OrbitControls;
     MapControls: typeof MapControls;
@@ -49,7 +49,7 @@ if (typeof window !== 'undefined') {
 
   window.axesHelper = new AxesHelper(10);
 
-  window.CircuitSceneManager = CircuitSceneManager;
+  window.CircuitController = CircuitController;
   window.componentsFactoryRegistry = componentsFactoryRegistry;
   window.OrbitControls = OrbitControls;
   window.MapControls = MapControls;
@@ -63,7 +63,7 @@ if (typeof window !== 'undefined') {
 }
 
 export {
-  CircuitSceneManager,
+  CircuitController,
   Circuit,
   VisualizerError,
   ValidationError,

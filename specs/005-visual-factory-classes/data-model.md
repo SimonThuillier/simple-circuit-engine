@@ -88,7 +88,7 @@ export interface IComponentVisualFactory {
    * @param state - The component's current simulation state
    *
    * @remarks
-   * - Called by CircuitRunnerSceneManager during simulation
+   * - Called by CircuitRunnerController during simulation
    * - Animation visual updates have priority over hover effects
    */
   updateAnimation(object3D: THREE.Object3D, state: ComponentState): void;
@@ -420,8 +420,8 @@ interface ComponentVisualUserData {
 ### Animation Priority Rule
 
 - When `isAnimating === true`, hover effects use alternative visual (e.g., slight scale) instead of emissive glow
-- Animation state is managed by CircuitRunnerSceneManager during simulation
-- Static mode (CircuitSceneManager) does not set `isAnimating`
+- Animation state is managed by CircuitRunnerController during simulation
+- Static mode (CircuitController) does not set `isAnimating`
 
 ---
 
@@ -488,8 +488,8 @@ BatteryVisual   SwitchVisual   SmallLEDVisual   DefaultVisual
 - `src/scene/shared/components/SwitchVisualFactory.ts` - Switch factory class
 - `src/scene/shared/components/SmallLEDVisualFactory.ts` - SmallLED factory class
 - `src/scene/shared/FactoryRegistry.ts` - Update to use interface
-- `src/scene/static/CircuitSceneManager.ts` - Update factory usage
-- `src/scene/simulation/CircuitRunnerSceneManager.ts` - Update factory usage
+- `src/scene/static/CircuitController.ts` - Update factory usage
+- `src/scene/simulation/CircuitRunnerController.ts` - Update factory usage
 - `scripts/viewer/src/main.ts` - Update factory registration
 
 ### Backward Compatibility

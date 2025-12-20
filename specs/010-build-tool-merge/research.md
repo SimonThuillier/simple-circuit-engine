@@ -65,8 +65,8 @@ Use a **disambiguation router pattern** in event handlers that checks mode and h
 handlePointerDown(event: MouseEvent): void {
   if (event.button !== 0) return; // Only left click
 
-  const hoveredElement = this._sceneManager.getHoveredElement();
-  const selection = this._sceneManager.getSelectionManager().getSelection();
+  const hoveredElement = this._Controller.getHoveredElement();
+  const selection = this._Controller.getSelectionManager().getSelection();
 
   // Priority 1: Enode (start wire creation)
   if (hoveredElement?.type === 'enode') {
@@ -116,7 +116,7 @@ Use **target type priority** with component selection state check:
 ### Implementation Approach
 ```typescript
 handleDblClick(event: MouseEvent): void {
-  const hoveredElement = this._sceneManager.getHoveredElement();
+  const hoveredElement = this._Controller.getHoveredElement();
 
   // Priority 1: Component (rotate)
   if (hoveredElement?.type === 'component') {
@@ -158,19 +158,19 @@ BuildTool handles deletion of **all circuit elements**: components, wires, branc
 ```typescript
 handleKeyDown(event: KeyboardEvent): void {
   if (event.key === 'Delete' || event.key === 'Backspace') {
-    const selection = this._sceneManager.getSelectionManager().getSelection();
+    const selection = this._Controller.getSelectionManager().getSelection();
     if (!selection) return;
 
     switch (selection.type) {
       case 'component':
-        this._sceneManager.removeComponent(selection.id);
+        this._Controller.removeComponent(selection.id);
         break;
       case 'wire':
-        this._sceneManager.removeWire(selection.id);
+        this._Controller.removeWire(selection.id);
         break;
       case 'enode': // Branching point
         if (!selection.data.componentId) { // Only standalone branching points
-          this._sceneManager.removeBranchingPoint(selection.id);
+          this._Controller.removeBranchingPoint(selection.id);
         }
         break;
     }
@@ -199,7 +199,7 @@ Use **incremental merge with feature flags** approach:
 4. Add rotation logic from PositionTool
 5. Add deletion logic from DeleteTool (simplest) and AddComponentTool
 6. Add branching point creation from WireTool (already present)
-7. Update CircuitSceneManager to use BuildTool
+7. Update CircuitController to use BuildTool
 8. Delete old tool files after tests pass
 
 ### Rationale
@@ -244,7 +244,7 @@ Phase 6: Branching Points (from WireTool)
 - Migrate branching point tests
 
 Phase 7: Integration
-- Update CircuitSceneManager
+- Update CircuitController
 - Update ToolType enum
 - Delete old tool files
 - Run full test suite
@@ -273,22 +273,22 @@ Store bound handler references and use consistent cleanup in onDeactivate().
 ```typescript
 class BuildTool {
   // Bind in constructor for stable references
-  constructor(sceneManager: CircuitSceneManager) {
-    this._sceneManager = sceneManager;
+  constructor(Controller: CircuitController) {
+    this._Controller = Controller;
     this.handlePointerDown = this.handlePointerDown.bind(this);
     this.handlePointerUp = this.handlePointerUp.bind(this);
     // ... etc
   }
 
   onActivate(): void {
-    const container = this._sceneManager.getContainer();
+    const container = this._Controller.getContainer();
     container.addEventListener('pointerdown', this.handlePointerDown);
     container.addEventListener('pointerup', this.handlePointerUp);
     // ... etc
   }
 
   onDeactivate(): void {
-    const container = this._sceneManager.getContainer();
+    const container = this._Controller.getContainer();
     container.removeEventListener('pointerdown', this.handlePointerDown);
     container.removeEventListener('pointerup', this.handlePointerUp);
     // ... etc
@@ -388,7 +388,7 @@ class BuildTool {
 - **Mitigation**: Explicit mode checks before state access
 
 ### Risk: Integration Breakage
-- **Mitigation**: Update CircuitSceneManager in same PR
+- **Mitigation**: Update CircuitController in same PR
 - **Mitigation**: Feature flag for rollback if needed
 
 ## References

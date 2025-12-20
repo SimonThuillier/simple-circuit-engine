@@ -113,6 +113,15 @@
         background-color: #45a049;
       }
 
+      #serialize-btn {
+        background-color: #2196f3;
+        color: white;
+      }
+
+      #serialize-btn:hover {
+        background-color: #0b7dda;
+      }
+
       #clear-btn {
         background-color: #f44336;
         color: white;
@@ -430,6 +439,7 @@
 
           <div class="button-group">
             <button id="visualize-btn">Render Circuit</button>
+            <button id="serialize-btn">Serialize Circuit</button>
             <button id="clear-btn">Clear</button>
           </div>
         </div>
@@ -457,18 +467,20 @@
       // Remplace 'container' par 'viewerContainer' pour plus de clarté
       const viewerContainer = document.getElementById('viewer-container');
 
-      if (typeof window.CircuitSceneManager !== 'function') {
-        console.error('CircuitSceneManager is not a constructor!');
-        alert('ERROR: CircuitSceneManager failed to load. Check browser console for details.');
+      if (typeof window.CircuitController !== 'function') {
+        console.error('CircuitController is not a constructor!');
+        alert('ERROR: CircuitController failed to load. Check browser console for details.');
       }
 
-      const sceneManager = new window.CircuitSceneManager(window.componentsFactoryRegistry);
-      sceneManager.initialize(viewerContainer);
-      sceneManager.getScene().add(window.axesHelper);
-      sceneManager.getCamera().layers.enable(1); // enode hover layer
-      sceneManager.getCamera().layers.enable(2); // component hover layer
+      const circuitController = new window.CircuitController(window.componentsFactoryRegistry);
+      circuitController.on('ready', (e) => console.log(e));
+      circuitController.on('error', (e) => console.error(e));
+      circuitController.initialize(viewerContainer);
+      circuitController.getScene().add(window.axesHelper);
+      circuitController.getCamera().layers.enable(1); // enode hover layer
+      circuitController.getCamera().layers.enable(2); // component hover layer
 
-      window.renderer.render(sceneManager.getScene(), sceneManager.getCamera());
+      window.renderer.render(circuitController.getScene(), circuitController.getCamera());
       viewerContainer.appendChild(window.renderer.domElement);
 
       // Redimensionner le renderer pour remplir la hauteur disponible jusqu'en bas de la page,
@@ -497,53 +509,41 @@
           window.renderer.setSize(w, h);
           window.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
         }
-        sceneManager.onContainerResize();
+        circuitController.onContainerResize();
       }
       // initial resize
       resizeRenderer();
       window.addEventListener('resize', resizeRenderer);
 
-      sceneManager.on('hover', (e) => {
-        //console.log('hover', e);
-      });
-      sceneManager.on('unhover', (e) => {
-        //console.log('unhover', e);
-      });
-      sceneManager.on('select', (e) => {
-        //console.log('select', e);
-      });
-      sceneManager.on('deselect', (e) => {
-        //console.log('deselect', e);
-      });
-      sceneManager.on('toolActivated', (e) => {
+      circuitController.on('toolActivated', (e) => {
         console.log('toolActivated', e);
       });
-      sceneManager.on('toolDeactivated', (e) => {
+      circuitController.on('toolDeactivated', (e) => {
         console.log('toolDeactivated', e);
       });
-      sceneManager.on('circuitElementAction', (e) => {
+      circuitController.on('circuitElementAction', (e) => {
         console.log('circuitElementAction', e);
       });
-      sceneManager.on('toolOperationStarted', (e) => {
+      circuitController.on('toolOperationStarted', (e) => {
         console.log('toolOperationStarted', e);
       });
-      sceneManager.on('toolOperationCancelled', (e) => {
+      circuitController.on('toolOperationCancelled', (e) => {
         console.warn('toolOperationCancelled', e);
       });
-      sceneManager.on('toolOperationCompleted', (e) => {
+      circuitController.on('toolOperationCompleted', (e) => {
         console.log('toolOperationCompleted', e);
       });
-      sceneManager.on('toolValidationError', (e) => {
+      circuitController.on('toolValidationError', (e) => {
         console.error('toolValidationError', e);
       });
 
-      sceneManager.getControls().update();
-      sceneManager.setEditMode(true);
+      circuitController.getControls().update();
+      circuitController.setEditMode(true);
 
       function animate() {
         requestAnimationFrame(animate);
-        sceneManager.getControls().update();
-        renderer.render(sceneManager.getScene(), sceneManager.getCamera());
+        circuitController.getControls().update();
+        renderer.render(circuitController.getScene(), circuitController.getCamera());
       }
       animate();
 
@@ -563,8 +563,8 @@
         try {
           const circuitData = JSON.parse(json);
           const circuit = window.Circuit.fromJSON(circuitData);
-          sceneManager.setCircuit(circuit);
-          window.renderer.render(sceneManager.getScene(), sceneManager.getCamera());
+          circuitController.setCircuit(circuit);
+          window.renderer.render(circuitController.getScene(), circuitController.getCamera());
           errorDisplay.classList.add('hidden');
           resizeRenderer();
         } catch (error) {
@@ -582,8 +582,33 @@
         }
       });
 
+      document.getElementById('serialize-btn').addEventListener('click', () => {
+        const errorDisplay = document.getElementById('error-display');
+        const errorMessage = document.getElementById('error-message');
+        const circuit = circuitController.getCircuit();
+
+        if (!circuit) {
+          errorMessage.textContent = 'No circuit loaded. Please render a circuit first.';
+          errorDisplay.classList.remove('hidden');
+          resizeRenderer();
+          return;
+        }
+
+        try {
+          const circuitJSON = circuit.toJSON();
+          const formattedJSON = JSON.stringify(circuitJSON, null, 2);
+          document.getElementById('circuit-input').value = formattedJSON;
+          errorDisplay.classList.add('hidden');
+          resizeRenderer();
+        } catch (error) {
+          errorMessage.textContent = `❌ Serialization Error: ${error.message}`;
+          errorDisplay.classList.remove('hidden');
+          resizeRenderer();
+        }
+      });
+
       document.getElementById('clear-btn').addEventListener('click', () => {
-        sceneManager.clearVisuals();
+        circuitController.setCircuit(null);
         document.getElementById('circuit-input').value = '';
         document.getElementById('error-display').classList.add('hidden');
         resizeRenderer();
@@ -624,7 +649,7 @@
       })();
 
       document.getElementById('tool-build').addEventListener('click', (e) => {
-        sceneManager.toggleTool('build');
+        circuitController.toggleTool('build');
       });
 
       // Build Tool Logic
@@ -638,13 +663,13 @@
 
           if (isToolActive) {
             // Deactivate tool
-            sceneManager.deactivateTool('build');
+            circuitController.deactivateTool('build');
             toolButton.classList.remove('active');
             isToolActive = false;
           } else {
             // Activate tool
-            sceneManager.setEditMode(true);
-            sceneManager.setActiveTool('build');
+            circuitController.setEditMode(true);
+            circuitController.setActiveTool('build');
             toolButton.classList.add('active');
             isToolActive = true;
           }
@@ -662,13 +687,13 @@
 
           if (isToolActive) {
             // Deactivate tool
-            sceneManager.deactivateTool('multiSelect');
+            circuitController.deactivateTool('multiSelect');
             toolButton.classList.remove('active');
             isToolActive = false;
           } else {
             // Activate tool
-            sceneManager.setEditMode(true);
-            sceneManager.setActiveTool('multiSelect');
+            circuitController.setEditMode(true);
+            circuitController.setActiveTool('multiSelect');
             toolButton.classList.add('active');
             isToolActive = true;
           }
@@ -684,7 +709,7 @@
 
         // Populate component list from factory registry
         function populateComponentList() {
-          const componentTypes = sceneManager.getAvailableComponentTypes();
+          const componentTypes = circuitController.getAvailableComponentTypes();
           componentList.innerHTML = '';
 
           // nullItem allows deselecting component type
@@ -721,11 +746,11 @@
           allItems.forEach((item) => item.classList.remove('selected'));
           itemElement.classList.add('selected');
 
-          // Set component type via scene manager
-          const activeTool = sceneManager.getActiveTool();
+          // Set component type via scene controllerType
+          const activeTool = circuitController.getActiveTool();
           if (activeTool === 'addComponent') {
             try {
-              sceneManager.setAddComponentType(type);
+              circuitController.setAddComponentType(type);
               console.log(`Selected component type: ${type}`);
             } catch (error) {
               console.error('Failed to set component type:', error);
@@ -741,7 +766,7 @@
 
           if (isToolActive) {
             // Deactivate tool
-            sceneManager.deactivateTool('addComponent');
+            circuitController.deactivateTool('addComponent');
             componentList.classList.remove('visible');
             toolButton.classList.remove('active');
             isToolActive = false;
@@ -752,8 +777,8 @@
             allItems.forEach((item) => item.classList.remove('selected'));
           } else {
             // Activate tool
-            sceneManager.setEditMode(true);
-            sceneManager.setActiveTool('addComponent');
+            circuitController.setEditMode(true);
+            circuitController.setActiveTool('addComponent');
 
             // Populate and show component list
             populateComponentList();
@@ -763,8 +788,8 @@
           }
         });
 
-        // Listen to tool activation/deactivation events from sceneManager
-        sceneManager.on('toolActivated', (e) => {
+        // Listen to tool activation/deactivation events from circuitController
+        circuitController.on('toolActivated', (e) => {
           if (e.toolType === 'addComponent') {
             toolButton.classList.add('active');
             componentList.classList.add('visible');
@@ -777,7 +802,7 @@
           }
         });
 
-        sceneManager.on('toolDeactivated', (e) => {
+        circuitController.on('toolDeactivated', (e) => {
           if (e.toolType === 'addComponent') {
             toolButton.classList.remove('active');
             componentList.classList.remove('visible');

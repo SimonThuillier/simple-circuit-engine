@@ -26,7 +26,7 @@
 
 - [X] T001 Create BuildTool.ts skeleton with IEditingTool interface in src/scene/static/tools/BuildTool.ts
 - [X] T002 Define BuildToolMode type and state interfaces (WireCreatingState, ElementDragState, WirePointDragState, BPDragState) in src/scene/static/tools/BuildTool.ts
-- [X] T003 Implement constructor with CircuitSceneManager parameter and bind all event handler methods in src/scene/static/tools/BuildTool.ts
+- [X] T003 Implement constructor with CircuitController parameter and bind all event handler methods in src/scene/static/tools/BuildTool.ts
 - [X] T004 Implement onActivate() method with event listener attachment and state reset in src/scene/static/tools/BuildTool.ts
 - [X] T005 Implement onDeactivate() method with cleanup, listener removal, and operation cancellation in src/scene/static/tools/BuildTool.ts
 - [X] T006 Implement getCursorType() method with mode-aware cursor logic in src/scene/static/tools/BuildTool.ts
@@ -179,12 +179,12 @@
 ### Implementation for User Story 6
 
 - [X] T066 [US6] Update ToolType union in src/scene/shared/types.ts to only include 'build' and 'addComponent'
-- [X] T067 [US6] Register BuildTool in CircuitSceneManager tool factory in src/scene/static/CircuitSceneManager.ts
-- [X] T068 [US6] Update CircuitSceneManager.setActiveTool() method to handle 'build' tool type in src/scene/static/CircuitSceneManager.ts
-- [X] T069 [US6] Remove PositionTool import and registration from CircuitSceneManager in src/scene/static/CircuitSceneManager.ts
-- [X] T070 [US6] Remove WireTool import and registration from CircuitSceneManager in src/scene/static/CircuitSceneManager.ts
-- [X] T071 [US6] Remove DeleteTool import and registration from CircuitSceneManager in src/scene/static/CircuitSceneManager.ts
-- [X] T072 [US6] Remove BranchingPointTool import and registration from CircuitSceneManager in src/scene/static/CircuitSceneManager.ts
+- [X] T067 [US6] Register BuildTool in CircuitController tool factory in src/scene/static/CircuitController.ts
+- [X] T068 [US6] Update CircuitController.setActiveTool() method to handle 'build' tool type in src/scene/static/CircuitController.ts
+- [X] T069 [US6] Remove PositionTool import and registration from CircuitController in src/scene/static/CircuitController.ts
+- [X] T070 [US6] Remove WireTool import and registration from CircuitController in src/scene/static/CircuitController.ts
+- [X] T071 [US6] Remove DeleteTool import and registration from CircuitController in src/scene/static/CircuitController.ts
+- [X] T072 [US6] Remove BranchingPointTool import and registration from CircuitController in src/scene/static/CircuitController.ts
 - [X] T073 [US6] Delete src/scene/static/tools/PositionTool.ts file
 - [X] T074 [US6] Delete src/scene/static/tools/WireTool.ts file
 - [X] T075 [US6] Delete src/scene/static/tools/DeleteTool.ts file

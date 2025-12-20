@@ -63,7 +63,7 @@ src/
 │   │   ├── MaterialUtils.ts        # ADD: createLine2Material helper
 │   │   └── types.ts                # UPDATE: Add Line2 type exports if needed
 │   └── static/
-│       └── CircuitSceneManager.ts  # UPDATE: Handle LineMaterial resolution updates
+│       └── CircuitController.ts  # UPDATE: Handle LineMaterial resolution updates
 
 tests/
 └── scene/

@@ -1,5 +1,5 @@
 /**
- * Shared types for 3D Circuit SceneManagers
+ * Shared types for 3D Circuit Controllers
  * @module rendering/contracts/types
  */
 
@@ -9,7 +9,7 @@ import type * as THREE from 'three';
 /**
  * Supported renderer event types (includes tool system events)
  */
-export type SceneManagerEvent =
+export type ControllerEvent =
   | 'hover'
   | 'unhover'
   | 'select'
@@ -32,7 +32,7 @@ export type CircuitSceneObjectType = 'component' | 'wire' | 'enode';
 /**
  * Event payload map for type-safe event emission
  */
-export interface SceneManagerEventMap {
+export interface ControllerEventMap {
   hover: { objectId: UUID; objectType: CircuitSceneObjectType };
   unhover: { objectId: UUID; objectType: CircuitSceneObjectType };
   select: { objectId: UUID; objectType: CircuitSceneObjectType };
@@ -52,7 +52,7 @@ export interface SceneManagerEventMap {
 /**
  * Callback function type for renderer events
  */
-export type SceneManagerCallback<T = any> = (payload: T) => void;
+export type ControllerCallback<T = any> = (payload: T) => void;
 
 /**
  * Optional parameter for incremental renderer updates
@@ -76,14 +76,14 @@ export interface ChangedData {
   addedENodes?: UUID[];
   /** ENode IDs that were removed from the circuit */
   removedENodes?: UUID[];
-  /** Flag indicating simulation state has changed (for CircuitRunnerSceneManager) */
+  /** Flag indicating simulation state has changed (for CircuitRunnerController) */
   stateChanged?: boolean;
 }
 
 /**
  * Optional configuration for renderer initialization
  */
-export interface SceneManagerOptions {
+export interface ControllerOptions {
   /** Background color for the scene (default: 0x000000) */
   backgroundColor?: number;
   /** Enable anti-aliasing (default: true) */
@@ -125,7 +125,7 @@ export type CursorType =
  * Interface defining contract for editing tool implementations
  *
  * All editing tools must implement this interface to integrate with
- * CircuitSceneManager's tool system.
+ * CircuitController's tool system.
  *
  * @example
  * ```typescript

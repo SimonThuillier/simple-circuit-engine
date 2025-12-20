@@ -19,10 +19,10 @@ The main editing tool implementing `IEditingTool` interface.
 | clipboard | `ClipboardData \| null` | Copied element data |
 
 **Relationships**:
-- Uses `CircuitSceneManager` for scene access
+- Uses `CircuitController` for scene access
 - Uses `SelectionManager` for selection state
 - Uses `WireVisualManager` for wire updates
-- Uses `CircuitEditionManager` for model persistence
+- Uses `CircuitWriter` for model persistence
 
 ---
 

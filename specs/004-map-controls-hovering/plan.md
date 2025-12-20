@@ -5,7 +5,7 @@
 
 ## Summary
 
-Integrate Three.js MapControls for camera navigation (pan, zoom, rotate) and implement priority-based hover detection using dedicated hitbox layers. Both CircuitSceneManager and CircuitRunnerSceneManager will gain these capabilities. Hover detection uses Three.js Raycaster against invisible hitbox meshes organized by layers (enode > component > wire priority).
+Integrate Three.js MapControls for camera navigation (pan, zoom, rotate) and implement priority-based hover detection using dedicated hitbox layers. Both CircuitController and CircuitRunnerController will gain these capabilities. Hover detection uses Three.js Raycaster against invisible hitbox meshes organized by layers (enode > component > wire priority).
 
 ## Technical Context
 
@@ -38,7 +38,7 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 | scene/ may import core, three | ✅ Using existing core types (UUID) and three |
 | scene/ may NOT import playback | ✅ No playback imports |
 | Resource Management | ✅ dispose() will clean up MapControls and event listeners |
-| No global state | ✅ All state scoped to manager instances |
+| No global state | ✅ All state scoped to controllerType instances |
 
 **No violations - proceeding to Phase 0.**
 
@@ -83,18 +83,18 @@ src/
 │   │   ├── LayerConstants.ts     # [NEW] Layer definitions (extract from ComponentVisuals.ts)
 │   │   └── ComponentVisuals.ts   # [EXISTS] Already has LAYERS enum and hitboxes
 │   ├── static/
-│   │   └── CircuitSceneManager.ts    # [MODIFY] Add MapControls and HoverManager
+│   │   └── CircuitController.ts    # [MODIFY] Add MapControls and HoverManager
 │   └── simulation/
-│       └── CircuitRunnerSceneManager.ts  # [MODIFY] Add MapControls and HoverManager
+│       └── CircuitRunnerController.ts  # [MODIFY] Add MapControls and HoverManager
 
 tests/
 ├── scene/
 │   ├── shared/
 │   │   └── HoverManager.test.ts  # [NEW] Unit tests for hover detection
 │   ├── static/
-│   │   └── CircuitSceneManager.test.ts  # [MODIFY] Add MapControls/hover tests
+│   │   └── CircuitController.test.ts  # [MODIFY] Add MapControls/hover tests
 │   └── simulation/
-│       └── CircuitRunnerSceneManager.test.ts  # [MODIFY] Add tests
+│       └── CircuitRunnerController.test.ts  # [MODIFY] Add tests
 ```
 
 **Structure Decision**: Single library project. New code goes in `src/scene/shared/` for reuse by both static and simulation managers. The existing LAYERS enum in ComponentVisuals.ts will be extracted to a shared LayerConstants.ts file.

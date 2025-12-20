@@ -89,7 +89,7 @@ export class HoverManager {
     // Setup raycaster
     this.raycaster.setFromCamera(new THREE.Vector2(normalizedX, normalizedY), this.camera);
 
-    // VERY IMPORTANT: Update ground plane position so that sceneManager cursorGroundPlanePosition queries work correctly
+    // VERY IMPORTANT: Update ground plane position so that controller cursorGroundPlanePosition queries work correctly
     this.raycaster.ray.intersectPlane(this.groundPlane, this.groundPlanePosition);
 
     // Try to find a hit in priority order: ENODE > COMPONENT > WIRE
@@ -194,7 +194,7 @@ export class HoverManager {
    * Clean up resources
    *
    * Removes all callbacks and clears state.
-   * Call when disposing the scene manager.
+   * Call when disposing the scene controllerType.
    */
   dispose(): void {
     this.clear();

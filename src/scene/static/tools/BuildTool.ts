@@ -21,8 +21,9 @@ import type {
   MonoSelectionData,
   HoveredElement,
 } from '../../shared/types';
-import type { CircuitSceneManager } from '../CircuitSceneManager';
+import type { CircuitController } from '../CircuitController';
 import type { UUID } from '../../../core/types/Identifier';
+import { ENodeSourceType } from '../../../core/types/ENodeSourceType';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import {
   gridToWorldRotation,
@@ -160,13 +161,24 @@ interface ClipboardData {
 }
 
 /**
+ * Returns the next sourceType in the cycle: null → Voltage → Current → null
+ * @param current - Current source type
+ * @returns Next source type in the cycle
+ */
+function getNextSourceType(current: ENodeSourceType | undefined): ENodeSourceType | undefined {
+  if (!current) return ENodeSourceType.Voltage;
+  if (current === ENodeSourceType.Voltage) return ENodeSourceType.Current;
+  return undefined; // Current → null
+}
+
+/**
  * Unified tool for building circuits
  * Implements all circuit editing functionality in a single tool
  */
 export class BuildTool implements IEditingTool {
   readonly type: ToolType = 'build';
 
-  private _sceneManager: CircuitSceneManager;
+  private _controller: CircuitController;
 
   // Tool state
   private mode: BuildToolMode = 'idle';
@@ -183,10 +195,10 @@ export class BuildTool implements IEditingTool {
 
   /**
    * Construct a new BuildTool instance
-   * @param sceneManager - The circuit scene manager instance
+   * @param controller - The circuit scene controllerType instance
    */
-  constructor(sceneManager: CircuitSceneManager) {
-    this._sceneManager = sceneManager;
+  constructor(controller: CircuitController) {
+    this._controller = controller;
 
     // Bind event handlers for stable references
     this.handlePointerDown = this.handlePointerDown.bind(this);
@@ -210,7 +222,7 @@ export class BuildTool implements IEditingTool {
     this.lastCancelledOp = null;
 
     // Set up event listeners
-    const container = this._sceneManager.getContainer();
+    const container = this._controller.getContainer();
 
     container.addEventListener('pointerdown', this.handlePointerDown);
     container.addEventListener('pointerup', this.handlePointerUp);
@@ -226,9 +238,9 @@ export class BuildTool implements IEditingTool {
     // Security : Cancel any active operations
     this.cancelOperation();
 
-    const container = this._sceneManager.getContainer();
+    const container = this._controller.getContainer();
     // Remove event listeners
-    this._sceneManager.off('gridPositionMove', this.handleGridPositionMove);
+    this._controller.off('gridPositionMove', this.handleGridPositionMove);
     container.removeEventListener('pointerdown', this.handlePointerDown);
     container.removeEventListener('pointerup', this.handlePointerUp);
     container.removeEventListener('dblclick', this.handleDblClick);
@@ -243,7 +255,7 @@ export class BuildTool implements IEditingTool {
     this.lastCancelledOp = null;
 
     // Safety: re-enable camera controls
-    const controls = this._sceneManager.getControls();
+    const controls = this._controller.getControls();
     if (controls) {
       controls.enablePan = true;
     }
@@ -269,7 +281,7 @@ export class BuildTool implements IEditingTool {
    * Returns cursor based on current mode and hover state
    */
   getCursorType(): CursorType {
-    const hoveredElement = this._sceneManager.getHoveredElement();
+    const hoveredElement = this._controller.getHoveredElement();
 
     // During wire creation
     if (this.mode === 'wire_creation') {
@@ -292,7 +304,7 @@ export class BuildTool implements IEditingTool {
       }
 
       // Can drag selected element
-      const selection = this._sceneManager.getSelectionManager().getSelection();
+      const selection = this._controller.getSelectionManager().getSelection();
       if (selection && selection.kind === 'mono' && hoveredElement.id === selection.id) {
         return 'grab';
       }
@@ -331,11 +343,17 @@ export class BuildTool implements IEditingTool {
    */
   private handlePointerDown(event: MouseEvent): void {
     if (event.button !== 0) return; // Only handle left click
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     if (!circuit) return;
-    const hoveredElement = this._sceneManager.getHoveredElement();
+    const hoveredElement = this._controller.getHoveredElement();
 
     if (this.mode === 'idle') {
+      // Handle Ctrl+click for sourceType cycling
+      if ((event.ctrlKey || event.metaKey) && hoveredElement && hoveredElement.type === 'enode') {
+        this.cycleEnodeSourceType(hoveredElement.id, hoveredElement.object3D);
+        return; // Early exit - don't start wire creation
+      }
+
       if (hoveredElement && hoveredElement.type === 'enode') {
         const enodeId = hoveredElement.id;
         // special priority 0 : if a wire creation was just cancelled, and we click again on the same enode within 500ms, we start dragging the branching point instead of starting a new wire creation
@@ -346,7 +364,7 @@ export class BuildTool implements IEditingTool {
           this.lastCancelledOp.mode === 'wire_creation' &&
           Date.now() - this.lastCancelledOp.ts < 500
         ) {
-          this.startBPDrag(enodeId, this._sceneManager.cursorGroundPlanePosition());
+          this.startBPDrag(enodeId, this._controller.cursorGroundPlanePosition());
           return;
         }
 
@@ -357,23 +375,24 @@ export class BuildTool implements IEditingTool {
       // Priority 2 : Check if we're hovering a component
       if (hoveredElement && hoveredElement.type === 'component') {
         const componentId = hoveredElement.id;
-        this.startComponentDrag(componentId, this._sceneManager.cursorGroundPlanePosition());
+        this.startComponentDrag(componentId, this._controller.cursorGroundPlanePosition());
         return;
       }
       // Priority 3 : Check if we're hovering a wire
       if (hoveredElement && hoveredElement.type === 'wire') {
         const wireId = hoveredElement.id;
         const screenPos = new THREE.Vector2(event.clientX, event.clientY);
-        const worldPosition = this._sceneManager.cursorGroundPlanePosition();
+        const worldPosition = this._controller.cursorGroundPlanePosition();
 
         // Drag target resolution: branching point > existing intermediate > new intermediate
         const wire = circuit.getWire(wireId);
         if (!wire) return;
 
         // Priority 3-1: Check for existing intermediate point
-        const nearestPoint = this._sceneManager
-          .getWireVisualManager()
-          .findNearestIntermediatePoint(wireId, screenPos);
+        const nearestPoint = this._controller.wireVisualManager.findNearestIntermediatePoint(
+          wireId,
+          screenPos
+        );
         if (nearestPoint) {
           // Start dragging existing intermediate point
           const pos = wire.intermediatePositions[nearestPoint.pointIndex];
@@ -384,9 +403,10 @@ export class BuildTool implements IEditingTool {
           }
         }
         // Priority 3-2: Create new intermediate point at click position
-        const insertIndex = this._sceneManager
-          .getWireVisualManager()
-          .getInsertIndexForPosition(wireId, worldPosition);
+        const insertIndex = this._controller.wireVisualManager.getInsertIndexForPosition(
+          wireId,
+          worldPosition
+        );
         this.startWireDrag(wireId, 'new_intermediate', insertIndex, worldPosition);
         return;
       }
@@ -411,9 +431,9 @@ export class BuildTool implements IEditingTool {
   private handlePointerUp(event: MouseEvent): void {
     if (event.button !== 0) return; // Only handle left click
 
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     if (!circuit) return;
-    const hoveredElement = this._sceneManager.getHoveredElement();
+    const hoveredElement = this._controller.getHoveredElement();
 
     if (this.mode === 'wire_creation') {
       // specific case : clicking on source enode cancels the wire creation but may lead to dragging branching point
@@ -438,9 +458,9 @@ export class BuildTool implements IEditingTool {
     }
 
     // Finally stop listening to gridPositionMove events
-    this._sceneManager.off('gridPositionMove', this.handleGridPositionMove);
+    this._controller.off('gridPositionMove', this.handleGridPositionMove);
     // and unlock MapControl change of camera
-    this._sceneManager.getControls()!.enablePan = true;
+    this._controller.getControls()!.enablePan = true;
   }
 
   /**
@@ -487,7 +507,7 @@ export class BuildTool implements IEditingTool {
 
     // Handle copy (CTRL+C) - copy selected component type and rotation
     if ((event.ctrlKey || event.metaKey) && event.key === 'c') {
-      const selection = this._sceneManager.getSelectionManager().getSelection();
+      const selection = this._controller.getSelectionManager().getSelection();
       if (selection && selection.kind === 'mono' && selection.type === 'component') {
         this.copyComponent(selection.id);
       }
@@ -503,7 +523,7 @@ export class BuildTool implements IEditingTool {
     }
 
     // actions on selection
-    const selection = this._sceneManager.getSelectionManager().getSelection();
+    const selection = this._controller.getSelectionManager().getSelection();
     if (!selection) return;
     if (selection.kind === 'multi') return; //this tool only handles mono selection for deletion
     const monoSelection = selection as MonoSelectionData;
@@ -512,13 +532,13 @@ export class BuildTool implements IEditingTool {
       // Handle deletion of components, wires, branching points
       if (monoSelection.type === 'component') {
         const componentId = monoSelection.id;
-        this._sceneManager.removeComponent(componentId);
+        this._controller.removeComponent(componentId);
       } else if (monoSelection.type === 'wire') {
         const wireId = monoSelection.id;
-        this._sceneManager.removeWire(wireId);
+        this._controller.removeWire(wireId);
       } else if (monoSelection.type === 'enode' && monoSelection.data === 'BranchingPoint') {
         const enodeId = monoSelection.id;
-        this._sceneManager.removeBranchingPoint(enodeId);
+        this._controller.removeBranchingPoint(enodeId);
         // TODO: may fail if the resulting merged wire is a duplicate - see how to handle this case
       }
     } else if (event.key === 'r' || event.key === 'R') {
@@ -537,15 +557,15 @@ export class BuildTool implements IEditingTool {
   private handleDblClick(event: MouseEvent): void {
     if (event.button !== 0) return; // Only handle left click
 
-    const hoveredElement = this._sceneManager.getHoveredElement();
+    const hoveredElement = this._controller.getHoveredElement();
 
     // Priority 1 - Check if we're hovering a wire => split it with new branchingPoint
     if (hoveredElement && hoveredElement.type === 'wire') {
       const wireId = hoveredElement.id;
-      const gridPosition = this._sceneManager.cursorGroundPlanePosition();
+      const gridPosition = this._controller.cursorGroundPlanePosition();
       const enodeId = this.createBranchingPointOnWire(wireId, gridPosition);
       if (enodeId) {
-        this._sceneManager.getSelectionManager().selectOne('enode', enodeId, { componentId: null });
+        this._controller.getSelectionManager().selectOne('enode', enodeId, { componentId: null });
       }
     }
     // Priority 2 - Check if we're hovering a component => rotate it
@@ -554,10 +574,10 @@ export class BuildTool implements IEditingTool {
       this.rotateComponent(componentId);
     } else if (!hoveredElement) {
       // Priority 3 - Double-click on empty space - create standalone branching point
-      const gridPosition = this._sceneManager.cursorGroundPlanePosition();
+      const gridPosition = this._controller.cursorGroundPlanePosition();
       const enodeId = this.createStandaloneBranchingPoint(gridPosition);
       if (enodeId) {
-        this._sceneManager.getSelectionManager().selectOne('enode', enodeId, { componentId: null });
+        this._controller.getSelectionManager().selectOne('enode', enodeId, { componentId: null });
       }
     }
   }
@@ -572,14 +592,14 @@ export class BuildTool implements IEditingTool {
    * @param sourceEnodeId - Source enode ID
    */
   private startWireCreation(sourceEnodeId: UUID): void {
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     if (!circuit) return;
 
     const sourceEnode = circuit.getENode(sourceEnodeId);
     if (!sourceEnode) return;
 
     // Get source position
-    const enodeGroup = this._sceneManager.getEnodeObject3Ds().get(sourceEnodeId);
+    const enodeGroup = this._controller.enodeObject3Ds.get(sourceEnodeId);
     if (!enodeGroup) return;
     const sourcePosition = enodeGroup.position.clone();
     if (enodeGroup.userData.componentId) {
@@ -589,7 +609,7 @@ export class BuildTool implements IEditingTool {
     }
 
     // Create preview wire
-    const previewWire = this._sceneManager.getWireVisualManager().createPreviewWire(sourcePosition);
+    const previewWire = this._controller.wireVisualManager.createPreviewWire(sourcePosition);
 
     // Enter wire creating state
     this.mode = 'wire_creation';
@@ -600,10 +620,10 @@ export class BuildTool implements IEditingTool {
       ts: Date.now(),
     };
 
-    this._sceneManager.getControls()!.enablePan = false;
-    this._sceneManager.on('gridPositionMove', this.handleGridPositionMove);
+    this._controller.getControls()!.enablePan = false;
+    this._controller.on('gridPositionMove', this.handleGridPositionMove);
 
-    this._sceneManager.emit('toolOperationStarted', {
+    this._controller.emit('toolOperationStarted', {
       toolType: this.type,
       mode: this.mode,
       operationData: { sourceEnodeId },
@@ -616,7 +636,7 @@ export class BuildTool implements IEditingTool {
    * @private
    */
   private updateWireCreation(position: THREE.Vector3): void {
-    this._sceneManager.getWireVisualManager().updatePreviewWire(position);
+    this._controller.wireVisualManager.updatePreviewWire(position);
   }
 
   /**
@@ -624,9 +644,9 @@ export class BuildTool implements IEditingTool {
    */
   private cancelWireCreation(emit: boolean = true): void {
     if (this.mode !== 'wire_creation') return;
-    this._sceneManager.getWireVisualManager().removePreviewWire();
+    this._controller.wireVisualManager.removePreviewWire();
     if (emit) {
-      this._sceneManager.emit('toolOperationCancelled', {
+      this._controller.emit('toolOperationCancelled', {
         toolType: this.type,
         mode: this.mode,
       });
@@ -650,7 +670,7 @@ export class BuildTool implements IEditingTool {
   private completeWireCreation(hoveredElement: HoveredElement | null): UUID | undefined {
     if (this.mode !== 'wire_creation' || !this.wireCreationState) return;
 
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     if (!circuit) return;
     const sourceEnodeId = this.wireCreationState.sourceEnodeId;
 
@@ -660,10 +680,10 @@ export class BuildTool implements IEditingTool {
       let hasSelected = false;
       if (!hoveredElement) {
         // finishing on empty space : create end branching point
-        const worldPosition = this._sceneManager.cursorGroundPlanePosition();
+        const worldPosition = this._controller.cursorGroundPlanePosition();
         targetEnodeId = this.createStandaloneBranchingPoint(worldPosition);
         if (targetEnodeId) {
-          this._sceneManager
+          this._controller
             .getSelectionManager()
             .selectOne('enode', targetEnodeId, { componentId: null });
           hasSelected = true;
@@ -671,7 +691,7 @@ export class BuildTool implements IEditingTool {
       } else if (hoveredElement.type === 'wire') {
         // this interesting case create a new branching point on the wire and connect to it
         const targetWireId = hoveredElement.id;
-        const gridPosition = this._sceneManager.cursorGroundPlanePosition();
+        const gridPosition = this._controller.cursorGroundPlanePosition();
         targetEnodeId = this.createBranchingPointOnWire(targetWireId, gridPosition);
       } else if (hoveredElement.type === 'enode') {
         targetEnodeId = hoveredElement.id;
@@ -682,13 +702,13 @@ export class BuildTool implements IEditingTool {
       }
 
       // Create definitive wire visual
-      const wire = this._sceneManager.addWire(sourceEnodeId, targetEnodeId);
+      const wire = this._controller.addWire(sourceEnodeId, targetEnodeId);
       // select the new wire if nothing was selected before
       if (!hasSelected) {
-        this._sceneManager.getSelectionManager().selectOne('wire', wire.id);
+        this._controller.getSelectionManager().selectOne('wire', wire.id);
       }
       // Emit success event
-      this._sceneManager.emit('toolOperationCompleted', {
+      this._controller.emit('toolOperationCompleted', {
         toolType: this.type,
         mode: this.mode,
         operationData: { wireId: wire.id, sourceEnodeId, targetEnodeId },
@@ -699,7 +719,7 @@ export class BuildTool implements IEditingTool {
       return wire.id;
     } catch (error) {
       this.cancelWireCreation();
-      this._sceneManager.emit('toolValidationError', {
+      this._controller.emit('toolValidationError', {
         toolType: this.type,
         mode: this.mode,
         errorMessage: error instanceof Error ? error.message : 'Unknown error during wire creation',
@@ -724,7 +744,7 @@ export class BuildTool implements IEditingTool {
     pointIndex: number,
     worldPosition: THREE.Vector3
   ): void {
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     if (!circuit) return;
 
     const wire = circuit.getWire(wireId);
@@ -751,10 +771,10 @@ export class BuildTool implements IEditingTool {
     };
 
     // block MapControls panning and register for gridPositionMove events
-    this._sceneManager.getControls()!.enablePan = false;
-    this._sceneManager.on('gridPositionMove', this.handleGridPositionMove);
+    this._controller.getControls()!.enablePan = false;
+    this._controller.on('gridPositionMove', this.handleGridPositionMove);
 
-    this._sceneManager.emit('toolOperationStarted', {
+    this._controller.emit('toolOperationStarted', {
       toolType: this.type,
       mode: this.mode,
       operationData: { wireId, pointIndex, targetType },
@@ -775,10 +795,8 @@ export class BuildTool implements IEditingTool {
 
     // T063: Real-time geometry update with temporary positions
     // Use circuit's update method to set intermediate positions
-    this._sceneManager
-      .getCircuitEditionManager()
-      .saveEditWirePositions(this.wireDragState.wireId, newPositions);
-    this._sceneManager.getWireVisualManager().updateWireById(this.wireDragState.wireId);
+    this._controller.circuitWriter.saveEditWirePositions(this.wireDragState.wireId, newPositions);
+    this._controller.wireVisualManager.updateWireById(this.wireDragState.wireId);
   }
 
   /**
@@ -788,13 +806,15 @@ export class BuildTool implements IEditingTool {
     if (this.mode !== 'wire_drag' || !this.wireDragState) return;
 
     // Revert intermediate positions
-    this._sceneManager
-      .getCircuitEditionManager()
-      .saveEditWirePositions(this.wireDragState.wireId, this.wireDragState.originalPositions, true);
-    this._sceneManager.getWireVisualManager().updateWireById(this.wireDragState.wireId);
+    this._controller.circuitWriter.saveEditWirePositions(
+      this.wireDragState.wireId,
+      this.wireDragState.originalPositions,
+      true
+    );
+    this._controller.wireVisualManager.updateWireById(this.wireDragState.wireId);
 
     if (emit) {
-      this._sceneManager.emit('toolOperationCancelled', {
+      this._controller.emit('toolOperationCancelled', {
         toolType: this.type,
         mode: this.mode,
       });
@@ -819,7 +839,7 @@ export class BuildTool implements IEditingTool {
     this.mode = 'idle';
     this.wireDragState = null;
 
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     if (!circuit) return;
     const wireId = wireDragState.wireId;
     const wire = circuit.getWire(wireId);
@@ -828,18 +848,20 @@ export class BuildTool implements IEditingTool {
     try {
       //Check for merge/delete conditions
       const finalPositions = this.checkMergeDelete(wire);
-      // Persist to model via CircuitEditionManager
-      this._sceneManager
-        .getCircuitEditionManager()
-        .saveEditWirePositions(wireDragState.wireId, finalPositions, true);
+      // Persist to model via CircuitWriter
+      this._controller.circuitWriter.saveEditWirePositions(
+        wireDragState.wireId,
+        finalPositions,
+        true
+      );
 
-      const hoveredElement = this._sceneManager.getHoveredElement();
+      const hoveredElement = this._controller.getHoveredElement();
       // special case 1 : if wire was dragged to enode, we need to split it and connect to it
       if (hoveredElement && hoveredElement.type === 'enode') {
         const targetEnodeId = hoveredElement.id;
-        const worldPosition = this._sceneManager.cursorGroundPlanePosition();
-        const result = this._sceneManager.splitWire(wireId, worldPosition, targetEnodeId);
-        this._sceneManager.emit('toolOperationCompleted', {
+        const worldPosition = this._controller.cursorGroundPlanePosition();
+        const result = this._controller.splitWire(wireId, worldPosition, targetEnodeId);
+        this._controller.emit('toolOperationCompleted', {
           toolType: this.type,
           mode: this.mode,
           operationData: {
@@ -853,7 +875,7 @@ export class BuildTool implements IEditingTool {
             addedWires: result.wires.map((w) => w.id),
           },
         });
-        this._sceneManager
+        this._controller
           .getSelectionManager()
           .selectOne('enode', targetEnodeId, { componentId: null });
         return;
@@ -862,10 +884,10 @@ export class BuildTool implements IEditingTool {
       // then split our dragged wire to connect to that branching point
       if (hoveredElement && hoveredElement.type === 'wire' && hoveredElement.id !== wireId) {
         const targetWireId = hoveredElement.id;
-        const worldPosition = this._sceneManager.cursorGroundPlanePosition();
+        const worldPosition = this._controller.cursorGroundPlanePosition();
         const targetEnodeId = this.createBranchingPointOnWire(targetWireId, worldPosition);
-        const result = this._sceneManager.splitWire(wireId, worldPosition, targetEnodeId);
-        this._sceneManager.emit('toolOperationCompleted', {
+        const result = this._controller.splitWire(wireId, worldPosition, targetEnodeId);
+        this._controller.emit('toolOperationCompleted', {
           toolType: this.type,
           mode: this.mode,
           operationData: {
@@ -880,7 +902,7 @@ export class BuildTool implements IEditingTool {
           },
         });
         if (targetEnodeId) {
-          this._sceneManager
+          this._controller
             .getSelectionManager()
             .selectOne('enode', targetEnodeId, { componentId: null });
         }
@@ -888,8 +910,8 @@ export class BuildTool implements IEditingTool {
       }
 
       // Default case : Update visual
-      this._sceneManager.getWireVisualManager().updateWireById(wireDragState.wireId);
-      this._sceneManager.emit('toolOperationCompleted', {
+      this._controller.wireVisualManager.updateWireById(wireDragState.wireId);
+      this._controller.emit('toolOperationCompleted', {
         toolType: this.type,
         mode: this.mode,
         operationData: {
@@ -901,7 +923,7 @@ export class BuildTool implements IEditingTool {
         },
       });
     } catch (error) {
-      this._sceneManager.emit('toolValidationError', {
+      this._controller.emit('toolValidationError', {
         toolType: this.type,
         mode: this.mode,
         errorMessage: `Failed to commit wire drag: ${(error as Error).message}`,
@@ -916,7 +938,7 @@ export class BuildTool implements IEditingTool {
    * @param worldPosition - Initial position
    */
   private startComponentDrag(componentId: UUID, worldPosition: THREE.Vector3): void {
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     if (!circuit) return;
 
     const component = circuit.getComponent(componentId);
@@ -929,10 +951,10 @@ export class BuildTool implements IEditingTool {
     };
 
     // block MapControls panning and register for gridPositionMove events
-    this._sceneManager.getControls()!.enablePan = false;
-    this._sceneManager.on('gridPositionMove', this.handleGridPositionMove);
+    this._controller.getControls()!.enablePan = false;
+    this._controller.on('gridPositionMove', this.handleGridPositionMove);
 
-    this._sceneManager.emit('toolOperationStarted', {
+    this._controller.emit('toolOperationStarted', {
       toolType: this.type,
       mode: this.mode,
       operationData: { componentId },
@@ -946,16 +968,14 @@ export class BuildTool implements IEditingTool {
   private updateComponentDrag(worldPosition: THREE.Vector3): void {
     if (this.mode !== 'component_drag' || !this.componentDragState) return;
 
-    const object = this._sceneManager.getObject3D('component', this.componentDragState.componentId);
+    const object = this._controller.getObject3D('component', this.componentDragState.componentId);
     if (!object) return;
 
     const newPosition = nearestWorldSnapPosition(worldPosition);
     object.position.copy(newPosition);
 
     // moving wires connected to component in real-time during drag
-    this._sceneManager
-      .getWireVisualManager()
-      .updateWiresForComponent(this.componentDragState.componentId);
+    this._controller.wireVisualManager.updateWiresForComponent(this.componentDragState.componentId);
   }
 
   /**
@@ -965,17 +985,15 @@ export class BuildTool implements IEditingTool {
     if (this.mode !== 'component_drag' || !this.componentDragState) return;
 
     // restore original component visual
-    const object = this._sceneManager.getObject3D('component', this.componentDragState.componentId);
+    const object = this._controller.getObject3D('component', this.componentDragState.componentId);
     if (!object) return;
 
     object.position.copy(this.componentDragState.initialPosition);
     // restore wires connected to component
-    this._sceneManager
-      .getWireVisualManager()
-      .updateWiresForComponent(this.componentDragState.componentId);
+    this._controller.wireVisualManager.updateWiresForComponent(this.componentDragState.componentId);
 
     if (emit) {
-      this._sceneManager.emit('toolOperationCancelled', {
+      this._controller.emit('toolOperationCancelled', {
         toolType: this.type,
         mode: 'component_drag',
       });
@@ -995,22 +1013,20 @@ export class BuildTool implements IEditingTool {
   private completeComponentDrag(): void {
     if (this.mode !== 'component_drag' || !this.componentDragState) return;
 
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     if (!circuit) return;
 
     const componentId = this.componentDragState.componentId;
-    const object = this._sceneManager.getObject3D('component', componentId);
+    const object = this._controller.getObject3D('component', componentId);
     if (!object) return;
 
     try {
-      const component = this._sceneManager
-        .getCircuitEditionManager()
-        .saveEditComponent(componentId, object, true);
+      const component = this._controller.circuitWriter.saveEditComponent(componentId, object, true);
       for (const connectedWire of circuit.getWiresByComponent(componentId)) {
-        this._sceneManager.getCircuitEditionManager().saveSimplifyWirePositions(connectedWire.id);
-        this._sceneManager.getWireVisualManager().updateWireById(connectedWire.id);
+        this._controller.circuitWriter.saveSimplifyWirePositions(connectedWire.id);
+        this._controller.wireVisualManager.updateWireById(connectedWire.id);
       }
-      this._sceneManager.emit('toolOperationCompleted', {
+      this._controller.emit('toolOperationCompleted', {
         toolType: this.type,
         mode: 'component_drag',
         operationData: {
@@ -1020,7 +1036,7 @@ export class BuildTool implements IEditingTool {
         changedData: {},
       });
     } catch (error) {
-      this._sceneManager.emit('toolValidationError', {
+      this._controller.emit('toolValidationError', {
         toolType: this.type,
         mode: this.mode,
         errorMessage: `Failed to commit component drag: ${(error as Error).message}`,
@@ -1039,7 +1055,7 @@ export class BuildTool implements IEditingTool {
    * @param worldPosition - Initial position
    */
   private startBPDrag(enodeId: UUID, worldPosition: THREE.Vector3): void {
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     if (!circuit) return;
 
     const branchingPoint = circuit.getENode(enodeId);
@@ -1051,10 +1067,10 @@ export class BuildTool implements IEditingTool {
       initialPosition: worldPosition.clone(),
     };
     // block MapControls panning and register for gridPositionMove events
-    this._sceneManager.getControls()!.enablePan = false;
-    this._sceneManager.on('gridPositionMove', this.handleGridPositionMove);
+    this._controller.getControls()!.enablePan = false;
+    this._controller.on('gridPositionMove', this.handleGridPositionMove);
 
-    this._sceneManager.emit('toolOperationStarted', {
+    this._controller.emit('toolOperationStarted', {
       toolType: this.type,
       mode: this.mode,
       operationData: { enodeId },
@@ -1068,15 +1084,15 @@ export class BuildTool implements IEditingTool {
   private updateBPDrag(worldPosition: THREE.Vector3): void {
     if (this.mode !== 'bp_drag' || !this.bpDragState) return;
 
-    const visual = this._sceneManager.getEnodeObject3Ds().get(this.bpDragState.enodeId);
+    const visual = this._controller.enodeObject3Ds.get(this.bpDragState.enodeId);
     if (!visual) return;
 
     visual.position.copy(nearestWorldSnapPosition(worldPosition));
-    const enode = this._sceneManager.getCircuitEditionManager().saveEditBranchingPoint(visual);
+    const enode = this._controller.circuitWriter.saveEditBranchingPoint(visual);
 
     // Update all wires connected to this branching point
     for (const connectedWireId of enode.wires) {
-      this._sceneManager.getWireVisualManager().updateWireById(connectedWireId);
+      this._controller.wireVisualManager.updateWireById(connectedWireId);
     }
   }
 
@@ -1088,19 +1104,19 @@ export class BuildTool implements IEditingTool {
 
     const initialPosition = this.bpDragState.initialPosition;
     // Update bp visual
-    const visual = this._sceneManager.getEnodeObject3Ds().get(this.bpDragState.enodeId);
+    const visual = this._controller.enodeObject3Ds.get(this.bpDragState.enodeId);
     if (!visual) return;
     visual.position.copy(initialPosition);
 
-    const enode = this._sceneManager.getCircuitEditionManager().saveEditBranchingPoint(visual);
+    const enode = this._controller.circuitWriter.saveEditBranchingPoint(visual);
 
     // restore all wires connected to this branching point
     for (const connectedWireId of enode.wires) {
-      this._sceneManager.getWireVisualManager().updateWireById(connectedWireId);
+      this._controller.wireVisualManager.updateWireById(connectedWireId);
     }
 
     if (emit) {
-      this._sceneManager.emit('toolOperationCancelled', {
+      this._controller.emit('toolOperationCancelled', {
         toolType: this.type,
         mode: 'bp_drag',
       });
@@ -1120,7 +1136,7 @@ export class BuildTool implements IEditingTool {
   private completeBPDrag(): void {
     if (this.mode !== 'bp_drag' || !this.bpDragState) return;
 
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     if (!circuit) return;
 
     try {
@@ -1130,10 +1146,10 @@ export class BuildTool implements IEditingTool {
       }
       // Branching point drag position is already updated, but it's a good place to simplify wire path if necessary
       for (const connectedWireId of branchingPoint.wires) {
-        this._sceneManager.getCircuitEditionManager().saveSimplifyWirePositions(connectedWireId);
-        this._sceneManager.getWireVisualManager().updateWireById(connectedWireId);
+        this._controller.circuitWriter.saveSimplifyWirePositions(connectedWireId);
+        this._controller.wireVisualManager.updateWireById(connectedWireId);
       }
-      this._sceneManager.emit('toolOperationCompleted', {
+      this._controller.emit('toolOperationCompleted', {
         toolType: this.type,
         mode: 'bp_drag',
         operationData: {
@@ -1143,7 +1159,7 @@ export class BuildTool implements IEditingTool {
         changedData: {},
       });
     } catch (error) {
-      this._sceneManager.emit('toolValidationError', {
+      this._controller.emit('toolValidationError', {
         toolType: this.type,
         mode: this.mode,
         errorMessage: `Failed to commit branching point drag: ${(error as Error).message}`,
@@ -1165,12 +1181,12 @@ export class BuildTool implements IEditingTool {
    * @param worldPosition - 3D position in world space
    */
   private createStandaloneBranchingPoint(worldPosition: THREE.Vector3): UUID | undefined {
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     if (!circuit) return;
     try {
       // Create branching point in circuit model (no sourceType initially)
-      const branchingPoint = this._sceneManager.addBranchingPoint(worldPosition);
-      this._sceneManager.emit('toolOperationCompleted', {
+      const branchingPoint = this._controller.addBranchingPoint(worldPosition);
+      this._controller.emit('toolOperationCompleted', {
         toolType: this.type,
         mode: 'bp_creation',
         operationData: {
@@ -1182,7 +1198,7 @@ export class BuildTool implements IEditingTool {
       });
       return branchingPoint.id;
     } catch (error) {
-      this._sceneManager.emit('toolValidationError', {
+      this._controller.emit('toolValidationError', {
         toolType: this.type,
         mode: 'bp_creation',
         errorMessage: `Failed to create branching point: ${(error as Error).message}`,
@@ -1197,13 +1213,13 @@ export class BuildTool implements IEditingTool {
    * @param worldPosition - 3D position in world space
    */
   private createBranchingPointOnWire(wireId: UUID, worldPosition: THREE.Vector3): UUID | undefined {
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     if (!circuit) return;
 
     try {
-      const result = this._sceneManager.splitWire(wireId, worldPosition);
+      const result = this._controller.splitWire(wireId, worldPosition);
       // Emit success event
-      this._sceneManager.emit('toolOperationCompleted', {
+      this._controller.emit('toolOperationCompleted', {
         toolType: this.type,
         mode: 'bp_creation',
         operationData: {
@@ -1218,7 +1234,7 @@ export class BuildTool implements IEditingTool {
       });
       return result.branchingPoint.id;
     } catch (error) {
-      this._sceneManager.emit('toolValidationError', {
+      this._controller.emit('toolValidationError', {
         toolType: this.type,
         mode: 'bp_creation',
         errorMessage: `Failed to create branching point: ${(error as Error).message}`,
@@ -1259,7 +1275,7 @@ export class BuildTool implements IEditingTool {
    * Only works on selected components (not wires or enodes).
    */
   private rotateComponent(componentId: UUID): void {
-    const object = this._sceneManager.getObject3D('component', componentId);
+    const object = this._controller.getObject3D('component', componentId);
     if (!object) {
       return;
     }
@@ -1268,11 +1284,9 @@ export class BuildTool implements IEditingTool {
     object.rotation.set(0, newAngle, 0);
 
     try {
-      const component = this._sceneManager
-        .getCircuitEditionManager()
-        .saveEditComponent(componentId, object);
-      this._sceneManager.getWireVisualManager().updateWiresForComponent(component.id);
-      this._sceneManager.emit('toolOperationCompleted', {
+      const component = this._controller.circuitWriter.saveEditComponent(componentId, object);
+      this._controller.wireVisualManager.updateWiresForComponent(component.id);
+      this._controller.emit('toolOperationCompleted', {
         toolType: this.type,
         mode: 'component_rotate',
         operationData: {
@@ -1282,7 +1296,7 @@ export class BuildTool implements IEditingTool {
         changedData: {},
       });
     } catch (error) {
-      this._sceneManager.emit('toolValidationError', {
+      this._controller.emit('toolValidationError', {
         toolType: this.type,
         mode: this.mode,
         errorMessage: `Failed to commit component rotate: ${(error as Error).message}`,
@@ -1307,7 +1321,7 @@ export class BuildTool implements IEditingTool {
     const draggedPos = positions[draggedIndex];
 
     // Check if dragged point is very close to wire endpoints or other intermediate points
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     if (!circuit) return positions;
 
     const node1 = circuit.getENode(wire.node1);
@@ -1363,7 +1377,7 @@ export class BuildTool implements IEditingTool {
    * @param componentId - UUID of the component to copy
    */
   private copyComponent(componentId: UUID): void {
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     if (!circuit) return;
 
     const component = circuit.getComponent(componentId);
@@ -1382,16 +1396,30 @@ export class BuildTool implements IEditingTool {
   private pasteComponent(): void {
     if (!this.clipboard) return;
 
-    const circuit = this._sceneManager.getCircuit();
+    const circuit = this._controller.getCircuit();
     if (!circuit) return;
 
     // Get cursor position
-    const worldPosition = this._sceneManager.cursorGroundPlanePosition();
+    const worldPosition = this._controller.cursorGroundPlanePosition();
 
-    this._sceneManager.addComponent(
+    this._controller.addComponent(
       this.clipboard.componentType,
       worldPosition,
       this.clipboard.rotation
     );
+  }
+
+  /**
+   * Cycles the sourceType of an enode: null → Voltage → Current → null
+   * Updates both model and visual immediately.
+   * @param enodeId - UUID of the enode to cycle
+   * @param hitbox - hitbox of the enode being clicked
+   */
+  private cycleEnodeSourceType(enodeId: UUID, hitbox: THREE.Object3D): void {
+    if (hitbox.userData.lockedSourceType) return; // do not update locked source types
+    if (!hitbox.parent) return;
+
+    const nextSourceType = getNextSourceType(hitbox.parent.userData.sourceType);
+    this._controller.updateEnodeSourceType(enodeId, nextSourceType || null);
   }
 }

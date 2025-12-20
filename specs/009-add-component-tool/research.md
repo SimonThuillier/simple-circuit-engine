@@ -12,7 +12,7 @@
 **Rationale**: The codebase already has a well-defined tool system with:
 - `IEditingTool` interface in `src/scene/shared/types.ts`
 - Tool lifecycle methods: `onActivate()`, `onDeactivate()`, `getCursorType()`, `getPreviewObjects()`
-- Event emission via `SceneManagerEventMap` (toolOperationStarted, toolOperationCompleted, toolValidationError)
+- Event emission via `ControllerEventMap` (toolOperationStarted, toolOperationCompleted, toolValidationError)
 - Event listeners attached in `onActivate()`, removed in `onDeactivate()`
 
 **Alternatives considered**:
@@ -26,7 +26,7 @@
 - `ComponentVisualFactory.createVisual()` already creates the visual representation
 - Three.js materials support opacity via `material.transparent = true` and `material.opacity = 0.5`
 - WireTool already uses `getPreviewObjects()` for preview wire display
-- Ghost object is added/removed from scene via CircuitSceneManager
+- Ghost object is added/removed from scene via CircuitController
 
 **Implementation approach**:
 ```typescript
@@ -34,7 +34,7 @@
 private ghostPreview: THREE.Object3D | null = null;
 
 private createGhostPreview(): void {
-  const factory = this._sceneManager.getFactoryRegistry().get(this._componentType);
+  const factory = this._Controller.getFactoryRegistry().get(this._componentType);
   // Create temporary component for visual generation
   const tempComponent = { id: 'preview', type: this._componentType, ... };
   this.ghostPreview = factory.createVisual(tempComponent);
@@ -62,7 +62,7 @@ private checkOverlap(position: THREE.Vector3, rotation: number): boolean {
   const previewBox = new THREE.Box3().setFromObject(this.ghostPreview);
 
   // Check against all existing components
-  for (const [id, obj] of this._sceneManager.getComponentObject3Ds()) {
+  for (const [id, obj] of this._Controller.getComponentObject3Ds()) {
     const componentBox = new THREE.Box3().setFromObject(obj);
     if (previewBox.intersectsBox(componentBox)) {
       return true; // Overlap detected
@@ -78,28 +78,28 @@ private checkOverlap(position: THREE.Vector3, rotation: number): boolean {
 
 ### 4. Adding Components to Circuit Model
 
-**Decision**: Extend `CircuitEditionManager` with `saveAddComponent()` method, add `addComponent()` wrapper to `CircuitSceneManager`.
+**Decision**: Extend `CircuitWriter` with `saveAddComponent()` method, add `addComponent()` wrapper to `CircuitController`.
 
 **Rationale**:
-- Follows existing pattern: `saveAddBranchingPoint()`, `saveAddWire()` in CircuitEditionManager
-- CircuitSceneManager already has `_createComponentObject3D()` for visual creation
+- Follows existing pattern: `saveAddBranchingPoint()`, `saveAddWire()` in CircuitWriter
+- CircuitController already has `_createComponentObject3D()` for visual creation
 - Maintains separation between model operations and visual operations
 
 **Implementation approach**:
 ```typescript
-// CircuitEditionManager
+// CircuitWriter
 saveAddComponent(type: ComponentType, position: Position, rotation: Rotation): Component {
-  const circuit = this._sceneManager.getCircuit();
+  const circuit = this._Controller.getCircuit();
   const component = circuit.addComponent(type, position, rotation);
-  this._sceneManager.emit('circuitElementAction', { type: 'component', action: 'add', ... });
+  this._Controller.emit('circuitElementAction', { type: 'component', action: 'add', ... });
   return component;
 }
 
-// CircuitSceneManager
+// CircuitController
 addComponent(type: ComponentType, worldPosition: THREE.Vector3, rotation: number): Component {
   const position = new Position(worldPosition.x, -worldPosition.z);
   const rot = new Rotation(rotation);
-  const component = this.circuitEditionManager.saveAddComponent(type, position, rot);
+  const component = this.circuitWriter.saveAddComponent(type, position, rot);
   this._createComponentObject3D(component);
   return component;
 }
@@ -110,7 +110,7 @@ addComponent(type: ComponentType, worldPosition: THREE.Vector3, rotation: number
 
 ### 5. Component Deletion
 
-**Decision**: Extend `CircuitEditionManager` with `saveDeleteComponent()` method, reuse existing selection system.
+**Decision**: Extend `CircuitWriter` with `saveDeleteComponent()` method, reuse existing selection system.
 
 **Rationale**:
 - WireTool already handles deletion via Delete key for wires and branching points
@@ -121,8 +121,8 @@ addComponent(type: ComponentType, worldPosition: THREE.Vector3, rotation: number
 ```typescript
 // In AddComponentTool.handleKeyDown
 if ((event.key === 'Delete' || event.key === 'Backspace') && selection?.type === 'component') {
-  this._sceneManager.removeComponent(selection.id);
-  this._sceneManager.getSelectionManager().clearSelection();
+  this._Controller.removeComponent(selection.id);
+  this._Controller.getSelectionManager().clearSelection();
 }
 ```
 
@@ -163,7 +163,7 @@ getCursorType(): CursorType {
 | Three.js | 0.181+ | Available |
 | IEditingTool interface | - | Available in types.ts |
 | FactoryRegistry | - | Available, has `getRegisteredTypes()` |
-| CircuitEditionManager | - | Available, needs extension |
+| CircuitWriter | - | Available, needs extension |
 | SelectionManager | - | Available for component selection |
 
 ## Risks and Mitigations
@@ -178,6 +178,6 @@ getCursorType(): CursorType {
 
 All technical questions resolved. Implementation can proceed using established patterns with minimal new abstractions:
 1. Extend existing tool system (AddComponentTool)
-2. Extend CircuitEditionManager for model operations
+2. Extend CircuitWriter for model operations
 3. Use Three.js Box3 for collision detection
 4. Use material properties for visual feedback

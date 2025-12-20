@@ -59,7 +59,7 @@ export interface IFactoryRegistry {
 **Migration Path**:
 1. Update `IFactoryRegistry` to accept `IComponentVisualFactory` instances
 2. Convert existing factory functions to classes implementing `IComponentVisualFactory`
-3. Update scene managers to call `factory.createVisual(component)` instead of `factory(component)`
+3. Update Controllers to call `factory.createVisual(component)` instead of `factory(component)`
 4. Update registration code to use class instances
 
 ---
@@ -199,7 +199,7 @@ removeSelection(object3D: THREE.Object3D): void {
 - Per spec edge case: "the component's group is removed and all animations on its children disposed of"
 - Current approach stores state in `userData` which is garbage collected with the Object3D
 - No external state or event listeners to clean up
-- Three.js geometries/materials should be disposed by the scene manager as it already does
+- Three.js geometries/materials should be disposed by the scene controllerType as it already does
 
 ---
 
@@ -245,12 +245,12 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
 
 ## Integration Patterns
 
-### Scene Manager Integration
+### Controller Integration
 
 **Pattern**: Factory method injection
-- CircuitSceneManager and CircuitRunnerSceneManager receive `IFactoryRegistry` in constructor
+- CircuitController and CircuitRunnerController receive `IFactoryRegistry` in constructor
 - Registry returns class instances; managers call `factory.createVisual(component)`
-- For hover: manager's hover callback calls `factory.applyHover(object3D)` / `factory.removeHover(object3D)`
+- For hover: controllerType's hover callback calls `factory.applyHover(object3D)` / `factory.removeHover(object3D)`
 - For animation: simulation renderer calls `factory.updateAnimation(object3D, state)` on state changes
 
 **Implementation Points**:

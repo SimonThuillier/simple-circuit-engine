@@ -142,11 +142,11 @@ class Rotation {
 │        ▼                          THREE.Object3D                 │
 │  ComponentType[]                   (ghost preview)               │
 │                                                                  │
-│  CircuitSceneManager                                             │
+│  CircuitController                                             │
 │        │                                                         │
 │        │ addComponent()                                          │
 │        ▼                                                         │
-│  CircuitEditionManager                                           │
+│  CircuitWriter                                           │
 │        │                                                         │
 │        │ saveAddComponent()                                      │
 │        ▼                                                         │

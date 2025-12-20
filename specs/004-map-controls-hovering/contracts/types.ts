@@ -81,11 +81,11 @@ export interface HoveredElement {
  * Configuration options for MapControls integration
  *
  * All properties are optional with sensible defaults.
- * Pass to CircuitSceneManager.initialize() or CircuitRunnerSceneManager.initialize().
+ * Pass to CircuitController.initialize() or CircuitRunnerController.initialize().
  *
  * @example
  * ```typescript
- * manager.initialize(container, {
+ * controllerType.initialize(container, {
  *   mapControls: {
  *     enableRotate: false,  // Disable rotation for 2D-only view
  *     maxDistance: 50,      // Limit zoom out
@@ -162,9 +162,9 @@ export interface MapControlsOptions {
 /**
  * Extended renderer options including MapControls configuration
  *
- * Extends existing SceneManagerOptions with mapControls property.
+ * Extends existing ControllerOptions with mapControls property.
  */
-export interface ExtendedSceneManagerOptions {
+export interface ExtendedControllerOptions {
   /** Background color for the scene (default: 0x000000) */
   backgroundColor?: number;
   /** Enable anti-aliasing (default: true) */

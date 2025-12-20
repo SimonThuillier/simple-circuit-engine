@@ -1,8 +1,8 @@
-# Data Model: 3D Circuit SceneManagers
+# Data Model: 3D Circuit Controllers
 
 ## Entity Definitions
 
-### 1. CircuitSceneManager
+### 1. CircuitController
 
 **Purpose**: Render static circuit topology with support for editing interactions via integrated tool system
 
@@ -13,7 +13,7 @@
 - `camera: THREE.PerspectiveCamera` - Camera for viewing the scene (private)
 - `container: HTMLElement | null` - DOM container for rendering (private)
 - `initialized: boolean` - Initialization state flag (private)
-- `eventEmitter: EventEmitter<SceneManagerEventMap>` - Event system (private)
+- `eventEmitter: EventEmitter<ControllerEventMap>` - Event system (private)
 - `componentMeshes: Map<UUID, THREE.Object3D>` - Component ID → visual mesh (private)
 - `wireMeshes: Map<UUID, THREE.Line>` - Wire ID → visual line (private)
 - `enodeMeshes: Map<UUID, THREE.Mesh>` - ENode ID → visual sphere (private)
@@ -65,7 +65,7 @@
 
 ---
 
-### 2. CircuitRunnerSceneManager
+### 2. CircuitRunnerController
 
 **Purpose**: Render live circuit simulation with animated state changes
 
@@ -76,7 +76,7 @@
 - `camera: THREE.PerspectiveCamera` - Camera for viewing the scene (private)
 - `container: HTMLElement | null` - DOM container for rendering (private)
 - `initialized: boolean` - Initialization state flag (private)
-- `eventEmitter: EventEmitter<SceneManagerEventMap>` - Event system (private)
+- `eventEmitter: EventEmitter<ControllerEventMap>` - Event system (private)
 - `componentMeshes: Map<UUID, THREE.Object3D>` - Component ID → visual mesh (private)
 - `wireMeshes: Map<UUID, THREE.Line>` - Wire ID → animated line (private)
 - `enodeMeshes: Map<UUID, THREE.Mesh>` - ENode ID → visual sphere (private)
@@ -155,13 +155,13 @@ type ComponentVisualFactory = (component: Component) => THREE.Object3D;
 
 ---
 
-### 5. SceneManagerEvent
+### 5. ControllerEvent
 
 **Purpose**: Union type of supported event types (includes tool system events)
 
 **Type Definition**:
 ```typescript
-type SceneManagerEvent =
+type ControllerEvent =
   | 'hover' | 'unhover' | 'position' | 'deselect' | 'error' | 'ready'
   | 'toolActivated' | 'toolDeactivated' | 'toolOperationStarted'
   | 'toolOperationCompleted' | 'toolOperationCancelled'
@@ -186,13 +186,13 @@ type SceneManagerEvent =
 
 ---
 
-### 6. SceneManagerCallback
+### 6. ControllerCallback
 
 **Purpose**: Function signature for event callbacks
 
 **Type Definition**:
 ```typescript
-type SceneManagerCallback<T = any> = (payload: T) => void;
+type ControllerCallback<T = any> = (payload: T) => void;
 ```
 
 **Contract**:
@@ -242,7 +242,7 @@ interface ChangedData {
 
 **Generic Parameter**:
 ```typescript
-interface SceneManagerEventMap {
+interface ControllerEventMap {
   hover: { objectId: UUID; objectType: 'component' | 'wire' | 'enode' };
   unhover: { objectId: UUID; objectType: 'component' | 'wire' | 'enode' };
   position: { objectId: UUID; objectType: 'component' | 'wire' | 'enode' };
@@ -386,14 +386,14 @@ type CursorType = 'default' | 'pointer' | 'crosshair' | 'move' | 'not-allowed' |
 ### Dependency Graph
 
 ```
-CircuitSceneManager
+CircuitController
   ├─ depends on → Circuit (core module)
   ├─ depends on → FactoryRegistry (shared)
   ├─ depends on → EventEmitter (shared)
   ├─ depends on → IEditingTool (5 implementations)
   └─ uses → THREE.Scene, THREE.Camera (Three.js)
 
-SimulationCircuitSceneManager
+SimulationCircuitController
   ├─ depends on → CircuitRunner (core module)
   ├─ depends on → FactoryRegistry (shared)
   ├─ depends on → EventEmitter (shared)
@@ -419,21 +419,21 @@ EventEmitter<T>
 
 ### Composition Relationships
 
-- **CircuitSceneManager** *contains* EventEmitter<SceneManagerEventMap>
-- **CircuitSceneManager** *contains* Map<ToolType, IEditingTool> (tool registry)
-- **CircuitSceneManager** *contains* ToolState | null (active tool state)
-- **SimulationCircuitSceneManager** *contains* EventEmitter<SceneManagerEventMap>
-- **SimulationCircuitSceneManager** *contains* InterpolationController
+- **CircuitController** *contains* EventEmitter<ControllerEventMap>
+- **CircuitController** *contains* Map<ToolType, IEditingTool> (tool registry)
+- **CircuitController** *contains* ToolState | null (active tool state)
+- **SimulationCircuitController** *contains* EventEmitter<ControllerEventMap>
+- **SimulationCircuitController** *contains* InterpolationController
 - **Both renderers** *contain* THREE.Scene, THREE.Camera
 - **Both renderers** *reference* FactoryRegistry (injected dependency)
 - **Each IEditingTool** *contains* tool-specific ToolState instance
 
 ### Association Relationships
 
-- **CircuitSceneManager** → **Circuit** (1:1, immutable after construction)
-- **SimulationCircuitSceneManager** → **CircuitRunner** (1:1, immutable after construction)
+- **CircuitController** → **Circuit** (1:1, immutable after construction)
+- **SimulationCircuitController** → **CircuitRunner** (1:1, immutable after construction)
 - **FactoryRegistry** → **ComponentVisualFactory** (1:many, registered dynamically)
-- **SceneManagers** → **THREE.Object3D** (1:many, created from circuit data)
+- **Controllers** → **THREE.Object3D** (1:many, created from circuit data)
 
 ---
 
@@ -449,7 +449,7 @@ EventEmitter<T>
 
 2. **Consumer creates renderer**
    ```typescript
-   const renderer = new CircuitSceneManager(circuit, registry);
+   const renderer = new CircuitController(circuit, registry);
    ```
 
 3. **Consumer initializes renderer**
@@ -458,19 +458,19 @@ EventEmitter<T>
    // Emits 'ready' event
    ```
 
-### Update Flow (Static SceneManager)
+### Update Flow (Static Controller)
 
 1. **Circuit topology changes** (external to renderer)
 2. **Consumer calls update()**
    ```typescript
    renderer.update({ addedComponents: [newId] });
    ```
-3. **SceneManager processes changes**:
+3. **Controller processes changes**:
    - Adds new visual meshes for added components
    - Removes meshes for deleted components
    - Updates positions/rotations for modified components
 
-### Render Flow (Simulation SceneManager)
+### Render Flow (Simulation Controller)
 
 1. **Consumer calls render() in animation loop**
    ```typescript
@@ -480,21 +480,21 @@ EventEmitter<T>
    }
    ```
 
-2. **SceneManager computes interpolated states**:
+2. **Controller computes interpolated states**:
    - Gets current simulation tick from CircuitRunner
    - Interpolates between last tick and current tick based on elapsed time
 
-3. **SceneManager updates visual properties**:
+3. **Controller updates visual properties**:
    - Sets material colors based on electrical state
    - Animates current flow on wires
    - Updates component visual states
 
 4. **Consumer renders scene** (external):
    ```typescript
-   webGLSceneManager.render(renderer.getScene(), camera);
+   webGLController.render(renderer.getScene(), camera);
    ```
 
-### Tool Interaction Flow (Static SceneManager)
+### Tool Interaction Flow (Static Controller)
 
 1. **Consumer enables edit mode**
    ```typescript
@@ -534,7 +534,7 @@ EventEmitter<T>
    - **If validation succeeds**:
      a. Tool calls Circuit API to modify topology
      b. Tool constructs ChangedData delta
-     c. SceneManager calls internal update(changedData)
+     c. Controller calls internal update(changedData)
      d. Emits 'toolOperationCompleted' with changedData
      e. Consumer reacts to event (e.g., update UI)
 
@@ -589,7 +589,7 @@ EventEmitter<T>
 
 ### Data Volume
 
-- CircuitSceneManager: ~500 components, ~1000 wires, ~1500 enodes
-- SimulationCircuitSceneManager: Same + interpolation state (~2x memory)
+- CircuitController: ~500 components, ~1000 wires, ~1500 enodes
+- SimulationCircuitController: Same + interpolation state (~2x memory)
 - FactoryRegistry: ~10-20 registered factories
 - EventEmitter: ~10-50 registered listeners per event type

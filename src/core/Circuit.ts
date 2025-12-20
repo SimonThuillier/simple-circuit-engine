@@ -921,20 +921,16 @@ export class Circuit {
   }
 
   /**
-   * Update the source type of an ENode (branching point).
+   * Update the source type of an ENode (branching point or component pin).
    * @param enodeId - ENode to update
    * @param sourceType - New source type (null to clear)
-   * @throws Error if enodeId not found or not a BranchingPoint
+   * @throws Error if enodeId not found
    */
   updateENodeSourceType(enodeId: UUID, sourceType: ENodeSourceType | null): void {
     const enode = this.enodes.get(enodeId);
 
     if (!enode) {
       throw new Error(`ENode ${enodeId} does not exist`);
-    }
-
-    if (enode.type !== ENodeType.BranchingPoint) {
-      throw new Error(`ENode ${enodeId} is not a branching point`);
     }
 
     // Update sourceType (ENode.source is mutable)

@@ -174,12 +174,12 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
 }
 ```
 
-## Integration with Scene Managers
+## Integration with Controllers
 
-### CircuitSceneManager (Static Mode)
+### CircuitController (Static Mode)
 
 ```typescript
-// In CircuitSceneManager._createComponentMesh
+// In CircuitController._createComponentMesh
 private _createComponentMesh(component: Component): void {
   const factory = this.factoryRegistry.get(component.type);
   const mesh = factory.createVisual(component);
@@ -214,7 +214,7 @@ private _handleHover(hoveredElement: HoveredElement | null): void {
 }
 ```
 
-### CircuitRunnerSceneManager (Simulation Mode)
+### CircuitRunnerController (Simulation Mode)
 
 ```typescript
 // In simulation state update loop

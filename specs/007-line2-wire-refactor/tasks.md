@@ -62,8 +62,8 @@ description: 'Task list for Line2 Wire Refactor implementation'
 - [x] T010 [US1] Update createOrUpdateWire method to use geometry.setFromPoints() with wirePath.points in src/scene/shared/WireVisualManager.ts
 - [x] T011 [US1] Update createOrUpdateWire method to create Line2 instead of THREE.Line using shared wireMaterial in src/scene/shared/WireVisualManager.ts
 - [x] T012 [US1] Update dispose method to dispose shared wireMaterial in src/scene/shared/WireVisualManager.ts
-- [x] T013 [US1] Update CircuitSceneManager to call wireVisualManager.setResolution() on init in src/scene/static/CircuitSceneManager.ts
-- [x] T014 [US1] Update CircuitSceneManager to call wireVisualManager.setResolution() on resize in src/scene/static/CircuitSceneManager.ts
+- [x] T013 [US1] Update CircuitController to call wireVisualManager.setResolution() on init in src/scene/static/CircuitController.ts
+- [x] T014 [US1] Update CircuitController to call wireVisualManager.setResolution() on resize in src/scene/static/CircuitController.ts
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - wires render as Line2 with consistent width
 
@@ -112,7 +112,7 @@ description: 'Task list for Line2 Wire Refactor implementation'
 
 - [x] T022 [US4] Verify LineMaterial is initialized with color 0xffffff (white) in src/scene/shared/WireVisualManager.ts
 - [x] T023 [US4] Verify LineMaterial is initialized with linewidth 2 pixels in src/scene/shared/WireVisualManager.ts
-- [x] T024 [US4] Verify resolution updates correctly on renderer resize events in src/scene/static/CircuitSceneManager.ts
+- [x] T024 [US4] Verify resolution updates correctly on renderer resize events in src/scene/static/CircuitController.ts
 - [x] T025 [US4] Ensure all Line2 objects share the same LineMaterial instance in src/scene/shared/WireVisualManager.ts
 
 **Checkpoint**: Wire materials render with correct visual properties across all scenarios

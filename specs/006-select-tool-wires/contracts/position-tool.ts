@@ -4,7 +4,7 @@
  * Tool for moving and rotating selected elements in the circuit scene.
  *
  * Architecture:
- * - Selection behavior (click to select/deselect) is handled by CircuitSceneManager
+ * - Selection behavior (click to select/deselect) is handled by CircuitController
  * - PositionTool handles drag/move operations on already-selected elements
  * - PositionTool handles rotation via double-click or keyboard
  */
@@ -38,14 +38,14 @@ export interface DragState {
  * Extends IEditingTool with drag and keyboard support for
  * moving and rotating selected elements.
  *
- * Note: Selection is handled by CircuitSceneManager, not by this tool.
+ * Note: Selection is handled by CircuitController, not by this tool.
  */
 export interface IPositionTool extends IEditingTool {
   readonly type: ToolType;
 
   /**
    * Handle pointer down to initiate drag on selected element
-   * Called by internal event listener, not CircuitSceneManager
+   * Called by internal event listener, not CircuitController
    *
    * @param event - The pointer event
    */

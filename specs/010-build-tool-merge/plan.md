@@ -18,7 +18,7 @@ Consolidate four existing tools (PositionTool, WireTool, DeleteTool, BranchingPo
 **Target Platform**: ES2022+ browsers with WebGL support
 **Project Type**: Single library project (simple-circuit-engine)
 **Performance Goals**: Real-time interaction (maintain <16ms frame budget for 60fps during drag operations)
-**Constraints**: Must preserve all existing tool functionality; no breaking changes to CircuitSceneManager API
+**Constraints**: Must preserve all existing tool functionality; no breaking changes to CircuitController API
 **Scale/Scope**: Single BuildTool class replacing 4 tool classes (~900 lines total → ~1200 lines consolidated)
 
 ## Constitution Check
@@ -55,7 +55,7 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 ### ✅ Public API Shape
 - **Status**: PASS
-- **Rationale**: IEditingTool interface maintained. Event-based communication preserved. ToolType enum updated but remains backward compatible with CircuitSceneManager.
+- **Rationale**: IEditingTool interface maintained. Event-based communication preserved. ToolType enum updated but remains backward compatible with CircuitController.
 
 ### ✅ Resource Management
 - **Status**: PASS
@@ -89,7 +89,7 @@ src/
 │   ├── shared/
 │   │   └── types.ts                # UPDATE: ToolType = 'build' | 'addComponent'
 │   └── static/
-│       ├── CircuitSceneManager.ts  # UPDATE: Tool registration and factory
+│       ├── CircuitController.ts  # UPDATE: Tool registration and factory
 │       └── tools/
 │           ├── BuildTool.ts        # NEW: Consolidated tool
 │           ├── AddComponentTool.ts # KEEP: Unchanged

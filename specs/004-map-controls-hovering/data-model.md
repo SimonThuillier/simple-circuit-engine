@@ -114,7 +114,7 @@ Layer assignments for Three.js raycasting.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                  CircuitSceneManager                     │
+│                  CircuitController                     │
 │  ┌──────────────┐       ┌────────────────┐              │
 │  │  MapControls │       │  HoverManager  │              │
 │  │  (Three.js)  │       │    (new)       │              │
@@ -149,7 +149,7 @@ Layer assignments for Three.js raycasting.
 The following types are already defined in `types.ts` and will be reused:
 
 ```typescript
-// Already exists in SceneManagerEventMap
+// Already exists in ControllerEventMap
 hover: { objectId: UUID; objectType: CircuitSceneObjectType };
 unhover: { objectId: UUID; objectType: CircuitSceneObjectType };
 ```

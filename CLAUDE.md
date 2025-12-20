@@ -83,10 +83,11 @@ function badExample(input: number | null): string {
 
 ## Recent Changes
 
+- 012-ctrl-click-source-cycle: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (already installed)
+
 - 011-multi-select-tool: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (for 3D scene interaction and selection rectangle rendering)
 
 - 010-build-tool-merge: Added TypeScript (strict mode), targeting ES2022 + Three.js 0.181+ (for 3D scene interaction)
-- 009-add-component-tool: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (already installed)
 
 <!-- MANUAL ADDITIONS START -->
 
@@ -174,10 +175,10 @@ BuildTool operates in multiple modes with clear state transitions:
 
 ### Integration Points
 
-- **CircuitSceneManager**: Tool registration and scene access
+- **CircuitController**: Tool registration and scene access
 - **SelectionManager**: Element selection state
 - **WireVisualManager**: Wire geometry updates
-- **CircuitEditionManager**: Model persistence
+- **CircuitWriter**: Model persistence
 - **HoverManager**: Element hover detection
 
 ### Testing

@@ -36,12 +36,12 @@
 - [X] T006 Implement `updateWireIntermediatePositions(wireId, positions)` method in src/core/Circuit.ts
 - [X] T007 Implement `updateENodeSourceType(enodeId, sourceType)` method in src/core/Circuit.ts
 
-### CircuitEditionManager Extensions
+### CircuitWriter Extensions
 
-- [X] T008 Implement `saveBranchingPointAction(position, sourceType?)` in src/scene/static/CircuitEditionManager.ts
-- [X] T009 Implement `saveSplitWire(wireId, position)` in src/scene/static/CircuitEditionManager.ts
-- [X] T010 Implement `saveWireIntermediatePositions(wireId, positions)` in src/scene/static/CircuitEditionManager.ts
-- [X] T011 Implement `saveENodeSourceTypeAction(enodeId, sourceType)` in src/scene/static/CircuitEditionManager.ts
+- [X] T008 Implement `saveBranchingPointAction(position, sourceType?)` in src/scene/static/CircuitWriter.ts
+- [X] T009 Implement `saveSplitWire(wireId, position)` in src/scene/static/CircuitWriter.ts
+- [X] T010 Implement `saveWireIntermediatePositions(wireId, positions)` in src/scene/static/CircuitWriter.ts
+- [X] T011 Implement `saveEditENodeSourceType(enodeId, sourceType)` in src/scene/static/CircuitWriter.ts
 
 ### WireVisualManager Extensions
 
@@ -68,9 +68,9 @@
 - [X] T019 [US2] Implement `applyHover(object3D)` and `removeHover(object3D)` methods with brightness shift in src/scene/shared/components/BranchingPointVisualFactory.ts
 - [X] T020 [US2] Implement `applySelection(object3D)` and `removeSelection(object3D)` methods with brightness shift in src/scene/shared/components/BranchingPointVisualFactory.ts
 - [X] T021 [US2] Implement `updateSourceType(object3D, sourceType)` method in src/scene/shared/components/BranchingPointVisualFactory.ts
-- [X] T022 [US2] Register BranchingPointVisualFactory in src/scene/static/CircuitSceneManager.ts
-- [X] T023 [US2] Implement branching point rendering in scene initialization in src/scene/static/CircuitSceneManager.ts
-- [X] T024 [US2] Wire hover/selection events for branching points in src/scene/static/CircuitSceneManager.ts
+- [X] T022 [US2] Register BranchingPointVisualFactory in src/scene/static/CircuitController.ts
+- [X] T023 [US2] Implement branching point rendering in scene initialization in src/scene/static/CircuitController.ts
+- [X] T024 [US2] Wire hover/selection events for branching points in src/scene/static/CircuitController.ts
 
 **Checkpoint**: Branching points render as cones with correct colors and feedback
 
@@ -97,7 +97,7 @@
 - [X] T035 [US1] Implement `getCursorType()` returning crosshair/pointer/not-allowed based on context in src/scene/static/tools/WireTool.ts
 - [X] T036 [US1] Add wire duplicate prevention check (FR-011) in src/scene/static/tools/WireTool.ts
 - [X] T037 [US1] Add self-connection prevention check (FR-010) in src/scene/static/tools/WireTool.ts
-- [X] T038 [US1] Implement wire visual creation via CircuitEditionManager in src/scene/static/tools/WireTool.ts
+- [X] T038 [US1] Implement wire visual creation via CircuitWriter in src/scene/static/tools/WireTool.ts
 
 **Checkpoint**: Users can create wires between pins with preview and cancellation support
 
@@ -130,7 +130,7 @@
 - [X] T042 [US3] Implement double-click vs single-click disambiguation (200ms timeout) in src/scene/static/tools/WireTool.ts
 - [X] T043 [US3] Implement `handleDblClick(event)` for double-click detection in src/scene/static/tools/WireTool.ts
 - [X] T044 [US3] Implement `createBranchingPointOnWire(wireId, position)` to split wire in src/scene/static/tools/WireTool.ts
-- [X] T045 [US3] Call CircuitEditionManager.saveSplitWire for wire split in src/scene/static/tools/WireTool.ts
+- [X] T045 [US3] Call CircuitWriter.saveSplitWire for wire split in src/scene/static/tools/WireTool.ts
 - [X] T046 [US3] Update scene to remove old wire visual and add new wire visuals in src/scene/static/tools/WireTool.ts
 - [X] T047 [US3] Add branching point visual to scene after creation in src/scene/static/tools/WireTool.ts
 
@@ -165,7 +165,7 @@
 
 - [X] T052 [US5] Implement `cycleBranchingPointSourceType(enodeId)` in src/scene/static/tools/WireTool.ts
 - [X] T053 [US5] Add branching point detection to handleDblClick (prioritize over wire/empty) in src/scene/static/tools/WireTool.ts
-- [X] T054 [US5] Call CircuitEditionManager.saveENodeSourceTypeAction for sourceType update in src/scene/static/tools/WireTool.ts
+- [X] T054 [US5] Call CircuitWriter.saveEditENodeSourceType for sourceType update in src/scene/static/tools/WireTool.ts
 - [X] T055 [US5] Update branching point visual color after sourceType change in src/scene/static/tools/WireTool.ts
 
 **Checkpoint**: Double-click on branching point cycles sourceType with visual feedback
@@ -206,7 +206,7 @@
 - [X] T070 Add JSDoc documentation to new WireTool methods in src/scene/static/tools/WireTool.ts
 - [X] T071 Add JSDoc documentation to Circuit extensions in src/core/Circuit.ts
 - [X] T072 [P] Add JSDoc documentation to WireVisualManager extensions in src/scene/shared/WireVisualManager.ts
-- [X] T073 [P] Add JSDoc documentation to CircuitEditionManager extensions in src/scene/static/CircuitEditionManager.ts
+- [X] T073 [P] Add JSDoc documentation to CircuitWriter extensions in src/scene/static/CircuitWriter.ts
 - [X] T074 Verify all event emissions (wireCreated, branchingPointCreated, etc.) in src/scene/static/tools/WireTool.ts
 - [X] T075 Run `npm test && npm run lint` to verify all tests pass and no lint errors
 - [X] T076 Manual integration test: Create circuit with wires, branching points, intermediate points

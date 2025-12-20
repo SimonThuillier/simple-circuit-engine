@@ -10,7 +10,7 @@
 ### Session 2025-12-11
 
 - Q: Should all wires be consolidated into a single Line2 or one Line2 per wire? → A: One Line2 per wire (N wires = N Line2 objects). Each wire renders as its own Line2 regardless of intermediate point count.
-- Q: Should CircuitRunnerSceneManager be included in this refactor? → A: No, exclude CircuitRunnerSceneManager (only refactor WireVisualManager).
+- Q: Should CircuitRunnerController be included in this refactor? → A: No, exclude CircuitRunnerController (only refactor WireVisualManager).
 
 ## User Scenarios & Testing _(mandatory)_
 
@@ -89,7 +89,7 @@ As a developer, I need all existing WireVisualManager tests to pass after the re
 **Acceptance Scenarios**:
 
 1. **Given** the refactored WireVisualManager, **When** existing unit tests are run, **Then** all tests pass (updated to work with Line2 API)
-2. **Given** integration tests using CircuitSceneManager, **When** wire-related tests execute, **Then** they verify correct wire rendering behavior
+2. **Given** integration tests using CircuitController, **When** wire-related tests execute, **Then** they verify correct wire rendering behavior
 3. **Given** the test file at tests/scene/shared/WireVisualManager.test.ts, **When** reviewed after refactor, **Then** it covers wire add, remove, update, and component move scenarios
 
 ---
@@ -115,7 +115,7 @@ As a developer, I need all existing WireVisualManager tests to pass after the re
 - **FR-008**: System MUST update wire endpoints when connected components move or rotate
 - **FR-009**: LineMaterial resolution MUST be updated when the renderer/window size changes
 - **FR-010**: System MUST properly dispose of Line2, LineGeometry, and LineMaterial resources on cleanup
-- **FR-011**: CircuitSceneManager and any other scene managers using WireVisualManager MUST be updated to work with the new Line2 approach
+- **FR-011**: CircuitController and any other Controllers using WireVisualManager MUST be updated to work with the new Line2 approach
 
 ### Key Entities
 
@@ -133,12 +133,12 @@ As a developer, I need all existing WireVisualManager tests to pass after the re
 - **SC-003**: Wire line width appears consistent when viewed at different zoom levels
 - **SC-004**: Adding or removing a wire updates the visual in under 16ms (maintaining 60fps interactivity)
 - **SC-005**: No memory leaks when repeatedly adding/removing wires (geometry properly disposed)
-- **SC-006**: All integration tests using CircuitSceneManager continue to pass
+- **SC-006**: All integration tests using CircuitController continue to pass
 
 ## Assumptions
 
 - Line2, LineGeometry, and LineMaterial from `three/addons` are available in Three.js 0.181+ (already installed in the project)
 - The current wire styling (white color, 2-pixel width) will be preserved as the default
-- The refactor scope is limited to WireVisualManager only; CircuitRunnerSceneManager (simulation) wire rendering is explicitly out of scope and will not be modified
+- The refactor scope is limited to WireVisualManager only; CircuitRunnerController (simulation) wire rendering is explicitly out of scope and will not be modified
 - Visual quality (consistent line width) is the primary motivation for this refactor
 - The existing WirePath interface and computeWirePath logic will be retained for computing wire paths

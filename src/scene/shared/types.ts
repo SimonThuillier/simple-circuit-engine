@@ -14,7 +14,7 @@ import type { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 export type { Line2, LineGeometry, LineMaterial };
 
 /**
- * Object types that can be interacted within the scene manager to render
+ * Object types that can be interacted within the scene controllerType to render
  */
 export type CircuitSceneObjectType =
   | 'componentGroup'
@@ -33,15 +33,18 @@ export type HoverableType = 'component' | 'enode' | 'wire';
 export type ModelEditAction = 'edit' | 'add' | 'delete';
 
 /**
- * Supported scene manager event types (includes tool system events)
+ * Supported scene controllerType event types (includes tool system events)
  */
-export type SceneManagerEvent =
+export type ControllerEvent =
+  | 'ready'
+  | 'error'
+  | 'circuitLoaded'
+  | 'circuitCleared'
+  | 'gridPositionMove'
   | 'hover'
   | 'unhover'
   | 'select'
   | 'deselect'
-  | 'error'
-  | 'ready'
   | 'toolActivated'
   | 'toolDeactivated'
   | 'toolOperationStarted'
@@ -50,13 +53,16 @@ export type SceneManagerEvent =
   | 'toolValidationError'
   | 'cursorChangeRequested'
   | 'circuitElementAction'
-  | 'gridPositionMove'
   | 'selectionChange';
 
 /**
  * Event payload map for type-safe event emission
  */
-export interface SceneManagerEventMap {
+export interface ControllerEventMap {
+  ready: { controllerType: 'static' | 'simulation' };
+  error: { message: string; error?: Error };
+  circuitLoaded: { name: string };
+  circuitCleared: { name: string };
   gridPositionMove: THREE.Vector3;
   hover: {
     objectId: UUID;
@@ -75,9 +81,6 @@ export interface SceneManagerEventMap {
   dragMove: { selection: SelectionData; currentPosition: THREE.Vector3; delta: THREE.Vector3 };
   dragEnd: { selection: SelectionData; finalPosition: THREE.Vector3 };
   dragCancel: { selection: SelectionData };
-  componentRotated: { componentId: UUID; newRotation: number };
-  error: { message: string; error?: Error };
-  ready: { manager: 'static' | 'simulation' };
   // Tool system events
   toolActivated: { toolType: ToolType };
   toolDeactivated: { toolType: ToolType };
@@ -99,63 +102,17 @@ export interface SceneManagerEventMap {
     error?: Error | null;
     data?: object | null;
   };
-  // Branching point events (T024)
-  branchingPointCreated: {
-    enodeId: UUID;
-    position: { x: number; y: number };
-  };
-  wireSplit: {
-    originalWireId: UUID;
-    branchingPointId: UUID;
-    wire1Id: UUID;
-    wire2Id: UUID;
-  };
-  wireIntermediatePositionsChanged: {
-    wireId: UUID;
-    positions: { x: number; y: number }[];
-  };
-  enodeSourceTypeChanged: {
-    enodeId: UUID;
-    sourceType: string | null;
-  };
 }
 
 /**
- * Callback function type for scene manager events
+ * Callback function type for scene controllerType events
  */
-export type SceneManagerCallback<T = any> = (payload: T) => void;
+export type ControllerCallback<T = any> = (payload: T) => void;
 
 /**
- * Optional parameter for incremental scene manager updates
- * If provided, only specified elements are updated
- * If omitted or empty, full update is performed
- * TODO: should be deprecated
+ * Optional configuration for scene controllerType initialization
  */
-export interface ChangedData {
-  /** Component IDs that were added to the circuit */
-  addedComponents?: UUID[];
-  /** Component IDs that were removed from the circuit */
-  removedComponents?: UUID[];
-  /** Component IDs that were modified (position, rotation, config) */
-  updatedComponents?: UUID[];
-  /** Wire IDs that were added to the circuit */
-  addedWires?: UUID[];
-  /** Wire IDs that were removed from the circuit */
-  removedWires?: UUID[];
-  /** Wire IDs that were modified (path changed) */
-  updatedWires?: UUID[];
-  /** ENode IDs that were added to the circuit */
-  addedENodes?: UUID[];
-  /** ENode IDs that were removed from the circuit */
-  removedENodes?: UUID[];
-  /** Flag indicating simulation state has changed (for SimulationCircuitRenderer) */
-  stateChanged?: boolean;
-}
-
-/**
- * Optional configuration for scene manager initialization
- */
-export interface SceneManagerOptions {
+export interface ControllerOptions {
   /** Background color for the scene (default: 0x000000) */
   backgroundColor?: number;
   /** Enable anti-aliasing (default: true) */
@@ -181,7 +138,7 @@ export interface SceneManagerOptions {
  *
  * @example
  * ```typescript
- * manager.initialize(container, {
+ * controllerType.initialize(container, {
  *   mapControls: {
  *     enableRotate: false,  // Disable rotation for 2D-only view
  *     maxDistance: 50,      // Limit zoom out
@@ -290,25 +247,6 @@ export interface MultiSelectionData {
 export type SelectionData = MonoSelectionData | MultiSelectionData;
 
 /**
- * UserData structure for component visual state management
- *
- * Tracks hover, selection, and animation state for component visuals.
- * Used by visual factories to store original material properties for restoration.
- */
-export interface ComponentVisualUserData {
-  /** Whether the component is currently hovered */
-  isHovered?: boolean;
-  /** Whether the component is currently selected (future feature) */
-  isSelected?: boolean;
-  /** Whether the component is currently being animated (simulation state) */
-  isAnimating?: boolean;
-  /** Original emissive color (for hover/animation restoration) */
-  originalEmissive?: THREE.Color;
-  /** Original emissive intensity (for hover/animation restoration) */
-  originalEmissiveIntensity?: number;
-}
-
-/**
  * Tool System Types
  */
 
@@ -335,7 +273,7 @@ export type CursorType =
  * Interface defining contract for editing tool implementations
  *
  * All editing tools must implement this interface to integrate with
- * CircuitSceneManager's tool system.
+ * CircuitController's tool system.
  *
  * @example
  * ```typescript

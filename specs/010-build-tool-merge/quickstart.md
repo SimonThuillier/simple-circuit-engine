@@ -23,27 +23,27 @@ Four separate editing tools have been merged into one unified **BuildTool**:
 
 #### Before (Multiple Tools)
 ```typescript
-import { CircuitSceneManager } from 'simple-circuit-engine';
+import { CircuitController } from 'simple-circuit-engine';
 
 // Moving components
-sceneManager.setActiveTool('position');
+Controller.setActiveTool('position');
 // ... user drags component ...
 
 // Creating wires
-sceneManager.setActiveTool('wire');
+Controller.setActiveTool('wire');
 // ... user creates wire ...
 
 // Deleting elements
-sceneManager.setActiveTool('delete');
+Controller.setActiveTool('delete');
 // ... user clicks element to delete ...
 ```
 
 #### After (Unified Tool)
 ```typescript
-import { CircuitSceneManager } from 'simple-circuit-engine';
+import { CircuitController } from 'simple-circuit-engine';
 
 // All circuit editing operations
-sceneManager.setActiveTool('build');
+Controller.setActiveTool('build');
 // ... user can now:
 //   - Drag components/branching points
 //   - Create wires
@@ -53,7 +53,7 @@ sceneManager.setActiveTool('build');
 // ... all without switching tools!
 
 // Component placement still uses separate tool
-sceneManager.setActiveTool('addComponent');
+Controller.setActiveTool('addComponent');
 ```
 
 ### ToolType Updates
@@ -226,7 +226,7 @@ If you have tests that reference old tool types:
 // Before
 describe('PositionTool', () => {
   it('should drag components', () => {
-    const tool = new PositionTool(sceneManager);
+    const tool = new PositionTool(Controller);
     tool.onActivate();
     // ... test logic ...
   });
@@ -235,7 +235,7 @@ describe('PositionTool', () => {
 // After
 describe('BuildTool', () => {
   it('should drag components', () => {
-    const tool = new BuildTool(sceneManager);
+    const tool = new BuildTool(Controller);
     tool.onActivate();
     // ... test logic (unchanged) ...
   });
@@ -250,7 +250,7 @@ describe('BuildTool', () => {
 
 ### Issue: Can't create wires
 **Symptom**: Clicking enode doesn't start wire creation
-**Solution**: Ensure BuildTool is active: `sceneManager.setActiveTool('build')`
+**Solution**: Ensure BuildTool is active: `Controller.setActiveTool('build')`
 
 ### Issue: Delete key doesn't work
 **Symptom**: Pressing Delete does nothing
@@ -265,7 +265,7 @@ describe('BuildTool', () => {
 
 ### Issue: Tool switching doesn't work
 **Symptom**: setActiveTool doesn't change behavior
-**Solution**: Check CircuitSceneManager is properly calling onDeactivate/onActivate
+**Solution**: Check CircuitController is properly calling onDeactivate/onActivate
 
 ## Performance Considerations
 
@@ -284,7 +284,7 @@ BuildTool maintains same performance characteristics as individual tools:
 ### ✅ No Breaking Changes
 - IEditingTool interface unchanged
 - Event payloads unchanged
-- CircuitSceneManager methods unchanged
+- CircuitController methods unchanged
 
 ### ⚠️ Breaking Changes
 - ToolType enum values changed (see Migration Guide above)

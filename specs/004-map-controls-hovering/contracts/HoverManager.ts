@@ -22,8 +22,8 @@ export type HoverCallback = (element: HoveredElement | null) => void;
  * Implements priority-based detection: enode > component > wire.
  *
  * @remarks
- * - HoverManager does not emit events directly; it reports to the scene manager
- * - Scene manager is responsible for emitting hover/unhover events
+ * - HoverManager does not emit events directly; it reports to the scene controllerType
+ * - Scene controllerType is responsible for emitting hover/unhover events
  * - HoverManager maintains state to prevent duplicate callbacks
  *
  * @example
@@ -128,7 +128,7 @@ export interface IHoverManager {
    * Clean up resources
    *
    * Removes all callbacks and clears state.
-   * Call when disposing the scene manager.
+   * Call when disposing the scene controllerType.
    */
   dispose(): void;
 }

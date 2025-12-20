@@ -1,15 +1,15 @@
 /**
- * CircuitRunner SceneManager Contract
- * @module scene/contracts/CircuitRunnerSceneManager
+ * CircuitRunner Controller Contract
+ * @module scene/contracts/CircuitRunnerController
  */
 
 import type { CircuitRunner } from '@/core/simulation/CircuitRunner';
 import type { IFactoryRegistry } from './ComponentVisualFactory';
-import type { SceneManagerEvent, SceneManagerCallback, ChangedData, SceneManagerOptions } from './types';
+import type { ControllerEvent, ControllerCallback, ChangedData, ControllerOptions } from './types';
 import type * as THREE from 'three';
 
 /**
- * SceneManager for live circuit simulation visualization
+ * Controller for live circuit simulation visualization
  *
  * Visualizes circuit state during active simulation, displaying real-time updates,
  * animations, and state changes. Operates on CircuitRunner instances.
@@ -28,14 +28,14 @@ import type * as THREE from 'three';
  * 5. Call dispose() to cleanup WebGL resources
  *
  * **Time Synchronization**:
- * SceneManager automatically interpolates visual state between simulation ticks based on
+ * Controller automatically interpolates visual state between simulation ticks based on
  * elapsed real-time, providing smooth 30-60 FPS animation even when simulation
  * runs at different tick rates.
  *
  * @example
  * ```typescript
  * const registry = new FactoryRegistry(defaultFactory);
- * const renderer = new SimulationCircuitSceneManager(circuitRunner, registry);
+ * const renderer = new SimulationCircuitController(circuitRunner, registry);
  *
  * renderer.on('ready', () => console.log('Ready to simulate'));
  * renderer.on('error', ({ message }) => console.error(message));
@@ -46,12 +46,12 @@ import type * as THREE from 'three';
  * function animate() {
  *   circuitRunner.tick(); // Advance simulation
  *   renderer.render();     // Interpolate and update visuals
- *   webGLSceneManager.render(renderer.getScene(), camera);
+ *   webGLController.render(renderer.getScene(), camera);
  *   requestAnimationFrame(animate);
  * }
  * ```
  */
-export interface ICircuitRunnerSceneManager {
+export interface ICircuitRunnerController {
   /**
    * The circuit simulation runner being visualized (readonly)
    */
@@ -75,12 +75,12 @@ export interface ICircuitRunnerSceneManager {
    * @throws {Error} If initialization fails (emits 'error' event with details)
    *
    * @remarks
-   * Unlike CircuitSceneManager, this renderer sets up additional systems for:
+   * Unlike CircuitController, this renderer sets up additional systems for:
    * - State interpolation tracking
    * - Animation controllers for wires
    * - Material state management for components
    */
-  initialize(container: HTMLElement, options?: SceneManagerOptions): void;
+  initialize(container: HTMLElement, options?: ControllerOptions): void;
 
   /**
    * Update the visualization based on simulation state changes
@@ -118,7 +118,7 @@ export interface ICircuitRunnerSceneManager {
    * @remarks
    * This method MUST be called every frame for smooth animation.
    * Interpolation is frame-rate independent (works at 30-120 FPS).
-   * Does NOT perform actual WebGL rendering (consumer calls webGLSceneManager.render()).
+   * Does NOT perform actual WebGL rendering (consumer calls webGLController.render()).
    *
    * **Performance**: Uses dirty tracking to only update changed elements.
    *
@@ -132,7 +132,7 @@ export interface ICircuitRunnerSceneManager {
    *     lastTickTime = Date.now();
    *   }
    *   renderer.render(); // Interpolates smoothly between ticks
-   *   webGLSceneManager.render(renderer.getScene(), camera);
+   *   webGLController.render(renderer.getScene(), camera);
    *   requestAnimationFrame(animate);
    * }
    * ```
@@ -172,7 +172,7 @@ export interface ICircuitRunnerSceneManager {
    * });
    * ```
    */
-  on<E extends SceneManagerEvent>(event: E, callback: SceneManagerCallback): void;
+  on<E extends ControllerEvent>(event: E, callback: ControllerCallback): void;
 
   /**
    * Unregister an event callback
@@ -183,7 +183,7 @@ export interface ICircuitRunnerSceneManager {
    * @remarks
    * If callback was registered multiple times, only removes one registration.
    */
-  off<E extends SceneManagerEvent>(event: E, callback: SceneManagerCallback): void;
+  off<E extends ControllerEvent>(event: E, callback: ControllerCallback): void;
 
   /**
    * Get the Three.js scene for rendering
@@ -194,7 +194,7 @@ export interface ICircuitRunnerSceneManager {
    * @remarks
    * Use this to access the scene for rendering:
    * ```typescript
-   * webGLSceneManager.render(renderer.getScene(), camera);
+   * webGLController.render(renderer.getScene(), camera);
    * ```
    *
    * Also provides access to scene.camera for direct camera manipulation:

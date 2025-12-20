@@ -1,7 +1,7 @@
 /**
- * Scene Manager Extensions Contract
- * @module scene/static/CircuitSceneManager (extensions)
- * @module scene/simulation/CircuitRunnerSceneManager (extensions)
+ * Controller Extensions Contract
+ * @module scene/static/CircuitController (extensions)
+ * @module scene/simulation/CircuitRunnerController (extensions)
  *
  * Defines the API additions for MapControls and hover detection.
  */
@@ -12,32 +12,32 @@ import type { HoveredElement, MapControlsOptions } from './types';
 import type { UUID } from '../../../src/core/types/Identifier';
 
 /**
- * MapControls and Hover Detection extensions for scene managers
+ * MapControls and Hover Detection extensions for Controllers
  *
- * These methods are added to both CircuitSceneManager and CircuitRunnerSceneManager.
+ * These methods are added to both CircuitController and CircuitRunnerController.
  *
  * @example
  * ```typescript
  * // Initialize with custom MapControls options
- * manager.initialize(container, {
+ * controllerType.initialize(container, {
  *   mapControls: { enableRotate: false }
  * });
  *
  * // Query hover state
- * const hovered = manager.getHoveredElement();
+ * const hovered = controllerType.getHoveredElement();
  *
  * // Listen for hover events (existing event system)
- * manager.on('hover', ({ objectId, objectType }) => {
+ * controllerType.on('hover', ({ objectId, objectType }) => {
  *   console.log(`Hovering ${objectType}: ${objectId}`);
  * });
  *
  * // Listen for unhover events
- * manager.on('unhover', ({ objectId, objectType }) => {
+ * controllerType.on('unhover', ({ objectId, objectType }) => {
  *   console.log(`Left ${objectType}: ${objectId}`);
  * });
  * ```
  */
-export interface ISceneManagerHoverExtensions {
+export interface IControllerHoverExtensions {
   /**
    * Get the currently hovered circuit element
    *
@@ -72,9 +72,9 @@ export interface ISceneManagerHoverExtensions {
 }
 
 /**
- * MapControls extensions for scene managers
+ * MapControls extensions for Controllers
  */
-export interface ISceneManagerMapControlsExtensions {
+export interface IControllerMapControlsExtensions {
   /**
    * Get the MapControls instance for direct manipulation
    *
@@ -123,18 +123,18 @@ export interface ISceneManagerMapControlsExtensions {
 /**
  * Combined extension interface
  *
- * Both CircuitSceneManager and CircuitRunnerSceneManager implement this.
+ * Both CircuitController and CircuitRunnerController implement this.
  */
-export interface ISceneManagerExtensions
-  extends ISceneManagerHoverExtensions,
-    ISceneManagerMapControlsExtensions {}
+export interface IControllerExtensions
+  extends IControllerHoverExtensions,
+    IControllerMapControlsExtensions {}
 
 /**
  * Internal state for hover/controls management
  *
- * Not exposed publicly - used by scene manager implementations.
+ * Not exposed publicly - used by scene controllerType implementations.
  */
-export interface SceneManagerInteractionState {
+export interface ControllerInteractionState {
   /** MapControls instance */
   mapControls: MapControls | null;
   /** Current MapControls configuration */
