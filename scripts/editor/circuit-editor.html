@@ -788,7 +788,7 @@
           }
         });
 
-        // Listen to tool activation/deactivation events from circuitController
+        // Listen to tool activation/deactivation events from runnerController
         circuitController.on('toolActivated', (e) => {
           if (e.toolType === 'addComponent') {
             toolButton.classList.add('active');

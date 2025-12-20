@@ -19,7 +19,7 @@
 
 **Purpose**: Extend type definitions and prepare shared infrastructure
 
-- [x] T001 [P] Add new simulation events to ControllerEventMap in src/scene/shared/types.ts (simulationStarted, simulationPaused, simulationStepped, simulationTick)
+- [x] T001 [P] Add new simulation events to ControllerEventMap in src/scene/shared/types.ts (simulationPlayed, simulationPaused, simulationStepped, simulationTick)
 - [x] T002 [P] Add wire material states 'voltage' and 'current' to WireMaterialState type in src/scene/shared/types.ts
 - [x] T003 Add voltage and current LineMaterial instances to WireVisualManager in src/scene/shared/WireVisualManager.ts
 
@@ -53,7 +53,7 @@
 - [x] T010 [US1] Implement pause() method that clears interval in src/scene/simulation/CircuitRunnerController.ts
 - [x] T011 [US1] Implement step() method that executes single tick in src/scene/simulation/CircuitRunnerController.ts
 - [x] T012 [US1] Implement private _executeTick() method that calls runner.tick() and triggers visual updates in src/scene/simulation/CircuitRunnerController.ts
-- [x] T013 [US1] Emit simulationStarted event from play() in src/scene/simulation/CircuitRunnerController.ts
+- [x] T013 [US1] Emit simulationPlayed event from play() in src/scene/simulation/CircuitRunnerController.ts
 - [x] T014 [US1] Emit simulationPaused event from pause() in src/scene/simulation/CircuitRunnerController.ts
 - [x] T015 [US1] Emit simulationStepped event from step() in src/scene/simulation/CircuitRunnerController.ts
 - [x] T016 [US1] Emit simulationTick event from _executeTick() in src/scene/simulation/CircuitRunnerController.ts

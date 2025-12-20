@@ -70,7 +70,7 @@ New events emitted by CircuitRunnerController:
 
 | Event | Payload | Trigger |
 |-------|---------|---------|
-| `simulationStarted` | `{ tick: number }` | `play()` called |
+| `simulationPlayed` | `{ tick: number }` | `play()` called |
 | `simulationPaused` | `{ tick: number }` | `pause()` called |
 | `simulationStepped` | `{ tick: number, result: RunnerResult }` | `step()` called |
 | `simulationTick` | `{ tick: number, dirty: DirtyElements }` | Each auto-tick during play |
@@ -79,7 +79,7 @@ New events emitted by CircuitRunnerController:
 ```typescript
 interface ControllerEventMap {
   // ... existing events ...
-  simulationStarted: { tick: number };
+  simulationPlayed: { tick: number };
   simulationPaused: { tick: number };
   simulationStepped: { tick: number; result: RunnerResult };
   simulationTick: { tick: number; dirty: DirtyElements };

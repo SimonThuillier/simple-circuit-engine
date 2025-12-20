@@ -167,11 +167,11 @@ export class CircuitRunnerController extends AbstractCircuitController {
   }
 
   /**
-   * Start automatic simulation playback
+   * Play automatic simulation playback
    * Simulation will advance at the configured tick interval until paused
    *
    * Requires a circuit runner to be loaded via setCircuitRunner()
-   * Emits 'simulationStarted' event on start
+   * Emits 'simulationPlayed' event on play
    * Emits 'simulationTick' event on each tick
    */
   play(): void {
@@ -185,7 +185,9 @@ export class CircuitRunnerController extends AbstractCircuitController {
     }
 
     this._isPlaying = true;
-    this.emit('simulationStarted', { tick: this._runner.getCurrentTick() });
+    this.emit('simulationPlayed', { tick: this._runner.getCurrentTick() });
+
+    console.log(this._runner.stateManager.getCurrentState());
 
     // Start interval loop
     this._simulationLoopId = window.setInterval(() => {
@@ -305,13 +307,15 @@ export class CircuitRunnerController extends AbstractCircuitController {
       if (!wireState) continue;
 
       // Determine material state based on electrical state
-      // Priority: current > voltage > idle
-      let materialState: 'current' | 'voltage' | 'idle';
-      if (wireState.hasCurrent) {
-        materialState = 'current';
+      // either idle, voltage, current or vc (voltage and current)
+      let materialState: 'current' | 'voltage' | 'vc' | 'idle';
+      if (wireState.hasCurrent && wireState.hasVoltage) {
+        materialState = 'vc';
       } else if (wireState.hasVoltage) {
         materialState = 'voltage';
-      } else {
+      } else if (wireState.hasCurrent) {
+        materialState = 'current';
+      }  else {
         materialState = 'idle';
       }
 
@@ -338,15 +342,24 @@ export class CircuitRunnerController extends AbstractCircuitController {
       const enodeObject = this.enodeObject3Ds.get(enodeId);
       if (!enodeObject) continue;
 
+      enodeObject.userData
+
       // Determine emissive color based on electrical state
       // Priority: current (blue) > voltage (red) > none
       let emissiveColor: number;
-      if (enodeState.hasCurrent) {
+      if (enodeState.hasCurrent && enodeState.hasVoltage) {
+        enodeObject.userData.electricalState = 'vc';
+        emissiveColor = 0xcc00cc; // Magenta for voltage and current (current circulating)
+      }
+      else if (enodeState.hasCurrent) {
+        enodeObject.userData.electricalState = 'current';
         emissiveColor = 0x0000ff; // Blue for current
       } else if (enodeState.hasVoltage) {
+        enodeObject.userData.electricalState = 'voltage';
         emissiveColor = 0xff0000; // Red for voltage only
-      } else {
-        emissiveColor = 0x000000; // No glow for idle
+      }
+      else {
+        enodeObject.userData.electricalState = 'idle';
       }
 
       // Apply emissive color to all meshes in the enode group
@@ -451,6 +464,11 @@ export class CircuitRunnerController extends AbstractCircuitController {
     for (const wire of wires) {
       this._createWireObject3D(wire);
     }
+
+    // then consider all elements dirty to set their initial simulation visual state
+    this._updateDirtyComponents({ components: new Set(components.map(c => c.id)) });
+    this._updateDirtyEnodes({ enodes: new Set(enodes.map(e => e.id)) });
+    this._updateDirtyWires({ wires: new Set(wires.map(w => w.id)) });
   }
 
   private _createComponentObject3D(component: Component): void {

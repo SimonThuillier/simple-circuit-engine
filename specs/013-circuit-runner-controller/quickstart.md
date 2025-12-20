@@ -84,7 +84,7 @@ console.log(`Current tick: ${controller.currentTick}`);
 
 ```typescript
 // Simulation started
-controller.on('simulationStarted', ({ tick }) => {
+controller.on('simulationPlayed', ({ tick }) => {
   console.log(`Simulation started at tick ${tick}`);
 });
 

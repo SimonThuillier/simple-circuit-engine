@@ -72,7 +72,8 @@ export class WireVisualManager {
       ['hovered', createLine2Material(0x40dfff, 4)],
       ['selected', createLine2Material(0xffaa00, 3)],
       ['voltage', createLine2Material(0xff0000, 2)], // Red for voltage only
-      ['current', createLine2Material(0x0000ff, 2)], // Blue for current (takes priority)
+      ['current', createLine2Material(0x0000ff, 2)], // Blue for current only
+      ['vc', createLine2Material(0xcc00cc, 3)], // Magenta for both voltage and current
     ]);
   }
 
@@ -156,6 +157,7 @@ export class WireVisualManager {
       line.userData = {
         type: 'wire',
         wireId: wire.id,
+        electricalState: 'idle'
       };
       // Enable wire hitbox layer
       line.layers.enable(HitboxLayers.WIRE);
@@ -232,7 +234,8 @@ export class WireVisualManager {
     if (!line) return;
     if (line.material !== this.wireMaterials.get('hovered')) return;
 
-    line.material = this.wireMaterials.get('idle')!;
+    line.material = this.wireMaterials.get(
+        line.userData.electricalState || 'idle')!;
   }
 
   applySelectedVisual(wireId: UUID): void {
@@ -246,7 +249,8 @@ export class WireVisualManager {
     if (!line) return;
     if (line.material !== this.wireMaterials.get('selected')) return;
 
-    line.material = this.wireMaterials.get('idle')!;
+    line.material = this.wireMaterials.get(
+        line.userData.electricalState || 'idle')!;
   }
 
   /**
@@ -254,12 +258,14 @@ export class WireVisualManager {
    * Used during simulation to visualize voltage/current flow
    *
    * @param wireId - Wire ID to update
-   * @param state - Material state: 'current', 'voltage', or 'idle'
+   * @param state - Material state: 'current', 'voltage', 'vc' (voltage and current) or 'idle'
    */
-  applyElectricalState(wireId: UUID, state: 'current' | 'voltage' | 'idle'): void {
+  applyElectricalState(wireId: UUID, state: 'current' | 'voltage' | 'vc' | 'idle'): void {
     const line = this._controller.wireObject3Ds.get(wireId);
     if (!line) return;
 
+    // set fallback visual state
+    line.userData.electricalState = state;
     // Don't override selected/hovered states
     const currentMaterial = line.material;
     if (currentMaterial === this.wireMaterials.get('selected')) return;
