@@ -53,7 +53,11 @@ export type ControllerEvent =
   | 'toolValidationError'
   | 'cursorChangeRequested'
   | 'circuitElementAction'
-  | 'selectionChange';
+  | 'selectionChange'
+  | 'simulationStarted'
+  | 'simulationPaused'
+  | 'simulationStepped'
+  | 'simulationTick';
 
 /**
  * Event payload map for type-safe event emission
@@ -102,6 +106,11 @@ export interface ControllerEventMap {
     error?: Error | null;
     data?: object | null;
   };
+  // Simulation events
+  simulationStarted: { tick: number };
+  simulationPaused: { tick: number };
+  simulationStepped: { tick: number; result: unknown };
+  simulationTick: { tick: number; dirty: unknown };
 }
 
 /**
@@ -226,7 +235,7 @@ export type HitboxUserData = EnodeHitboxUserData | ComponentHitboxUserData | Wir
 /**
  * Supported wires material states for visual feedback
  */
-export type WireMaterialState = 'idle' | 'hovered' | 'selected';
+export type WireMaterialState = 'idle' | 'hovered' | 'selected' | 'voltage' | 'current';
 
 /** Represents the Selection of one Hoverable Element of the scene **/
 export interface MonoSelectionData {

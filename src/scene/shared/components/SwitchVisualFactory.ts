@@ -128,7 +128,7 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
    * @remarks
    * Rotates the contactor group to visually represent open/closed state
    */
-  updateAnimation(object3D: THREE.Object3D, state: ComponentState): void {
+  override updateAnimation(object3D: THREE.Object3D, state: ComponentState): void {
     const switchState = state as SwitchState;
     const contactorGroup = this.findContactorGroup(object3D);
 

@@ -8,13 +8,13 @@
 
 import * as THREE from 'three';
 import type { CircuitRunner } from '../../core/simulation/CircuitRunner';
-import type { Component } from '../../core/components/Component';
+import type { Component } from '../../core/Component';
 import type { Wire } from '../../core/Wire';
 import type { ENode } from '../../core/ENode';
-import type { UUID } from '../../core/types/Identifier';
 import { ENodeType } from '../../core/types/ENodeType';
+import { ComponentType } from '../../core/types/ComponentType';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
-import { InterpolationController } from '../shared/InterpolationController';
+import type { UserCommand } from '../../core/simulation/types/UserCommand';
 import { AbstractCircuitController } from '../shared/AbstractCircuitController';
 import {
   createGridHelper,
@@ -32,10 +32,11 @@ import {
 export class CircuitRunnerController extends AbstractCircuitController {
   private _runner: CircuitRunner | null = null;
 
-  // Simulation-specific fields
-  private interpolationController: InterpolationController | null = null;
-  private lastSimulationTick: number = 0;
-  private lastRenderTime: number = 0;
+  // Playback control state
+  private _isPlaying: boolean = false;
+  private _tickIntervalMs: number = 500;
+  private _simulationLoopId: number | null = null;
+  private _pointerDownHandler: ((event: PointerEvent) => void) | null = null;
 
   /**
    * Create a new Simulation Circuit Controller
@@ -53,11 +54,57 @@ export class CircuitRunnerController extends AbstractCircuitController {
   }
 
   /**
+   * Check if simulation is currently playing (auto-advancing ticks)
+   * Returns false if paused or no circuit loaded
+   */
+  get isPlaying(): boolean {
+    return this._isPlaying;
+  }
+
+  /**
+   * Get current tick interval in milliseconds
+   * Default is 500ms (2 ticks per second)
+   */
+  get tickInterval(): number {
+    return this._tickIntervalMs;
+  }
+
+  /**
+   * Set tick interval in milliseconds (50-2000ms)
+   * If simulation is playing, restarts the interval with new value
+   *
+   * @param value - Interval in milliseconds, must be between 50-2000ms
+   * @throws {RangeError} If value is outside valid range
+   */
+  set tickInterval(value: number) {
+    if (value < 50 || value > 2000) {
+      throw new RangeError('Tick interval must be between 50 and 2000ms');
+    }
+    this._tickIntervalMs = value;
+
+    // If playing, restart interval with new value
+    if (this._isPlaying) {
+      this.pause();
+      this.play();
+    }
+  }
+
+  /**
+   * Get current simulation tick number
+   * Returns 0 if no circuit runner is loaded
+   */
+  get currentTick(): number {
+    return this._runner?.getCurrentTick() ?? 0;
+  }
+
+  /**
    * Specific Initialization logic, performed after AbstractCircuitController initialization
    * @private
    */
   protected onInitialize() {
-    // TODO add simulation-specific initialization logic here
+    // Register click handler for component interaction
+    this._pointerDownHandler = this._handlePointerDown.bind(this);
+    this._container!.addEventListener('pointerdown', this._pointerDownHandler);
   }
 
   protected emitReady() {
@@ -68,22 +115,46 @@ export class CircuitRunnerController extends AbstractCircuitController {
    * specific disposal prepended at the beginning of dispose process
    */
   protected onDispose(): void {
-    // TODO implement simulation-specific disposal logic here
+    // Stop simulation loop if running
+    if (this._isPlaying) {
+      this.pause();
+    }
+
+    // Remove click event listener if registered
+    if (this._pointerDownHandler && this._container) {
+      this._container.removeEventListener('pointerdown', this._pointerDownHandler);
+      this._pointerDownHandler = null;
+    }
+
+    // Clear runner reference
+    this._runner = null;
   }
 
+  /**
+   * Load a circuit runner for simulation and visualization
+   * Replaces any existing circuit and stops ongoing simulation
+   *
+   * @param runner - CircuitRunner instance to visualize, or null to clear
+   */
   setCircuitRunner(runner: CircuitRunner | null): void {
     this._checkInitialized();
-    if (runner === this._runner) return; // TODO : implement hash and equals methods in circuit to perform value equality check
-    if (!!this._runner) {
-      // TODO : implement everything that needs to be done (stopping runner/animations ....)
+    if (runner === this._runner) return;
 
-      // then proceed on removing the circuit itself (will trigger automatically _removeAllVisuals)
+    // Stop current simulation if playing
+    if (this._isPlaying) {
+      this.pause();
+    }
+
+    if (this._runner) {
+      // Clear previous circuit and visuals
       this._setCircuit(null);
+      this._runner = null;
     }
 
     if (runner) {
-      this._setCircuit(runner.circuit);
       this._runner = runner;
+      // Load new circuit and create visuals
+      this._setCircuit(runner.circuit);
     }
   }
 
@@ -93,6 +164,257 @@ export class CircuitRunnerController extends AbstractCircuitController {
    */
   protected onSetCircuit() {
     this._fullUpdate();
+  }
+
+  /**
+   * Start automatic simulation playback
+   * Simulation will advance at the configured tick interval until paused
+   *
+   * Requires a circuit runner to be loaded via setCircuitRunner()
+   * Emits 'simulationStarted' event on start
+   * Emits 'simulationTick' event on each tick
+   */
+  play(): void {
+    if (!this._runner) {
+      console.warn('Cannot play: no circuit runner loaded');
+      return;
+    }
+
+    if (this._isPlaying) {
+      return; // Already playing
+    }
+
+    this._isPlaying = true;
+    this.emit('simulationStarted', { tick: this._runner.getCurrentTick() });
+
+    // Start interval loop
+    this._simulationLoopId = window.setInterval(() => {
+      this._executeTick();
+    }, this._tickIntervalMs);
+  }
+
+  /**
+   * Pause automatic simulation playback
+   * Safe to call even if already paused or no circuit loaded
+   *
+   * Emits 'simulationPaused' event
+   */
+  pause(): void {
+    if (!this._isPlaying) {
+      return; // Already paused
+    }
+
+    this._isPlaying = false;
+
+    // Clear interval
+    if (this._simulationLoopId !== null) {
+      window.clearInterval(this._simulationLoopId);
+      this._simulationLoopId = null;
+    }
+
+    this.emit('simulationPaused', { tick: this._runner?.getCurrentTick() ?? 0 });
+  }
+
+  /**
+   * Execute a single simulation tick
+   * Simulation remains paused after step, useful for debugging
+   *
+   * If currently playing, pauses first then steps
+   * Requires a circuit runner to be loaded via setCircuitRunner()
+   * Emits 'simulationStepped' event with tick result
+   */
+  step(): void {
+    if (!this._runner) {
+      console.warn('Cannot step: no circuit runner loaded');
+      return;
+    }
+
+    // If playing, pause first
+    if (this._isPlaying) {
+      this.pause();
+    }
+
+    // Execute one tick
+    const result = this._executeTick();
+
+    this.emit('simulationStepped', { tick: this._runner.getCurrentTick(), result });
+  }
+
+  /**
+   * Execute one simulation tick and update visuals
+   * @private
+   */
+  private _executeTick(): unknown {
+    if (!this._runner) {
+      return null;
+    }
+
+    // Execute simulation tick
+    const result = this._runner.tick();
+
+    // Get dirty elements for optimized updates
+    const dirty = this._runner.dirtyTracker.getDirtyElements();
+
+    // Emit tick event
+    this.emit('simulationTick', { tick: this._runner.getCurrentTick(), dirty });
+
+    // Update visuals for changed elements
+    this._updateDirtyComponents(dirty);
+    this._updateDirtyWires(dirty);
+    this._updateDirtyEnodes(dirty);
+
+    return result;
+  }
+
+  /**
+   * Update component animations for dirty components
+   * @private
+   */
+  private _updateDirtyComponents(dirty: { components: ReadonlySet<string> }): void {
+    if (!this._runner) return;
+
+    // Update each dirty component's visual animation
+    for (const componentId of dirty.components) {
+      const object3D = this.componentObject3Ds.get(componentId);
+      if (!object3D) continue;
+
+      // Get component and its current state
+      const component = this._circuit?.getComponent(componentId);
+      if (!component) continue;
+
+      const state = this._runner.getComponentState(componentId);
+      if (!state) continue;
+
+      // Get factory and update animation
+      const factory = this.factoryRegistry.get(component.type);
+      factory.updateAnimation(object3D, state);
+    }
+  }
+
+  /**
+   * Update wire visual state based on electrical state
+   * @private
+   */
+  private _updateDirtyWires(dirty: { wires: ReadonlySet<string> }): void {
+    if (!this._runner) return;
+
+    // Update each dirty wire's material state
+    for (const wireId of dirty.wires) {
+      // Get wire electrical state from runner
+      const wireState = this._runner.getWireState(wireId);
+      if (!wireState) continue;
+
+      // Determine material state based on electrical state
+      // Priority: current > voltage > idle
+      let materialState: 'current' | 'voltage' | 'idle';
+      if (wireState.hasCurrent) {
+        materialState = 'current';
+      } else if (wireState.hasVoltage) {
+        materialState = 'voltage';
+      } else {
+        materialState = 'idle';
+      }
+
+      // Apply material state via WireVisualManager
+      this.wireVisualManager.applyElectricalState(wireId, materialState);
+    }
+  }
+
+  /**
+   * Update enode visual state based on electrical state
+   * Applies emissive glow to pins and branching points
+   * @private
+   */
+  private _updateDirtyEnodes(dirty: { enodes: ReadonlySet<string> }): void {
+    if (!this._runner) return;
+
+    // Update each dirty enode's emissive state
+    for (const enodeId of dirty.enodes) {
+      // Get enode electrical state from runner
+      const enodeState = this._runner.getEnodeState(enodeId);
+      if (!enodeState) continue;
+
+      // Get enode visual object (could be pin group or branching point)
+      const enodeObject = this.enodeObject3Ds.get(enodeId);
+      if (!enodeObject) continue;
+
+      // Determine emissive color based on electrical state
+      // Priority: current (blue) > voltage (red) > none
+      let emissiveColor: number;
+      if (enodeState.hasCurrent) {
+        emissiveColor = 0x0000ff; // Blue for current
+      } else if (enodeState.hasVoltage) {
+        emissiveColor = 0xff0000; // Red for voltage only
+      } else {
+        emissiveColor = 0x000000; // No glow for idle
+      }
+
+      // Apply emissive color to all meshes in the enode group
+      enodeObject.traverse((obj) => {
+        if (obj instanceof THREE.Mesh && obj.material) {
+          const material = obj.material as THREE.MeshStandardMaterial;
+          if (material.emissive) {
+            material.emissive.setHex(emissiveColor);
+            material.emissiveIntensity = emissiveColor === 0x000000 ? 0 : 1;
+          }
+        }
+      });
+    }
+  }
+
+  /**
+   * Handle pointer down events for component interaction
+   * @private
+   */
+  private _handlePointerDown(event: PointerEvent): void {
+    // Only handle left clicks
+    if (event.button !== 0) return;
+
+    // Only process clicks if we have a runner
+    if (!this._runner) return;
+
+    // Use raycasting to detect clicked component
+    const mouse = new THREE.Vector2();
+    const rect = this._container!.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, this._camera!);
+
+    // Check for component hitbox intersections
+    const hitboxes: THREE.Object3D[] = [];
+    for (const object3D of this.componentObject3Ds.values()) {
+      object3D.traverse((child) => {
+        if (child.userData && child.userData.type === 'componentHitbox') {
+          hitboxes.push(child);
+        }
+      });
+    }
+
+    const intersects = raycaster.intersectObjects(hitboxes, false);
+    if (intersects.length === 0) return;
+
+    // Get the clicked component
+    const hitbox = intersects[0]?.object;
+    if (!hitbox || !hitbox.userData) return;
+
+    const componentId = hitbox.userData.componentId;
+    const componentType = hitbox.userData.componentType;
+
+    // Only handle Switch components
+    if (componentType !== ComponentType.Switch) return;
+
+    // Create toggle command
+    const command: UserCommand = {
+      type: 'toggle_switch',
+      targetId: componentId,
+      scheduledAtTick: this._runner.getCurrentTick(),
+      parameters: null,
+    };
+
+    // Submit command to runner
+    this._runner.submitCommand(command);
   }
 
   /**

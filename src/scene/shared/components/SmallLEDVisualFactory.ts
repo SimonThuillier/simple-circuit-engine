@@ -75,7 +75,7 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
    * @remarks
    * Applies yellow emissive glow when LED is lit (state.isLit === true)
    */
-  updateAnimation(object3D: THREE.Object3D, state: ComponentState): void {
+  override updateAnimation(object3D: THREE.Object3D, state: ComponentState): void {
     const ledState = state as SmallLEDState;
     const ledMesh = this.findLedMesh(object3D);
 

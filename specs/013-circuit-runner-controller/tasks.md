@@ -19,9 +19,9 @@
 
 **Purpose**: Extend type definitions and prepare shared infrastructure
 
-- [ ] T001 [P] Add new simulation events to ControllerEventMap in src/scene/shared/types.ts (simulationStarted, simulationPaused, simulationStepped, simulationTick)
-- [ ] T002 [P] Add wire material states 'voltage' and 'current' to WireMaterialState type in src/scene/shared/types.ts
-- [ ] T003 Add voltage and current LineMaterial instances to WireVisualManager in src/scene/shared/WireVisualManager.ts
+- [x] T001 [P] Add new simulation events to ControllerEventMap in src/scene/shared/types.ts (simulationStarted, simulationPaused, simulationStepped, simulationTick)
+- [x] T002 [P] Add wire material states 'voltage' and 'current' to WireMaterialState type in src/scene/shared/types.ts
+- [x] T003 Add voltage and current LineMaterial instances to WireVisualManager in src/scene/shared/WireVisualManager.ts
 
 ---
 
@@ -31,11 +31,11 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T004 Add private state properties to CircuitRunnerController (_isPlaying, _tickIntervalMs, _simulationLoopId, _pointerDownHandler) in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T005 Add public accessor getters (isPlaying, tickInterval, currentTick) to CircuitRunnerController in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T006 Add tickInterval setter with validation (50-2000ms) to CircuitRunnerController in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T007 Implement setCircuitRunner(runner) method to load circuit and initialize visuals in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T008 Update onDispose() to clean up simulation loop and event handlers in src/scene/simulation/CircuitRunnerController.ts
+- [x] T004 Add private state properties to CircuitRunnerController (_isPlaying, _tickIntervalMs, _simulationLoopId, _pointerDownHandler) in src/scene/simulation/CircuitRunnerController.ts
+- [x] T005 Add public accessor getters (isPlaying, tickInterval, currentTick) to CircuitRunnerController in src/scene/simulation/CircuitRunnerController.ts
+- [x] T006 Add tickInterval setter with validation (50-2000ms) to CircuitRunnerController in src/scene/simulation/CircuitRunnerController.ts
+- [x] T007 Implement setCircuitRunner(runner) method to load circuit and initialize visuals in src/scene/simulation/CircuitRunnerController.ts
+- [x] T008 Update onDispose() to clean up simulation loop and event handlers in src/scene/simulation/CircuitRunnerController.ts
 
 **Checkpoint**: Foundation ready - user story implementation can begin
 
@@ -49,15 +49,15 @@
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] Implement play() method with setInterval loop in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T010 [US1] Implement pause() method that clears interval in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T011 [US1] Implement step() method that executes single tick in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T012 [US1] Implement private _executeTick() method that calls runner.tick() and triggers visual updates in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T013 [US1] Emit simulationStarted event from play() in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T014 [US1] Emit simulationPaused event from pause() in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T015 [US1] Emit simulationStepped event from step() in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T016 [US1] Emit simulationTick event from _executeTick() in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T017 [US1] Handle tickInterval changes while playing (restart interval) in src/scene/simulation/CircuitRunnerController.ts
+- [x] T009 [US1] Implement play() method with setInterval loop in src/scene/simulation/CircuitRunnerController.ts
+- [x] T010 [US1] Implement pause() method that clears interval in src/scene/simulation/CircuitRunnerController.ts
+- [x] T011 [US1] Implement step() method that executes single tick in src/scene/simulation/CircuitRunnerController.ts
+- [x] T012 [US1] Implement private _executeTick() method that calls runner.tick() and triggers visual updates in src/scene/simulation/CircuitRunnerController.ts
+- [x] T013 [US1] Emit simulationStarted event from play() in src/scene/simulation/CircuitRunnerController.ts
+- [x] T014 [US1] Emit simulationPaused event from pause() in src/scene/simulation/CircuitRunnerController.ts
+- [x] T015 [US1] Emit simulationStepped event from step() in src/scene/simulation/CircuitRunnerController.ts
+- [x] T016 [US1] Emit simulationTick event from _executeTick() in src/scene/simulation/CircuitRunnerController.ts
+- [x] T017 [US1] Handle tickInterval changes while playing (restart interval) in src/scene/simulation/CircuitRunnerController.ts
 
 **Checkpoint**: Simulation playback controls work. Can play/pause/step through simulation.
 
@@ -71,10 +71,10 @@
 
 ### Implementation for User Story 2
 
-- [ ] T018 [US2] Implement _updateDirtyComponents(dirty) method using factory.updateAnimation() in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T019 [US2] Call _updateDirtyComponents from _executeTick() after runner.tick() in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T020 [US2] Verify SwitchVisualFactory.updateAnimation correctly rotates contactor in src/scene/shared/components/SwitchVisualFactory.ts (read and verify existing implementation)
-- [ ] T021 [US2] Verify SmallLEDVisualFactory.updateAnimation correctly applies glow in src/scene/shared/components/SmallLEDVisualFactory.ts (read and verify existing implementation)
+- [x] T018 [US2] Implement _updateDirtyComponents(dirty) method using factory.updateAnimation() in src/scene/simulation/CircuitRunnerController.ts
+- [x] T019 [US2] Call _updateDirtyComponents from _executeTick() after runner.tick() in src/scene/simulation/CircuitRunnerController.ts
+- [x] T020 [US2] Verify SwitchVisualFactory.updateAnimation correctly rotates contactor in src/scene/shared/components/SwitchVisualFactory.ts (read and verify existing implementation)
+- [x] T021 [US2] Verify SmallLEDVisualFactory.updateAnimation correctly applies glow in src/scene/shared/components/SmallLEDVisualFactory.ts (read and verify existing implementation)
 
 **Checkpoint**: Components animate based on simulation state. Switch closes/opens, LED lights.
 
@@ -88,15 +88,15 @@
 
 ### Implementation for User Story 5
 
-- [ ] T022 [US5] Add click event listener registration in onInitialize() in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T023 [US5] Implement _handlePointerDown(event) method to detect component clicks in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T024 [US5] Check if clicked component is Switch type using componentObject3Ds userData in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T025 [US5] Create UserCommand {type: 'toggle_switch', targetId, scheduledAtTick} for Switch clicks in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T026 [US5] Submit command via runner.submitCommand() in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T027 [US5] Remove click event listener in onDispose() in src/scene/simulation/CircuitRunnerController.ts
+- [x] T022 [US5] Add click event listener registration in onInitialize() in src/scene/simulation/CircuitRunnerController.ts
+- [x] T023 [US5] Implement _handlePointerDown(event) method to detect component clicks in src/scene/simulation/CircuitRunnerController.ts
+- [x] T024 [US5] Check if clicked component is Switch type using componentObject3Ds userData in src/scene/simulation/CircuitRunnerController.ts
+- [x] T025 [US5] Create UserCommand {type: 'toggle_switch', targetId, scheduledAtTick} for Switch clicks in src/scene/simulation/CircuitRunnerController.ts
+- [x] T026 [US5] Submit command via runner.submitCommand() in src/scene/simulation/CircuitRunnerController.ts
+- [x] T027 [US5] Remove click event listener in onDispose() in src/scene/simulation/CircuitRunnerController.ts
 
 **Checkpoint**: Clicking switches toggles them. Circuit responds to user interaction.
-
+ 
 ---
 
 ## Phase 6: User Story 3 - Visualize Wire Electrical State (Priority: P2)
@@ -107,11 +107,11 @@
 
 ### Implementation for User Story 3
 
-- [ ] T028 [US3] Implement _updateDirtyWires(dirty) method in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T029 [US3] Get wire electrical state via runner.getWireState(wireId) in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T030 [US3] Determine material state: 'current' if hasCurrent, 'voltage' if hasVoltage only, 'idle' otherwise in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T031 [US3] Apply material state to wire Line2 via WireVisualManager in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T032 [US3] Call _updateDirtyWires from _executeTick() in src/scene/simulation/CircuitRunnerController.ts
+- [x] T028 [US3] Implement _updateDirtyWires(dirty) method in src/scene/simulation/CircuitRunnerController.ts
+- [x] T029 [US3] Get wire electrical state via runner.getWireState(wireId) in src/scene/simulation/CircuitRunnerController.ts
+- [x] T030 [US3] Determine material state: 'current' if hasCurrent, 'voltage' if hasVoltage only, 'idle' otherwise in src/scene/simulation/CircuitRunnerController.ts
+- [x] T031 [US3] Apply material state to wire Line2 via WireVisualManager in src/scene/simulation/CircuitRunnerController.ts
+- [x] T032 [US3] Call _updateDirtyWires from _executeTick() in src/scene/simulation/CircuitRunnerController.ts
 
 **Checkpoint**: Wires show electrical state visually. Blue for current, red for voltage only, white for idle.
 
@@ -125,11 +125,11 @@
 
 ### Implementation for User Story 4
 
-- [ ] T033 [US4] Implement _updateDirtyEnodes(dirty) method in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T034 [US4] Get enode electrical state via runner.getEnodeState(enodeId) in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T035 [US4] Apply emissive glow: blue (0x0000ff) for hasCurrent, red (0xff0000) for hasVoltage only, none for idle in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T036 [US4] Handle both pin groups (on components) and standalone branching points in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T037 [US4] Call _updateDirtyEnodes from _executeTick() in src/scene/simulation/CircuitRunnerController.ts
+- [x] T033 [US4] Implement _updateDirtyEnodes(dirty) method in src/scene/simulation/CircuitRunnerController.ts
+- [x] T034 [US4] Get enode electrical state via runner.getEnodeState(enodeId) in src/scene/simulation/CircuitRunnerController.ts
+- [x] T035 [US4] Apply emissive glow: blue (0x0000ff) for hasCurrent, red (0xff0000) for hasVoltage only, none for idle in src/scene/simulation/CircuitRunnerController.ts
+- [x] T036 [US4] Handle both pin groups (on components) and standalone branching points in src/scene/simulation/CircuitRunnerController.ts
+- [x] T037 [US4] Call _updateDirtyEnodes from _executeTick() in src/scene/simulation/CircuitRunnerController.ts
 
 **Checkpoint**: Pins and branching points glow based on electrical state.
 
@@ -139,12 +139,12 @@
 
 **Purpose**: Final validation and documentation
 
-- [ ] T038 [P] Add JSDoc comments to all public methods (play, pause, step, setCircuitRunner, isPlaying, tickInterval, currentTick) in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T039 [P] Validate edge case: play on empty circuit handles gracefully in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T040 [P] Validate edge case: rapid play/pause toggling works correctly in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T041 [P] Validate edge case: circuit replacement while playing stops previous simulation in src/scene/simulation/CircuitRunnerController.ts
+- [x] T038 [P] Add JSDoc comments to all public methods (play, pause, step, setCircuitRunner, isPlaying, tickInterval, currentTick) in src/scene/simulation/CircuitRunnerController.ts
+- [x] T039 [P] Validate edge case: play on empty circuit handles gracefully in src/scene/simulation/CircuitRunnerController.ts
+- [x] T040 [P] Validate edge case: rapid play/pause toggling works correctly in src/scene/simulation/CircuitRunnerController.ts
+- [x] T041 [P] Validate edge case: circuit replacement while playing stops previous simulation in src/scene/simulation/CircuitRunnerController.ts
 - [ ] T042 Run quickstart.md validation - verify usage example works
-- [ ] T043 Run npm test && npm run lint to ensure all existing tests pass
+- [x] T043 Run npm test && npm run lint to ensure all existing tests pass
 
 ---
 

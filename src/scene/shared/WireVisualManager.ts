@@ -71,6 +71,8 @@ export class WireVisualManager {
       ['idle', createLine2Material(0xffffff, 2)],
       ['hovered', createLine2Material(0x40dfff, 4)],
       ['selected', createLine2Material(0xffaa00, 3)],
+      ['voltage', createLine2Material(0xff0000, 2)], // Red for voltage only
+      ['current', createLine2Material(0x0000ff, 2)], // Blue for current (takes priority)
     ]);
   }
 
@@ -245,6 +247,25 @@ export class WireVisualManager {
     if (line.material !== this.wireMaterials.get('selected')) return;
 
     line.material = this.wireMaterials.get('idle')!;
+  }
+
+  /**
+   * Apply electrical state material to a wire
+   * Used during simulation to visualize voltage/current flow
+   *
+   * @param wireId - Wire ID to update
+   * @param state - Material state: 'current', 'voltage', or 'idle'
+   */
+  applyElectricalState(wireId: UUID, state: 'current' | 'voltage' | 'idle'): void {
+    const line = this._controller.wireObject3Ds.get(wireId);
+    if (!line) return;
+
+    // Don't override selected/hovered states
+    const currentMaterial = line.material;
+    if (currentMaterial === this.wireMaterials.get('selected')) return;
+    if (currentMaterial === this.wireMaterials.get('hovered')) return;
+
+    line.material = this.wireMaterials.get(state)!;
   }
 
   /**
