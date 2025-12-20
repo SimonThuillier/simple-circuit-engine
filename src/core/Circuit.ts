@@ -909,7 +909,7 @@ export class Circuit {
       ...wire.intermediatePositions,
       this.enodes.get(wire.node2)!.getPosition(this),
     ];
-    const simplifiedFullPositions = simplifyPositions(fullPositions, 10);
+    const simplifiedFullPositions = simplifyPositions(fullPositions, 5);
     // remove first and last positions (they are the positions of the nodes)
     wire.intermediatePositions = simplifiedFullPositions.slice(
       1,

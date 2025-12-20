@@ -24,6 +24,13 @@ export class SwitchState extends ComponentState {
   }
 
   /**
+   * Check if switch is in opening or closing state
+   */
+  get isInTransition(): boolean {
+    return this.state === 'closing' || this.state === 'opening';
+  }
+
+  /**
    * Check if switch is in closed or closing state
    */
   get isClosed(): boolean {

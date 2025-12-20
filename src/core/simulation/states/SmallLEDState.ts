@@ -27,6 +27,6 @@ export class SmallLEDState extends ComponentState {
    * Check if LED is in lit state (on or going_on)
    */
   get isLit(): boolean {
-    return this.state === 'on' || this.state === 'going_on';
+    return this.state === 'on' || this.state === 'goingOn';
   }
 }

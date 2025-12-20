@@ -453,6 +453,8 @@
     <div id="editor-container">
       <div id="editor-menu">
         <div id="sim-toggle" class="sim-button">Play</div>
+        <div id="sim-step" class="sim-button">Step</div>
+        <div id="sim-stop" class="sim-button">Stop / Reset</div>
       </div>
       <div id="viewer-container"></div>
     </div>
@@ -520,7 +522,19 @@
         document.getElementById('sim-toggle').textContent = 'Play';
       });
       runnerController.on('simulationTick', (e) => {
-        console.log('simulationTick', e);
+        document.getElementById('sim-step').textContent = 'Step (' + e.tick + ')';
+        //console.log('simulationTick', e);
+      });
+      runnerController.on('simulationUserCommand', (e) => {
+        console.log('simulationUserCommand', e);
+      });
+      runnerController.on('simulationStepped', (e) => {
+        document.getElementById('sim-step').textContent = 'Step (' + e.tick + ')';
+        console.log('simulationStepped', e);
+      });
+      runnerController.on('simulationStopped', (e) => {
+        document.getElementById('sim-step').textContent = 'Step (' + e.tick + ')';
+        console.log('simulationStopped', e);
       });
 
       runnerController.getControls().update();
@@ -568,7 +582,6 @@
         }
       });
 
-
       document.getElementById('clear-btn').addEventListener('click', () => {
         runnerController.setCircuitRunner(null);
         document.getElementById('circuit-input').value = '';
@@ -611,12 +624,17 @@
       })();
 
       document.getElementById('sim-toggle').addEventListener('click', (e) => {
-        if(runnerController.isPlaying){
-            runnerController.pause();
+        if (runnerController.isPlaying) {
+          runnerController.pause();
+        } else {
+          runnerController.play();
         }
-        else {
-            runnerController.play();
-        }
+      });
+      document.getElementById('sim-step').addEventListener('click', (e) => {
+        runnerController.step();
+      });
+      document.getElementById('sim-stop').addEventListener('click', (e) => {
+        runnerController.stop();
       });
     </script>
   </body>

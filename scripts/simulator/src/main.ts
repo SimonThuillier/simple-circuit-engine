@@ -18,8 +18,8 @@ import {
   SmallLEDVisualFactory,
 } from '../../../src/scene';
 import { MapControls } from 'three/addons/controls/MapControls.js';
-import {BatteryBehavior, BehaviorRegistry, SmallLEDBehavior} from "../../../src/core/simulation";
-import {SwitchBehavior} from "../../../src/core/simulation/behaviors/SwitchBehavior";
+import { BatteryBehavior, BehaviorRegistry, SmallLEDBehavior } from '../../../src/core/simulation';
+import { SwitchBehavior } from '../../../src/core/simulation/behaviors/SwitchBehavior';
 
 // Export to window object for use in HTML
 declare global {

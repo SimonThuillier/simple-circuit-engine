@@ -174,10 +174,9 @@ export class BranchingPointVisualFactory {
     }
 
     let fallbackEmissive = 0x000000;
-    if(object3D.userData.electricalState){
-        fallbackEmissive = this.colorForElectricalState(object3D.userData.electricalState);
+    if (object3D.userData.electricalState) {
+      fallbackEmissive = this.colorForElectricalState(object3D.userData.electricalState);
     }
-
 
     const visual = object3D.children.find((child) => child.userData.type === 'enode') as
       | THREE.Mesh

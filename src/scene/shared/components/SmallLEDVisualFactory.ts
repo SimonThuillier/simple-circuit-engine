@@ -85,10 +85,12 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
 
     if (ledState.isLit) {
       // Apply LED glow
+      ledMesh.userData.materialLocked = true;
       ledMesh.material.emissive.setHex(SmallLEDVisualFactory.LED_LIT_COLOR);
       ledMesh.material.emissiveIntensity = SmallLEDVisualFactory.LED_LIT_INTENSITY;
     } else {
       // Remove glow
+      ledMesh.userData.materialLocked = false;
       ledMesh.material.emissive.setHex(0x000000);
       ledMesh.material.emissiveIntensity = 0;
     }

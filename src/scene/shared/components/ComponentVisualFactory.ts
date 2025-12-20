@@ -202,15 +202,16 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     }
 
     object3D.traverse((child) => {
-      if(child.userData.type === 'enodeHitbox' ||
-          child.userData.type === 'enode') {
+      if (child.userData.type === 'enodeHitbox' || child.userData.type === 'enode') {
         return;
       }
-      if(child.userData.type === 'enodeGroup') {
+      if (child.userData.type === 'enodeGroup') {
         this.applyPinHover(child);
         return;
       }
-      if(!(child instanceof THREE.Mesh)) return;
+      if (!(child instanceof THREE.Mesh)) return;
+      if (child.userData.materialLocked) return; // this flag indicates material is locked by animation
+
       const material = child.material;
       if (material.visible === false) return;
       if (!(material instanceof THREE.MeshStandardMaterial)) return;
@@ -228,20 +229,20 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
       return;
     }
     object3D.traverse((child) => {
-      if(child.userData.type === 'enodeHitbox' ||
-          child.userData.type === 'enode') {
+      if (child.userData.type === 'enodeHitbox' || child.userData.type === 'enode') {
         return;
       }
-      if(child.userData.type === 'enodeGroup') {
+      if (child.userData.type === 'enodeGroup') {
         this.removePinHover(child);
         return;
       }
-      if(!(child instanceof THREE.Mesh)) return;
+      if (!(child instanceof THREE.Mesh)) return;
+      if (child.userData.materialLocked) return; // this flag indicates material is locked by animation
+
       const material = child.material;
       if (!(material instanceof THREE.MeshStandardMaterial)) return;
       material.emissiveIntensity = 0;
-    }
-    );
+    });
   }
 
   /**
@@ -254,15 +255,14 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
    */
   applySelection(object3D: THREE.Object3D): void {
     object3D.traverse((child) => {
-      if(child.userData.type === 'enodeHitbox' ||
-          child.userData.type === 'enode') {
+      if (child.userData.type === 'enodeHitbox' || child.userData.type === 'enode') {
         return;
       }
-      if(child.userData.type === 'enodeGroup') {
+      if (child.userData.type === 'enodeGroup') {
         this.removePinHover(child);
         return;
       }
-      if(!(child instanceof THREE.Mesh)) return;
+      if (!(child instanceof THREE.Mesh)) return;
       const material = child.material;
       if (material.visible === false || material.opacity < 0.5) return;
       if (!(material instanceof THREE.MeshStandardMaterial)) return;
@@ -284,15 +284,14 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
    */
   removeSelection(object3D: THREE.Object3D): void {
     object3D.traverse((child) => {
-      if(child.userData.type === 'enodeHitbox' ||
-          child.userData.type === 'enode') {
+      if (child.userData.type === 'enodeHitbox' || child.userData.type === 'enode') {
         return;
       }
-      if(child.userData.type === 'enodeGroup') {
+      if (child.userData.type === 'enodeGroup') {
         this.removePinHover(child);
         return;
       }
-      if(!(child instanceof THREE.Mesh)) return;
+      if (!(child instanceof THREE.Mesh)) return;
       const material = child.material;
       if (material.visible === false || material.opacity < 0.5) return;
       if (!(material instanceof THREE.MeshStandardMaterial)) return;
@@ -512,8 +511,10 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
         } else if (child.userData.type === 'enode') {
           material.color.setHex(this.pinColorForSourceType(sourceType));
           material.emissiveIntensity = sourceType ? 1 : 0;
-          if(!sourceType && pinGroup.userData.electricalState) {
-            const emissiveColor = this.pinColorForElectricalState(pinGroup.userData.electricalState);
+          if (!sourceType && pinGroup.userData.electricalState) {
+            const emissiveColor = this.pinColorForElectricalState(
+              pinGroup.userData.electricalState
+            );
             material.emissive.setHex(emissiveColor);
             material.emissiveIntensity = emissiveColor === 0x000000 ? 0 : 1;
           }

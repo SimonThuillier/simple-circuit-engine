@@ -21,6 +21,7 @@ import {
   gridToWorldPosition,
   gridToWorldRotation,
 } from '../shared/GeometryUtils';
+import type { HoveredElement } from '../shared/types';
 
 /**
  * Simulation Circuit Runner Controller Implementation
@@ -36,7 +37,7 @@ export class CircuitRunnerController extends AbstractCircuitController {
   private _isPlaying: boolean = false;
   private _tickIntervalMs: number = 500;
   private _simulationLoopId: number | null = null;
-  private _pointerDownHandler: ((event: PointerEvent) => void) | null = null;
+  private _clickHandler: ((event: MouseEvent) => void) | null = null;
 
   /**
    * Create a new Simulation Circuit Controller
@@ -103,8 +104,11 @@ export class CircuitRunnerController extends AbstractCircuitController {
    */
   protected onInitialize() {
     // Register click handler for component interaction
-    this._pointerDownHandler = this._handlePointerDown.bind(this);
-    this._container!.addEventListener('pointerdown', this._pointerDownHandler);
+    //this._pointerDownHandler = this._handlePointerDown.bind(this);
+    //this._container!.addEventListener('pointerdown', this._pointerDownHandler);
+
+    this._clickHandler = this._handleClick.bind(this);
+    this._container!.addEventListener('click', this._clickHandler);
   }
 
   protected emitReady() {
@@ -121,10 +125,14 @@ export class CircuitRunnerController extends AbstractCircuitController {
     }
 
     // Remove click event listener if registered
-    if (this._pointerDownHandler && this._container) {
-      this._container.removeEventListener('pointerdown', this._pointerDownHandler);
-      this._pointerDownHandler = null;
+    if (this._clickHandler && this._container) {
+      this._container.removeEventListener('click', this._clickHandler);
+      this._clickHandler = null;
     }
+    // if (this._pointerDownHandler && this._container) {
+    //   this._container.removeEventListener('pointerdown', this._pointerDownHandler);
+    //   this._pointerDownHandler = null;
+    // }
 
     // Clear runner reference
     this._runner = null;
@@ -149,6 +157,7 @@ export class CircuitRunnerController extends AbstractCircuitController {
       // Clear previous circuit and visuals
       this._setCircuit(null);
       this._runner = null;
+      this.emit('simulationStopped', { tick: 0 });
     }
 
     if (runner) {
@@ -183,11 +192,8 @@ export class CircuitRunnerController extends AbstractCircuitController {
     if (this._isPlaying) {
       return; // Already playing
     }
-
     this._isPlaying = true;
     this.emit('simulationPlayed', { tick: this._runner.getCurrentTick() });
-
-    console.log(this._runner.stateManager.getCurrentState());
 
     // Start interval loop
     this._simulationLoopId = window.setInterval(() => {
@@ -240,6 +246,31 @@ export class CircuitRunnerController extends AbstractCircuitController {
     const result = this._executeTick();
 
     this.emit('simulationStepped', { tick: this._runner.getCurrentTick(), result });
+  }
+
+  /**
+   * Stop the simulation, reset visual to initial state
+   * Simulation remains paused after step, useful for debugging
+   *
+   * If currently playing, pauses first then steps
+   * Requires a circuit runner to be loaded via setCircuitRunner()
+   * Emits 'simulationStopped' event with tick result (0)
+   */
+  stop(): void {
+    if (!this._runner) {
+      console.warn('Cannot step: no circuit runner loaded');
+      return;
+    }
+    // If playing, pause first
+    if (this._isPlaying) {
+      this.pause();
+    }
+    this._runner.reset();
+    // Update visuals to initial state
+    this._fullVisualUpdateFromSimulationState();
+    const result = this._runner.getCurrentTick();
+
+    this.emit('simulationStopped', { tick: result });
   }
 
   /**
@@ -315,7 +346,7 @@ export class CircuitRunnerController extends AbstractCircuitController {
         materialState = 'voltage';
       } else if (wireState.hasCurrent) {
         materialState = 'current';
-      }  else {
+      } else {
         materialState = 'idle';
       }
 
@@ -342,7 +373,7 @@ export class CircuitRunnerController extends AbstractCircuitController {
       const enodeObject = this.enodeObject3Ds.get(enodeId);
       if (!enodeObject) continue;
 
-      enodeObject.userData
+      enodeObject.userData;
 
       // Determine emissive color based on electrical state
       // Priority: current (blue) > voltage (red) > none
@@ -350,15 +381,13 @@ export class CircuitRunnerController extends AbstractCircuitController {
       if (enodeState.hasCurrent && enodeState.hasVoltage) {
         enodeObject.userData.electricalState = 'vc';
         emissiveColor = 0xcc00cc; // Magenta for voltage and current (current circulating)
-      }
-      else if (enodeState.hasCurrent) {
+      } else if (enodeState.hasCurrent) {
         enodeObject.userData.electricalState = 'current';
         emissiveColor = 0x0000ff; // Blue for current
       } else if (enodeState.hasVoltage) {
         enodeObject.userData.electricalState = 'voltage';
         emissiveColor = 0xff0000; // Red for voltage only
-      }
-      else {
+      } else {
         enodeObject.userData.electricalState = 'idle';
       }
 
@@ -376,58 +405,55 @@ export class CircuitRunnerController extends AbstractCircuitController {
   }
 
   /**
-   * Handle pointer down events for component interaction
+   * Handle click events for component interaction
+   * @param event
    * @private
    */
-  private _handlePointerDown(event: PointerEvent): void {
+  private _handleClick(event: MouseEvent): void {
     // Only handle left clicks
     if (event.button !== 0) return;
-
-    // Only process clicks if we have a runner
-    if (!this._runner) return;
-
-    // Use raycasting to detect clicked component
-    const mouse = new THREE.Vector2();
-    const rect = this._container!.getBoundingClientRect();
-    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-    const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(mouse, this._camera!);
-
-    // Check for component hitbox intersections
-    const hitboxes: THREE.Object3D[] = [];
-    for (const object3D of this.componentObject3Ds.values()) {
-      object3D.traverse((child) => {
-        if (child.userData && child.userData.type === 'componentHitbox') {
-          hitboxes.push(child);
-        }
-      });
+    const hoveredElement = this.getHoveredElement();
+    if (!hoveredElement) return;
+    if (event.metaKey && event.ctrlKey) {
+      this._handleCtrlClick(hoveredElement);
+    } else {
+      this._handleRegularClick(hoveredElement);
     }
+  }
 
-    const intersects = raycaster.intersectObjects(hitboxes, false);
-    if (intersects.length === 0) return;
+  /**
+   * Handle regular click events : emit user commands to the runner
+   * @param clickedElement
+   * @private
+   */
+  private _handleRegularClick(clickedElement: HoveredElement) {
+    if (!this._runner) return; // only process if we have a runner
+    if (clickedElement.type !== 'component') return;
+    const componentGroup = clickedElement.object3D.parent;
+    if (!componentGroup) return;
+    const componentType = componentGroup.userData.componentType;
+    const componentId = componentGroup.userData.componentId;
+    switch (componentType) {
+      case ComponentType.Switch: {
+        const command: UserCommand = {
+          type: 'toggle_switch',
+          targetId: componentId,
+          scheduledAtTick: this._runner.getCurrentTick(),
+          parameters: null,
+        };
+        // Submit command to runner and emit event
+        this._runner.submitCommand(command);
+        this.emit('simulationUserCommand', command);
+        return;
+      }
+      default:
+        return;
+    }
+  }
 
-    // Get the clicked component
-    const hitbox = intersects[0]?.object;
-    if (!hitbox || !hitbox.userData) return;
-
-    const componentId = hitbox.userData.componentId;
-    const componentType = hitbox.userData.componentType;
-
-    // Only handle Switch components
-    if (componentType !== ComponentType.Switch) return;
-
-    // Create toggle command
-    const command: UserCommand = {
-      type: 'toggle_switch',
-      targetId: componentId,
-      scheduledAtTick: this._runner.getCurrentTick(),
-      parameters: null,
-    };
-
-    // Submit command to runner
-    this._runner.submitCommand(command);
+  private _handleCtrlClick(clickedElement: HoveredElement) {
+    // TODO: implement ctrl+click handling
+    console.warn('TODO: implement ctrl+click handling');
   }
 
   /**
@@ -464,11 +490,24 @@ export class CircuitRunnerController extends AbstractCircuitController {
     for (const wire of wires) {
       this._createWireObject3D(wire);
     }
+    // finally consider all elements dirty to set their initial simulation visual state
+    this._fullVisualUpdateFromSimulationState();
+  }
 
-    // then consider all elements dirty to set their initial simulation visual state
-    this._updateDirtyComponents({ components: new Set(components.map(c => c.id)) });
-    this._updateDirtyEnodes({ enodes: new Set(enodes.map(e => e.id)) });
-    this._updateDirtyWires({ wires: new Set(wires.map(w => w.id)) });
+  /**
+   * Consider all elements as dirty to update all visual state according to simulation state
+   * @private
+   */
+  private _fullVisualUpdateFromSimulationState(): void {
+    if (!this._circuit || !this._runner) return;
+
+    const components = this._circuit.getAllComponents();
+    const wires = this._circuit.getAllWires();
+    const enodes = this._circuit.getAllENodes();
+
+    this._updateDirtyComponents({ components: new Set(components.map((c) => c.id)) });
+    this._updateDirtyEnodes({ enodes: new Set(enodes.map((e) => e.id)) });
+    this._updateDirtyWires({ wires: new Set(wires.map((w) => w.id)) });
   }
 
   private _createComponentObject3D(component: Component): void {

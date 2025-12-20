@@ -9,6 +9,7 @@ import type { ComponentType } from '@/core/types/ComponentType';
 import type { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import type { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import type { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
+import type { UserCommand } from '@/core/simulation';
 
 // Re-export Line2 types for convenience
 export type { Line2, LineGeometry, LineMaterial };
@@ -57,7 +58,9 @@ export type ControllerEvent =
   | 'simulationPlayed'
   | 'simulationPaused'
   | 'simulationStepped'
-  | 'simulationTick';
+  | 'simulationTick'
+  | 'simulationUserCommand'
+  | 'simulationStopped';
 
 /**
  * Event payload map for type-safe event emission
@@ -111,6 +114,8 @@ export interface ControllerEventMap {
   simulationPaused: { tick: number };
   simulationStepped: { tick: number; result: unknown };
   simulationTick: { tick: number; dirty: unknown };
+  simulationUserCommand: UserCommand;
+  simulationStopped: { tick: number };
 }
 
 /**
