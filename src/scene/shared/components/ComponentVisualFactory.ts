@@ -119,7 +119,7 @@ export interface IComponentVisualFactory {
   /**
    * Remove hover effect on a pin
    */
-    removePinHover(pinGroup: THREE.Object3D): void;
+  removePinHover(pinGroup: THREE.Object3D): void;
 
   /**
    * Update animation state based on simulation data
@@ -313,17 +313,18 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
    * @returns THREE.Group configured as pin group
    */
   protected createPinGroup(
-      componentId: string,
-      pinId: string,
-      label: string,
-      sourceType: ENodeSourceType | null = null): THREE.Group {
+    componentId: string,
+    pinId: string,
+    label: string,
+    sourceType: ENodeSourceType | null = null
+  ): THREE.Group {
     const pinGroup = new THREE.Group();
     pinGroup.userData = {
       type: 'enodeGroup',
       componentId: componentId,
       enodeId: pinId,
       label: label,
-      lockedSourceType: sourceType
+      lockedSourceType: sourceType,
     };
 
     // Hitbox (hemisphere, raycastable)
@@ -341,7 +342,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
       componentId: componentId,
       enodeId: pinId,
       label: label,
-      lockedSourceType: sourceType
+      lockedSourceType: sourceType,
     };
     hitbox.layers.set(HitboxLayers.ENODE);
     pinGroup.add(hitbox);
@@ -360,7 +361,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
       componentId: componentId,
       enodeId: pinId,
       label: label,
-      lockedSourceType: sourceType
+      lockedSourceType: sourceType,
     };
     pinGroup.add(visual);
 
@@ -404,13 +405,12 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
   }
 
   protected pinColorForSourceType(sourceType: ENodeSourceType | null): number {
-    if(!sourceType){
+    if (!sourceType) {
       return 0xb87333; // Bronze for no source
     }
     if (sourceType === ENodeSourceType.Voltage) {
       return 0xff0000; // Red for voltage
-    }
-    else if(sourceType === ENodeSourceType.Current) {
+    } else if (sourceType === ENodeSourceType.Current) {
       return 0x0000ff; // Blue for current
     }
     return 0xb87333; // Bronze by default
@@ -434,12 +434,12 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
    * - Color scheme matches BranchingPointVisualFactory for consistency
    */
   updatePinSourceType(pinGroup: THREE.Object3D, sourceType: ENodeSourceType | null): void {
-    if(!!pinGroup.userData.lockedSourceType) return; // Pin is locked to a source type, do not change color
+    if (!!pinGroup.userData.lockedSourceType) return; // Pin is locked to a source type, do not change color
     pinGroup.userData.sourceType = sourceType;
 
-    const visual = pinGroup.children.find(
-      (child) => child.userData.type === 'enode'
-    ) as THREE.Mesh | undefined;
+    const visual = pinGroup.children.find((child) => child.userData.type === 'enode') as
+      | THREE.Mesh
+      | undefined;
 
     if (!visual || !(visual.material instanceof THREE.MeshStandardMaterial)) {
       return;
@@ -482,9 +482,8 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     }
     pinGroup.userData.isHovered = false;
 
-    const sourceType: ENodeSourceType | null = pinGroup.userData.lockedSourceType
-        || pinGroup.userData.sourceType
-        || null;
+    const sourceType: ENodeSourceType | null =
+      pinGroup.userData.lockedSourceType || pinGroup.userData.sourceType || null;
 
     pinGroup.traverse((child) => {
       if (child instanceof THREE.Mesh) {

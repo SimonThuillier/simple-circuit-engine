@@ -165,9 +165,7 @@ interface ClipboardData {
  * @param current - Current source type
  * @returns Next source type in the cycle
  */
-function getNextSourceType(
-  current: ENodeSourceType | undefined
-): ENodeSourceType | undefined {
+function getNextSourceType(current: ENodeSourceType | undefined): ENodeSourceType | undefined {
   if (!current) return ENodeSourceType.Voltage;
   if (current === ENodeSourceType.Voltage) return ENodeSourceType.Current;
   return undefined; // Current → null
@@ -391,9 +389,10 @@ export class BuildTool implements IEditingTool {
         if (!wire) return;
 
         // Priority 3-1: Check for existing intermediate point
-        const nearestPoint = this._controller
-          .wireVisualManager
-          .findNearestIntermediatePoint(wireId, screenPos);
+        const nearestPoint = this._controller.wireVisualManager.findNearestIntermediatePoint(
+          wireId,
+          screenPos
+        );
         if (nearestPoint) {
           // Start dragging existing intermediate point
           const pos = wire.intermediatePositions[nearestPoint.pointIndex];
@@ -404,9 +403,10 @@ export class BuildTool implements IEditingTool {
           }
         }
         // Priority 3-2: Create new intermediate point at click position
-        const insertIndex = this._controller
-          .wireVisualManager
-          .getInsertIndexForPosition(wireId, worldPosition);
+        const insertIndex = this._controller.wireVisualManager.getInsertIndexForPosition(
+          wireId,
+          worldPosition
+        );
         this.startWireDrag(wireId, 'new_intermediate', insertIndex, worldPosition);
         return;
       }
@@ -795,9 +795,7 @@ export class BuildTool implements IEditingTool {
 
     // T063: Real-time geometry update with temporary positions
     // Use circuit's update method to set intermediate positions
-    this._controller
-      .circuitWriter
-      .saveEditWirePositions(this.wireDragState.wireId, newPositions);
+    this._controller.circuitWriter.saveEditWirePositions(this.wireDragState.wireId, newPositions);
     this._controller.wireVisualManager.updateWireById(this.wireDragState.wireId);
   }
 
@@ -808,9 +806,11 @@ export class BuildTool implements IEditingTool {
     if (this.mode !== 'wire_drag' || !this.wireDragState) return;
 
     // Revert intermediate positions
-    this._controller
-      .circuitWriter
-      .saveEditWirePositions(this.wireDragState.wireId, this.wireDragState.originalPositions, true);
+    this._controller.circuitWriter.saveEditWirePositions(
+      this.wireDragState.wireId,
+      this.wireDragState.originalPositions,
+      true
+    );
     this._controller.wireVisualManager.updateWireById(this.wireDragState.wireId);
 
     if (emit) {
@@ -849,9 +849,11 @@ export class BuildTool implements IEditingTool {
       //Check for merge/delete conditions
       const finalPositions = this.checkMergeDelete(wire);
       // Persist to model via CircuitWriter
-      this._controller
-        .circuitWriter
-        .saveEditWirePositions(wireDragState.wireId, finalPositions, true);
+      this._controller.circuitWriter.saveEditWirePositions(
+        wireDragState.wireId,
+        finalPositions,
+        true
+      );
 
       const hoveredElement = this._controller.getHoveredElement();
       // special case 1 : if wire was dragged to enode, we need to split it and connect to it
@@ -973,9 +975,7 @@ export class BuildTool implements IEditingTool {
     object.position.copy(newPosition);
 
     // moving wires connected to component in real-time during drag
-    this._controller
-      .wireVisualManager
-      .updateWiresForComponent(this.componentDragState.componentId);
+    this._controller.wireVisualManager.updateWiresForComponent(this.componentDragState.componentId);
   }
 
   /**
@@ -990,9 +990,7 @@ export class BuildTool implements IEditingTool {
 
     object.position.copy(this.componentDragState.initialPosition);
     // restore wires connected to component
-    this._controller
-      .wireVisualManager
-      .updateWiresForComponent(this.componentDragState.componentId);
+    this._controller.wireVisualManager.updateWiresForComponent(this.componentDragState.componentId);
 
     if (emit) {
       this._controller.emit('toolOperationCancelled', {
@@ -1023,9 +1021,7 @@ export class BuildTool implements IEditingTool {
     if (!object) return;
 
     try {
-      const component = this._controller
-        .circuitWriter
-        .saveEditComponent(componentId, object, true);
+      const component = this._controller.circuitWriter.saveEditComponent(componentId, object, true);
       for (const connectedWire of circuit.getWiresByComponent(componentId)) {
         this._controller.circuitWriter.saveSimplifyWirePositions(connectedWire.id);
         this._controller.wireVisualManager.updateWireById(connectedWire.id);
@@ -1288,9 +1284,7 @@ export class BuildTool implements IEditingTool {
     object.rotation.set(0, newAngle, 0);
 
     try {
-      const component = this._controller
-        .circuitWriter
-        .saveEditComponent(componentId, object);
+      const component = this._controller.circuitWriter.saveEditComponent(componentId, object);
       this._controller.wireVisualManager.updateWiresForComponent(component.id);
       this._controller.emit('toolOperationCompleted', {
         toolType: this.type,
@@ -1422,8 +1416,8 @@ export class BuildTool implements IEditingTool {
    * @param hitbox - hitbox of the enode being clicked
    */
   private cycleEnodeSourceType(enodeId: UUID, hitbox: THREE.Object3D): void {
-    if(hitbox.userData.lockedSourceType) return; // do not update locked source types
-    if(!hitbox.parent) return;
+    if (hitbox.userData.lockedSourceType) return; // do not update locked source types
+    if (!hitbox.parent) return;
 
     const nextSourceType = getNextSourceType(hitbox.parent.userData.sourceType);
     this._controller.updateEnodeSourceType(enodeId, nextSourceType || null);

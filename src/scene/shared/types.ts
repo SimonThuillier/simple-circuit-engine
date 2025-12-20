@@ -109,8 +109,6 @@ export interface ControllerEventMap {
  */
 export type ControllerCallback<T = any> = (payload: T) => void;
 
-
-
 /**
  * Optional configuration for scene controllerType initialization
  */

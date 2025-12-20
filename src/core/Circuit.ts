@@ -1052,5 +1052,4 @@ export class Circuit {
 
     return circuit;
   }
-
 }

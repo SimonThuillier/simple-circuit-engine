@@ -82,6 +82,7 @@ function badExample(input: number | null): string {
 ```
 
 ## Recent Changes
+
 - 012-ctrl-click-source-cycle: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (already installed)
 
 - 011-multi-select-tool: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (for 3D scene interaction and selection rectangle rendering)

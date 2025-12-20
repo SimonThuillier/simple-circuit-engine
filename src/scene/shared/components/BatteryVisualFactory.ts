@@ -1,7 +1,7 @@
 import { ComponentVisualFactoryBase } from './ComponentVisualFactory';
 import type { Component } from '@/core/Component';
 import * as THREE from 'three';
-import {ENodeSourceType} from "@/core/types/ENodeSourceType";
+import { ENodeSourceType } from '@/core/types/ENodeSourceType';
 
 /**
  * Visual factory for Battery components
@@ -40,18 +40,22 @@ export class BatteryVisualFactory extends ComponentVisualFactoryBase {
 
     // Cathode (positive pin) group
     const cathodeGroup = this.createPinGroup(
-        component.id,
-        component.pins[0]!,
-        'cathode', ENodeSourceType.Voltage);
+      component.id,
+      component.pins[0]!,
+      'cathode',
+      ENodeSourceType.Voltage
+    );
     cathodeGroup.position.set(0, 0, -1);
     cathodeGroup.rotateX(-Math.PI / 2);
     group.add(cathodeGroup);
 
     // Anode (negative pin) group
     const anodeGroup = this.createPinGroup(
-        component.id,
-        component.pins[1]!,
-        'anode', ENodeSourceType.Current);
+      component.id,
+      component.pins[1]!,
+      'anode',
+      ENodeSourceType.Current
+    );
     anodeGroup.position.set(0, 0, 1);
     anodeGroup.rotateX(Math.PI / 2);
     group.add(anodeGroup);

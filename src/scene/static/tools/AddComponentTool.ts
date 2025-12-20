@@ -101,9 +101,7 @@ export class AddComponentTool implements IEditingTool {
     }
 
     if (this._pointerDownHandler) {
-      this._controller
-        .getContainer()
-        .removeEventListener('pointerdown', this._pointerDownHandler);
+      this._controller.getContainer().removeEventListener('pointerdown', this._pointerDownHandler);
       this._pointerDownHandler = null;
     }
 
@@ -429,11 +427,7 @@ export class AddComponentTool implements IEditingTool {
       const rotation = new Euler(0, (this._previewRotation * Math.PI) / 180, 0);
 
       // Place component via CircuitController
-      const component = this._controller.addComponent(
-        this._componentType,
-        worldPosition,
-        rotation
-      );
+      const component = this._controller.addComponent(this._componentType, worldPosition, rotation);
 
       // Emit success event (T019)
       this._controller.emit('toolOperationCompleted', {

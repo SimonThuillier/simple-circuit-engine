@@ -67,7 +67,7 @@ function createMockController(
     getCamera: () => new THREE.PerspectiveCamera(),
     getContainer: () => document.createElement('div'),
     componentObject3Ds: componentGroups,
-    wireObject3Ds: wireLines
+    wireObject3Ds: wireLines,
   };
 }
 

@@ -17,10 +17,10 @@ import type { Circuit } from '../../core/Circuit';
 import type { Wire } from '../../core/Wire';
 import { ENodeType } from '../../core/types/ENodeType';
 import { createLine2Material } from './MaterialUtils';
-import type { CircuitController } from '../static/CircuitController';
 import type { WireMaterialState } from './types';
 import { HitboxLayers } from './LayerConstants';
 import { gridToWorldPosition } from './GeometryUtils';
+import type { AbstractCircuitController } from './AbstractCircuitController';
 
 /**
  * Wire path representation for rendering
@@ -58,13 +58,13 @@ export class WireVisualManager {
   private containerWidth: number = 500;
   private containerHeight: number = 500;
 
-  private _controller: CircuitController;
+  private _controller: AbstractCircuitController;
   /** Shared LineMaterials for all wires (memory efficient, consistent styling) */
   private wireMaterials: Map<WireMaterialState, LineMaterial> = new Map();
   /** Preview wire for wire creation mode */
   private previewWire: Line2 | null = null;
 
-  constructor(controller: CircuitController) {
+  constructor(controller: AbstractCircuitController) {
     this._controller = controller;
     // Create shared LineMaterial with default white color and 2px width
     this.wireMaterials = new Map([

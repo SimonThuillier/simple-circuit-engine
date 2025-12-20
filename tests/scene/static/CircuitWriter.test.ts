@@ -492,7 +492,7 @@ describe('CircuitWriter', () => {
         id: enodeId,
         error: null,
         data: {
-          sourceType: 'Voltage'
+          sourceType: 'Voltage',
         },
       });
     });
@@ -506,7 +506,7 @@ describe('CircuitWriter', () => {
         id: enodeId,
         error: null,
         data: {
-          sourceType: null
+          sourceType: null,
         },
       });
     });

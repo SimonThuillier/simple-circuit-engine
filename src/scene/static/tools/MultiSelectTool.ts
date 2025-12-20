@@ -870,9 +870,7 @@ export class MultiSelectTool implements IEditingTool {
         componentObject3D.position.copy(snappedPosition);
 
         // Update component in circuit model
-        this.controller
-          .circuitWriter
-          .saveEditComponent(elementId, componentObject3D);
+        this.controller.circuitWriter.saveEditComponent(elementId, componentObject3D);
         continue;
       }
 
@@ -961,9 +959,7 @@ export class MultiSelectTool implements IEditingTool {
       const componentObject3D = this.controller.componentObject3Ds.get(elementId);
       if (componentObject3D) {
         componentObject3D.position.copy(initialPos);
-        this.controller
-          .circuitWriter
-          .saveEditComponent(elementId, componentObject3D);
+        this.controller.circuitWriter.saveEditComponent(elementId, componentObject3D);
         continue;
       }
 
@@ -1276,9 +1272,11 @@ export class MultiSelectTool implements IEditingTool {
               y: Math.round(gridCursor.y + relPos.y),
             }));
 
-            this.controller
-              .circuitWriter
-              .saveEditWirePositions(newWire.id, absolutePositions, true);
+            this.controller.circuitWriter.saveEditWirePositions(
+              newWire.id,
+              absolutePositions,
+              true
+            );
             this.controller.wireVisualManager.updateWireById(newWire.id);
           }
         } catch (error) {
