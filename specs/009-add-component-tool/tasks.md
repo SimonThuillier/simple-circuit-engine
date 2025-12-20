@@ -53,7 +53,7 @@
 - [x] T014 [US1] Implement applyGhostEffect() method - traverse Object3D and set material.opacity = 0.5 and material.transparent = true in src/scene/static/tools/AddComponentTool.ts
 - [x] T015 [US1] Implement getPreviewObjects() to return [ghostPreview] when preview exists in src/scene/static/tools/AddComponentTool.ts
 - [x] T016 [US1] Implement handleGridPositionMove() method - update previewPosition with grid snapping in src/scene/static/tools/AddComponentTool.ts
-- [x] T017 [US1] Implement handleClick() method - call addComponent() on CircuitController when clicking empty space in src/scene/static/tools/AddComponentTool.ts
+- [x] T017 [US1] Implement handlePointerDown() method - call addComponent() on CircuitController when clicking empty space in src/scene/static/tools/AddComponentTool.ts
 - [x] T018 [US1] Implement getCursorType() - return 'crosshair' by default in src/scene/static/tools/AddComponentTool.ts
 - [x] T019 [US1] Emit toolOperationCompleted event with component details after successful placement in src/scene/static/tools/AddComponentTool.ts
 - [x] T020 [US1] Add JSDoc documentation for all public methods in src/scene/static/tools/AddComponentTool.ts
@@ -75,7 +75,7 @@
 - [x] T023 [US2] Implement removeInvalidEffect() method - restore normal emissive values in src/scene/static/tools/AddComponentTool.ts
 - [x] T024 [US2] Update handleGridPositionMove() to call checkOverlap() and apply invalid effect when overlap detected in src/scene/static/tools/AddComponentTool.ts
 - [x] T025 [US2] Update getCursorType() to return 'not-allowed' when hasOverlap is true in src/scene/static/tools/AddComponentTool.ts
-- [x] T026 [US2] Update handleClick() to check hasOverlap and emit toolValidationError if overlap detected in src/scene/static/tools/AddComponentTool.ts
+- [x] T026 [US2] Update handlePointerDown() to check hasOverlap and emit toolValidationError if overlap detected in src/scene/static/tools/AddComponentTool.ts
 - [x] T027 [US2] Emit toolValidationError event with message "Cannot place component: position occupied" when overlap prevents placement in src/scene/static/tools/AddComponentTool.ts
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work - placement works with overlap prevention
@@ -96,7 +96,7 @@
 - [x] T031 [US3] Update handleGridPositionMove() to apply current previewRotation to ghost preview position in src/scene/static/tools/AddComponentTool.ts
 - [x] T032 [US3] Attach 'wheel' event listener in onActivate() to call handleScroll() in src/scene/static/tools/AddComponentTool.ts
 - [x] T033 [US3] Remove 'wheel' event listener in onDeactivate() in src/scene/static/tools/AddComponentTool.ts
-- [x] T034 [US3] Update handleClick() to pass previewRotation to addComponent() method in src/scene/static/tools/AddComponentTool.ts
+- [x] T034 [US3] Update handlePointerDown() to pass previewRotation to addComponent() method in src/scene/static/tools/AddComponentTool.ts
 
 **Checkpoint**: All primary placement features should now work - placement, overlap detection, rotation
 
@@ -117,7 +117,7 @@
 - [x] T039 [US4] Emit toolOperationCompleted event with action:'delete' and componentId after deletion in src/scene/static/tools/AddComponentTool.ts
 - [x] T040 [US4] Attach 'keydown' event listener in onActivate() to call handleKeyDown() in src/scene/static/tools/AddComponentTool.ts
 - [x] T041 [US4] Remove 'keydown' event listener in onDeactivate() in src/scene/static/tools/AddComponentTool.ts
-- [x] T042 [US4] Update handleClick() to handle clicking on existing components - call SelectionManager.selectOne() instead of placing in src/scene/static/tools/AddComponentTool.ts
+- [x] T042 [US4] Update handlePointerDown() to handle clicking on existing components - call SelectionManager.selectOne() instead of placing in src/scene/static/tools/AddComponentTool.ts
 - [x] T043 [US4] Update getCursorType() to return 'pointer' when hovering existing component in src/scene/static/tools/AddComponentTool.ts
 
 **Checkpoint**: All user stories should now be independently functional - complete Add Component Tool workflow ✅

@@ -451,7 +451,7 @@ export class CircuitRunnerController extends AbstractCircuitController {
     }
   }
 
-  private _handleCtrlClick(clickedElement: HoveredElement) {
+  private _handleCtrlClick(_clickedElement: HoveredElement) {
     // TODO: implement ctrl+click handling
     console.warn('TODO: implement ctrl+click handling');
   }

@@ -52,8 +52,10 @@ export type ControllerEvent =
   | 'toolOperationCompleted'
   | 'toolOperationCancelled'
   | 'toolValidationError'
+  | 'addComponentTypeChanged'
   | 'cursorChangeRequested'
   | 'circuitElementAction'
+  | 'circuitMetadataEdition'
   | 'selectionChange'
   | 'simulationPlayed'
   | 'simulationPaused'
@@ -100,13 +102,18 @@ export interface ControllerEventMap {
   };
   toolOperationCancelled: { toolType: ToolType; mode: unknown };
   toolValidationError: { toolType: ToolType; mode: unknown; errorMessage: string };
+  addComponentTypeChanged: { componentType: ComponentType | null };
   cursorChangeRequested: { cursorType: CursorType };
-  // Model circuit events (add, edit, delete)
+  // Model circuit events (add, edit, delete elements, metadataEdit)
   circuitElementAction: {
     type: HoverableType;
     action: ModelEditAction;
     id?: UUID | undefined;
     error?: Error | null;
+    data?: object | null;
+  };
+  circuitMetadataEdition: {
+    circuitName: string;
     data?: object | null;
   };
   // Simulation events

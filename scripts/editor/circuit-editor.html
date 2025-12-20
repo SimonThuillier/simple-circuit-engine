@@ -714,6 +714,7 @@
 
           // nullItem allows deselecting component type
           const nullItem = document.createElement('li');
+          nullItem.id = 'btn-addComponent-type-none';
           nullItem.className = 'component-item';
           nullItem.textContent = 'None';
           nullItem.addEventListener('click', (e) => {
@@ -724,6 +725,7 @@
 
           componentTypes.forEach((type) => {
             const item = document.createElement('li');
+            item.id = `btn-addComponent-type-${type}`;
             item.className = 'component-item';
             item.textContent = type;
             item.dataset.componentType = type;
@@ -812,6 +814,16 @@
             // Clear visual selection
             const allItems = componentList.querySelectorAll('.component-item');
             allItems.forEach((item) => item.classList.remove('selected'));
+          }
+        });
+
+        circuitController.on('addComponentTypeChanged', (e) => {
+          const allItems = componentList.querySelectorAll('.component-item');
+          allItems.forEach((item) => item.classList.remove('selected'));
+          const itemElement = document.getElementById(
+                  `btn-addComponent-type-${e.componentType || 'none'}`);
+          if(itemElement.classList) {
+            itemElement.classList.add('selected');
           }
         });
       })();

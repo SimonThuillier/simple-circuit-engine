@@ -193,11 +193,11 @@
 
 ### Individual Tool Implementations
 
-- [X] T077 [US2] Implement PositionTool in src/scene/static/tools/PositionTool.ts: handleClick (position), handleDrag (move), handleDoubleClick (rotate), emit 'toolOperationCompleted' per FR-029, FR-037
-- [X] T078 [US2] Implement AddComponentTool in src/scene/static/tools/AddComponentTool.ts: handleGridPositionMove (preview), handleScroll (rotate), handleClick (place), overlap validation per FR-029, FR-030, FR-032
-- [X] T079 [US2] Implement WireTool in src/scene/static/tools/WireTool.ts: handleClick (source/target), path preview, cancellation support, emit 'toolOperationStarted'/'toolOperationCompleted' per FR-029, FR-030, FR-031
-- [X] T080 [US2] Implement BranchingPointTool in src/scene/static/tools/BranchingPointTool.ts: handleClick (wire targeting, insertion), wire validation per FR-029, FR-032
-- [X] T081 [US2] Implement DeleteTool in src/scene/static/tools/DeleteTool.ts: handleClick (delete), cascade logic for component pins, emit 'toolOperationCompleted' per FR-029, FR-032, FR-037
+- [X] T077 [US2] Implement PositionTool in src/scene/static/tools/PositionTool.ts: handlePointerDown (position), handleDrag (move), handleDoubleClick (rotate), emit 'toolOperationCompleted' per FR-029, FR-037
+- [X] T078 [US2] Implement AddComponentTool in src/scene/static/tools/AddComponentTool.ts: handleGridPositionMove (preview), handleScroll (rotate), handlePointerDown (place), overlap validation per FR-029, FR-030, FR-032
+- [X] T079 [US2] Implement WireTool in src/scene/static/tools/WireTool.ts: handlePointerDown (source/target), path preview, cancellation support, emit 'toolOperationStarted'/'toolOperationCompleted' per FR-029, FR-030, FR-031
+- [X] T080 [US2] Implement BranchingPointTool in src/scene/static/tools/BranchingPointTool.ts: handlePointerDown (wire targeting, insertion), wire validation per FR-029, FR-032
+- [X] T081 [US2] Implement DeleteTool in src/scene/static/tools/DeleteTool.ts: handlePointerDown (delete), cascade logic for component pins, emit 'toolOperationCompleted' per FR-029, FR-032, FR-037
 
 ### Tool Operations Implementation
 

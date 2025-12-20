@@ -529,7 +529,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
    * Default implementation is a no-op for static components.
    * Override in subclasses that have animation (LED, Switch).
    */
-  updateAnimation(object3D: THREE.Object3D, state: ComponentState): void {
+  updateAnimation(_object3D: THREE.Object3D, _state: ComponentState): void {
     // Default: no-op for static components
     // Subclasses override for component-specific animation
   }
