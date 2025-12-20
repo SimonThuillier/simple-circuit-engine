@@ -60,7 +60,7 @@ export class AddComponentTool implements IEditingTool {
     this._pointerDownHandler = (event: MouseEvent) => {
       if (event.button === 0) {
         // Left click only
-        this.handleClick(this._previewPosition);
+        this.handlePointerDown(this._previewPosition);
       }
     };
     this._controller.getContainer().addEventListener('pointerdown', this._pointerDownHandler);
@@ -68,7 +68,7 @@ export class AddComponentTool implements IEditingTool {
     // Attach wheel listener for rotation (User Story 3 - will be used in Phase 5)
     this._wheelHandler = (event: WheelEvent) => {
       event.preventDefault();
-      this.handleScroll(event.deltaY);
+      this.handleScroll(event.deltaY, event.ctrlKey);
     };
     this._controller.getContainer().addEventListener('wheel', this._wheelHandler, {
       passive: false,
@@ -134,6 +134,8 @@ export class AddComponentTool implements IEditingTool {
    * @param type - Component type to place
    */
   setComponentType(type: ComponentType | null): void {
+    if (this._componentType === type) return; // No change
+
     this._componentType = type;
 
     // Recreate ghost preview with new component type
@@ -148,6 +150,28 @@ export class AddComponentTool implements IEditingTool {
       this._controller.getControls()!.enablePan = true;
       this._controller.getControls()!.enableZoom = true;
     }
+    this._controller.emit('addComponentTypeChanged', {
+      componentType: this._componentType,
+    });
+  }
+
+  /**
+   * Cycle through available component types (for ctrl+scroll)
+   * @param forward
+   * @private
+   */
+  private cycleComponentTypes(forward: boolean): void {
+    const registry = this._controller.factoryRegistry;
+    const types = ['none', ...Array.from(registry.getRegisteredTypes())];
+    if (types.length < 2) return;
+
+    let currentIndex = types.indexOf(this._componentType || 'none');
+    if (currentIndex < 0) return;
+
+    currentIndex = (currentIndex + (forward ? 1 : -1) + types.length) % types.length;
+
+    const newType = types[currentIndex] === 'none' ? null : (types[currentIndex] as ComponentType);
+    this.setComponentType(newType);
   }
 
   /**
@@ -385,13 +409,13 @@ export class AddComponentTool implements IEditingTool {
   }
 
   /**
-   * Handle click events for component placement or selection (T017, T019, T026, T027, T042)
+   * Handle pointer down events for component placement or selection (T017, T019, T026, T027, T042)
    * - If clicking on existing component: select it
    * - If clicking empty space: place component at preview position
    *
    * @param worldPosition - Click position in world coordinates
    */
-  handleClick(worldPosition: THREE.Vector3): void {
+  handlePointerDown(worldPosition: THREE.Vector3): void {
     // T042: Check if clicking on an existing component
     const hoveredElement = this._controller.getHoveredElement();
     if (hoveredElement && hoveredElement.type === 'component') {
@@ -402,15 +426,8 @@ export class AddComponentTool implements IEditingTool {
       return;
     }
 
-    // Validate component type is selected
-    if (!this._componentType) {
-      this._controller.emit('toolValidationError', {
-        toolType: this.type,
-        mode: 'default',
-        errorMessage: 'No component type selected. Use setComponentType() first.',
-      });
-      return;
-    }
+    // Nothing more to do is no component type is set
+    if (!this._componentType) return;
 
     // Check for overlap before placing (T026, T027)
     if (this._hasOverlap) {
@@ -457,8 +474,17 @@ export class AddComponentTool implements IEditingTool {
    * Rotates preview by 90 degrees per scroll
    *
    * @param delta - Scroll delta (positive = scroll down, negative = scroll up)
+   * @param ctrlKey
    */
-  handleScroll(delta: number): void {
+  handleScroll(delta: number, ctrlKey: boolean): void {
+    if(ctrlKey){
+        // Cycle through component types while ctrl is held
+        this.cycleComponentTypes(delta > 0);
+        this._controller.getControls()!.enablePan = false;
+        this._controller.getControls()!.enableZoom = false;
+        return;
+    }
+
     // Rotate preview by 90 degrees
     this._previewRotation += delta > 0 ? 90 : -90;
 
@@ -494,6 +520,12 @@ export class AddComponentTool implements IEditingTool {
   handleKeyDown(event: KeyboardEvent): void {
     // T036: Get current selection from SelectionManager
     const selection = this._controller.getSelectionManager().getSelection();
+
+    // echap to set componentType to null
+    if (event.key === 'Escape') {
+      this.setComponentType(null);
+      return;
+    }
 
     // Check if Delete or Backspace key pressed and a component is selected
     if (

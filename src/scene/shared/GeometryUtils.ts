@@ -19,14 +19,52 @@ import { Rotation } from '@/core/types/Rotation';
  * @returns GridHelper object
  */
 export function createGridHelper(
-  size: number = 50,
-  divisions: number = 50,
+  size: number = 10,
+  divisions: number = 10,
   colorCenterLine: number = 0xaaaaaa,
   colorGrid: number = 0x777777
 ): THREE.GridHelper {
   const helper = new THREE.GridHelper(size, divisions, colorCenterLine, colorGrid);
   helper.position.set(0, 0, 0);
+  // set z-index to be behind other objects
+  helper.renderOrder = -1;
   return helper;
+}
+
+/**
+ * optimal number of grid divisions for a given size
+ * @param size
+ */
+export function computeDivisionsForSize(size: number): number {
+  if(size <= 10) return size;
+  let basis = 10;
+  let threshold = 10;
+  if(size <= 30){
+    return basis + Math.floor((size - threshold) / 2);
+  }
+  basis = 20;
+  threshold = 30;
+  if(size <= 70){
+    return basis + Math.floor((size - threshold) / 4);
+  }
+  basis = 30;
+  threshold = 70;
+  if(size <= 150){
+    return basis + Math.floor((size - threshold) / 8);
+  }
+  basis = 40;
+  threshold = 150;
+  if(size <= 310){
+    return basis + Math.floor((size - threshold) / 16);
+  }
+  basis = 50;
+  threshold = 310;
+  if(size <= 630){
+    return basis + Math.floor((size - threshold) / 32);
+  }
+  basis = 60;
+  threshold = 630;
+  return Math.min(70, basis + Math.floor((size - threshold) / 64));
 }
 
 /**

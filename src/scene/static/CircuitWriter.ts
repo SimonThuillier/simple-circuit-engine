@@ -8,7 +8,7 @@ import type { ENode } from '@/core/ENode';
 import type { Wire } from '@/core/Wire';
 import type { ComponentType } from '@/core/types/ComponentType';
 import type { Component } from '@/core/Component';
-import { worldToGridPosition, worldToGridRotation } from '../shared/GeometryUtils';
+import {computeDivisionsForSize, worldToGridPosition, worldToGridRotation} from '../shared/GeometryUtils';
 
 /**
  * Manages editing operations of 3D models from the circuit scene into the core circuit model.
@@ -491,5 +491,35 @@ export class CircuitWriter {
       this._controller.emit('circuitElementAction', event);
       throw new Error((error as Error).message);
     }
+  }
+
+  /**
+   * Automatically adjust the circuit size and divisions based on positions of all core circuit elements.
+   * @return if the size/division has been updated or not
+   */
+  saveAutoAdjustCircuitSize() : boolean {
+    const circuit = this._controller.getCircuit();
+    if (!circuit) {
+      throw new Error('No circuit available in the scene controllerType.');
+    }
+
+    const newSize = Math.max(10, circuit.getEnclosingSize(1));
+    if(circuit.metadata.size === newSize){
+      return false; // no change
+    }
+
+    const divisions = computeDivisionsForSize(newSize);
+
+    circuit.metadata.size = newSize;
+    circuit.metadata.divisions = divisions;
+
+    this._controller.emit('circuitMetadataEdition', {
+        circuitName: circuit.name,
+        data: {
+            size: newSize,
+            divisions: divisions
+        }
+    });
+    return true
   }
 }

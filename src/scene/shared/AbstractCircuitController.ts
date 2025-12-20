@@ -391,14 +391,17 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
   /**
    * Get the current cursor position on the ground plane (y=0) in world coordinates
    * The position is clamped within the circuit grid boundaries but not snapped to grid
+   * @param bound - Whether to constrain position within grid boundaries
    */
-  cursorGroundPlanePosition(): THREE.Vector3 {
+  cursorGroundPlanePosition(bound: boolean = true): THREE.Vector3 {
     const vector = this._hoverManager!.getGroundPlanePosition().clone();
-    vector.set(
-      Math.min(Math.max(vector.x, -this._gridHalfSize), this._gridHalfSize),
-      0,
-      Math.min(Math.max(vector.z, -this._gridHalfSize), this._gridHalfSize)
-    );
+    if(bound){
+      vector.set(
+          Math.min(Math.max(vector.x, -this._gridHalfSize), this._gridHalfSize),
+          0,
+          Math.min(Math.max(vector.z, -this._gridHalfSize), this._gridHalfSize)
+      );
+    }
     return vector;
   }
 

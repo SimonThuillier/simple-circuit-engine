@@ -856,6 +856,9 @@ export class MultiSelectTool implements IEditingTool {
     const { dragStartWorld, initialPositions, affectedWireIds, initialWireIntermediatePositions } =
       this.bulkDragState;
 
+    // we retrieve unbound world position to avoid snapping during drag since Multi Select tool allows to expand grid
+    worldPosition = this.controller.cursorGroundPlanePosition(false);
+
     // Calculate delta
     const delta = new THREE.Vector3().subVectors(worldPosition, dragStartWorld);
 
@@ -914,7 +917,7 @@ export class MultiSelectTool implements IEditingTool {
     if (!circuit) return;
 
     const { dragStartWorld, initialPositions } = this.bulkDragState;
-    const currentPosition = this.controller.cursorGroundPlanePosition();
+    const currentPosition = this.controller.cursorGroundPlanePosition(false);
 
     // Calculate final delta
     const delta = new THREE.Vector3().subVectors(currentPosition, dragStartWorld);
@@ -930,6 +933,9 @@ export class MultiSelectTool implements IEditingTool {
       },
       changedData: {},
     });
+
+    // launch autoAdjust of the grid after bulk move
+    this.controller.autoAdjustCircuitGridSize();
 
     // Cleanup
     this.mode = 'idle';
@@ -1186,7 +1192,7 @@ export class MultiSelectTool implements IEditingTool {
     const circuit = this.controller.getCircuit();
     if (!circuit) return false;
 
-    const cursorPosition = this.controller.cursorGroundPlanePosition();
+    const cursorPosition = this.controller.cursorGroundPlanePosition(false);
     const gridCursor = worldToGridPosition(cursorPosition);
 
     // Map from original IDs to newly created element IDs for wire remapping (T047)
@@ -1316,6 +1322,9 @@ export class MultiSelectTool implements IEditingTool {
       changedData: {},
     });
 
+    // launch autoAdjust of the grid after bulk paste
+    this.controller.autoAdjustCircuitGridSize();
+
     return true;
   }
 
@@ -1389,6 +1398,9 @@ export class MultiSelectTool implements IEditingTool {
       },
       changedData: {},
     });
+
+    // launch autoAdjust of the grid after bulk delete
+    this.controller.autoAdjustCircuitGridSize();
 
     // T036: Clear selection after delete
     selectionManager.deselect();
