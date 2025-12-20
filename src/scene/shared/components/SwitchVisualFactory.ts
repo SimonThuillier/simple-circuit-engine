@@ -20,7 +20,10 @@ import * as THREE from 'three';
  */
 export class SwitchVisualFactory extends ComponentVisualFactoryBase {
   /** Rotation for closed switch (contactor aligned) */
-  private static readonly CLOSED_ROTATION = new THREE.Euler(0.5, 0.8, 0);
+  private static readonly CLOSED_ROTATION = new THREE.Euler(0, 0, 0);
+
+  /** Rotation for opening/closing switch */
+  private static readonly INTERMEDIATE_ROTATION = new THREE.Euler(0.25, 0.65, 0.25);
 
   /** Rotation for open switch (contactor misaligned) */
   private static readonly OPEN_ROTATION = new THREE.Euler(0.5, 1.3, 0.5);
@@ -95,12 +98,12 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
       part: 'contactor',
     };
     contactor.rotateZ(Math.PI / 2);
-    contactor.position.set(0.5, 0, 0);
+    contactor.position.set(0.65, 0, 0);
     contactorGroup.add(contactor);
 
     group.add(contactorGroup);
     contactorGroup.position.set(-1, 0, 0);
-    contactorGroup.rotation.set(0.5, 0.8, 0);
+    contactorGroup.rotation.copy(SwitchVisualFactory.OPEN_ROTATION);
 
     // Input pin group
     const inputPinGroup = this.createPinGroup(component.id, component.pins[0]!, 'input');
@@ -128,7 +131,7 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
    * @remarks
    * Rotates the contactor group to visually represent open/closed state
    */
-  updateAnimation(object3D: THREE.Object3D, state: ComponentState): void {
+  override updateAnimation(object3D: THREE.Object3D, state: ComponentState): void {
     const switchState = state as SwitchState;
     const contactorGroup = this.findContactorGroup(object3D);
 
@@ -136,7 +139,9 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
       return;
     }
 
-    if (switchState.isClosed) {
+    if (switchState.isInTransition) {
+      contactorGroup.rotation.copy(SwitchVisualFactory.INTERMEDIATE_ROTATION);
+    } else if (switchState.isClosed) {
       // Closed position - contactor aligned
       contactorGroup.rotation.copy(SwitchVisualFactory.CLOSED_ROTATION);
     } else {

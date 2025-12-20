@@ -202,32 +202,21 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     }
 
     object3D.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        const material = child.material;
-        if (material instanceof THREE.MeshStandardMaterial) {
-          // Skip invisible materials
-          if (material.visible === false) {
-            return;
-          }
-
-          material.emissive.setHex(ComponentVisualFactoryBase.DEFAULT_HOVER_COLOR);
-          material.emissiveIntensity = ComponentVisualFactoryBase.DEFAULT_HOVER_INTENSITY;
-
-          // // Store original values if not already stored
-          // if (!child.userData.isHovered && !child.userData.isSelected) {
-          //   child.userData.originalEmissive = material.emissive.clone();
-          //   child.userData.originalEmissiveIntensity = material.emissiveIntensity;
-          // }
-          //
-          // child.userData.isHovered = true;
-          //
-          // // Only apply hover visual if not selected (selection takes precedence)
-          // if (!child.userData.isSelected) {
-          //   material.emissive.setHex(ComponentVisualFactoryBase.DEFAULT_HOVER_COLOR);
-          //   material.emissiveIntensity = ComponentVisualFactoryBase.DEFAULT_HOVER_INTENSITY;
-          // }
-        }
+      if (child.userData.type === 'enodeHitbox' || child.userData.type === 'enode') {
+        return;
       }
+      if (child.userData.type === 'enodeGroup') {
+        this.applyPinHover(child);
+        return;
+      }
+      if (!(child instanceof THREE.Mesh)) return;
+      if (child.userData.materialLocked) return; // this flag indicates material is locked by animation
+
+      const material = child.material;
+      if (material.visible === false) return;
+      if (!(material instanceof THREE.MeshStandardMaterial)) return;
+      material.emissive.setHex(ComponentVisualFactoryBase.DEFAULT_HOVER_COLOR);
+      material.emissiveIntensity = ComponentVisualFactoryBase.DEFAULT_HOVER_INTENSITY;
     });
   }
 
@@ -240,13 +229,19 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
       return;
     }
     object3D.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        const material = child.material;
-
-        if (material instanceof THREE.MeshStandardMaterial) {
-          material.emissiveIntensity = 0;
-        }
+      if (child.userData.type === 'enodeHitbox' || child.userData.type === 'enode') {
+        return;
       }
+      if (child.userData.type === 'enodeGroup') {
+        this.removePinHover(child);
+        return;
+      }
+      if (!(child instanceof THREE.Mesh)) return;
+      if (child.userData.materialLocked) return; // this flag indicates material is locked by animation
+
+      const material = child.material;
+      if (!(material instanceof THREE.MeshStandardMaterial)) return;
+      material.emissiveIntensity = 0;
     });
   }
 
@@ -260,19 +255,20 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
    */
   applySelection(object3D: THREE.Object3D): void {
     object3D.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        const material = child.material;
-        if (material instanceof THREE.MeshStandardMaterial) {
-          // Skip hitboxes (invisible materials)
-          if (material.visible === false || material.opacity < 0.5) {
-            return;
-          }
-
-          // Apply selection effect (overrides hover if present)
-          material.emissive.setHex(ComponentVisualFactoryBase.DEFAULT_SELECTION_COLOR);
-          material.emissiveIntensity = ComponentVisualFactoryBase.DEFAULT_SELECTION_INTENSITY;
-        }
+      if (child.userData.type === 'enodeHitbox' || child.userData.type === 'enode') {
+        return;
       }
+      if (child.userData.type === 'enodeGroup') {
+        this.removePinHover(child);
+        return;
+      }
+      if (!(child instanceof THREE.Mesh)) return;
+      const material = child.material;
+      if (material.visible === false || material.opacity < 0.5) return;
+      if (!(material instanceof THREE.MeshStandardMaterial)) return;
+      // Apply selection effect (overrides hover if present)
+      material.emissive.setHex(ComponentVisualFactoryBase.DEFAULT_SELECTION_COLOR);
+      material.emissiveIntensity = ComponentVisualFactoryBase.DEFAULT_SELECTION_INTENSITY;
     });
 
     object3D.userData.isSelected = true;
@@ -288,12 +284,19 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
    */
   removeSelection(object3D: THREE.Object3D): void {
     object3D.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        const material = child.material;
-        if (material instanceof THREE.MeshStandardMaterial) {
-          material.emissiveIntensity = 0;
-        }
+      if (child.userData.type === 'enodeHitbox' || child.userData.type === 'enode') {
+        return;
       }
+      if (child.userData.type === 'enodeGroup') {
+        this.removePinHover(child);
+        return;
+      }
+      if (!(child instanceof THREE.Mesh)) return;
+      const material = child.material;
+      if (material.visible === false || material.opacity < 0.5) return;
+      if (!(material instanceof THREE.MeshStandardMaterial)) return;
+      // remove selection effect
+      material.emissiveIntensity = 0;
     });
     object3D.userData.isSelected = false;
   }
@@ -416,6 +419,20 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     return 0xb87333; // Bronze by default
   }
 
+  protected pinColorForElectricalState(state: 'current' | 'voltage' | 'vc' | 'idle'): number {
+    switch (state) {
+      case 'voltage':
+        return 0xff0000; // Red
+      case 'current':
+        return 0x0000ff; // Blue
+      case 'vc':
+        return 0xcc00cc; // Magenta
+      case 'idle':
+      default:
+        return 0x000000;
+    }
+  }
+
   /**
    * Updates the visual color of a component pin based on its source type.
    *
@@ -493,7 +510,14 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
           material.opacity = 0;
         } else if (child.userData.type === 'enode') {
           material.color.setHex(this.pinColorForSourceType(sourceType));
-          material.emissiveIntensity = 0;
+          material.emissiveIntensity = sourceType ? 1 : 0;
+          if (!sourceType && pinGroup.userData.electricalState) {
+            const emissiveColor = this.pinColorForElectricalState(
+              pinGroup.userData.electricalState
+            );
+            material.emissive.setHex(emissiveColor);
+            material.emissiveIntensity = emissiveColor === 0x000000 ? 0 : 1;
+          }
         }
       }
     });

@@ -130,6 +130,20 @@ export class BranchingPointVisualFactory {
     }
   }
 
+  protected colorForElectricalState(state: 'current' | 'voltage' | 'vc' | 'idle'): number {
+    switch (state) {
+      case 'voltage':
+        return 0xff0000; // Red
+      case 'current':
+        return 0x0000ff; // Blue
+      case 'vc':
+        return 0xcc00cc; // Magenta
+      case 'idle':
+      default:
+        return 0x000000;
+    }
+  }
+
   /**
    * Apply hover object3D feedback.
    * @param object3D - The branching point basis object3D (group)
@@ -159,12 +173,17 @@ export class BranchingPointVisualFactory {
       return;
     }
 
+    let fallbackEmissive = 0x000000;
+    if (object3D.userData.electricalState) {
+      fallbackEmissive = this.colorForElectricalState(object3D.userData.electricalState);
+    }
+
     const visual = object3D.children.find((child) => child.userData.type === 'enode') as
       | THREE.Mesh
       | undefined;
 
     if (visual && visual.material instanceof THREE.MeshStandardMaterial) {
-      visual.material.emissive.setHex(0x000000);
+      visual.material.emissive.setHex(fallbackEmissive);
     }
   }
 

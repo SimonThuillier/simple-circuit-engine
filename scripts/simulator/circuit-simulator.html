@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Circuit Viewer</title>
+    <title>Circuit Simulator</title>
     <style>
       body {
         font-family:
@@ -45,6 +45,56 @@
         margin-bottom: 20px;
       }
 
+      .sim-button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+      }
+
+      .sim-button:hover {
+        background-color: #f0f0f0;
+      }
+
+      .sim-button.active {
+        background-color: #e0e0e0;
+      }
+
+      #component-list {
+        display: none;
+        padding: 0;
+        margin: 0;
+        list-style: none;
+        background: white;
+        border-left: 3px solid #4caf50;
+      }
+
+      #component-list.visible {
+        display: block;
+      }
+
+      .component-item {
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 13px;
+        color: #555;
+        border-bottom: 1px solid #f0f0f0;
+        transition: background-color 0.15s;
+      }
+
+      .component-item:hover {
+        background-color: #f5f5f5;
+        color: #333;
+      }
+
+      .component-item.selected {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+        font-weight: 500;
+      }
+
       button {
         padding: 10px 20px;
         font-size: 14px;
@@ -61,6 +111,15 @@
 
       #visualize-btn:hover {
         background-color: #45a049;
+      }
+
+      #serialize-btn {
+        background-color: #2196f3;
+        color: white;
+      }
+
+      #serialize-btn:hover {
+        background-color: #0b7dda;
       }
 
       #clear-btn {
@@ -162,7 +221,7 @@
       /* Ensure viewer adapts smoothly */
       /* viewer fixed to viewport edges (10px each side). top is computed in JS so the viewer sits
          just below the top UI (.container). */
-      #viewer-container {
+      #editor-container {
         box-sizing: border-box;
         position: fixed; /* horizontal anchored to viewport */
         left: 10px;
@@ -177,6 +236,24 @@
           top 0.25s ease;
         min-height: 120px; /* fallback */
         z-index: 4;
+        display: grid;
+        grid-template-columns: 1fr 5fr;
+        grid-template-rows: 1fr;
+      }
+
+      #editor-menu {
+        border-right: 1px solid #ddd;
+        padding: 0px;
+        min-width: 170px;
+        width: 170px;
+        height: 100%;
+        overflow-y: auto;
+      }
+
+      /* Ensure viewer adapts smoothly */
+      /* viewer fixed to viewport edges (10px each side). top is computed in JS so the viewer sits
+         just below the top UI (.container). */
+      #viewer-container {
       }
 
       .instructions {
@@ -199,7 +276,7 @@
     </style>
   </head>
   <body>
-    <h1>Circuit Viewer</h1>
+    <h1>Circuit Simulator</h1>
 
     <div class="container">
       <!-- modified input-container to be an accordion -->
@@ -223,8 +300,8 @@
           <div class="instructions">
             <h3>How to use:</h3>
             <p>1. Paste your circuit JSON into the textarea below</p>
-            <p>2. Click "Visualize Circuit" to generate the topology graph</p>
-            <p>3. View the rendered graph showing components, pins, and connections</p>
+            <p>2. Click "Visualize Circuit" to load and render the circuit</p>
+            <p>3. Play/Pause the simulation and click elements to visualize changes</p>
           </div>
 
           <textarea
@@ -373,26 +450,35 @@
       </div>
     </div>
 
-    <div id="viewer-container"></div>
+    <div id="editor-container">
+      <div id="editor-menu">
+        <div id="sim-toggle" class="sim-button">Play</div>
+        <div id="sim-step" class="sim-button">Step</div>
+        <div id="sim-stop" class="sim-button">Stop / Reset</div>
+      </div>
+      <div id="viewer-container"></div>
+    </div>
 
-    <script src="circuit-viewer.js"></script>
+    <script src="circuit-simulator.js"></script>
     <script>
       // Initialize visualizer
       // Remplace 'container' par 'viewerContainer' pour plus de clarté
       const viewerContainer = document.getElementById('viewer-container');
 
-      if (typeof window.CircuitController !== 'function') {
-        console.error('CircuitController is not a constructor!');
-        alert('ERROR: CircuitController failed to load. Check browser console for details.');
+      if (typeof window.CircuitRunnerController !== 'function') {
+        console.error('CircuitRunnerController is not a constructor!');
+        alert('ERROR: CircuitRunnerController failed to load. Check browser console for details.');
       }
 
-      const runnerController = new window.CircuitController(window.componentsFactoryRegistry);
-      circuitController.initialize(viewerContainer);
-      circuitController.getScene().add(window.axesHelper);
-      circuitController.getCamera().layers.enable(1); // enode hover layer
-      circuitController.getCamera().layers.enable(2); // component hover layer
+      const runnerController = new window.CircuitRunnerController(window.componentsFactoryRegistry);
+      runnerController.on('ready', (e) => console.log('ready', e));
+      runnerController.on('error', (e) => console.error('error', e));
+      runnerController.initialize(viewerContainer);
+      runnerController.getScene().add(window.axesHelper);
+      runnerController.getCamera().layers.enable(1); // enode hover layer
+      runnerController.getCamera().layers.enable(2); // component hover layer
 
-      window.renderer.render(circuitController.getScene(), circuitController.getCamera());
+      window.renderer.render(runnerController.getScene(), runnerController.getCamera());
       viewerContainer.appendChild(window.renderer.domElement);
 
       // Redimensionner le renderer pour remplir la hauteur disponible jusqu'en bas de la page,
@@ -406,7 +492,7 @@
 
         // ensure horizontal anchoring and vertical placement
         viewerContainer.style.position = 'fixed';
-        viewerContainer.style.left = '10px';
+        viewerContainer.style.left = '180px';
         viewerContainer.style.right = '10px';
         viewerContainer.style.top = top + 'px';
 
@@ -414,37 +500,49 @@
         const availableHeight = Math.max(window.innerHeight - top - marginBottom, 120);
         viewerContainer.style.height = availableHeight + 'px';
 
-        const w = viewerContainer.clientWidth || window.innerWidth - 20;
-        const h = availableHeight;
+        const rect = viewerContainer.getBoundingClientRect();
+        const w = rect.width; // viewerContainer.clientWidth || window.innerWidth - 20;
+        const h = rect.height;
         if (typeof window.renderer === 'object' && typeof window.renderer.setSize === 'function') {
           window.renderer.setSize(w, h);
           window.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
         }
-        circuitController.onContainerResize(w, h);
+        runnerController.onContainerResize();
       }
       // initial resize
       resizeRenderer();
       window.addEventListener('resize', resizeRenderer);
 
-      circuitController.on('hover', (e) => {
-        //console.log('hover', e);
+      runnerController.on('simulationPlayed', (e) => {
+        console.log('simulationPlayed', e);
+        document.getElementById('sim-toggle').textContent = 'Pause';
       });
-      circuitController.on('unhover', (e) => {
-        //console.log('unhover', e);
+      runnerController.on('simulationPaused', (e) => {
+        console.log('simulationPaused', e);
+        document.getElementById('sim-toggle').textContent = 'Play';
       });
-      circuitController.on('select', (e) => {
-        console.log('select', e);
+      runnerController.on('simulationTick', (e) => {
+        document.getElementById('sim-step').textContent = 'Step (' + e.tick + ')';
+        //console.log('simulationTick', e);
       });
-      circuitController.on('deselect', (e) => {
-        console.log('deselect', e);
+      runnerController.on('simulationUserCommand', (e) => {
+        console.log('simulationUserCommand', e);
+      });
+      runnerController.on('simulationStepped', (e) => {
+        document.getElementById('sim-step').textContent = 'Step (' + e.tick + ')';
+        console.log('simulationStepped', e);
+      });
+      runnerController.on('simulationStopped', (e) => {
+        document.getElementById('sim-step').textContent = 'Step (' + e.tick + ')';
+        console.log('simulationStopped', e);
       });
 
-      circuitController.getControls().update();
+      runnerController.getControls().update();
 
       function animate() {
         requestAnimationFrame(animate);
-        circuitController.getControls().update();
-        renderer.render(circuitController.getScene(), circuitController.getCamera());
+        runnerController.getControls().update();
+        renderer.render(runnerController.getScene(), runnerController.getCamera());
       }
       animate();
 
@@ -464,8 +562,9 @@
         try {
           const circuitData = JSON.parse(json);
           const circuit = window.Circuit.fromJSON(circuitData);
-          circuitController.setCircuit(circuit);
-          window.renderer.render(circuitController.getScene(), circuitController.getCamera());
+          const runner = new window.CircuitRunner(circuit, window.behaviorRegistry);
+          runnerController.setCircuitRunner(runner);
+          window.renderer.render(runnerController.getScene(), runnerController.getCamera());
           errorDisplay.classList.add('hidden');
           resizeRenderer();
         } catch (error) {
@@ -484,7 +583,7 @@
       });
 
       document.getElementById('clear-btn').addEventListener('click', () => {
-        circuitController.setCircuit(null);
+        runnerController.setCircuitRunner(null);
         document.getElementById('circuit-input').value = '';
         document.getElementById('error-display').classList.add('hidden');
         resizeRenderer();
@@ -495,7 +594,7 @@
         resizeRenderer();
       });
 
-      // Accordion toggle logic
+      // Input Accordion toggle logic
       (function () {
         const accordion = document.getElementById('input-accordion');
         const toggleBtn = document.getElementById('toggle-input');
@@ -523,6 +622,20 @@
           setCollapsed(!isCollapsed);
         });
       })();
+
+      document.getElementById('sim-toggle').addEventListener('click', (e) => {
+        if (runnerController.isPlaying) {
+          runnerController.pause();
+        } else {
+          runnerController.play();
+        }
+      });
+      document.getElementById('sim-step').addEventListener('click', (e) => {
+        runnerController.step();
+      });
+      document.getElementById('sim-stop').addEventListener('click', (e) => {
+        runnerController.stop();
+      });
     </script>
   </body>
 </html>

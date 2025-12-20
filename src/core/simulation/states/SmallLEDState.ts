@@ -22,4 +22,11 @@ export class SmallLEDState extends ComponentState {
   constructor(componentId: UUID, initialState: string = 'off') {
     super(componentId, initialState);
   }
+
+  /**
+   * Check if LED is in lit state (on or going_on)
+   */
+  get isLit(): boolean {
+    return this.state === 'on' || this.state === 'goingOn';
+  }
 }
