@@ -84,7 +84,7 @@
 ### Implementation for User Story 1
 
 - [x] T027 [P] [US1] Implement `BatteryState` class in `src/core/simulation/states/BatteryState.ts`
-- [x] T028 [P] [US1] Implement `SmallLEDState` class in `src/core/simulation/states/SmallLEDState.ts`
+- [x] T028 [P] [US1] Implement `LightbulbState` class in `src/core/simulation/states/LightbulbState.ts`
 - [x] T029 [US1] Implement `BatteryBehavior` class in `src/core/simulation/behaviors/BatteryBehavior.ts` (always outputs voltage/current)
 - [x] T030 [US1] Implement `SmallLEDBehavior` class in `src/core/simulation/behaviors/SmallLEDBehavior.ts` (turns on when pins powered correctly)
 - [x] T031 [US1] Implement `CircuitRunner` constructor in `src/core/simulation/CircuitRunner.ts` (initialize state, registry, managers)

@@ -230,12 +230,11 @@
           <textarea
             id="circuit-input"
             placeholder='Paste circuit JSON here (e.g., from output/sample-circuits/*.json)&#10;&#10;Example format:&#10;{&#10;  "metadata": { "name": "My Circuit", ... },&#10;  "components": [...],&#10;  "enodes": [...],&#10;  "wires": [...]&#10;}'
-          >
-    {
+          >{
   "metadata": {
     "name": "Switch-Controlled LED Circuit",
-    "size": 20,
-    "divisions": 20,
+    "size": 10,
+    "divisions": 10,
     "cameraStartup": {
       "x": 0,
       "y": 0,
@@ -244,121 +243,152 @@
   },
   "components": [
     {
-      "id": "e16b79a0-c6e2-49d2-8d23-852266cdf3d2",
-      "type": "battery",
+      "id": "135fea74-e5e7-4fd8-8156-f7e267b50ca1",
+      "type": "relay",
       "position": {
-        "x": 0,
-        "y": 0
+        "x": 3,
+        "y": -3
       },
       "rotation": 0,
       "pins": [
-        "5e87fd9e-d08b-4dae-bf9e-f9fd4f95d569",
-        "75360089-6b35-4c9a-a08e-4257a2d34968"
+        "01837f9f-713e-4d94-8e5b-104cd0880cbd",
+        "c6d3f854-bed0-41d7-833a-d280be7eaffa",
+        "94ebc49b-02b8-45b2-80fa-ba5f5b35f502",
+        "84263873-bb91-4b70-a8af-d9142090784e"
+      ],
+      "config": {
+        "activationLogic": "positive"
+      }
+    },
+    {
+      "id": "44ba831c-afff-44d6-9ffe-2e70d7e6ff1c",
+      "type": "transistor",
+      "position": {
+        "x": -2,
+        "y": -3
+      },
+      "rotation": 0,
+      "pins": [
+        "4f4c1043-b204-412e-b0ce-cc297139ae23",
+        "973b2c06-3526-4bb9-9390-966ce7da5130",
+        "43d95d1c-d046-4db5-9191-a6eaf9999b33"
+      ],
+      "config": {
+        "activationLogic": "positive"
+      }
+    },
+    {
+      "id": "a9d05469-f125-45a2-a38b-6eaa2e6c186a",
+      "type": "battery",
+      "position": {
+        "x": 0,
+        "y": 4
+      },
+      "rotation": 0,
+      "pins": [
+        "4fa04e4b-86f4-4911-b0fb-b52c603bd3eb",
+        "3e30c8ba-9561-4e23-a68a-d987f3413c9b"
       ],
       "config": {}
     },
     {
-      "id": "9cfa2f2d-3660-4f4f-98a5-b719ed7d12e9",
+      "id": "1890f7b6-ef80-4f11-8b2b-91ecde7bd5e2",
       "type": "switch",
       "position": {
-        "x": 5,
-        "y": 1
+        "x": 4,
+        "y": 2
       },
       "rotation": 0,
       "pins": [
-        "97b91b70-caa6-4a91-bfc0-6f290f33661c",
-        "db83437e-efba-419a-8b8e-cdf3b1b25745"
+        "e1955123-e00b-4783-970d-0026fcc4625e",
+        "85b14380-cc96-4d30-a439-566c27af4c39"
       ],
       "config": {
         "initialState": "open"
-      }
-    },
-    {
-      "id": "0b2e768e-a727-4733-9139-15b594fb4a35",
-      "type": "smallLED",
-      "position": {
-        "x": 5,
-        "y": -4
-      },
-      "rotation": 0,
-      "pins": [
-        "295298ee-5ecc-4474-9acb-9be1feee059f",
-        "ddf99ca2-8426-4a02-8b13-b05560806564"
-      ],
-      "config": {
-        "mode": "symmetric",
-        "activeColor": "red",
-        "idleColor": "black"
       }
     }
   ],
   "enodes": [
     {
-      "id": "5e87fd9e-d08b-4dae-bf9e-f9fd4f95d569",
+      "id": "01837f9f-713e-4d94-8e5b-104cd0880cbd",
+      "type": "Pin",
+      "source": null,
+      "component": "135fea74-e5e7-4fd8-8156-f7e267b50ca1",
+      "pinLabel": "cmd_in"
+    },
+    {
+      "id": "c6d3f854-bed0-41d7-833a-d280be7eaffa",
+      "type": "Pin",
+      "source": null,
+      "component": "135fea74-e5e7-4fd8-8156-f7e267b50ca1",
+      "pinLabel": "cmd_out"
+    },
+    {
+      "id": "94ebc49b-02b8-45b2-80fa-ba5f5b35f502",
+      "type": "Pin",
+      "source": null,
+      "component": "135fea74-e5e7-4fd8-8156-f7e267b50ca1",
+      "pinLabel": "power_in"
+    },
+    {
+      "id": "84263873-bb91-4b70-a8af-d9142090784e",
+      "type": "Pin",
+      "source": null,
+      "component": "135fea74-e5e7-4fd8-8156-f7e267b50ca1",
+      "pinLabel": "power_out"
+    },
+    {
+      "id": "4f4c1043-b204-412e-b0ce-cc297139ae23",
+      "type": "Pin",
+      "source": null,
+      "component": "44ba831c-afff-44d6-9ffe-2e70d7e6ff1c",
+      "pinLabel": "collector"
+    },
+    {
+      "id": "973b2c06-3526-4bb9-9390-966ce7da5130",
+      "type": "Pin",
+      "source": null,
+      "component": "44ba831c-afff-44d6-9ffe-2e70d7e6ff1c",
+      "pinLabel": "base"
+    },
+    {
+      "id": "43d95d1c-d046-4db5-9191-a6eaf9999b33",
+      "type": "Pin",
+      "source": null,
+      "component": "44ba831c-afff-44d6-9ffe-2e70d7e6ff1c",
+      "pinLabel": "emitter"
+    },
+    {
+      "id": "4fa04e4b-86f4-4911-b0fb-b52c603bd3eb",
       "type": "Pin",
       "source": "Voltage",
-      "component": "e16b79a0-c6e2-49d2-8d23-852266cdf3d2",
+      "component": "a9d05469-f125-45a2-a38b-6eaa2e6c186a",
       "pinLabel": "cathode"
     },
     {
-      "id": "75360089-6b35-4c9a-a08e-4257a2d34968",
+      "id": "3e30c8ba-9561-4e23-a68a-d987f3413c9b",
       "type": "Pin",
       "source": "Current",
-      "component": "e16b79a0-c6e2-49d2-8d23-852266cdf3d2",
+      "component": "a9d05469-f125-45a2-a38b-6eaa2e6c186a",
       "pinLabel": "anode"
     },
     {
-      "id": "97b91b70-caa6-4a91-bfc0-6f290f33661c",
+      "id": "e1955123-e00b-4783-970d-0026fcc4625e",
       "type": "Pin",
       "source": null,
-      "component": "9cfa2f2d-3660-4f4f-98a5-b719ed7d12e9",
+      "component": "1890f7b6-ef80-4f11-8b2b-91ecde7bd5e2",
       "pinLabel": "input"
     },
     {
-      "id": "db83437e-efba-419a-8b8e-cdf3b1b25745",
+      "id": "85b14380-cc96-4d30-a439-566c27af4c39",
       "type": "Pin",
       "source": null,
-      "component": "9cfa2f2d-3660-4f4f-98a5-b719ed7d12e9",
+      "component": "1890f7b6-ef80-4f11-8b2b-91ecde7bd5e2",
       "pinLabel": "output"
-    },
-    {
-      "id": "295298ee-5ecc-4474-9acb-9be1feee059f",
-      "type": "Pin",
-      "source": null,
-      "component": "0b2e768e-a727-4733-9139-15b594fb4a35",
-      "pinLabel": "cathode"
-    },
-    {
-      "id": "ddf99ca2-8426-4a02-8b13-b05560806564",
-      "type": "Pin",
-      "source": null,
-      "component": "0b2e768e-a727-4733-9139-15b594fb4a35",
-      "pinLabel": "anode"
     }
   ],
-  "wires": [
-    {
-      "id": "63ac676e-bc4f-4522-a286-a4b46e5fda53",
-      "node1": "5e87fd9e-d08b-4dae-bf9e-f9fd4f95d569",
-      "node2": "97b91b70-caa6-4a91-bfc0-6f290f33661c",
-      "intermediatePositions": []
-    },
-    {
-      "id": "f8d4e220-6376-4002-be89-e8190d19607b",
-      "node1": "db83437e-efba-419a-8b8e-cdf3b1b25745",
-      "node2": "ddf99ca2-8426-4a02-8b13-b05560806564",
-      "intermediatePositions": []
-    },
-    {
-      "id": "e4b1e554-2a6c-4615-a72b-2d4a1a90a3d4",
-      "node1": "295298ee-5ecc-4474-9acb-9be1feee059f",
-      "node2": "75360089-6b35-4c9a-a08e-4257a2d34968",
-      "intermediatePositions": []
-    }
-  ]
-}
-            </textarea
-          >
+  "wires": []
+}</textarea>
 
           <div class="button-group">
             <button id="visualize-btn">Render Circuit</button>
@@ -381,12 +411,7 @@
       // Remplace 'container' par 'viewerContainer' pour plus de clarté
       const viewerContainer = document.getElementById('viewer-container');
 
-      if (typeof window.CircuitController !== 'function') {
-        console.error('CircuitController is not a constructor!');
-        alert('ERROR: CircuitController failed to load. Check browser console for details.');
-      }
-
-      const runnerController = new window.CircuitController(window.componentsFactoryRegistry);
+      const circuitController = new window.CircuitController(window.componentsFactoryRegistry);
       circuitController.initialize(viewerContainer);
       circuitController.getScene().add(window.axesHelper);
       circuitController.getCamera().layers.enable(1); // enode hover layer
@@ -523,6 +548,9 @@
           setCollapsed(!isCollapsed);
         });
       })();
+
+      document.getElementById('visualize-btn').click();
+      document.getElementById('toggle-input').click();
     </script>
   </body>
 </html>

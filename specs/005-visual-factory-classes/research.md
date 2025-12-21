@@ -118,7 +118,7 @@ removeHover(object3D: THREE.Object3D): void {
 **Rationale**:
 - Per spec: "animation state based on simulation data"
 - ComponentState from `core/simulation/states/` contains the simulation state
-- LED example: `SmallLEDState` has `isLit` property
+- LED example: `LightbulbState` has `isLit` property
 - Visual factory checks state and updates material/geometry accordingly
 - No need for complex animation system for MVP; immediate state application is sufficient
 
@@ -130,7 +130,7 @@ updateAnimation(object3D: THREE.Object3D, state: ComponentState): void {
 }
 
 // Example: SmallLEDVisualFactory
-updateAnimation(object3D: THREE.Object3D, state: SmallLEDState): void {
+updateAnimation(object3D: THREE.Object3D, state: LightbulbState): void {
   const ledMesh = this.findLedMesh(object3D);
   if (ledMesh && ledMesh.material instanceof THREE.MeshStandardMaterial) {
     if (state.isLit) {

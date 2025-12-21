@@ -270,7 +270,7 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
   /**
    * Animate LED glow based on lit state
    */
-  updateAnimation(object3D: THREE.Object3D, state: SmallLEDState): void {
+  updateAnimation(object3D: THREE.Object3D, state: LightbulbState): void {
     const ledMesh = this.findLedMesh(object3D);
     if (!ledMesh) return;
 

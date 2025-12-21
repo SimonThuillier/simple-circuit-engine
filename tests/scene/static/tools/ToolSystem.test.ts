@@ -6,7 +6,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CircuitController } from '../../../../src/scene/static/CircuitController';
-import { FactoryRegistry } from '../../../../src/scene/shared/FactoryRegistry';
+import { FactoryRegistry } from '../../../../src/scene/shared/components/FactoryRegistry';
 import type { ToolType } from '../../../../src/scene/shared/types';
 import { DefaultVisualFactory } from '../../../../src/scene';
 

@@ -77,7 +77,7 @@ src/
 │       └── states/
 │           ├── ComponentState.ts     # Existing - base state class
 │           ├── SwitchState.ts        # Existing - switch open/closed
-│           └── SmallLEDState.ts      # Existing - LED on/off
+│           └── LightbulbState.ts      # Existing - LED on/off
 ├── scene/
 │   ├── shared/
 │   │   ├── AbstractCircuitController.ts  # Existing - base class

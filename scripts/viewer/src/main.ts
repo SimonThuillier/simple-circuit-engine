@@ -4,19 +4,25 @@
  */
 import { IntegrityError, RenderError, ValidationError, VisualizerError } from './errors.js';
 import { CircuitController } from '@/scene/static/CircuitController.js';
-import { FactoryRegistry } from '@/scene/shared/FactoryRegistry.js';
-import { DefaultVisualFactory } from '@/scene/shared/components/DefaultVisualFactory.js';
 import { Circuit } from '@/core/Circuit.js';
 import { AxesHelper, WebGLRenderer } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { ComponentType } from '@/core/types/ComponentType.js';
-import {
-  BatteryVisualFactory,
-  type IFactoryRegistry,
-  SwitchVisualFactory,
-  SmallLEDVisualFactory,
-} from '../../../src/scene';
 import { MapControls } from 'three/addons/controls/MapControls.js';
+
+import {
+  type IFactoryRegistry,
+  FactoryRegistry,
+  DefaultVisualFactory,
+  BatteryVisualFactory,
+  LightbulbVisualFactory,
+  RelayVisualFactory,
+  SmallLEDVisualFactory,
+  SwitchVisualFactory,
+  TransistorVisualFactory
+} from '../../../src/scene/shared/components';
+
+
 
 // Export to window object for use in HTML
 declare global {
@@ -24,7 +30,7 @@ declare global {
     renderer: WebGLRenderer;
     axesHelper: AxesHelper;
     CircuitController: typeof CircuitController;
-    componentsFactoryRegistry: FactoryRegistry;
+    componentsFactoryRegistry: IFactoryRegistry;
     OrbitControls: typeof OrbitControls;
     MapControls: typeof MapControls;
     Circuit: typeof Circuit;
@@ -37,12 +43,15 @@ declare global {
 
 // Immediately assign to window (for IIFE bundles)
 if (typeof window !== 'undefined') {
-  const componentsFactoryRegistry: IFactoryRegistry = new FactoryRegistry(
+  const componentsFactoryRegistry = new FactoryRegistry(
     new DefaultVisualFactory()
   );
   componentsFactoryRegistry.register(ComponentType.Battery, new BatteryVisualFactory());
+  componentsFactoryRegistry.register(ComponentType.Lightbulb, new LightbulbVisualFactory());
+  componentsFactoryRegistry.register(ComponentType.Relay, new RelayVisualFactory());
   componentsFactoryRegistry.register(ComponentType.Switch, new SwitchVisualFactory());
   componentsFactoryRegistry.register(ComponentType.SmallLED, new SmallLEDVisualFactory());
+  componentsFactoryRegistry.register(ComponentType.Transistor, new TransistorVisualFactory());
 
   window.renderer = new WebGLRenderer({ antialias: false, alpha: false });
   window.renderer.setClearColor(0x222290);

@@ -46,23 +46,17 @@ export class SwitchBehavior implements ComponentBehavior {
 
   /**
    * Switches states depend on user interaction, not their pins so this is more of a decorative function
-   * @param component
+   * @param _component
    * @param componentState
-   * @param nodeStates
+   * @param _nodeStates
    * @param _targetTick
    */
   onPinsChange(
-    component: Component,
+    _component: Component,
     componentState: ComponentState,
-    nodeStates: ReadonlyMap<UUID, NodeElectricalState>,
+    _nodeStates: ReadonlyMap<UUID, NodeElectricalState>,
     _targetTick: number
   ): BehaviorResult {
-    const pinStates: Map<string, NodeElectricalState> = new Map();
-
-    for (const pinId in component.pins) {
-      pinStates.set(component.getPinLabel(pinId)!, nodeStates.get(pinId as UUID)!);
-    }
-
     return {
       componentState: componentState,
       hasChanged: false,

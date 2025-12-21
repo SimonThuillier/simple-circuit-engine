@@ -48,7 +48,7 @@ import { HitboxLayers } from '../../../src/scene/shared/LayerConstants';
  *     // ... create LED visual
  *   }
  *
- *   updateAnimation(object3D: THREE.Object3D, state: SmallLEDState): void {
+ *   updateAnimation(object3D: THREE.Object3D, state: LightbulbState): void {
  *     // Custom animation: LED glow when lit
  *   }
  * }

@@ -25,14 +25,11 @@ export { BuildTool } from './static/tools/BuildTool';
 export { AddComponentTool } from './static/tools/AddComponentTool';
 
 // Shared utilities
-export { FactoryRegistry } from './shared/FactoryRegistry';
+export { FactoryRegistry } from './shared/components/FactoryRegistry';
 export { ComponentVisualFactoryBase } from './shared/components/ComponentVisualFactory';
-export { DefaultVisualFactory } from './shared/components/DefaultVisualFactory';
 export { EventEmitter } from './shared/EventEmitter';
 export { InterpolationController } from './shared/InterpolationController';
 export { HoverManager } from './shared/HoverManager';
-
-// Component Visual Factories
 
 // Types
 export type {
@@ -60,6 +57,3 @@ export type {
 
 export { HitboxLayers } from './shared/LayerConstants';
 export type { HitboxLayerValue } from './shared/LayerConstants';
-export { BatteryVisualFactory } from './shared/components/BatteryVisualFactory';
-export { SwitchVisualFactory } from './shared/components/SwitchVisualFactory';
-export { SmallLEDVisualFactory } from './shared/components/SmallLEDVisualFactory';

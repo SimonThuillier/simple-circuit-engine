@@ -394,7 +394,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     const material = new THREE.MeshBasicMaterial({
       color: 0xffff00,
       transparent: true,
-      opacity: 0.2,
+      opacity: 0,
       visible: false,
     });
     const hitbox = new THREE.Mesh(geometry, material);
