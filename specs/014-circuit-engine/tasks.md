@@ -19,11 +19,11 @@
 
 **Purpose**: Type definitions and infrastructure changes required before facade implementation
 
-- [ ] T001 Add EngineMode type and CircuitEngineEventMap to src/scene/shared/types.ts
-- [ ] T002 Add SharedResources interface to src/scene/shared/types.ts
-- [ ] T003 Add ModeChangedEvent interface to src/scene/shared/types.ts
-- [ ] T004 Add CircuitEngineOptions interface to src/scene/shared/types.ts
-- [ ] T005 Add onAny() method to EventEmitter in src/scene/shared/EventEmitter.ts
+- [X] T001 Add EngineMode type and CircuitEngineEventMap to src/scene/shared/types.ts
+- [X] T002 Add SharedResources interface to src/scene/shared/types.ts
+- [X] T003 Add ModeChangedEvent interface to src/scene/shared/types.ts
+- [X] T004 Add CircuitEngineOptions interface to src/scene/shared/types.ts
+- [X] T005 Add onAny() method to EventEmitter in src/scene/shared/EventEmitter.ts
 
 ---
 
@@ -33,11 +33,11 @@
 
 **CRITICAL**: CircuitEngine cannot be implemented until these refactorings are complete
 
-- [ ] T006 Add optional sharedResources parameter to AbstractCircuitController constructor in src/scene/shared/AbstractCircuitController.ts
-- [ ] T007 Modify AbstractCircuitController.initialize() to use injected resources when provided in src/scene/shared/AbstractCircuitController.ts
-- [ ] T008 Add _useSharedResources flag to skip resource creation in AbstractCircuitController in src/scene/shared/AbstractCircuitController.ts
-- [ ] T009 Modify CircuitRunnerController to skip visual creation when visual maps are pre-populated in src/scene/simulation/CircuitRunnerController.ts
-- [ ] T010 Add test for AbstractCircuitController shared resource injection in tests/scene/shared/AbstractCircuitController.test.ts
+- [X] T006 Add optional sharedResources parameter to AbstractCircuitController constructor in src/scene/shared/AbstractCircuitController.ts
+- [X] T007 Modify AbstractCircuitController.initialize() to use injected resources when provided in src/scene/shared/AbstractCircuitController.ts
+- [X] T008 Add _useSharedResources flag to skip resource creation in AbstractCircuitController in src/scene/shared/AbstractCircuitController.ts
+- [X] T009 Modify CircuitRunnerController to skip visual creation when visual maps are pre-populated in src/scene/simulation/CircuitRunnerController.ts
+- [X] T010 Add test for AbstractCircuitController shared resource injection in tests/scene/shared/AbstractCircuitController.test.ts
 
 **Checkpoint**: Foundation ready - CircuitEngine implementation can begin
 
@@ -51,10 +51,10 @@
 
 ### Tests for User Story 1
 
-- [ ] T011 [P] [US1] Test setMode('simulation') transitions correctly in tests/scene/CircuitEngine.test.ts
-- [ ] T012 [P] [US1] Test active tool is cancelled when switching to simulation in tests/scene/CircuitEngine.test.ts
-- [ ] T013 [P] [US1] Test CircuitRunner is created from current circuit in tests/scene/CircuitEngine.test.ts
-- [ ] T014 [P] [US1] Test edit-only operations throw in simulation mode in tests/scene/CircuitEngine.test.ts
+- [X] T011 [P] [US1] Test setMode('simulation') transitions correctly in tests/scene/CircuitEngine.test.ts
+- [X] T012 [P] [US1] Test active tool is cancelled when switching to simulation in tests/scene/CircuitEngine.test.ts
+- [X] T013 [P] [US1] Test CircuitRunner is created from current circuit in tests/scene/CircuitEngine.test.ts
+- [X] T014 [P] [US1] Test edit-only operations throw in simulation mode in tests/scene/CircuitEngine.test.ts
 
 ### Implementation for User Story 1
 

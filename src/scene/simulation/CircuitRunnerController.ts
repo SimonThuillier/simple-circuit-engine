@@ -15,6 +15,7 @@ import { ENodeType } from '../../core/types/ENodeType';
 import { ComponentType } from '../../core/types/ComponentType';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
 import type { UserCommand } from '../../core/simulation/types/UserCommand';
+import type { SharedResources } from '../shared/types';
 import { AbstractCircuitController } from '../shared/AbstractCircuitController';
 import {
   createGridHelper,
@@ -43,10 +44,11 @@ export class CircuitRunnerController extends AbstractCircuitController {
    * Create a new Simulation Circuit Controller
    *
    * @param factoryRegistry - Component visual factory registry
+   * @param sharedResources - Optional shared resources for facade pattern (CircuitEngine)
    * @throws {TypeError} If factoryRegistry is null/undefined
    */
-  constructor(factoryRegistry: IFactoryRegistry) {
-    super(factoryRegistry);
+  constructor(factoryRegistry: IFactoryRegistry, sharedResources?: SharedResources) {
+    super(factoryRegistry, sharedResources);
     if (!factoryRegistry) {
       throw new TypeError('FactoryRegistry is required');
     }
@@ -459,6 +461,9 @@ export class CircuitRunnerController extends AbstractCircuitController {
   /**
    * recreate all visuals based on circuit data
    * Should be called on an already cleared scene
+   *
+   * When using shared resources (CircuitEngine facade), skips visual creation
+   * if visuals already exist in the shared maps (created by edit controller).
    * @private
    */
   private _fullUpdate(): void {
@@ -466,31 +471,38 @@ export class CircuitRunnerController extends AbstractCircuitController {
 
     if (!this._circuit) return;
 
-    // 1. Add circuit sized grid
-    this._grid = createGridHelper(this._circuit.metadata.size, this._circuit.metadata.divisions);
-    this._scene!.add(this._grid);
+    // When using shared resources and visuals already exist, skip creation
+    // The edit controller has already created all visuals
+    const visualsPrePopulated = this._useSharedResources && this.componentObject3Ds.size > 0;
 
-    // Create visuals for all circuit elements
-    const components = this._circuit.getAllComponents();
-    const wires = this._circuit.getAllWires();
-    const enodes = this._circuit.getAllENodes();
+    if (!visualsPrePopulated) {
+      // 1. Add circuit sized grid
+      this._grid = createGridHelper(this._circuit.metadata.size, this._circuit.metadata.divisions);
+      this._scene!.add(this._grid);
 
-    for (const component of components) {
-      this._createComponentObject3D(component);
-    }
-    for (const enode of enodes) {
-      this._createEnodeObject3D(enode);
-      // For edited pin enodes, update source type visual (component creates them only in their default mode)
-      if (enode.type === ENodeType.Pin && enode.source) {
-        const pinGroup = this.enodeObject3Ds.get(enode.id);
-        if (!pinGroup) continue;
-        this.factoryRegistry.getFallbackFactory().updatePinSourceType(pinGroup, enode.source);
+      // Create visuals for all circuit elements
+      const components = this._circuit.getAllComponents();
+      const wires = this._circuit.getAllWires();
+      const enodes = this._circuit.getAllENodes();
+
+      for (const component of components) {
+        this._createComponentObject3D(component);
+      }
+      for (const enode of enodes) {
+        this._createEnodeObject3D(enode);
+        // For edited pin enodes, update source type visual (component creates them only in their default mode)
+        if (enode.type === ENodeType.Pin && enode.source) {
+          const pinGroup = this.enodeObject3Ds.get(enode.id);
+          if (!pinGroup) continue;
+          this.factoryRegistry.getFallbackFactory().updatePinSourceType(pinGroup, enode.source);
+        }
+      }
+      for (const wire of wires) {
+        this._createWireObject3D(wire);
       }
     }
-    for (const wire of wires) {
-      this._createWireObject3D(wire);
-    }
-    // finally consider all elements dirty to set their initial simulation visual state
+
+    // Always update simulation visual state (colors, animations) from simulation state
     this._fullVisualUpdateFromSimulationState();
   }
 

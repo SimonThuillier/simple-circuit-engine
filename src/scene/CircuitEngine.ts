@@ -1,0 +1,671 @@
+/**
+ * CircuitEngine - Unified Facade for Circuit Editing and Simulation
+ * @module scene/CircuitEngine
+ *
+ * Provides a unified API for both static circuit editing and live simulation,
+ * managing mode transitions and resource sharing between controllers.
+ */
+
+import * as THREE from 'three';
+import { MapControls } from 'three/addons/controls/MapControls.js';
+import type { Line2 } from 'three/examples/jsm/lines/Line2.js';
+import { EventEmitter } from './shared/EventEmitter';
+import { CircuitController } from './static/CircuitController';
+import { CircuitRunnerController } from './simulation/CircuitRunnerController';
+import { CircuitRunner } from '../core/simulation/CircuitRunner';
+import { HoverManager } from './shared/HoverManager';
+import { WireVisualManager } from './shared/WireVisualManager';
+import { BranchingPointVisualFactory } from './shared/components/BranchingPointVisualFactory';
+import { createPerspectiveCamera } from './shared/CameraUtils';
+import { setupSceneLights } from './shared/LightingUtils';
+import type { Circuit } from '../core/Circuit';
+import type { UUID } from '../core/types/Identifier';
+import type { BehaviorRegistry } from '../core/simulation/behaviors/BehaviorRegistry';
+import type { IFactoryRegistry } from './shared/components/ComponentVisualFactory';
+import type {
+  EngineMode,
+  SharedResources,
+  CircuitEngineEventMap,
+  CircuitEngineOptions,
+  ToolType,
+} from './shared/types';
+
+/**
+ * CircuitEngine - Unified Facade for Circuit Editing and Simulation
+ *
+ * Manages two internal controllers:
+ * - CircuitController: Static editing with tools, selection, and manipulation
+ * - CircuitRunnerController: Live simulation with playback and animation
+ *
+ * Both controllers share the same Three.js scene, camera, and visual objects,
+ * enabling seamless transitions between edit and simulation modes.
+ *
+ * @example
+ * ```typescript
+ * const engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
+ * engine.initialize(container);
+ * engine.setCircuit(circuit);
+ *
+ * // Edit mode (default)
+ * engine.setEditModeEnabled(true);
+ * engine.setActiveTool('build');
+ *
+ * // Switch to simulation
+ * engine.setMode('simulation');
+ * engine.play();
+ *
+ * // Switch back to edit
+ * engine.setMode('edit');
+ * ```
+ */
+export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
+  // Dependencies
+  private readonly _factoryRegistry: IFactoryRegistry;
+  private readonly _behaviorRegistry: BehaviorRegistry;
+
+  // Shared resources
+  private _sharedResources: SharedResources | null = null;
+  private _container: HTMLElement | null = null;
+
+  // Controllers
+  private _editController: CircuitController | null = null;
+  private _simulationController: CircuitRunnerController | null = null;
+
+  // State
+  private _mode: EngineMode = 'edit';
+  private _initialized: boolean = false;
+  private _disposed: boolean = false;
+  private _options: CircuitEngineOptions = {};
+
+  // Simulation
+  private _runner: CircuitRunner | null = null;
+
+  // Event forwarding cleanup functions
+  private _editControllerCleanup: (() => void) | null = null;
+  private _simulationControllerCleanup: (() => void) | null = null;
+
+  /**
+   * Create a new CircuitEngine instance.
+   *
+   * @param factoryRegistry - Registry of component visual factories
+   * @param behaviorRegistry - Registry of component simulation behaviors
+   * @throws {TypeError} If factoryRegistry or behaviorRegistry is null/undefined
+   */
+  constructor(factoryRegistry: IFactoryRegistry, behaviorRegistry: BehaviorRegistry) {
+    super();
+
+    if (!factoryRegistry) {
+      throw new TypeError('FactoryRegistry is required');
+    }
+    if (!behaviorRegistry) {
+      throw new TypeError('BehaviorRegistry is required');
+    }
+
+    this._factoryRegistry = factoryRegistry;
+    this._behaviorRegistry = behaviorRegistry;
+  }
+
+  // ============================================================================
+  // Lifecycle
+  // ============================================================================
+
+  /**
+   * Check if engine is initialized
+   */
+  get isInitialized(): boolean {
+    return this._initialized;
+  }
+
+  /**
+   * Check if engine is disposed
+   */
+  get isDisposed(): boolean {
+    return this._disposed;
+  }
+
+  /**
+   * Initialize the engine with a DOM container.
+   * Creates shared Three.js resources and both controllers.
+   *
+   * @param container - HTMLElement to mount the scene
+   * @param options - Configuration options
+   * @throws {TypeError} If container is not a valid HTMLElement
+   * @throws {Error} If already initialized
+   */
+  initialize(container: HTMLElement, options?: CircuitEngineOptions): void {
+    if (this._initialized) {
+      throw new Error('CircuitEngine is already initialized');
+    }
+    if (this._disposed) {
+      throw new Error('CircuitEngine has been disposed');
+    }
+    if (!container || !(container instanceof HTMLElement)) {
+      throw new TypeError('Container must be a valid HTMLElement');
+    }
+
+    this._container = container;
+    this._options = options ?? {};
+
+    // Create shared resources
+    this._sharedResources = this._createSharedResources(container, options);
+
+    // Create controllers with shared resources
+    this._editController = new CircuitController(this._factoryRegistry, this._sharedResources);
+    this._simulationController = new CircuitRunnerController(
+      this._factoryRegistry,
+      this._sharedResources
+    );
+
+    // Initialize both controllers
+    this._editController.initialize(container, options);
+    this._simulationController.initialize(container, options);
+
+    // Setup event forwarding from both controllers
+    this._setupEventForwarding();
+
+    // Set initial mode
+    this._mode = options?.initialMode ?? 'edit';
+
+    this._initialized = true;
+
+    // Emit ready event
+    this.emit('ready', { controllerType: 'engine' });
+  }
+
+  /**
+   * Create shared resources for both controllers.
+   */
+  private _createSharedResources(
+    container: HTMLElement,
+    options?: CircuitEngineOptions
+  ): SharedResources {
+    // Create scene
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1a1a2e); // Default dark background
+    setupSceneLights(scene);
+
+    // Create camera
+    const aspect = container.clientWidth / container.clientHeight || 1;
+    const camera = createPerspectiveCamera(options, aspect);
+    camera.layers.set(0); // Only render visual layer
+
+    // Create MapControls
+    const mapControls = new MapControls(camera, container);
+    mapControls.enableDamping = true;
+    mapControls.dampingFactor = 0.05;
+    mapControls.screenSpacePanning = true;
+
+    // Create managers
+    const hoverManager = new HoverManager(scene, camera);
+    const branchingPointVisualFactory = new BranchingPointVisualFactory();
+
+    // Create shared visual maps
+    const componentObject3Ds = new Map<UUID, THREE.Object3D>();
+    const enodeObject3Ds = new Map<UUID, THREE.Object3D>();
+    const wireObject3Ds = new Map<UUID, Line2>();
+
+    // Create wireVisualManager with a temporary mock controller
+    // (will be updated when controllers are created)
+    const mockController = {
+      getCircuit: () => null,
+      getScene: () => scene,
+      getCamera: () => camera,
+      getContainer: () => container,
+      componentObject3Ds,
+      wireObject3Ds,
+      enodeObject3Ds,
+    };
+    const wireVisualManager = new WireVisualManager(mockController as any);
+    wireVisualManager.setResolution(container.clientWidth, container.clientHeight);
+
+    return {
+      scene,
+      camera,
+      mapControls,
+      grid: null,
+      factoryRegistry: this._factoryRegistry,
+      branchingPointVisualFactory,
+      wireVisualManager,
+      hoverManager,
+      componentObject3Ds,
+      enodeObject3Ds,
+      wireObject3Ds,
+    };
+  }
+
+  /**
+   * Setup event forwarding from both controllers to engine.
+   */
+  private _setupEventForwarding(): void {
+    if (this._editController) {
+      this._editControllerCleanup = this._editController.onAny((event, payload) => {
+        // Forward all events from edit controller
+        this.emit(event as keyof CircuitEngineEventMap, payload as any);
+      });
+    }
+
+    if (this._simulationController) {
+      this._simulationControllerCleanup = this._simulationController.onAny((event, payload) => {
+        // Forward all events from simulation controller
+        this.emit(event as keyof CircuitEngineEventMap, payload as any);
+      });
+    }
+  }
+
+  /**
+   * Teardown event forwarding cleanup.
+   */
+  private _teardownEventForwarding(): void {
+    if (this._editControllerCleanup) {
+      this._editControllerCleanup();
+      this._editControllerCleanup = null;
+    }
+    if (this._simulationControllerCleanup) {
+      this._simulationControllerCleanup();
+      this._simulationControllerCleanup = null;
+    }
+  }
+
+  /**
+   * Dispose all resources and clean up.
+   *
+   * @throws {Error} If not initialized or already disposed
+   */
+  dispose(): void {
+    this._checkInitialized();
+
+    // Stop simulation if running
+    if (this._mode === 'simulation' && this._simulationController?.isPlaying) {
+      this._simulationController.pause();
+    }
+
+    // Teardown event forwarding
+    this._teardownEventForwarding();
+
+    // Dispose controllers (they won't dispose shared resources)
+    if (this._editController) {
+      this._editController.dispose();
+      this._editController = null;
+    }
+    if (this._simulationController) {
+      this._simulationController.dispose();
+      this._simulationController = null;
+    }
+
+    // Dispose shared resources (we own them)
+    if (this._sharedResources) {
+      this._sharedResources.hoverManager.dispose();
+      this._sharedResources.wireVisualManager.dispose();
+      this._sharedResources.mapControls.dispose();
+
+      // Clear visual maps
+      this._sharedResources.componentObject3Ds.clear();
+      this._sharedResources.enodeObject3Ds.clear();
+      this._sharedResources.wireObject3Ds.clear();
+
+      this._sharedResources = null;
+    }
+
+    // Clear runner
+    this._runner = null;
+
+    // Clear event listeners
+    this.removeAllListeners();
+
+    this._disposed = true;
+    this._initialized = false;
+  }
+
+  // ============================================================================
+  // Mode Management
+  // ============================================================================
+
+  /**
+   * Current operating mode
+   */
+  get mode(): EngineMode {
+    return this._mode;
+  }
+
+  /**
+   * Switch between edit and simulation modes.
+   *
+   * @param mode - Target mode to switch to
+   * @throws {Error} If not initialized
+   * @throws {Error} If switching to simulation without a circuit loaded
+   */
+  setMode(mode: EngineMode): void {
+    this._checkInitialized();
+
+    // Early return if same mode
+    if (this._mode === mode) {
+      return;
+    }
+
+    const previousMode = this._mode;
+
+    if (mode === 'simulation') {
+      this._transitionToSimulation();
+    } else {
+      this._transitionToEdit();
+    }
+
+    this._mode = mode;
+
+    // Emit modeChanged event
+    this.emit('modeChanged', { mode, previousMode });
+  }
+
+  /**
+   * Transition from edit mode to simulation mode.
+   */
+  private _transitionToSimulation(): void {
+    // Validate circuit is loaded
+    const circuit = this._editController?.getCircuit();
+    if (!circuit) {
+      throw new Error('Cannot switch to simulation mode: no circuit loaded');
+    }
+
+    // Cancel active tool and disable edit mode
+    if (this._editController) {
+      this._editController.setEditMode(false);
+    }
+
+    // Create CircuitRunner from current circuit
+    this._runner = new CircuitRunner(circuit, this._behaviorRegistry, this._options.runnerOptions);
+
+    // Load runner into simulation controller
+    if (this._simulationController) {
+      this._simulationController.setCircuitRunner(this._runner);
+    }
+  }
+
+  /**
+   * Transition from simulation mode to edit mode.
+   */
+  private _transitionToEdit(): void {
+    // Stop simulation if playing
+    if (this._simulationController?.isPlaying) {
+      this._simulationController.pause();
+    }
+
+    // Clear runner from simulation controller
+    if (this._simulationController) {
+      this._simulationController.setCircuitRunner(null);
+    }
+
+    // Clear runner reference
+    this._runner = null;
+
+    // Re-enable edit mode
+    // Note: The edit controller maintains its circuit and visuals
+  }
+
+  // ============================================================================
+  // Circuit Management
+  // ============================================================================
+
+  /**
+   * Load a circuit for editing/simulation.
+   *
+   * @param circuit - Circuit to load, or null to clear
+   * @throws {Error} If not initialized
+   */
+  setCircuit(circuit: Circuit | null): void {
+    this._checkInitialized();
+
+    // Load circuit via edit controller
+    if (this._editController) {
+      this._editController.setCircuit(circuit);
+    }
+  }
+
+  /**
+   * Get the currently loaded circuit
+   */
+  getCircuit(): Circuit | null {
+    this._checkInitialized();
+    return this._editController?.getCircuit() ?? null;
+  }
+
+  // ============================================================================
+  // Controller Access
+  // ============================================================================
+
+  /**
+   * Get the edit controller for advanced operations.
+   *
+   * @throws {Error} If not initialized
+   */
+  getEditController(): CircuitController {
+    this._checkInitialized();
+    return this._editController!;
+  }
+
+  /**
+   * Get the simulation controller for advanced operations.
+   *
+   * @throws {Error} If not initialized
+   */
+  getSimulationController(): CircuitRunnerController {
+    this._checkInitialized();
+    return this._simulationController!;
+  }
+
+  // ============================================================================
+  // Edit Mode Operations
+  // ============================================================================
+
+  /**
+   * Activate an editing tool.
+   *
+   * @param toolType - Tool to activate
+   * @throws {Error} If not in edit mode
+   */
+  setActiveTool(toolType: ToolType): void {
+    this._checkEditMode();
+    this._editController!.setActiveTool(toolType);
+  }
+
+  /**
+   * Get the currently active tool
+   *
+   * @throws {Error} If not in edit mode
+   */
+  getActiveTool(): ToolType | null {
+    this._checkEditMode();
+    return this._editController!.getActiveTool();
+  }
+
+  /**
+   * Enable or disable edit mode (tool system).
+   *
+   * @param enabled - True to enable, false to disable
+   * @throws {Error} If not in edit mode
+   */
+  setEditModeEnabled(enabled: boolean): void {
+    this._checkEditMode();
+    this._editController!.setEditMode(enabled);
+  }
+
+  // ============================================================================
+  // Simulation Mode Operations
+  // ============================================================================
+
+  /**
+   * Start automatic simulation playback.
+   *
+   * @throws {Error} If not in simulation mode
+   */
+  play(): void {
+    this._checkSimulationMode();
+    this._simulationController!.play();
+  }
+
+  /**
+   * Pause automatic simulation playback.
+   *
+   * @throws {Error} If not in simulation mode
+   */
+  pause(): void {
+    this._checkSimulationMode();
+    this._simulationController!.pause();
+  }
+
+  /**
+   * Execute a single simulation tick.
+   *
+   * @throws {Error} If not in simulation mode
+   */
+  step(): void {
+    this._checkSimulationMode();
+    this._simulationController!.step();
+  }
+
+  /**
+   * Stop simulation and reset to initial state.
+   *
+   * @throws {Error} If not in simulation mode
+   */
+  stop(): void {
+    this._checkSimulationMode();
+    this._simulationController!.stop();
+  }
+
+  /**
+   * Check if simulation is currently playing
+   */
+  get isPlaying(): boolean {
+    if (this._mode !== 'simulation') {
+      return false;
+    }
+    return this._simulationController?.isPlaying ?? false;
+  }
+
+  /**
+   * Get current simulation tick
+   */
+  get currentTick(): number {
+    if (this._mode !== 'simulation') {
+      return 0;
+    }
+    return this._simulationController?.currentTick ?? 0;
+  }
+
+  /**
+   * Tick interval in milliseconds
+   */
+  get tickInterval(): number {
+    return this._simulationController?.tickInterval ?? 500;
+  }
+
+  set tickInterval(value: number) {
+    if (this._simulationController) {
+      this._simulationController.tickInterval = value;
+    }
+  }
+
+  // ============================================================================
+  // Three.js Access
+  // ============================================================================
+
+  /**
+   * Get the Three.js scene for external rendering.
+   *
+   * @throws {Error} If not initialized
+   */
+  getScene(): THREE.Scene {
+    this._checkInitialized();
+    return this._sharedResources!.scene;
+  }
+
+  /**
+   * Get the camera for external rendering.
+   *
+   * @throws {Error} If not initialized
+   */
+  getCamera(): THREE.PerspectiveCamera {
+    this._checkInitialized();
+    return this._sharedResources!.camera;
+  }
+
+  /**
+   * Get the MapControls for external manipulation.
+   *
+   * @throws {Error} If not initialized
+   */
+  getControls(): MapControls {
+    this._checkInitialized();
+    return this._sharedResources!.mapControls;
+  }
+
+  /**
+   * Handle container resize.
+   *
+   * @param width - New width (optional, uses container if omitted)
+   * @param height - New height (optional, uses container if omitted)
+   */
+  onContainerResize(width?: number, height?: number): void {
+    this._checkInitialized();
+
+    const w = width ?? this._container!.clientWidth;
+    const h = height ?? this._container!.clientHeight;
+
+    // Update camera
+    const camera = this._sharedResources!.camera;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+
+    // Update wire visual manager resolution
+    this._sharedResources!.wireVisualManager.setResolution(w, h);
+
+    // Delegate to active controller for any additional resize handling
+    if (this._mode === 'edit' && this._editController) {
+      this._editController.onContainerResize(w, h);
+    } else if (this._mode === 'simulation' && this._simulationController) {
+      this._simulationController.onContainerResize(w, h);
+    }
+  }
+
+  // ============================================================================
+  // Internal Helpers
+  // ============================================================================
+
+  /**
+   * Check that engine is initialized and not disposed.
+   *
+   * @throws {Error} If not initialized or disposed
+   */
+  private _checkInitialized(): void {
+    if (!this._initialized) {
+      throw new Error('CircuitEngine is not initialized');
+    }
+    if (this._disposed) {
+      throw new Error('CircuitEngine has been disposed');
+    }
+  }
+
+  /**
+   * Check that engine is in edit mode.
+   *
+   * @throws {Error} If not in edit mode
+   */
+  private _checkEditMode(): void {
+    this._checkInitialized();
+    if (this._mode !== 'edit') {
+      throw new Error('Operation not available: not in edit mode');
+    }
+  }
+
+  /**
+   * Check that engine is in simulation mode.
+   *
+   * @throws {Error} If not in simulation mode
+   */
+  private _checkSimulationMode(): void {
+    this._checkInitialized();
+    if (this._mode !== 'simulation') {
+      throw new Error('Operation not available: not in simulation mode');
+    }
+  }
+}

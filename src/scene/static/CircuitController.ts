@@ -12,7 +12,7 @@ import type { ENode } from '../../core/ENode';
 import type { UUID } from '../../core/types/Identifier';
 import { ENodeType } from '../../core/types/ENodeType';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
-import type { ToolType, SelectionData } from '../shared/types';
+import type { ToolType, SelectionData, SharedResources } from '../shared/types';
 import {
   createGridHelper,
   gridToWorldPosition,
@@ -56,10 +56,11 @@ export class CircuitController extends AbstractCircuitController {
    * Create a new Static Circuit Controller
    *
    * @param factoryRegistry - Component visual factory registry
+   * @param sharedResources - Optional shared resources for facade pattern (CircuitEngine)
    * @throws {TypeError} factoryRegistry is null/undefined
    */
-  constructor(factoryRegistry: IFactoryRegistry) {
-    super(factoryRegistry);
+  constructor(factoryRegistry: IFactoryRegistry, sharedResources?: SharedResources) {
+    super(factoryRegistry, sharedResources);
 
     this.circuitWriter = new CircuitWriter(this);
 

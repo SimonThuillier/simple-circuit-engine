@@ -112,4 +112,42 @@ export class EventEmitter<EventMap extends Record<string, any>> {
   listenerCount<K extends keyof EventMap>(event: K): number {
     return this.listeners.get(event)?.length ?? 0;
   }
+
+  /**
+   * Register a listener that receives all events
+   *
+   * @param callback - Function called with event name and payload for every event
+   * @returns Cleanup function to remove the listener
+   *
+   * @remarks
+   * Useful for event forwarding/delegation patterns where you want to
+   * re-emit all events from one emitter to another.
+   *
+   * @example
+   * ```typescript
+   * const cleanup = source.onAny((event, payload) => {
+   *   target.emit(event, payload);
+   * });
+   * // Later: cleanup();
+   * ```
+   */
+  onAny(callback: <K extends keyof EventMap>(event: K, payload: EventMap[K]) => void): () => void {
+    // Store the original emit
+    const originalEmit = this.emit.bind(this);
+
+    // Override emit to also call the callback
+    this.emit = <K extends keyof EventMap>(event: K, payload: EventMap[K]) => {
+      originalEmit(event, payload);
+      try {
+        callback(event, payload);
+      } catch (error) {
+        console.error(`Error in onAny listener for '${String(event)}':`, error);
+      }
+    };
+
+    // Return cleanup function that restores original emit
+    return () => {
+      this.emit = originalEmit;
+    };
+  }
 }
