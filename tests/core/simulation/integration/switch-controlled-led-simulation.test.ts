@@ -13,11 +13,10 @@ import { Rotation } from '@/core/types/Rotation';
 import { Position3D } from '@/core/types/Position3D';
 import { CircuitRunner } from '@/core/simulation/CircuitRunner';
 import {
-  BatteryBehavior,
   BehaviorRegistry,
+  BatteryBehavior,
   SmallLEDBehavior,
-} from '../../../../src/core/simulation';
-import { SwitchBehavior } from '@/core/simulation/behaviors/SwitchBehavior';
+  SwitchBehavior} from '@/core/simulation/behaviors';
 import type { Component } from '@/core/Component';
 
 function createBehaviorRegistry(): BehaviorRegistry {
