@@ -26,11 +26,11 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
   private readonly envelopeGeometry = RingGeometry(0.4, 0.5, 0.4, 16);
   /** Shared Transistor filler geometry */
   private readonly fillerGeometry = new THREE.CylinderGeometry(
-      0.4, 
-      0.4, 
+      0.42,
+      0.42,
       0.44,
-      16, 
-      4, 
+      12,
+      1,
       false, 0, Math.PI * 2);
 
   createVisual(component: Component): THREE.Object3D {
@@ -70,6 +70,7 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
       type: 'component',
       componentId: component.id,
       part: 'filler',
+      initialState: 'open'
     };
     filler.position.set(0, 0.12, 0);
     group.add(filler);
@@ -93,7 +94,30 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
     emitterGroup.rotateX(Math.PI / 2)
     group.add(emitterGroup);
 
+    this.updateFromConfiguration(group, component.config);
     return group;
+  }
+
+  override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>){
+    const fillerMesh = this.findFillerMesh(object3D);
+    if(fillerMesh){
+      if(config.get('activationLogic') === 'negative'){
+        fillerMesh.userData.initialState = 'closed';
+        fillerMesh.position.set(0, 0.18, 0);
+        fillerMesh.material.visible=true;
+        fillerMesh.material.opacity = 1;
+        fillerMesh.material.emissive.setHex(TransistorVisualFactory.TRANSISTOR_CLOSED_COLOR);
+        fillerMesh.material.emissiveIntensity = TransistorVisualFactory.TRANSISTOR_CLOSED_INTENSITY;
+      }
+      else {
+        fillerMesh.userData.initialState = 'open';
+        fillerMesh.position.set(0, 0.12, 0);
+        fillerMesh.material.visible=false;
+        fillerMesh.material.opacity = 0;
+        fillerMesh.material.emissive.setHex(0x000000);
+        fillerMesh.material.emissiveIntensity = 0;
+      }
+    }
   }
 
   /**
@@ -109,6 +133,7 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
 
     if (transistorState.isClosed) {
       fillerMesh.userData.materialLocked = true;
+      fillerMesh.position.set(0, 0.18, 0);
       fillerMesh.material.visible=true;
       fillerMesh.material.opacity = 1;
       fillerMesh.material.emissive.setHex(TransistorVisualFactory.TRANSISTOR_CLOSED_COLOR);

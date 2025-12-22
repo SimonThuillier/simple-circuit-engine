@@ -649,6 +649,27 @@ export class CircuitController extends AbstractCircuitController {
   }
 
   /**
+   * cycle component config and update visuals if necessary
+   * have effect only on components that supports fast config cycle (used to invert logic or initial state of switches)
+   * else use the (yet to implement) method editComponentConfig()
+   *
+   * @returns if the component has changed config
+   * @param componentId
+   */
+  cycleComponentConfig(componentId: UUID): boolean {
+    const result = this.circuitWriter.cycleComponentConfig(componentId);
+    if(!result.hasChanged) {
+        return false;
+    }
+    const object3D = this.componentObject3Ds.get(componentId);
+    if(!object3D) return false;
+    // Update visuals if component hasChanged
+    const factory = this.factoryRegistry.get(result.component.type);
+    factory.updateFromConfiguration(object3D, result.component.config);
+    return true;
+  }
+
+  /**
    * Remove a component from the circuit and scene
    *
    * @param componentId - UUID of the component to remove

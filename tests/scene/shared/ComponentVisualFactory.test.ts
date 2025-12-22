@@ -560,7 +560,7 @@ describe('SwitchVisualFactory - Animation', () => {
       let contactorGroup: THREE.Object3D | null = null;
       visual.traverse((child) => {
         if (child instanceof THREE.Mesh && child.userData.part === 'contactor') {
-          contactorGroup = child.parent;
+          contactorGroup = child;
         }
       });
 

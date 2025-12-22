@@ -30,7 +30,7 @@ export class RelayBehavior implements ComponentBehavior {
     if (component.type !== ComponentType.Relay) {
       throw new Error(`Invalid component type for RelayBehavior: ${component.type}`);
     }
-    const state = component.config.get('initialState') || 'open';
+    const state = component.config.get('activationLogic') === 'negative'? 'closed': 'open';
     return new RelayState(component.id, state);
   }
 
@@ -77,16 +77,20 @@ export class RelayBehavior implements ComponentBehavior {
       pinStates.set(component.getPinLabel(pinId)!, nodeStates.get(pinId as UUID)!);
     }
 
-    let activationCondition =
+    const isCommanded =
         (pinStates.get('cmd_in')!.hasVoltage && pinStates.get('cmd_in')!.hasCurrent) ||
         (pinStates.get('cmd_out')!.hasVoltage && pinStates.get('cmd_out')!.hasCurrent) ||
         (pinStates.get('cmd_in')!.hasVoltage && pinStates.get('cmd_out')!.hasCurrent) ||
         (pinStates.get('cmd_out')!.hasVoltage && pinStates.get('cmd_in')!.hasCurrent);
 
+    console.log(component.config.get('activationLogic'));
+    const shouldBeClosed = component.config.get('activationLogic') === 'negative'
+        ? !isCommanded: isCommanded;
+
     let hasChanged = false;
     const scheduledEvents: ScheduledEvent[] = [];
 
-    if (activationCondition) {
+    if (shouldBeClosed) {
       if (state.state === 'open' || state.state === 'opening') {
         hasChanged = true;
         state.state = 'closing';
