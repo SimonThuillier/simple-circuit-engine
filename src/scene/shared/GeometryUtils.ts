@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import { Position } from '../../core/types/Position';
 import { Rotation } from '@/core/types/Rotation';
+import {ExtrudeGeometry} from "three";
 
 /**
  * Create a grid helper for the scene
@@ -192,4 +193,39 @@ export function isObjectInScreenRect(
   const worldPosition = new THREE.Vector3();
   object.getWorldPosition(worldPosition);
   return isPointInScreenRect(worldPosition, camera, width, height, rect);
+}
+
+/**
+ * Create a ring geometry with given inner/outer radius and height
+ * @param innerRadius
+ * @param outerRadius
+ * @param height
+ * @param steps
+ * @constructor
+ */
+export function RingGeometry(
+    innerRadius: number,
+    outerRadius: number,
+    height:number,
+    steps: number): ExtrudeGeometry {
+  // Create the outer ring shape
+  const shape = new THREE.Shape();
+  shape.moveTo(outerRadius, 0);
+  shape.absarc(0, 0, outerRadius, 0, Math.PI * 2, false);
+
+  // Create the inner ring path (hole)
+  const holePath = new THREE.Path();
+  holePath.moveTo(innerRadius, 0);
+  holePath.absarc(0, 0, innerRadius, 0, Math.PI * 2, true);
+  shape.holes.push(holePath);
+
+  // Extrude settings
+  const extrudeSettings = {
+    depth: height,
+    bevelEnabled: false,
+    steps: steps,
+  };
+
+  // Create the extruded geometry
+  return new THREE.ExtrudeGeometry(shape, extrudeSettings);
 }

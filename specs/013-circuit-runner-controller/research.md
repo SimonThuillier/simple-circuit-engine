@@ -56,7 +56,7 @@ updateAnimation(object3D: THREE.Object3D, state: ComponentState): void
 
 **Existing Implementations**:
 - `SwitchVisualFactory`: Rotates contactor based on `SwitchState.isClosed`
-- `SmallLEDVisualFactory`: Applies emissive glow based on `SmallLEDState.isLit`
+- `SmallLEDVisualFactory`: Applies emissive glow based on `LightbulbState.isLit`
 - `ComponentVisualFactoryBase`: Default no-op for static components
 
 **Decision**: Call `factory.updateAnimation(object3D, state)` for each dirty component after tick.

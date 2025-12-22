@@ -6,11 +6,11 @@
  * with fallback support for unknown component types.
  */
 
-import type { ComponentType } from '../../core/types/ComponentType';
+import type { ComponentType } from '@/core/types/ComponentType';
 import type {
   IComponentVisualFactory,
   IFactoryRegistry,
-} from './components/ComponentVisualFactory';
+} from './ComponentVisualFactory';
 
 /**
  * Registry mapping ComponentType to ComponentVisualFactory

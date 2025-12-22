@@ -198,7 +198,7 @@ class SwitchState extends ComponentState {
 }
 
 // LED: Has off, goingOn, on, goingOff states (with delayed transitions)
-class SmallLEDState extends ComponentState {
+class LightbulbState extends ComponentState {
   constructor(componentId: UUID) {
     super(componentId, 'off');  // Starts off
   }

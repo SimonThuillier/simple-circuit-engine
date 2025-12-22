@@ -1,46 +1,65 @@
 /**
- * LED component behavior implementation
+ * relay component behavior implementation
  * @module core/simulation/behaviors
  */
 
 import type { UUID } from '@/core/types/Identifier.js';
 import type { ComponentBehavior, BehaviorResult } from './ComponentBehavior.js';
 import type { Component } from '@/core/Component.js';
-import { SmallLEDState } from '../states/SmallLEDState';
 import type { ComponentState } from '../states/ComponentState.js';
 import { ComponentType } from '@/core/types/ComponentType';
+import { RelayState } from '@/core/simulation/states/RelayState';
 import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
 import type { NodeElectricalState, ScheduledEvent, UserCommand } from '@/core/simulation';
 
-export class SmallLEDBehavior implements ComponentBehavior {
-  readonly componentType = ComponentType.SmallLED;
+/**
+ * Behavior implementation for relays components.
+ *
+ * @public
+ */
+export class RelayBehavior implements ComponentBehavior {
+  readonly componentType = ComponentType.Relay;
 
   /**
-   * Create initial state for a smallLED.
+   * Create initial state for a relay.
    *
-   * @param component - The smallLED component
-   * @returns LED Initial state (always active and delivering voltage)
+   * @param component - The Relay component
+   * @returns Relay Initial state (open by default)
    */
   createInitialState(component: Component): ComponentState {
-    if (component.type !== ComponentType.SmallLED) {
-      throw new Error(`Invalid component type for SmallLEDBehavior: ${component.type}`);
+    if (component.type !== ComponentType.Relay) {
+      throw new Error(`Invalid component type for RelayBehavior: ${component.type}`);
     }
-    return new SmallLEDState(component.id);
+    const state = component.config.get('initialState') || 'open';
+    return new RelayState(component.id, state);
   }
 
   allowConductivity(
-    _component: Component,
-    _state: ComponentState,
+    component: Component,
+    state: ComponentState,
     _conductivityType: ENodeSourceType,
-    _pinId: string,
-    _otherPinId: string
+    pinId: string,
+    otherPinId: string
   ): boolean {
-    return true;
-    // TODO: implement asymmetric conductivity later
+    if (pinId === otherPinId) return true;
+    const pinLabel = component.getPinLabel(pinId);
+    const otherPinLabel = component.getPinLabel(otherPinId);
+    if (!pinLabel || !otherPinLabel) return false;
+    const pinLabels = [pinLabel, otherPinLabel];
+
+    if(pinLabels.includes('cmd_in') &&
+        pinLabels.includes('cmd_out')){
+      return true;
+    }
+    if(pinLabels.includes('power_in') &&
+        pinLabels.includes('power_out')){
+      return state.state === 'closed' || state.state === 'opening';
+    }
+    return false;
   }
 
   /**
-   * only symmetrical behavior of LEDS is handled for now
+   * Relay cmd pins need to have voltage and current so that relay contactor stays closed
    * @param component
    * @param state
    * @param nodeStates
@@ -59,37 +78,37 @@ export class SmallLEDBehavior implements ComponentBehavior {
     }
 
     let activationCondition =
-        (pinStates.get('anode')!.hasVoltage && pinStates.get('anode')!.hasCurrent) ||
-    (pinStates.get('cathode')!.hasVoltage && pinStates.get('cathode')!.hasCurrent) ||
-    (pinStates.get('anode')!.hasVoltage && pinStates.get('cathode')!.hasCurrent) ||
-    (pinStates.get('cathode')!.hasVoltage && pinStates.get('anode')!.hasCurrent);
+        (pinStates.get('cmd_in')!.hasVoltage && pinStates.get('cmd_in')!.hasCurrent) ||
+        (pinStates.get('cmd_out')!.hasVoltage && pinStates.get('cmd_out')!.hasCurrent) ||
+        (pinStates.get('cmd_in')!.hasVoltage && pinStates.get('cmd_out')!.hasCurrent) ||
+        (pinStates.get('cmd_out')!.hasVoltage && pinStates.get('cmd_in')!.hasCurrent);
 
     let hasChanged = false;
     const scheduledEvents: ScheduledEvent[] = [];
 
     if (activationCondition) {
-      if (state.state === 'off' || state.state === 'goingOff') {
+      if (state.state === 'open' || state.state === 'opening') {
         hasChanged = true;
-        state.state = 'goingOn';
+        state.state = 'closing';
         state.startTick = targetTick;
         scheduledEvents.push({
           targetId: component.id,
           scheduledAtTick: targetTick,
           readyAtTick: targetTick + 1, // TODO handle component config later
-          type: 'GoingOnEnd',
+          type: 'ClosingEnd',
           parameters: undefined,
         });
       }
     } else {
-      if (state.state === 'on' || state.state === 'goingOn') {
+      if (state.state === 'closed' || state.state === 'closing') {
         hasChanged = true;
-        state.state = 'goingOff';
+        state.state = 'opening';
         state.startTick = targetTick;
         scheduledEvents.push({
           targetId: component.id,
           scheduledAtTick: targetTick,
           readyAtTick: targetTick + 1, // TODO handle component config later
-          type: 'GoingOffEnd',
+          type: 'OpeningEnd',
           parameters: undefined,
         });
       }
@@ -102,11 +121,7 @@ export class SmallLEDBehavior implements ComponentBehavior {
     };
   }
 
-  onUserCommand(
-    _component: Component,
-    state: ComponentState,
-    _command: UserCommand
-  ): BehaviorResult {
+  onUserCommand(_component: Component, state: ComponentState, _command: UserCommand): BehaviorResult {
     return {
       componentState: state,
       hasChanged: false,
@@ -121,17 +136,17 @@ export class SmallLEDBehavior implements ComponentBehavior {
   ): BehaviorResult {
     let hasChanged = false;
 
-    if (event.type === 'GoingOffEnd') {
-      if (state.state !== 'off') {
+    if (event.type === 'ClosingEnd') {
+      if (state.state !== 'closed') {
         hasChanged = true;
         state.startTick = event.readyAtTick;
-        state.state = 'off';
+        state.state = 'closed';
       }
-    } else if (event.type === 'GoingOnEnd') {
-      if (state.state !== 'on') {
+    } else if (event.type === 'OpeningEnd') {
+      if (state.state !== 'open') {
         hasChanged = true;
         state.startTick = event.readyAtTick;
-        state.state = 'on';
+        state.state = 'open';
       }
     }
 

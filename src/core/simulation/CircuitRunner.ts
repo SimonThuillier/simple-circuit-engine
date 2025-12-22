@@ -63,7 +63,14 @@ export class CircuitRunner {
     this.dirtyTracker = new DirtyTracker();
 
     // Initialize simulation state
-    this.initializeState();
+    try{
+      this.initializeState();
+    }
+    catch(e){
+      console.error("Error during CircuitRunner initialization:", e);
+      throw e;
+    }
+
   }
 
   /**

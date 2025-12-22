@@ -132,7 +132,7 @@ export class GlowingComponentFactory extends ComponentVisualFactoryBase {
 Override `updateAnimation` for components with animation:
 
 ```typescript
-import type { SmallLEDState } from '@/core/simulation/states/SmallLEDState';
+import type { LightbulbState } from '@/core/simulation/states/LightbulbState';
 
 export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
   private static readonly LED_LIT_COLOR = 0xffff00;
@@ -144,7 +144,7 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
     return group;
   }
 
-  updateAnimation(object3D: THREE.Object3D, state: SmallLEDState): void {
+  updateAnimation(object3D: THREE.Object3D, state: LightbulbState): void {
     const ledMesh = this.findLedMesh(object3D);
     if (!ledMesh || !(ledMesh.material instanceof THREE.MeshStandardMaterial)) {
       return;

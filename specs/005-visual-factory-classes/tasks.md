@@ -119,7 +119,7 @@
 
 ### Implementation for User Story 3
 
-- [X] T039 [US3] Override updateAnimation in SmallLEDVisualFactory with LED glow effect based on SmallLEDState.isLit in src/scene/shared/components/SmallLEDVisualFactory.ts
+- [X] T039 [US3] Override updateAnimation in SmallLEDVisualFactory with LED glow effect based on LightbulbState.isLit in src/scene/shared/components/SmallLEDVisualFactory.ts
 - [X] T040 [US3] Add findLedMesh private helper method to SmallLEDVisualFactory in src/scene/shared/components/SmallLEDVisualFactory.ts
 - [X] T041 [US3] Override updateAnimation in SwitchVisualFactory with contactor rotation based on SwitchState.isClosed in src/scene/shared/components/SwitchVisualFactory.ts
 - [X] T042 [US3] Add findContactorGroup private helper method to SwitchVisualFactory in src/scene/shared/components/SwitchVisualFactory.ts
