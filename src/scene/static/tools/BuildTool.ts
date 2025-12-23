@@ -348,10 +348,17 @@ export class BuildTool implements IEditingTool {
     const hoveredElement = this._controller.getHoveredElement();
 
     if (this.mode === 'idle') {
-      // Handle Ctrl+click for sourceType cycling
-      if ((event.ctrlKey || event.metaKey) && hoveredElement && hoveredElement.type === 'enode') {
-        this.cycleEnodeSourceType(hoveredElement.id, hoveredElement.object3D);
-        return; // Early exit - don't start wire creation
+      // Handle Ctrl+click for sourceType or fast component config cycling
+      if ((event.ctrlKey || event.metaKey) && hoveredElement) {
+        if(hoveredElement.type === 'enode'){
+          this.cycleEnodeSourceType(hoveredElement.id, hoveredElement.object3D);
+        }
+        else if (hoveredElement.type === 'component') {
+          this._controller.cycleComponentConfig(hoveredElement.id);
+        }
+        // TODO: for wire maybe implement a path regularization feature later
+        // Early exit - don't start wire creation
+        return;
       }
 
       if (hoveredElement && hoveredElement.type === 'enode') {

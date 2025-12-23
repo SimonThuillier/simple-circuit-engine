@@ -16,14 +16,16 @@ import * as THREE from 'three';
  * - Rotates contactor based on open/closed state
  */
 export class RelayVisualFactory extends ComponentVisualFactoryBase {
-  /** Rotation for closed relay (contactor aligned) */
-  private static readonly CLOSED_ROTATION = new THREE.Euler(0, -Math.PI/2, 0);
-
-  /** Rotation for opening/closing relay */
-  private static readonly INTERMEDIATE_ROTATION = new THREE.Euler(0.1, -0.8*Math.PI/2, 0.1);
-
   /** Rotation for open relay (contactor misaligned) */
   private static readonly OPEN_ROTATION = new THREE.Euler(0.2, -0.6*Math.PI/2, 0.2);
+  /** Rotation for opening/closing relay */
+  private static readonly INTERMEDIATE_ROTATION = new THREE.Euler(0.1, -0.8*Math.PI/2, 0.1);
+  /** Rotation for closed relay (contactor aligned) */
+  private static readonly CLOSED_ROTATION = new THREE.Euler(0, -Math.PI/2, 0);
+  /** Rotation for opening/closing negative activation logic relay */
+  private static readonly INVERTED_INTERMEDIATE_ROTATION = new THREE.Euler(-0.1, -1.2*Math.PI/2, -0.1);
+  /** Rotation for open negative activation logic relay (contactor misaligned toward the coil) */
+  private static readonly INVERTED_OPEN_ROTATION = new THREE.Euler(-0.2, -1.4*Math.PI/2, -0.2);
 
   createVisual(component: Component): THREE.Object3D {
     // Root group (not rendered, just organizational)
@@ -131,6 +133,12 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
         visible: false,
       })
     );
+    contactorGroup.userData = {
+      type: 'component',
+      componentId: component.id,
+      part: 'contactor',
+      initialState: 'open'
+    };
 
     const contactorMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
     const contactorGeometry = new THREE.CylinderGeometry(
@@ -144,11 +152,6 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
       Math.PI * 2
     );
     const contactor = new THREE.Mesh(contactorGeometry, contactorMaterial);
-    contactor.userData = {
-      type: 'component',
-      componentId: component.id,
-      part: 'contactor',
-    };
     contactor.rotateX(-Math.PI / 2);
     contactor.rotateZ(Math.PI / 2);
     contactor.position.set(0.75, 0, 0);
@@ -158,8 +161,23 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
     contactorGroup.position.set(0.6, 0, -0.6);
     contactorGroup.rotation.copy(RelayVisualFactory.OPEN_ROTATION);
 
-
+    // take config into account
+    this.updateFromConfiguration(group, component.config);
     return group;
+  }
+
+  override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>){
+    const contactorGroup = this.findContactorGroup(object3D);
+    if(contactorGroup){
+      if(config.get('activationLogic') === 'negative'){
+        contactorGroup.userData.initialState = 'closed';
+        contactorGroup.rotation.copy(RelayVisualFactory.CLOSED_ROTATION);
+      }
+      else {
+        contactorGroup.userData.initialState = 'open';
+        contactorGroup.rotation.copy(RelayVisualFactory.OPEN_ROTATION);
+      }
+    }
   }
 
   /**
@@ -176,13 +194,17 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
     const contactorGroup = this.findContactorGroup(object3D);
     if (contactorGroup) {
       if (relayState.isInTransition) {
-        contactorGroup.rotation.copy(RelayVisualFactory.INTERMEDIATE_ROTATION);
+        const targetRotation = contactorGroup.userData.initialState === 'closed' ?
+            RelayVisualFactory.INVERTED_INTERMEDIATE_ROTATION : RelayVisualFactory.INTERMEDIATE_ROTATION;
+        contactorGroup.rotation.copy(targetRotation);
       } else if (relayState.isClosed) {
         // Closed position - contactor aligned
         contactorGroup.rotation.copy(RelayVisualFactory.CLOSED_ROTATION);
       } else {
         // Open position - contactor misaligned
-        contactorGroup.rotation.copy(RelayVisualFactory.OPEN_ROTATION);
+        const targetRotation = contactorGroup.userData.initialState === 'closed' ?
+            RelayVisualFactory.INVERTED_OPEN_ROTATION : RelayVisualFactory.OPEN_ROTATION;
+        contactorGroup.rotation.copy(targetRotation);
       }
     }
     const coil = this.findCoil(object3D);
@@ -218,7 +240,7 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
 
     object3D.traverse((child) => {
       if (child instanceof THREE.Mesh && child.userData.part === 'contactor') {
-        contactorGroup = child.parent;
+        contactorGroup = child;
       }
     });
 

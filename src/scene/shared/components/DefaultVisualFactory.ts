@@ -1,4 +1,4 @@
-import { type ComponentVisualFactory, ComponentVisualFactoryBase } from './ComponentVisualFactory';
+import { ComponentVisualFactoryBase } from './ComponentVisualFactory';
 import type { Component } from '@/core/Component';
 import * as THREE from 'three';
 

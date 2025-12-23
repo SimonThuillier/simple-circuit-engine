@@ -78,7 +78,9 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTy
       ['input', undefined],
       ['output', undefined],
     ]),
-    config: new Map([['initialState', 'open']]),
+    config: new Map([
+        ['initialState', 'open']
+    ]),
   },
   [ComponentType.Battery]: {
     id: ComponentType.Battery,
@@ -107,7 +109,9 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTy
       ['power_in', undefined],
       ['power_out', undefined],
     ]),
-    config: new Map([['activationLogic', 'positive']]),
+    config: new Map([
+        ['activationLogic', 'positive']
+    ]),
   },
   [ComponentType.Transistor]: {
     id: ComponentType.Transistor,
@@ -117,7 +121,9 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTy
       ['base', undefined],
       ['emitter', undefined],
     ]),
-    config: new Map([['activationLogic', 'positive']]),
+    config: new Map([
+        ['activationLogic', 'positive']
+    ]),
   },
   [ComponentType.SmallLED]: {
     id: ComponentType.SmallLED,

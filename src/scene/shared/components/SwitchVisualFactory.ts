@@ -21,10 +21,8 @@ import * as THREE from 'three';
 export class SwitchVisualFactory extends ComponentVisualFactoryBase {
   /** Rotation for closed switch (contactor aligned) */
   private static readonly CLOSED_ROTATION = new THREE.Euler(0, 0, 0);
-
   /** Rotation for opening/closing switch */
   private static readonly INTERMEDIATE_ROTATION = new THREE.Euler(0.25, 0.65, 0.25);
-
   /** Rotation for open switch (contactor misaligned) */
   private static readonly OPEN_ROTATION = new THREE.Euler(0.5, 1.3, 0.5);
 
@@ -79,6 +77,12 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
         visible: false,
       })
     );
+    contactorGroup.userData = {
+      type: 'component',
+      componentId: component.id,
+      part: 'contactor',
+      initialState: 'open'
+    };
 
     const contactorMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
     const contactorGeometry = new THREE.CylinderGeometry(
@@ -92,11 +96,7 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
       Math.PI * 2
     );
     const contactor = new THREE.Mesh(contactorGeometry, contactorMaterial);
-    contactor.userData = {
-      type: 'component',
-      componentId: component.id,
-      part: 'contactor',
-    };
+
     contactor.rotateZ(Math.PI / 2);
     contactor.position.set(0.65, 0, 0);
     contactorGroup.add(contactor);
@@ -119,7 +119,22 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
     outputPinGroup.rotateY(Math.PI);
     group.add(outputPinGroup);
 
+    this.updateFromConfiguration(group, component.config);
     return group;
+  }
+
+  override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>){
+    const contactorGroup = this.findContactorGroup(object3D);
+    if(contactorGroup){
+      if(config.get('initialState') === 'closed'){
+        contactorGroup.userData.initialState = 'closed';
+        contactorGroup.rotation.copy(SwitchVisualFactory.CLOSED_ROTATION);
+      }
+      else {
+        contactorGroup.userData.initialState = 'open';
+        contactorGroup.rotation.copy(SwitchVisualFactory.OPEN_ROTATION);
+      }
+    }
   }
 
   /**
@@ -164,7 +179,7 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
 
     object3D.traverse((child) => {
       if (child instanceof THREE.Mesh && child.userData.part === 'contactor') {
-        contactorGroup = child.parent;
+        contactorGroup = child;
       }
     });
 

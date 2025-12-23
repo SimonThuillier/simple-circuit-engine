@@ -6,7 +6,7 @@ import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
 import type { UUID } from '@/core/types/Identifier';
 import type { ENode } from '@/core/ENode';
 import type { Wire } from '@/core/Wire';
-import type { ComponentType } from '@/core/types/ComponentType';
+import { ComponentType } from '@/core/types/ComponentType';
 import type { Component } from '@/core/Component';
 import {computeDivisionsForSize, worldToGridPosition, worldToGridRotation} from '../shared/GeometryUtils';
 
@@ -444,6 +444,73 @@ export class CircuitWriter {
 
     return component;
   }
+
+  /**
+   * Save edits made to a component configuration in the circuit model and emit the appropriate event
+   * @param componentId
+   * @param config - full new component configuration map
+   */
+  saveEditComponentConfig(componentId: UUID, config: Map<string, string>): Component {
+    // Logic to save the current state of the scene component into the core model
+    const circuit = this._controller.getCircuit();
+    if (!circuit) {
+      throw new Error('No circuit available in the scene controllerType.');
+    }
+    const component = circuit.getComponent(componentId);
+    if (!component) {
+      throw new Error(`Component with ID ${componentId} not found in the circuit.`);
+    }
+
+    component.config = new Map(config); // replace full config
+    this._controller.emit('circuitElementAction', {
+        type: 'component',
+        action: 'edit',
+        id: componentId,
+        error: null,
+        data: {
+          config: config
+        },
+    });
+    return component;
+  }
+
+  /**
+   * cycle component config and update visuals if necessary
+   * have effect only on components that supports fast config cycle (used to invert logic or initial state of switches)
+   * if component supports it, update the supported config item to the next value in the cycle
+   * @param componentId
+   * @returns object with hasChanged boolean and updated component
+   * @throws Error if circuit is not available or component not found
+   */
+  cycleComponentConfig(componentId: UUID): {hasChanged: boolean, component: Component} {
+    // Logic to save the current state of the scene component into the core model
+    const circuit = this._controller.getCircuit();
+    if (!circuit) {
+      throw new Error('No circuit available in the scene controllerType.');
+    }
+    const component = circuit.getComponent(componentId);
+    if (!component) {
+      throw new Error(`Component with ID ${componentId} not found in the circuit.`);
+    }
+    const config = component.config;
+    switch(component.type) {
+      case ComponentType.Switch:
+        config.set('initialState', config.get('initialState') === 'open' ? 'closed' : 'open');
+        this.saveEditComponentConfig(component.id, config);
+        return {hasChanged: true, component: component};
+      case ComponentType.Relay:
+        config.set('activationLogic', config.get('activationLogic') === 'positive' ? 'negative' : 'positive');
+        this.saveEditComponentConfig(component.id, config);
+        return {hasChanged: true, component: component};
+      case ComponentType.Transistor:
+        config.set('activationLogic', config.get('activationLogic') === 'positive' ? 'negative' : 'positive');
+        this.saveEditComponentConfig(component.id, config);
+        return {hasChanged: true, component: component};
+      default:
+        return {hasChanged: false, component: component};
+    }
+  }
+
 
   /**
    * Delete a component from the circuit model and emit the appropriate event

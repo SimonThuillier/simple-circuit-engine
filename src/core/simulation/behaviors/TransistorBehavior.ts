@@ -30,7 +30,7 @@ export class TransistorBehavior implements ComponentBehavior {
     if (component.type !== ComponentType.Transistor) {
       throw new Error(`Invalid component type for TransistorBehavior: ${component.type}`);
     }
-    const state = component.config.get('initialState') || 'open';
+    const state = component.config.get('activationLogic') === 'negative'? 'closed': 'open';
     return new TransistorState(component.id, state);
   }
 
@@ -73,12 +73,16 @@ export class TransistorBehavior implements ComponentBehavior {
       pinStates.set(component.getPinLabel(pinId)!, nodeStates.get(pinId as UUID)!);
     }
 
-    const cmdVoltageOK = pinStates.get('base')!.hasVoltage;
+    const isCommanded = pinStates.get('base')!.hasVoltage;
+
+    console.log(component.config.get('activationLogic'));
+    const shouldConduct = component.config.get('activationLogic') === 'negative'
+        ? !isCommanded: isCommanded;
 
     let hasChanged = false;
     const scheduledEvents: ScheduledEvent[] = [];
 
-    if (cmdVoltageOK) {
+    if (shouldConduct) {
       if (state.state === 'open' || state.state === 'opening') {
         hasChanged = true;
         state.state = 'closing';

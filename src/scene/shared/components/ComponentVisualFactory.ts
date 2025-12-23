@@ -53,6 +53,15 @@ export interface IComponentVisualFactory {
   createVisual(component: Component): THREE.Object3D;
 
   /**
+   * Update visual based on component configuration
+   *
+   * @param object3D - The Object3D created by createVisual()
+   * @param config - The core component configuration Map
+   *
+   */
+  updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>): void;
+
+  /**
    * Apply hover visual effect to a component's Object3D
    *
    * @param object3D - The Object3D created by createVisual()
@@ -128,7 +137,7 @@ export interface IComponentVisualFactory {
    * @param state - The component's current simulation state
    *
    * @remarks
-   * - Called by CircuitRunnercontroller during simulation
+   * - Called by CircuitRunnerController during simulation
    * - Animation visual updates have priority over hover effects
    * - Default implementation: no-op (static components)
    * - Subclasses override for component-specific animation
@@ -185,6 +194,13 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
    * Must be implemented by subclasses
    */
   abstract createVisual(component: Component): THREE.Object3D;
+
+  /**
+   * By default no visual configuration-based updates is needed
+   */
+  updateFromConfiguration(_object3D: THREE.Object3D, _config: Map<string, string>){
+    // Default: no-op
+  }
 
   /**
    * Apply hover visual effect using emissive glow
