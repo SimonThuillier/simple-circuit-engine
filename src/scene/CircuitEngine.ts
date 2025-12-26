@@ -12,7 +12,6 @@ import type { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { EventEmitter } from './shared/EventEmitter';
 import { CircuitController } from './static/CircuitController';
 import { CircuitRunnerController } from './simulation/CircuitRunnerController';
-import { CircuitRunner } from '../core/simulation/CircuitRunner';
 import { HoverManager } from './shared/HoverManager';
 import { WireVisualManager } from './shared/WireVisualManager';
 import { BranchingPointVisualFactory } from './shared/components/BranchingPointVisualFactory';
@@ -75,10 +74,6 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
   private _mode: EngineMode = 'edit';
   private _initialized: boolean = false;
   private _disposed: boolean = false;
-  private _options: CircuitEngineOptions = {};
-
-  // Simulation
-  private _runner: CircuitRunner | null = null;
 
   // Event forwarding cleanup functions
   private _editControllerCleanup: (() => void) | null = null;
@@ -144,7 +139,6 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
     }
 
     this._container = container;
-    this._options = options ?? {};
 
     // Create shared resources
     this._sharedResources = this._createSharedResources(container, options);
@@ -153,9 +147,9 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
     this._editController = new CircuitController(this._factoryRegistry, this._sharedResources);
     this._simulationController = new CircuitRunnerController(
       this._factoryRegistry,
+      this._behaviorRegistry,
       this._sharedResources
     );
-
     // Initialize both controllers
     this._editController.initialize(container, options);
     this._simulationController.initialize(container, options);
@@ -165,6 +159,12 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
 
     // Set initial mode
     this._mode = options?.initialMode ?? 'edit';
+    if(this._mode === 'edit') {
+        this._editController.setActive(true);
+    }
+    else {
+        this._simulationController.setActive(true);
+    }
 
     this._initialized = true;
 
@@ -204,19 +204,10 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
     const enodeObject3Ds = new Map<UUID, THREE.Object3D>();
     const wireObject3Ds = new Map<UUID, Line2>();
 
-    // Create wireVisualManager with a temporary mock controller
-    // (will be updated when controllers are created)
-    const mockController = {
-      getCircuit: () => null,
-      getScene: () => scene,
-      getCamera: () => camera,
-      getContainer: () => container,
-      componentObject3Ds,
-      wireObject3Ds,
-      enodeObject3Ds,
-    };
-    const wireVisualManager = new WireVisualManager(mockController as any);
+    const wireVisualManager = new WireVisualManager(componentObject3Ds, wireObject3Ds);
+    wireVisualManager.setContainer(container);
     wireVisualManager.setResolution(container.clientWidth, container.clientHeight);
+    wireVisualManager.setSceneAndCamera(scene, camera);
 
     return {
       scene,
@@ -307,7 +298,7 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
     }
 
     // Clear runner
-    this._runner = null;
+    //this._runner = null;
 
     // Clear event listeners
     this.removeAllListeners();
@@ -366,17 +357,14 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
       throw new Error('Cannot switch to simulation mode: no circuit loaded');
     }
 
-    // Cancel active tool and disable edit mode
+    // Set edit controller inactive
     if (this._editController) {
-      this._editController.setEditMode(false);
+      this._editController.setActive(false);
     }
 
-    // Create CircuitRunner from current circuit
-    this._runner = new CircuitRunner(circuit, this._behaviorRegistry, this._options.runnerOptions);
-
-    // Load runner into simulation controller
+    // Set simulation controller active
     if (this._simulationController) {
-      this._simulationController.setCircuitRunner(this._runner);
+      this._simulationController.setActive(true);
     }
   }
 
@@ -384,21 +372,16 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
    * Transition from simulation mode to edit mode.
    */
   private _transitionToEdit(): void {
-    // Stop simulation if playing
-    if (this._simulationController?.isPlaying) {
-      this._simulationController.pause();
-    }
-
-    // Clear runner from simulation controller
+    // Set simulation controller inactive
     if (this._simulationController) {
-      this._simulationController.setCircuitRunner(null);
+      this._simulationController.setActive(false);
     }
 
-    // Clear runner reference
-    this._runner = null;
-
-    // Re-enable edit mode
+    // Set edit controller active
     // Note: The edit controller maintains its circuit and visuals
+    if (this._editController) {
+      this._editController.setActive(true);
+    }
   }
 
   // ============================================================================
@@ -417,6 +400,7 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
     // Load circuit via edit controller
     if (this._editController) {
       this._editController.setCircuit(circuit);
+      this._simulationController?.setCircuit(circuit);
     }
   }
 
@@ -637,11 +621,11 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
    * @throws {Error} If not initialized or disposed
    */
   private _checkInitialized(): void {
-    if (!this._initialized) {
-      throw new Error('CircuitEngine is not initialized');
-    }
     if (this._disposed) {
       throw new Error('CircuitEngine has been disposed');
+    }
+    if (!this._initialized) {
+      throw new Error('CircuitEngine is not initialized');
     }
   }
 

@@ -115,7 +115,7 @@ A developer needs to unmount the circuit editor/simulator from the DOM. They cal
 - **FR-009**: System MUST provide access to underlying controllers via `getEditController()` and `getSimulationController()` for advanced use cases
 - **FR-010**: System MUST provide a single `initialize(container, options)` method that sets up both controllers
 - **FR-011**: System MUST share the same container and Three.js scene, camera, grid, mapControls, between both controllers to enable seamless visual transition
-- **FR-012**: System MUST share the same factoryRegistry, branchingPointVisualFactory, wireVisualManager, HoverManager, and visual object maps (componentObject3Ds, enodeObject3Ds, wireObject3Ds) between both controllers to avoid redundant resource usage and enable zero-recreation mode switching
+- **FR-012**: System MUST share the same factoryRegistry, branchingPointVisualFactory, wireVisualManager, HoverManager, and visual object maps (_componentObject3Ds, _enodeObject3Ds, _wireObject3Ds) between both controllers to avoid redundant resource usage and enable zero-recreation mode switching
 - **FR-013**: System MUST provide a single `dispose()` method that cleans up both controllers and all shared resources
 - **FR-014**: System MUST reject mode-specific operations when in the wrong mode with an appropriate error
 - **FR-015**: System MUST expose simulation playback controls (play, pause, step, stop) that delegate to the simulation controller

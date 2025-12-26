@@ -74,7 +74,7 @@ export type ControllerEvent =
  * Event payload map for type-safe event emission
  */
 export interface ControllerEventMap {
-  ready: { controllerType: 'static' | 'simulation' };
+  ready: { controllerType: 'static' | 'simulation' | 'engine' };
   error: { message: string; error?: Error };
   circuitLoaded: { name: string };
   circuitCleared: { name: string };

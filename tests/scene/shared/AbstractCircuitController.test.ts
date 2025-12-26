@@ -13,6 +13,7 @@ import { FactoryRegistry, DefaultVisualFactory } from '../../../src/scene/shared
 import { HoverManager } from '../../../src/scene/shared/HoverManager';
 import { BranchingPointVisualFactory } from '../../../src/scene/shared/components/BranchingPointVisualFactory';
 import { WireVisualManager } from '../../../src/scene/shared/WireVisualManager';
+import { BehaviorRegistry } from '../../../src/core/simulation/behaviors/BehaviorRegistry';
 import type { SharedResources } from '../../../src/scene/shared/types';
 import type { IFactoryRegistry } from '../../../src/scene/shared/components/ComponentVisualFactory';
 import type { UUID } from '../../../src/core/types/Identifier';
@@ -33,17 +34,16 @@ function createMockSharedResources(factoryRegistry: IFactoryRegistry): SharedRes
   const hoverManager = new HoverManager(scene, camera);
   const branchingPointVisualFactory = new BranchingPointVisualFactory();
 
-  // Create a mock controller for WireVisualManager
-  const mockController = {
-    getCircuit: () => null,
-    getScene: () => scene,
-    getCamera: () => camera,
-    getContainer: () => container,
-    componentObject3Ds: new Map<UUID, THREE.Object3D>(),
-    wireObject3Ds: new Map<UUID, Line2>(),
-    enodeObject3Ds: new Map<UUID, THREE.Object3D>(),
-  };
-  const wireVisualManager = new WireVisualManager(mockController as any);
+  // Create shared visual maps
+  const componentObject3Ds = new Map<UUID, THREE.Object3D>();
+  const enodeObject3Ds = new Map<UUID, THREE.Object3D>();
+  const wireObject3Ds = new Map<UUID, Line2>();
+
+  // Create WireVisualManager with the new constructor interface
+  const wireVisualManager = new WireVisualManager(componentObject3Ds, wireObject3Ds);
+  wireVisualManager.setSceneAndCamera(scene, camera);
+  wireVisualManager.setContainer(container);
+  wireVisualManager.setResolution(800, 600);
 
   return {
     scene,
@@ -54,19 +54,21 @@ function createMockSharedResources(factoryRegistry: IFactoryRegistry): SharedRes
     branchingPointVisualFactory,
     wireVisualManager,
     hoverManager,
-    componentObject3Ds: new Map<UUID, THREE.Object3D>(),
-    enodeObject3Ds: new Map<UUID, THREE.Object3D>(),
-    wireObject3Ds: new Map<UUID, Line2>(),
+    componentObject3Ds,
+    enodeObject3Ds,
+    wireObject3Ds,
   };
 }
 
 describe('AbstractCircuitController - Shared Resources Injection', () => {
   let factoryRegistry: IFactoryRegistry;
+  let behaviorRegistry: BehaviorRegistry;
   let container: HTMLDivElement;
   let sharedResources: SharedResources;
 
   beforeEach(() => {
     factoryRegistry = new FactoryRegistry(new DefaultVisualFactory());
+    behaviorRegistry = new BehaviorRegistry();
     container = document.createElement('div');
     container.style.width = '800px';
     container.style.height = '600px';
@@ -157,26 +159,26 @@ describe('AbstractCircuitController - Shared Resources Injection', () => {
 
   describe('CircuitRunnerController with shared resources', () => {
     it('should accept sharedResources in constructor', () => {
-      const controller = new CircuitRunnerController(factoryRegistry, sharedResources);
+      const controller = new CircuitRunnerController(factoryRegistry, behaviorRegistry, sharedResources);
       expect(controller).toBeDefined();
     });
 
     it('should use shared scene when initialized with sharedResources', () => {
-      const controller = new CircuitRunnerController(factoryRegistry, sharedResources);
+      const controller = new CircuitRunnerController(factoryRegistry, behaviorRegistry, sharedResources);
       controller.initialize(container);
 
       expect(controller.getScene()).toBe(sharedResources.scene);
     });
 
     it('should use shared camera when initialized with sharedResources', () => {
-      const controller = new CircuitRunnerController(factoryRegistry, sharedResources);
+      const controller = new CircuitRunnerController(factoryRegistry, behaviorRegistry, sharedResources);
       controller.initialize(container);
 
       expect(controller.getCamera()).toBe(sharedResources.camera);
     });
 
     it('should emit ready event when initialized with shared resources', () => {
-      const controller = new CircuitRunnerController(factoryRegistry, sharedResources);
+      const controller = new CircuitRunnerController(factoryRegistry, behaviorRegistry, sharedResources);
       const readyHandler = vi.fn();
       controller.on('ready', readyHandler);
 
@@ -186,7 +188,7 @@ describe('AbstractCircuitController - Shared Resources Injection', () => {
     });
 
     it('should not dispose shared resources when controller is disposed', () => {
-      const controller = new CircuitRunnerController(factoryRegistry, sharedResources);
+      const controller = new CircuitRunnerController(factoryRegistry, behaviorRegistry, sharedResources);
       controller.initialize(container);
 
       // Store references before dispose

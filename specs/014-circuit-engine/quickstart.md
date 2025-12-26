@@ -16,9 +16,9 @@ npm install simple-circuit-engine
 ## Basic Usage (5 Lines)
 
 ```typescript
-import { CircuitEngine, DefaultFactoryRegistry, DefaultBehaviorRegistry } from 'simple-circuit-engine';
+import { CircuitEngine, FactoryRegistry, DefaultVisualFactory, BehaviorRegistry } from 'simple-circuit-engine';
 
-const engine = new CircuitEngine(new DefaultFactoryRegistry(), new DefaultBehaviorRegistry());
+const engine = new CircuitEngine(new FactoryRegistry(new DefaultVisualFactory()), new BehaviorRegistry());
 engine.initialize(document.getElementById('canvas-container')!);
 engine.setCircuit(myCircuit);
 // Ready to use! Engine starts in edit mode by default.
@@ -106,8 +106,9 @@ engine.on('toolActivated', ({ toolType }) => {
 import * as THREE from 'three';
 import {
   CircuitEngine,
-  DefaultFactoryRegistry,
-  DefaultBehaviorRegistry,
+  FactoryRegistry,
+  DefaultVisualFactory,
+  BehaviorRegistry,
   Circuit
 } from 'simple-circuit-engine';
 
@@ -120,8 +121,8 @@ renderer.setSize(container.clientWidth, container.clientHeight);
 container.appendChild(renderer.domElement);
 
 // Create engine
-const factoryRegistry = new DefaultFactoryRegistry();
-const behaviorRegistry = new DefaultBehaviorRegistry();
+const factoryRegistry = new FactoryRegistry(new DefaultVisualFactory());
+const behaviorRegistry = new BehaviorRegistry();
 const engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
 
 // Initialize with options

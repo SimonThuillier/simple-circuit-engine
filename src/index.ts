@@ -7,7 +7,7 @@
  * @packageDocumentation
  */
 
-export { CircuitEngine } from './CircuitEngine.js';
+export { CircuitEngine } from './scene/CircuitEngine.js';
 
 // Re-export core types for consumers who need them
 export type * from './core/index.js';

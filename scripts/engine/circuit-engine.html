@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CircuitEngine Demo - Editor + Simulator</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
+          sans-serif;
+        margin: 0;
+        padding: 0;
+        background: #f5f5f5;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      .app-container {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        grid-template-rows: 1fr;
+        height: 100vh;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        background: white;
+        border-right: 1px solid #ddd;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .sidebar-header {
+        padding: 16px;
+        border-bottom: 1px solid #ddd;
+        background: #f8f9fa;
+      }
+
+      .sidebar-header h1 {
+        margin: 0;
+        font-size: 18px;
+        color: #333;
+      }
+
+      .sidebar-header .subtitle {
+        margin: 4px 0 0;
+        font-size: 12px;
+        color: #666;
+      }
+
+      /* Mode Toggle */
+      .mode-toggle {
+        display: flex;
+        padding: 12px;
+        gap: 8px;
+        border-bottom: 1px solid #ddd;
+      }
+
+      .mode-btn {
+        flex: 1;
+        padding: 10px 16px;
+        border: 2px solid #ddd;
+        border-radius: 6px;
+        background: white;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.2s;
+      }
+
+      .mode-btn:hover {
+        border-color: #999;
+      }
+
+      .mode-btn.active {
+        border-color: #4caf50;
+        background: #e8f5e9;
+        color: #2e7d32;
+      }
+
+      .mode-btn.simulation.active {
+        border-color: #2196f3;
+        background: #e3f2fd;
+        color: #1565c0;
+      }
+
+      /* Sections */
+      .sidebar-section {
+        border-bottom: 1px solid #ddd;
+      }
+
+      .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        cursor: pointer;
+        background: #f8f9fa;
+        user-select: none;
+      }
+
+      .section-header:hover {
+        background: #f0f0f0;
+      }
+
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .section-chevron {
+        font-size: 12px;
+        transition: transform 0.2s;
+      }
+
+      .sidebar-section.collapsed .section-chevron {
+        transform: rotate(-90deg);
+      }
+
+      .section-content {
+        padding: 12px 16px;
+        display: block;
+      }
+
+      .sidebar-section.collapsed .section-content {
+        display: none;
+      }
+
+      /* JSON Input */
+      #circuit-input {
+        width: 100%;
+        min-height: 120px;
+        max-height: 200px;
+        font-family: 'Courier New', monospace;
+        font-size: 11px;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        resize: vertical;
+        margin-bottom: 8px;
+      }
+
+      .json-buttons {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .json-buttons button {
+        flex: 1;
+        min-width: 70px;
+        padding: 8px 12px;
+        font-size: 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      #load-btn {
+        background-color: #4caf50;
+        color: white;
+      }
+
+      #load-btn:hover {
+        background-color: #45a049;
+      }
+
+      #serialize-btn {
+        background-color: #2196f3;
+        color: white;
+      }
+
+      #serialize-btn:hover {
+        background-color: #1976d2;
+      }
+
+      #clear-btn {
+        background-color: #f44336;
+        color: white;
+      }
+
+      #clear-btn:hover {
+        background-color: #d32f2f;
+      }
+
+      /* Edit Tools */
+      .tool-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .tool-btn {
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: white;
+        cursor: pointer;
+        font-size: 13px;
+        text-align: left;
+        transition: all 0.15s;
+      }
+
+      .tool-btn:hover {
+        border-color: #999;
+        background: #f5f5f5;
+      }
+
+      .tool-btn.active {
+        border-color: #4caf50;
+        background: #e8f5e9;
+        color: #2e7d32;
+      }
+
+      .tool-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* Component List */
+      #component-list {
+        display: none;
+        margin-top: 8px;
+        padding: 0;
+        list-style: none;
+        border-left: 3px solid #4caf50;
+        background: #fafafa;
+      }
+
+      #component-list.visible {
+        display: block;
+      }
+
+      .component-item {
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 12px;
+        color: #555;
+        border-bottom: 1px solid #eee;
+        transition: background-color 0.15s;
+      }
+
+      .component-item:hover {
+        background-color: #f0f0f0;
+      }
+
+      .component-item.selected {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+        font-weight: 500;
+      }
+
+      /* Simulation Controls */
+      .sim-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .sim-btn {
+        padding: 12px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.15s;
+      }
+
+      .sim-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      #play-pause-btn {
+        background: #4caf50;
+        color: white;
+      }
+
+      #play-pause-btn:hover:not(:disabled) {
+        background: #45a049;
+      }
+
+      #play-pause-btn.playing {
+        background: #ff9800;
+      }
+
+      #play-pause-btn.playing:hover:not(:disabled) {
+        background: #f57c00;
+      }
+
+      #step-btn {
+        background: #2196f3;
+        color: white;
+      }
+
+      #step-btn:hover:not(:disabled) {
+        background: #1976d2;
+      }
+
+      #stop-btn {
+        background: #f44336;
+        color: white;
+      }
+
+      #stop-btn:hover:not(:disabled) {
+        background: #d32f2f;
+      }
+
+      .tick-display {
+        padding: 8px 12px;
+        background: #f5f5f5;
+        border-radius: 4px;
+        font-size: 12px;
+        color: #666;
+        text-align: center;
+      }
+
+      /* Error Display */
+      #error-display {
+        background-color: #ffebee;
+        color: #c62828;
+        padding: 12px;
+        margin: 12px 16px;
+        border-radius: 4px;
+        border-left: 4px solid #c62828;
+        font-size: 12px;
+        display: none;
+      }
+
+      #error-display.visible {
+        display: block;
+      }
+
+      #error-display .close-btn {
+        float: right;
+        background: none;
+        border: none;
+        color: #c62828;
+        cursor: pointer;
+        font-size: 16px;
+        padding: 0;
+        line-height: 1;
+      }
+
+      /* Status Bar */
+      .status-bar {
+        margin-top: auto;
+        padding: 12px 16px;
+        background: #f8f9fa;
+        border-top: 1px solid #ddd;
+        font-size: 11px;
+        color: #666;
+      }
+
+      .status-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 4px;
+      }
+
+      .status-item:last-child {
+        margin-bottom: 0;
+      }
+
+      /* Viewer */
+      .viewer-container {
+        position: relative;
+        background: #1a1a2e;
+        overflow: hidden;
+      }
+
+      #canvas-container {
+        width: 100%;
+        height: 100%;
+      }
+
+      /* Mode indicator overlay */
+      .mode-indicator {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        pointer-events: none;
+      }
+
+      .mode-indicator.edit {
+        background: rgba(76, 175, 80, 0.9);
+        color: white;
+      }
+
+      .mode-indicator.simulation {
+        background: rgba(33, 150, 243, 0.9);
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <h1>CircuitEngine Demo</h1>
+          <p class="subtitle">Editor + Simulator unified API</p>
+        </div>
+
+        <!-- Mode Toggle -->
+        <div class="mode-toggle">
+          <button id="mode-edit" class="mode-btn active">Edit Mode</button>
+          <button id="mode-simulation" class="mode-btn simulation">Simulation</button>
+        </div>
+
+        <!-- JSON Section -->
+        <div class="sidebar-section" id="json-section">
+          <div class="section-header">
+            <span class="section-title">Circuit JSON</span>
+            <span class="section-chevron">&#9662;</span>
+          </div>
+          <div class="section-content">
+            <textarea id="circuit-input" placeholder="Paste circuit JSON here...">{
+  "metadata": {
+    "name": "Switch-Controlled LED Circuit",
+    "size": 20,
+    "divisions": 20,
+    "cameraStartup": { "x": 0, "y": 0, "z": 50 }
+  },
+  "components": [
+    {
+      "id": "e16b79a0-c6e2-49d2-8d23-852266cdf3d2",
+      "type": "battery",
+      "position": { "x": 0, "y": 0 },
+      "rotation": 0,
+      "pins": ["5e87fd9e-d08b-4dae-bf9e-f9fd4f95d569", "75360089-6b35-4c9a-a08e-4257a2d34968"],
+      "config": {}
+    },
+    {
+      "id": "9cfa2f2d-3660-4f4f-98a5-b719ed7d12e9",
+      "type": "switch",
+      "position": { "x": 5, "y": 1 },
+      "rotation": 0,
+      "pins": ["97b91b70-caa6-4a91-bfc0-6f290f33661c", "db83437e-efba-419a-8b8e-cdf3b1b25745"],
+      "config": { "initialState": "open" }
+    },
+    {
+      "id": "0b2e768e-a727-4733-9139-15b594fb4a35",
+      "type": "smallLED",
+      "position": { "x": 5, "y": -4 },
+      "rotation": 0,
+      "pins": ["295298ee-5ecc-4474-9acb-9be1feee059f", "ddf99ca2-8426-4a02-8b13-b05560806564"],
+      "config": { "mode": "symmetric", "activeColor": "red", "idleColor": "black" }
+    }
+  ],
+  "enodes": [
+    { "id": "5e87fd9e-d08b-4dae-bf9e-f9fd4f95d569", "type": "Pin", "source": "Voltage", "component": "e16b79a0-c6e2-49d2-8d23-852266cdf3d2", "pinLabel": "cathode" },
+    { "id": "75360089-6b35-4c9a-a08e-4257a2d34968", "type": "Pin", "source": "Current", "component": "e16b79a0-c6e2-49d2-8d23-852266cdf3d2", "pinLabel": "anode" },
+    { "id": "97b91b70-caa6-4a91-bfc0-6f290f33661c", "type": "Pin", "source": null, "component": "9cfa2f2d-3660-4f4f-98a5-b719ed7d12e9", "pinLabel": "input" },
+    { "id": "db83437e-efba-419a-8b8e-cdf3b1b25745", "type": "Pin", "source": null, "component": "9cfa2f2d-3660-4f4f-98a5-b719ed7d12e9", "pinLabel": "output" },
+    { "id": "295298ee-5ecc-4474-9acb-9be1feee059f", "type": "Pin", "source": null, "component": "0b2e768e-a727-4733-9139-15b594fb4a35", "pinLabel": "cathode" },
+    { "id": "ddf99ca2-8426-4a02-8b13-b05560806564", "type": "Pin", "source": null, "component": "0b2e768e-a727-4733-9139-15b594fb4a35", "pinLabel": "anode" }
+  ],
+  "wires": [
+    { "id": "63ac676e-bc4f-4522-a286-a4b46e5fda53", "node1": "5e87fd9e-d08b-4dae-bf9e-f9fd4f95d569", "node2": "97b91b70-caa6-4a91-bfc0-6f290f33661c", "intermediatePositions": [] },
+    { "id": "f8d4e220-6376-4002-be89-e8190d19607b", "node1": "db83437e-efba-419a-8b8e-cdf3b1b25745", "node2": "ddf99ca2-8426-4a02-8b13-b05560806564", "intermediatePositions": [] },
+    { "id": "e4b1e554-2a6c-4615-a72b-2d4a1a90a3d4", "node1": "295298ee-5ecc-4474-9acb-9be1feee059f", "node2": "75360089-6b35-4c9a-a08e-4257a2d34968", "intermediatePositions": [] }
+  ]
+}</textarea>
+            <div class="json-buttons">
+              <button id="load-btn">Load</button>
+              <button id="serialize-btn">Export</button>
+              <button id="clear-btn">Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit Tools Section -->
+        <div class="sidebar-section" id="edit-section">
+          <div class="section-header">
+            <span class="section-title">Edit Tools</span>
+            <span class="section-chevron">&#9662;</span>
+          </div>
+          <div class="section-content">
+            <div class="tool-list">
+              <button id="tool-build" class="tool-btn">Build Tool</button>
+              <button id="tool-multi-select" class="tool-btn">Multi-Select Tool</button>
+              <button id="tool-add-component" class="tool-btn">Add Component</button>
+              <ul id="component-list"></ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulation Controls Section -->
+        <div class="sidebar-section" id="sim-section">
+          <div class="section-header">
+            <span class="section-title">Simulation Controls</span>
+            <span class="section-chevron">&#9662;</span>
+          </div>
+          <div class="section-content">
+            <div class="sim-controls">
+              <button id="play-pause-btn" class="sim-btn" disabled>Play</button>
+              <button id="step-btn" class="sim-btn" disabled>Step</button>
+              <button id="stop-btn" class="sim-btn" disabled>Stop / Reset</button>
+              <div class="tick-display">Tick: <span id="tick-count">0</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Error Display -->
+        <div id="error-display">
+          <button class="close-btn" id="close-error">&times;</button>
+          <span id="error-message"></span>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+          <div class="status-item">
+            <span>Mode:</span>
+            <span id="status-mode">Edit</span>
+          </div>
+          <div class="status-item">
+            <span>Circuit:</span>
+            <span id="status-circuit">Not loaded</span>
+          </div>
+          <div class="status-item">
+            <span>Active Tool:</span>
+            <span id="status-tool">None</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Viewer -->
+      <div class="viewer-container">
+        <div id="canvas-container"></div>
+        <div class="mode-indicator edit" id="mode-indicator">EDIT MODE</div>
+      </div>
+    </div>
+
+    <script src="circuit-engine.js"></script>
+    <script>
+      // Initialize CircuitEngine
+      const container = document.getElementById('canvas-container');
+
+      if (typeof window.CircuitEngine !== 'function') {
+        console.error('CircuitEngine is not a constructor!');
+        alert('ERROR: CircuitEngine failed to load. Check browser console for details.');
+        throw new Error('CircuitEngine not available');
+      }
+
+      // Create engine with registries
+      const engine = new window.CircuitEngine(
+        window.componentsFactoryRegistry,
+        window.behaviorRegistry
+      );
+
+      // Initialize engine
+      engine.initialize(container, { initialMode: 'edit' });
+
+      // Add axes helper
+      engine.getScene().add(window.axesHelper);
+
+      // Setup camera layers for hover visibility
+      engine.getCamera().layers.enable(1); // enode hover layer
+      engine.getCamera().layers.enable(2); // component hover layer
+
+      // Setup WebGL renderer
+      const renderer = window.renderer;
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
+
+      // Animation loop
+      function animate() {
+        requestAnimationFrame(animate);
+        engine.getControls().update();
+        renderer.render(engine.getScene(), engine.getCamera());
+      }
+      animate();
+
+      // Handle window resize
+      function handleResize() {
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        renderer.setSize(width, height);
+        engine.onContainerResize(width, height);
+      }
+      window.addEventListener('resize', handleResize);
+
+      // UI State
+      let currentMode = 'edit';
+
+      // UI Helper functions
+      function showError(message) {
+        const errorDisplay = document.getElementById('error-display');
+        const errorMessage = document.getElementById('error-message');
+        errorMessage.textContent = message;
+        errorDisplay.classList.add('visible');
+      }
+
+      function hideError() {
+        document.getElementById('error-display').classList.remove('visible');
+      }
+
+      function updateModeUI(mode) {
+        currentMode = mode;
+
+        // Update mode buttons
+        document.getElementById('mode-edit').classList.toggle('active', mode === 'edit');
+        document.getElementById('mode-simulation').classList.toggle('active', mode === 'simulation');
+
+        // Update mode indicator
+        const indicator = document.getElementById('mode-indicator');
+        indicator.className = 'mode-indicator ' + mode;
+        indicator.textContent = mode === 'edit' ? 'EDIT MODE' : 'SIMULATION MODE';
+
+        // Update status
+        document.getElementById('status-mode').textContent = mode === 'edit' ? 'Edit' : 'Simulation';
+
+        // Enable/disable sections
+        const editSection = document.getElementById('edit-section');
+        const simSection = document.getElementById('sim-section');
+
+        if (mode === 'edit') {
+          editSection.style.opacity = '1';
+          editSection.style.pointerEvents = 'auto';
+          simSection.style.opacity = '0.5';
+
+          // Disable sim buttons
+          document.getElementById('play-pause-btn').disabled = true;
+          document.getElementById('step-btn').disabled = true;
+          document.getElementById('stop-btn').disabled = true;
+        } else {
+          editSection.style.opacity = '0.5';
+          editSection.style.pointerEvents = 'none';
+          simSection.style.opacity = '1';
+
+          // Enable sim buttons if circuit is loaded
+          const hasCircuit = engine.getCircuit() !== null;
+          document.getElementById('play-pause-btn').disabled = !hasCircuit;
+          document.getElementById('step-btn').disabled = !hasCircuit;
+          document.getElementById('stop-btn').disabled = !hasCircuit;
+        }
+      }
+
+      function updatePlayPauseButton() {
+        const btn = document.getElementById('play-pause-btn');
+        if (engine.isPlaying) {
+          btn.textContent = 'Pause';
+          btn.classList.add('playing');
+        } else {
+          btn.textContent = 'Play';
+          btn.classList.remove('playing');
+        }
+      }
+
+      // Event handlers
+
+      // Mode toggle
+      document.getElementById('mode-edit').addEventListener('click', () => {
+        if (currentMode !== 'edit') {
+          engine.setMode('edit');
+        }
+      });
+
+      document.getElementById('mode-simulation').addEventListener('click', () => {
+        if (currentMode !== 'simulation') {
+          try {
+            engine.setMode('simulation');
+          } catch (error) {
+            showError('Cannot switch to simulation: ' + error.message);
+          }
+        }
+      });
+
+      // JSON operations
+      document.getElementById('load-btn').addEventListener('click', () => {
+        const json = document.getElementById('circuit-input').value;
+        if (!json.trim()) {
+          showError('Please enter circuit JSON');
+          return;
+        }
+
+        try {
+          const circuitData = JSON.parse(json);
+          const circuit = window.Circuit.fromJSON(circuitData);
+          engine.setCircuit(circuit);
+          hideError();
+
+          // Update status
+          document.getElementById('status-circuit').textContent =
+            circuitData.metadata?.name || 'Loaded';
+
+          // Enable sim buttons if in simulation mode
+          if (currentMode === 'simulation') {
+            document.getElementById('play-pause-btn').disabled = false;
+            document.getElementById('step-btn').disabled = false;
+            document.getElementById('stop-btn').disabled = false;
+          }
+        } catch (error) {
+          showError('Load error: ' + error.message);
+        }
+      });
+
+      document.getElementById('serialize-btn').addEventListener('click', () => {
+        const circuit = engine.getCircuit();
+        if (!circuit) {
+          showError('No circuit loaded');
+          return;
+        }
+
+        try {
+          const circuitJSON = circuit.toJSON();
+          const formatted = JSON.stringify(circuitJSON, null, 2);
+          document.getElementById('circuit-input').value = formatted;
+          hideError();
+        } catch (error) {
+          showError('Export error: ' + error.message);
+        }
+      });
+
+      document.getElementById('clear-btn').addEventListener('click', () => {
+        engine.setCircuit(null);
+        document.getElementById('circuit-input').value = '';
+        document.getElementById('status-circuit').textContent = 'Not loaded';
+        document.getElementById('tick-count').textContent = '0';
+        hideError();
+      });
+
+      document.getElementById('close-error').addEventListener('click', hideError);
+
+      // Edit tools
+      function deactivateAllTools() {
+        document.querySelectorAll('.tool-btn').forEach((btn) => btn.classList.remove('active'));
+        document.getElementById('component-list').classList.remove('visible');
+      }
+
+      document.getElementById('tool-build').addEventListener('click', () => {
+        if (currentMode !== 'edit') return;
+
+        const isActive = document.getElementById('tool-build').classList.contains('active');
+        deactivateAllTools();
+
+        if (!isActive) {
+          engine.setEditModeEnabled(true);
+          engine.setActiveTool('build');
+          document.getElementById('tool-build').classList.add('active');
+          document.getElementById('status-tool').textContent = 'Build';
+        } else {
+          document.getElementById('status-tool').textContent = 'None';
+        }
+      });
+
+      document.getElementById('tool-multi-select').addEventListener('click', () => {
+        if (currentMode !== 'edit') return;
+
+        const isActive = document.getElementById('tool-multi-select').classList.contains('active');
+        deactivateAllTools();
+
+        if (!isActive) {
+          engine.setEditModeEnabled(true);
+          engine.setActiveTool('multiSelect');
+          document.getElementById('tool-multi-select').classList.add('active');
+          document.getElementById('status-tool').textContent = 'Multi-Select';
+        } else {
+          document.getElementById('status-tool').textContent = 'None';
+        }
+      });
+
+      // Add Component Tool
+      (function () {
+        const toolBtn = document.getElementById('tool-add-component');
+        const componentList = document.getElementById('component-list');
+        let selectedType = null;
+
+        function populateComponentList() {
+          const types = engine.getEditController().getAvailableComponentTypes();
+          componentList.innerHTML = '';
+
+          // None option
+          const noneItem = document.createElement('li');
+          noneItem.className = 'component-item';
+          noneItem.textContent = 'None';
+          noneItem.addEventListener('click', () => selectType(null, noneItem));
+          componentList.appendChild(noneItem);
+
+          // Component types
+          types.forEach((type) => {
+            const item = document.createElement('li');
+            item.className = 'component-item';
+            item.textContent = type;
+            item.addEventListener('click', () => selectType(type, item));
+            componentList.appendChild(item);
+          });
+        }
+
+        function selectType(type, element) {
+          selectedType = type;
+          componentList.querySelectorAll('.component-item').forEach((el) =>
+            el.classList.remove('selected')
+          );
+          element.classList.add('selected');
+
+          try {
+            engine.getEditController().setAddComponentType(type);
+          } catch (error) {
+            console.error('Failed to set component type:', error);
+          }
+        }
+
+        toolBtn.addEventListener('click', () => {
+          if (currentMode !== 'edit') return;
+
+          const isActive = toolBtn.classList.contains('active');
+          deactivateAllTools();
+
+          if (!isActive) {
+            engine.setEditModeEnabled(true);
+            engine.setActiveTool('addComponent');
+            toolBtn.classList.add('active');
+            populateComponentList();
+            componentList.classList.add('visible');
+            document.getElementById('status-tool').textContent = 'Add Component';
+          } else {
+            document.getElementById('status-tool').textContent = 'None';
+          }
+        });
+      })();
+
+      // Simulation controls
+      document.getElementById('play-pause-btn').addEventListener('click', () => {
+        if (currentMode !== 'simulation') return;
+
+        if (engine.isPlaying) {
+          engine.pause();
+        } else {
+          engine.play();
+        }
+        updatePlayPauseButton();
+      });
+
+      document.getElementById('step-btn').addEventListener('click', () => {
+        if (currentMode !== 'simulation') return;
+        engine.step();
+      });
+
+      document.getElementById('stop-btn').addEventListener('click', () => {
+        if (currentMode !== 'simulation') return;
+        engine.stop();
+        document.getElementById('tick-count').textContent = '0';
+        updatePlayPauseButton();
+      });
+
+      // Section collapse toggles
+      document.querySelectorAll('.section-header').forEach((header) => {
+        header.addEventListener('click', () => {
+          header.parentElement.classList.toggle('collapsed');
+        });
+      });
+
+      // Engine event listeners
+      engine.on('ready', () => {
+        console.log('CircuitEngine ready');
+      });
+
+      engine.on('modeChanged', ({ mode, previousMode }) => {
+        console.log(`Mode changed: ${previousMode} -> ${mode}`);
+        updateModeUI(mode);
+      });
+
+      engine.on('circuitLoaded', ({ name }) => {
+        console.log('Circuit loaded:', name);
+        document.getElementById('status-circuit').textContent = name || 'Loaded';
+      });
+
+      engine.on('toolActivated', ({ toolType }) => {
+        console.log('Tool activated:', toolType);
+        document.getElementById('status-tool').textContent = toolType || 'None';
+      });
+
+      engine.on('toolDeactivated', ({ toolType }) => {
+        console.log('Tool deactivated:', toolType);
+        deactivateAllTools();
+        document.getElementById('status-tool').textContent = 'None';
+      });
+
+      engine.on('simulationPlayed', () => {
+        console.log('Simulation played');
+        updatePlayPauseButton();
+      });
+
+      engine.on('simulationPaused', () => {
+        console.log('Simulation paused');
+        updatePlayPauseButton();
+      });
+
+      engine.on('simulationTick', ({ tick }) => {
+        document.getElementById('tick-count').textContent = tick;
+      });
+
+      engine.on('simulationStepped', ({ tick }) => {
+        document.getElementById('tick-count').textContent = tick;
+      });
+
+      engine.on('simulationStopped', ({ tick }) => {
+        document.getElementById('tick-count').textContent = tick;
+        updatePlayPauseButton();
+      });
+
+      // Initial UI state
+      updateModeUI('edit');
+    </script>
+  </body>
+</html>

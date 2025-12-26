@@ -1,14 +1,12 @@
 /**
- * Main entry point for the circuit topology visualizer
- * Exports CircuitVisualizer class to window object
+ * Main entry point for the CircuitEngine demo page
+ * Uses the unified CircuitEngine API for both editing and simulation
  */
-import { IntegrityError, RenderError, ValidationError, VisualizerError } from './errors.js';
+import { EngineError, IntegrityError, RenderError, ValidationError } from './errors.js';
+import { CircuitEngine } from '@/scene/CircuitEngine.js';
 import { Circuit } from '@/core/Circuit.js';
-import { CircuitRunnerController } from '@/scene/simulation/CircuitRunnerController.js';
 import { AxesHelper, WebGLRenderer } from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { ComponentType } from '@/core/types/ComponentType.js';
-import { MapControls } from 'three/addons/controls/MapControls.js';
 import {
   BehaviorRegistry,
   BatteryBehavior,
@@ -16,8 +14,8 @@ import {
   RelayBehavior,
   SmallLEDBehavior,
   SwitchBehavior,
-  TransistorBehavior
-} from '../../../src/core/simulation/behaviors';
+  TransistorBehavior,
+} from '@/core/simulation/behaviors';
 
 import {
   type IFactoryRegistry,
@@ -28,21 +26,19 @@ import {
   RelayVisualFactory,
   SmallLEDVisualFactory,
   SwitchVisualFactory,
-  TransistorVisualFactory
-} from '../../../src/scene/shared/components';
+  TransistorVisualFactory,
+} from '@/scene/shared/components';
 
 // Export to window object for use in HTML
 declare global {
   interface Window {
     renderer: WebGLRenderer;
     axesHelper: AxesHelper;
+    CircuitEngine: typeof CircuitEngine;
     Circuit: typeof Circuit;
-    CircuitRunnerController: typeof CircuitRunnerController;
     behaviorRegistry: BehaviorRegistry;
     componentsFactoryRegistry: IFactoryRegistry;
-    OrbitControls: typeof OrbitControls;
-    MapControls: typeof MapControls;
-    VisualizerError: typeof VisualizerError;
+    EngineError: typeof EngineError;
     ValidationError: typeof ValidationError;
     IntegrityError: typeof IntegrityError;
     RenderError: typeof RenderError;
@@ -51,9 +47,8 @@ declare global {
 
 // Immediately assign to window (for IIFE bundles)
 if (typeof window !== 'undefined') {
-  const componentsFactoryRegistry: IFactoryRegistry = new FactoryRegistry(
-    new DefaultVisualFactory()
-  );
+  // Create component factory registry with all visual factories
+  const componentsFactoryRegistry: IFactoryRegistry = new FactoryRegistry(new DefaultVisualFactory());
   componentsFactoryRegistry.register(ComponentType.Battery, new BatteryVisualFactory());
   componentsFactoryRegistry.register(ComponentType.Lightbulb, new LightbulbVisualFactory());
   componentsFactoryRegistry.register(ComponentType.Relay, new RelayVisualFactory());
@@ -61,6 +56,7 @@ if (typeof window !== 'undefined') {
   componentsFactoryRegistry.register(ComponentType.SmallLED, new SmallLEDVisualFactory());
   componentsFactoryRegistry.register(ComponentType.Transistor, new TransistorVisualFactory());
 
+  // Create behavior registry with all component behaviors
   const behaviorRegistry = new BehaviorRegistry();
   behaviorRegistry.register(new BatteryBehavior());
   behaviorRegistry.register(new LightbulbBehavior());
@@ -69,29 +65,24 @@ if (typeof window !== 'undefined') {
   behaviorRegistry.register(new SmallLEDBehavior());
   behaviorRegistry.register(new TransistorBehavior());
 
-  window.renderer = new WebGLRenderer({ antialias: false, alpha: false });
-  window.renderer.setClearColor(0x222290);
+  // Create WebGL renderer
+  window.renderer = new WebGLRenderer({ antialias: true, alpha: false });
+  window.renderer.setClearColor(0x1a1a2e);
 
+  // Create axes helper for reference
   window.axesHelper = new AxesHelper(10);
 
+  // Export to window
+  window.CircuitEngine = CircuitEngine;
   window.Circuit = Circuit;
-  window.CircuitRunnerController = CircuitRunnerController;
   window.behaviorRegistry = behaviorRegistry;
   window.componentsFactoryRegistry = componentsFactoryRegistry;
-  window.OrbitControls = OrbitControls;
-  window.MapControls = MapControls;
-
-  window.VisualizerError = VisualizerError;
+  window.EngineError = EngineError;
   window.ValidationError = ValidationError;
   window.IntegrityError = IntegrityError;
   window.RenderError = RenderError;
+
+  console.log('CircuitEngine Demo loaded');
 }
 
-export {
-  CircuitRunnerController,
-  Circuit,
-  VisualizerError,
-  ValidationError,
-  IntegrityError,
-  RenderError,
-};
+export { CircuitEngine, Circuit, EngineError, ValidationError, IntegrityError, RenderError };

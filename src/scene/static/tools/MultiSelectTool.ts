@@ -62,6 +62,7 @@ const MIN_SELECTION_RECT_SIZE = 5;
 
 /**
  * Complete clipboard data structure for copy/paste
+ * TODO : copy and paste edited enodes sourceType and components config
  */
 export interface ClipboardData {
   /** Center of selection bounding box in grid coordinates */

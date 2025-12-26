@@ -38,9 +38,9 @@ interface SharedResources {
   hoverManager: HoverManager;
 
   // Visual object maps (shared between controllers)
-  componentObject3Ds: Map<UUID, THREE.Object3D>;
-  enodeObject3Ds: Map<UUID, THREE.Object3D>;
-  wireObject3Ds: Map<UUID, Line2>;
+  _componentObject3Ds: Map<UUID, THREE.Object3D>;
+  _enodeObject3Ds: Map<UUID, THREE.Object3D>;
+  _wireObject3Ds: Map<UUID, Line2>;
 }
 ```
 

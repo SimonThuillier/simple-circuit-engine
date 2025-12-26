@@ -31,12 +31,12 @@
 
 ### RQ2: How should visual object maps be shared?
 
-**Context**: Each controller maintains `componentObject3Ds`, `enodeObject3Ds`, `wireObject3Ds` maps. FR-012 requires sharing these.
+**Context**: Each controller maintains `_componentObject3Ds`, `_enodeObject3Ds`, `_wireObject3Ds` maps. FR-012 requires sharing these.
 
 **Finding**: Maps are declared as `public readonly` in AbstractCircuitController:
-- Line 74: `public readonly componentObject3Ds: Map<UUID, THREE.Object3D>`
-- Line 75: `public readonly enodeObject3Ds: Map<UUID, THREE.Object3D>`
-- Line 76: `public readonly wireObject3Ds: Map<UUID, Line2>`
+- Line 74: `public readonly _componentObject3Ds: Map<UUID, THREE.Object3D>`
+- Line 75: `public readonly _enodeObject3Ds: Map<UUID, THREE.Object3D>`
+- Line 76: `public readonly _wireObject3Ds: Map<UUID, Line2>`
 
 **Decision**: Pass shared maps via constructor injection, same pattern as other shared resources.
 

@@ -58,13 +58,13 @@
 
 ### Implementation for User Story 1
 
-- [ ] T015 [US1] Create CircuitEngine class skeleton with constructor (factoryRegistry, behaviorRegistry) in src/scene/CircuitEngine.ts
-- [ ] T016 [US1] Implement _mode property and mode getter in src/scene/CircuitEngine.ts
-- [ ] T017 [US1] Implement _createSharedResources() helper to create all shared Three.js objects in src/scene/CircuitEngine.ts
-- [ ] T018 [US1] Implement initialize() to create shared resources and both controllers in src/scene/CircuitEngine.ts
-- [ ] T019 [US1] Implement setMode('simulation') transition logic in src/scene/CircuitEngine.ts
-- [ ] T020 [US1] Implement simulation playback delegates (play, pause, step, stop) in src/scene/CircuitEngine.ts
-- [ ] T021 [US1] Implement mode guard for edit-only operations (setActiveTool, setEditModeEnabled) in src/scene/CircuitEngine.ts
+- [X] T015 [US1] Create CircuitEngine class skeleton with constructor (factoryRegistry, behaviorRegistry) in src/scene/CircuitEngine.ts
+- [X] T016 [US1] Implement _mode property and mode getter in src/scene/CircuitEngine.ts
+- [X] T017 [US1] Implement _createSharedResources() helper to create all shared Three.js objects in src/scene/CircuitEngine.ts
+- [X] T018 [US1] Implement initialize() to create shared resources and both controllers in src/scene/CircuitEngine.ts
+- [X] T019 [US1] Implement setMode('simulation') transition logic in src/scene/CircuitEngine.ts
+- [X] T020 [US1] Implement simulation playback delegates (play, pause, step, stop) in src/scene/CircuitEngine.ts
+- [X] T021 [US1] Implement mode guard for edit-only operations (setActiveTool, setEditModeEnabled) in src/scene/CircuitEngine.ts
 
 **Checkpoint**: Edit→Simulation mode switch works. Users can load circuit in edit mode and run simulation.
 
@@ -78,17 +78,17 @@
 
 ### Tests for User Story 2
 
-- [ ] T022 [P] [US2] Test setMode('edit') stops simulation automatically in tests/scene/CircuitEngine.test.ts
-- [ ] T023 [P] [US2] Test circuit reverts to design state (not runtime state) in tests/scene/CircuitEngine.test.ts
-- [ ] T024 [P] [US2] Test simulation-only operations throw in edit mode in tests/scene/CircuitEngine.test.ts
-- [ ] T025 [P] [US2] Test same-mode switch is no-op in tests/scene/CircuitEngine.test.ts
+- [X] T022 [P] [US2] Test setMode('edit') stops simulation automatically in tests/scene/CircuitEngine.test.ts
+- [X] T023 [P] [US2] Test circuit reverts to design state (not runtime state) in tests/scene/CircuitEngine.test.ts
+- [X] T024 [P] [US2] Test simulation-only operations throw in edit mode in tests/scene/CircuitEngine.test.ts
+- [X] T025 [P] [US2] Test same-mode switch is no-op in tests/scene/CircuitEngine.test.ts
 
 ### Implementation for User Story 2
 
-- [ ] T026 [US2] Implement setMode('edit') transition logic in src/scene/CircuitEngine.ts
-- [ ] T027 [US2] Implement _resetSimulationVisuals() to restore circuit design state colors in src/scene/CircuitEngine.ts
-- [ ] T028 [US2] Implement mode guard for simulation-only operations (play, pause, step, stop) in src/scene/CircuitEngine.ts
-- [ ] T029 [US2] Add early return for same-mode switch to setMode() in src/scene/CircuitEngine.ts
+- [X] T026 [US2] Implement setMode('edit') transition logic in src/scene/CircuitEngine.ts
+- [X] T027 [US2] Implement _resetSimulationVisuals() to restore circuit design state colors in src/scene/CircuitEngine.ts
+- [X] T028 [US2] Implement mode guard for simulation-only operations (play, pause, step, stop) in src/scene/CircuitEngine.ts
+- [X] T029 [US2] Add early return for same-mode switch to setMode() in src/scene/CircuitEngine.ts
 
 **Checkpoint**: Bidirectional mode switching works. Users can iterate between edit and simulation.
 
@@ -102,18 +102,18 @@
 
 ### Tests for User Story 3
 
-- [ ] T030 [P] [US3] Test initialize() creates scene, camera, MapControls in tests/scene/CircuitEngine.test.ts
-- [ ] T031 [P] [US3] Test initialize() emits ready event in tests/scene/CircuitEngine.test.ts
-- [ ] T032 [P] [US3] Test setCircuit() loads circuit and emits circuitLoaded in tests/scene/CircuitEngine.test.ts
-- [ ] T033 [P] [US3] Test setCircuit(null) clears circuit and emits circuitCleared in tests/scene/CircuitEngine.test.ts
+- [X] T030 [P] [US3] Test initialize() creates scene, camera, MapControls in tests/scene/CircuitEngine.test.ts
+- [X] T031 [P] [US3] Test initialize() emits ready event in tests/scene/CircuitEngine.test.ts
+- [X] T032 [P] [US3] Test setCircuit() loads circuit and emits circuitLoaded in tests/scene/CircuitEngine.test.ts
+- [X] T033 [P] [US3] Test setCircuit(null) clears circuit and emits circuitCleared in tests/scene/CircuitEngine.test.ts
 
 ### Implementation for User Story 3
 
-- [ ] T034 [US3] Implement setCircuit() to load circuit via edit controller in src/scene/CircuitEngine.ts
-- [ ] T035 [US3] Implement getCircuit() getter in src/scene/CircuitEngine.ts
-- [ ] T036 [US3] Implement Three.js access methods (getScene, getCamera, getControls) in src/scene/CircuitEngine.ts
-- [ ] T037 [US3] Implement onContainerResize() delegate in src/scene/CircuitEngine.ts
-- [ ] T038 [US3] Implement getEditController() and getSimulationController() for advanced access in src/scene/CircuitEngine.ts
+- [X] T034 [US3] Implement setCircuit() to load circuit via edit controller in src/scene/CircuitEngine.ts
+- [X] T035 [US3] Implement getCircuit() getter in src/scene/CircuitEngine.ts
+- [X] T036 [US3] Implement Three.js access methods (getScene, getCamera, getControls) in src/scene/CircuitEngine.ts
+- [X] T037 [US3] Implement onContainerResize() delegate in src/scene/CircuitEngine.ts
+- [X] T038 [US3] Implement getEditController() and getSimulationController() for advanced access in src/scene/CircuitEngine.ts
 
 **Checkpoint**: Unified initialization works. Developers can integrate with 5 lines of code.
 
@@ -127,17 +127,17 @@
 
 ### Tests for User Story 4
 
-- [ ] T039 [P] [US4] Test on() subscribes to controller events in tests/scene/CircuitEngine.test.ts
-- [ ] T040 [P] [US4] Test events from active controller are forwarded in tests/scene/CircuitEngine.test.ts
-- [ ] T041 [P] [US4] Test modeChanged event is emitted on mode switch in tests/scene/CircuitEngine.test.ts
-- [ ] T042 [P] [US4] Test off() unsubscribes from events in tests/scene/CircuitEngine.test.ts
+- [X] T039 [P] [US4] Test on() subscribes to controller events in tests/scene/CircuitEngine.test.ts
+- [X] T040 [P] [US4] Test events from active controller are forwarded in tests/scene/CircuitEngine.test.ts
+- [X] T041 [P] [US4] Test modeChanged event is emitted on mode switch in tests/scene/CircuitEngine.test.ts
+- [X] T042 [P] [US4] Test off() unsubscribes from events in tests/scene/CircuitEngine.test.ts
 
 ### Implementation for User Story 4
 
-- [ ] T043 [US4] Make CircuitEngine extend EventEmitter<CircuitEngineEventMap> in src/scene/CircuitEngine.ts
-- [ ] T044 [US4] Implement _setupEventForwarding() using onAny() on both controllers in src/scene/CircuitEngine.ts
-- [ ] T045 [US4] Emit modeChanged event in setMode() after transition completes in src/scene/CircuitEngine.ts
-- [ ] T046 [US4] Implement _teardownEventForwarding() for dispose cleanup in src/scene/CircuitEngine.ts
+- [X] T043 [US4] Make CircuitEngine extend EventEmitter<CircuitEngineEventMap> in src/scene/CircuitEngine.ts
+- [X] T044 [US4] Implement _setupEventForwarding() using onAny() on both controllers in src/scene/CircuitEngine.ts
+- [X] T045 [US4] Emit modeChanged event in setMode() after transition completes in src/scene/CircuitEngine.ts
+- [X] T046 [US4] Implement _teardownEventForwarding() for dispose cleanup in src/scene/CircuitEngine.ts
 
 **Checkpoint**: Event system works. Developers can subscribe once and receive events from both modes.
 
@@ -151,18 +151,18 @@
 
 ### Tests for User Story 5
 
-- [ ] T047 [P] [US5] Test dispose() stops simulation if running in tests/scene/CircuitEngine.test.ts
-- [ ] T048 [P] [US5] Test dispose() clears all event subscriptions in tests/scene/CircuitEngine.test.ts
-- [ ] T049 [P] [US5] Test dispose() releases Three.js resources in tests/scene/CircuitEngine.test.ts
-- [ ] T050 [P] [US5] Test operations throw after dispose in tests/scene/CircuitEngine.test.ts
+- [X] T047 [P] [US5] Test dispose() stops simulation if running in tests/scene/CircuitEngine.test.ts
+- [X] T048 [P] [US5] Test dispose() clears all event subscriptions in tests/scene/CircuitEngine.test.ts
+- [X] T049 [P] [US5] Test dispose() releases Three.js resources in tests/scene/CircuitEngine.test.ts
+- [X] T050 [P] [US5] Test operations throw after dispose in tests/scene/CircuitEngine.test.ts
 
 ### Implementation for User Story 5
 
-- [ ] T051 [US5] Implement dispose() to stop simulation and clear runner in src/scene/CircuitEngine.ts
-- [ ] T052 [US5] Implement dispose() to deactivate tools and clear selection in src/scene/CircuitEngine.ts
-- [ ] T053 [US5] Implement dispose() to tear down event forwarding in src/scene/CircuitEngine.ts
-- [ ] T054 [US5] Implement dispose() to dispose both controllers in src/scene/CircuitEngine.ts
-- [ ] T055 [US5] Implement isInitialized and isDisposed getters with state guards in src/scene/CircuitEngine.ts
+- [X] T051 [US5] Implement dispose() to stop simulation and clear runner in src/scene/CircuitEngine.ts
+- [X] T052 [US5] Implement dispose() to deactivate tools and clear selection in src/scene/CircuitEngine.ts
+- [X] T053 [US5] Implement dispose() to tear down event forwarding in src/scene/CircuitEngine.ts
+- [X] T054 [US5] Implement dispose() to dispose both controllers in src/scene/CircuitEngine.ts
+- [X] T055 [US5] Implement isInitialized and isDisposed getters with state guards in src/scene/CircuitEngine.ts
 
 **Checkpoint**: Full lifecycle works. Engine can be safely mounted/unmounted without leaks.
 
@@ -172,11 +172,11 @@
 
 **Purpose**: Exports, documentation, and final integration
 
-- [ ] T056 [P] Create re-export at src/CircuitEngine.ts for convenient top-level import
-- [ ] T057 [P] Add CircuitEngine export to src/index.ts
-- [ ] T058 [P] Add JSDoc documentation to all public methods in src/scene/CircuitEngine.ts
-- [ ] T059 Validate quickstart.md examples work correctly
-- [ ] T060 Run npm test && npm run lint to verify all tests pass and no lint errors
+- [X] T056 [P] Create re-export at src/CircuitEngine.ts for convenient top-level import
+- [X] T057 [P] Add CircuitEngine export to src/index.ts
+- [X] T058 [P] Add JSDoc documentation to all public methods in src/scene/CircuitEngine.ts
+- [X] T059 Validate quickstart.md examples work correctly
+- [X] T060 Run npm test && npm run lint to verify all tests pass and no lint errors
 
 ---
 
