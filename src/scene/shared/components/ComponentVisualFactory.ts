@@ -12,6 +12,7 @@ import type { ComponentState } from '@/core/simulation/states/ComponentState';
 import { ENodeSourceType } from '@/core/types/ENodeSourceType';
 import * as THREE from 'three';
 import { HitboxLayers } from '../LayerConstants';
+import type { ConfigFormDefinition } from '../types/ConfigTypes';
 
 /**
  * Interface for component visual factories
@@ -144,6 +145,41 @@ export interface IComponentVisualFactory {
    *   (e.g., LED glow, switch contactor rotation)
    */
   updateAnimation(object3D: THREE.Object3D, state: ComponentState | null): void;
+
+  /**
+   * Get the config form definition for this component type
+   *
+   * @returns Form definition with field specifications, or null if no config
+   *
+   * @remarks
+   * Defines the UI controls for editing component configuration.
+   * Return null for components with no configurable options.
+   */
+  getConfigFormDefinition(): ConfigFormDefinition | null;
+
+  /**
+   * Map core component config (string values) to form data (typed values)
+   *
+   * @param config - Core config from Component.config
+   * @returns Form data with appropriate types for UI controls
+   *
+   * @remarks
+   * Called when config panel opens to initialize form controls.
+   * Converts core string values to UI-appropriate types (e.g., "open" → true).
+   */
+  mapCoreConfigToForm(config: Map<string, string>): Map<string, any>;
+
+  /**
+   * Map form data (typed values) back to core config (string values)
+   *
+   * @param formData - Current form values from UI
+   * @returns Core config ready for Component.setAllParameters()
+   *
+   * @remarks
+   * Called on each value change to update Component.config.
+   * Converts UI values back to core string format (e.g., true → "open").
+   */
+  mapFormToCoreConfig(formData: Map<string, any>): Map<string, string>;
 }
 
 /**
@@ -548,6 +584,37 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
   updateAnimation(_object3D: THREE.Object3D, _state: ComponentState | null): void {
     // Default: no-op for static components
     // Subclasses override for component-specific animation
+  }
+
+  /**
+   * Get config form definition (default: null - no config)
+   *
+   * Override in subclasses that have configurable options.
+   */
+  getConfigFormDefinition(): ConfigFormDefinition | null {
+    return null;
+  }
+
+  /**
+   * Map core config to form data (default: identity mapping)
+   *
+   * Override in subclasses that need type conversions.
+   */
+  mapCoreConfigToForm(config: Map<string, string>): Map<string, any> {
+    return new Map(config);
+  }
+
+  /**
+   * Map form data to core config (default: convert all to strings)
+   *
+   * Override in subclasses that need type conversions.
+   */
+  mapFormToCoreConfig(formData: Map<string, any>): Map<string, string> {
+    const config = new Map<string, string>();
+    for (const [key, value] of formData.entries()) {
+      config.set(key, String(value));
+    }
+    return config;
   }
 }
 

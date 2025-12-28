@@ -2,6 +2,7 @@ import { ComponentVisualFactoryBase } from './ComponentVisualFactory';
 import type { Component } from '@/core/Component';
 import type { ComponentState } from '@/core/simulation/states/ComponentState';
 import type { SwitchState } from '@/core/simulation/states/SwitchState';
+import type { ConfigFormDefinition } from '../types/ConfigTypes';
 import * as THREE from 'three';
 
 /**
@@ -122,6 +123,58 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
     return group;
   }
 
+  /**
+   * Get config form definition for Switch (T024)
+   *
+   * @returns Form definition with initialState boolean field
+   */
+  override getConfigFormDefinition(): ConfigFormDefinition | null {
+    return {
+      fields: [
+        {
+          key: 'initialState',
+          label: 'Open at start',
+          type: 'boolean',
+        },
+        {
+          key: 'size',
+          label: 'Size',
+          type: 'number',
+        }
+      ],
+    };
+  }
+
+  /**
+   * Map core config to form data (T024)
+   * Converts "open"/"closed" strings to boolean
+   *
+   * @param config - Core component config
+   * @returns Form data with boolean initialState
+   */
+  override mapCoreConfigToForm(config: Map<string, string>): Map<string, any> {
+    const formData = new Map<string, any>();
+    const initialState = config.get('initialState');
+    formData.set('initialState', initialState === 'open');
+    formData.set('size', parseFloat(config.get('size') || '1'));
+    return formData;
+  }
+
+  /**
+   * Map form data to core config (T024)
+   * Converts boolean to "open"/"closed" strings
+   *
+   * @param formData - Form data with boolean initialState
+   * @returns Core config with string initialState
+   */
+  override mapFormToCoreConfig(formData: Map<string, any>): Map<string, string> {
+    const config = new Map<string, string>();
+    const initialState = formData.get('initialState');
+    config.set('initialState', initialState ? 'open' : 'closed');
+    config.set('size', formData.get('size').toString());
+    return config;
+  }
+
   override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>){
     const contactorGroup = this.findContactorGroup(object3D);
     if(!contactorGroup) return;
@@ -132,6 +185,11 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
     else {
       contactorGroup.userData.initialState = 'open';
     }
+
+    const scale = parseFloat(config.get('size') || '1');
+    object3D.scale.set(scale, scale, scale);
+
+
     this.updateAnimation(object3D, null);
   }
 

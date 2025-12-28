@@ -3,6 +3,7 @@ import type { Component } from '@/core/Component';
 import type { ComponentState } from '@/core/simulation/states/ComponentState';
 import {LightbulbState} from "@/core/simulation/states";
 import * as THREE from 'three';
+import type {ConfigFormDefinition} from "../types/ConfigTypes";
 
 /**
  * Visual factory for Lightbulb components
@@ -74,8 +75,48 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
     pin2Group.rotateY(Math.PI);
     group.add(pin2Group);
 
+    this.updateFromConfiguration(group, component.config);
     return group;
   }
+
+  /**
+   * Get config form definition for Lightbulb
+   *
+   * @returns Form definition with size
+   */
+  override getConfigFormDefinition(): ConfigFormDefinition | null {
+    return {
+      fields: [
+        { key: 'size', label: 'Size', type: 'number' }
+      ],
+    };
+  }
+
+  override mapCoreConfigToForm(config: Map<string, string>): Map<string, any> {
+    const formData = new Map<string, any>();
+    formData.set('size', parseFloat(config.get('size') || '1'));
+    return formData;
+  }
+
+  /**
+   * Map form data to core config (T024)
+   * Converts boolean to "open"/"closed" strings
+   *
+   * @param formData - Form data with boolean initialState
+   * @returns Core config with string initialState
+   */
+  override mapFormToCoreConfig(formData: Map<string, any>): Map<string, string> {
+    const config = new Map<string, string>();
+    config.set('size', formData.get('size').toString());
+    return config;
+  }
+
+  override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>){
+    const scale = parseFloat(config.get('size') || '1');
+    object3D.scale.set(scale, scale, scale);
+    this.updateAnimation(object3D, null);
+  }
+
 
   /**
    * Update Lightbulb animation based on simulation state

@@ -158,6 +158,10 @@ interface ClipboardData {
    * Rotation of component to paste
    */
   rotation: Euler;
+  /** Original configuration data for the component */
+  config: Map<string, string>;
+  /** Original pins sourceTypes */
+  pinSources: Array<ENodeSourceType | undefined | null>;
 }
 
 /**
@@ -348,6 +352,15 @@ export class BuildTool implements IEditingTool {
     const hoveredElement = this._controller.getHoveredElement();
 
     if (this.mode === 'idle') {
+      // Handle Ctrl+Shift+click for config panel (T011, T012)
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && hoveredElement) {
+        if (hoveredElement.type === 'component') {
+          this.openConfigPanel(hoveredElement.id, event);
+        }
+        // Early exit - don't start other operations
+        return;
+      }
+
       // Handle Ctrl+click for sourceType or fast component config cycling
       if ((event.ctrlKey || event.metaKey) && hoveredElement) {
         if(hoveredElement.type === 'enode'){
@@ -1390,9 +1403,16 @@ export class BuildTool implements IEditingTool {
     const component = circuit.getComponent(componentId);
     if (!component) return;
 
+    const sources = component.pins.map((pinId) => {
+      const enode = circuit.getENode(pinId);
+      return enode ? enode.source : null;
+    })
+
     this.clipboard = {
       componentType: component.type,
       rotation: gridToWorldRotation(component.rotation),
+      pinSources: sources,
+      config: new Map(component.config), // Deep copy of config
     };
   }
 
@@ -1412,7 +1432,9 @@ export class BuildTool implements IEditingTool {
     this._controller.addComponent(
       this.clipboard.componentType,
       worldPosition,
-      this.clipboard.rotation
+      this.clipboard.rotation,
+      this.clipboard.config,
+      this.clipboard.pinSources
     );
   }
 
@@ -1428,5 +1450,16 @@ export class BuildTool implements IEditingTool {
 
     const nextSourceType = getNextSourceType(hitbox.parent.userData.sourceType);
     this._controller.updateEnodeSourceType(enodeId, nextSourceType || null);
+  }
+
+  /**
+   * Open config panel for component (T014)
+   * Converts component world position to screen coordinates and opens panel
+   * @param componentId - UUID of the component to configure
+   * @param event - Mouse event for screen position
+   */
+  private openConfigPanel(componentId: UUID, event: MouseEvent): void {
+    const screenPosition = { x: event.clientX, y: event.clientY };
+    this._controller.openConfigPanel(componentId, screenPosition);
   }
 }

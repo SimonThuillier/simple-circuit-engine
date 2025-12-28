@@ -2,6 +2,8 @@ import { ComponentVisualFactoryBase } from './ComponentVisualFactory';
 import type { Component } from '@/core/Component';
 import type { ComponentState } from '@/core/simulation/states/ComponentState';
 import type { SmallLEDState } from '@/core/simulation/states/SmallLEDState';
+import type { ConfigFormDefinition } from '../types/ConfigTypes';
+import { presetOrHexToHex, hexToPresetOrHex } from '../utils/ColorPresets';
 import * as THREE from 'three';
 
 /**
@@ -62,7 +64,94 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
     outputPinGroup.rotateY(Math.PI);
     group.add(outputPinGroup);
 
+    this.updateFromConfiguration(group, component.config);
     return group;
+  }
+
+  /**
+   * Get config form definition for SmallLED (T027)
+   *
+   * @returns Form definition with activeColor and idleColor color fields
+   */
+  override getConfigFormDefinition(): ConfigFormDefinition | null {
+    return {
+      fields: [
+        { key: 'activeColor', label: 'Active Color', type: 'color' },
+        { key: 'idleColor', label: 'Idle Color', type: 'color' },
+        { key: 'size', label: 'Size', type: 'number' }
+      ],
+    };
+  }
+
+  /**
+   * Map core config to form data (T027)
+   * Converts hex/preset strings to hex values for color picker
+   *
+   * @param config - Core component config
+   * @returns Form data with hex color strings
+   */
+  override mapCoreConfigToForm(config: Map<string, string>): Map<string, any> {
+    const formData = new Map<string, any>();
+    const activeColor = config.get('activeColor') || '#ffff00';
+    const idleColor = config.get('idleColor') || '#ffffff';
+
+    // Convert preset names to hex if needed
+    formData.set('activeColor', presetOrHexToHex(activeColor));
+    formData.set('idleColor', presetOrHexToHex(idleColor));
+    formData.set('size', parseFloat(config.get('size') || '1'));
+
+    return formData;
+  }
+
+  /**
+   * Map form data to core config (T027)
+   * Converts hex colors to preset names if they match, otherwise keeps hex
+   *
+   * @param formData - Form data with hex color strings
+   * @returns Core config with hex or preset name strings
+   */
+  override mapFormToCoreConfig(formData: Map<string, any>): Map<string, string> {
+    const config = new Map<string, string>();
+    const activeColor = formData.get('activeColor');
+    const idleColor = formData.get('idleColor');
+
+    // Convert hex to preset name if it matches a preset
+    if (activeColor) {
+      config.set('activeColor', hexToPresetOrHex(activeColor));
+    }
+    if (idleColor) {
+      config.set('idleColor', hexToPresetOrHex(idleColor));
+    }
+
+    config.set('size', formData.get('size').toString());
+    return config;
+  }
+
+  /**
+   * Update visual from configuration (T022)
+   * Updates LED color based on activeColor config
+   *
+   * @param object3D - The Object3D created by createVisual()
+   * @param config - Component configuration map
+   *
+   * @remarks
+   * Updates the LED mesh color based on activeColor config value
+   * Supports both hex colors and color presets
+   */
+  override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>): void {
+    const ledMesh = this.findLedMesh(object3D);
+    if (!ledMesh) return;
+
+    const activeColor = config.get('activeColor');
+    if (activeColor) {
+      // Convert preset to hex if needed, then parse
+      const hexColor = presetOrHexToHex(activeColor);
+      const colorHex = parseInt(hexColor.replace('#', ''), 16);
+      ledMesh.material.color.setHex(colorHex);
+    }
+
+    const scale = parseFloat(config.get('size') || '1');
+    object3D.scale.set(scale, scale, scale);
   }
 
   /**
