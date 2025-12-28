@@ -482,8 +482,18 @@ export class CircuitRunnerController extends AbstractCircuitController {
    */
   private _handleRegularClick(clickedElement: HoveredElement) {
     if (!this._runner) return; // only process if we have a runner
-    if (clickedElement.type !== 'component') return;
-    const componentGroup = clickedElement.object3D.parent;
+    if (clickedElement.type === 'wire') return;
+    let componentGroup = null;
+    if( clickedElement.type === 'component'){
+      componentGroup = clickedElement.object3D.parent;
+    }
+    else if (clickedElement.type === 'enode') {
+      // for pin enodes, get parent component
+      const enode = this._circuit?.getENode(clickedElement.id);
+      if (!enode) return;
+      if(!enode.component) return;
+      componentGroup = this._componentObject3Ds.get(enode.component);
+    }
     if (!componentGroup) return;
     const componentType = componentGroup.userData.componentType;
     const componentId = componentGroup.userData.componentId;

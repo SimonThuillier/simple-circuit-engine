@@ -29,6 +29,7 @@ import type { Euler } from 'three';
 import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
 import { AbstractCircuitController } from '../shared/AbstractCircuitController';
 import type { Circuit } from '@/core/Circuit';
+import { ConfigPanelManager } from './ConfigPanelManager';
 
 /**
  * Static Circuit Controller Implementation
@@ -44,6 +45,8 @@ export class CircuitController extends AbstractCircuitController {
   public readonly circuitWriter: CircuitWriter;
   // Selection manager
   private _selectionManager: SelectionManager | null = null;
+  // Config panel manager
+  private _configPanelManager: ConfigPanelManager | null = null;
   // Circuit RepositoryTool system
   private _tools: Map<ToolType, IEditingTool> = new Map();
   private _activeTool: ToolType | null = null;
@@ -77,6 +80,8 @@ export class CircuitController extends AbstractCircuitController {
     this._initializeTools();
     // Initialize Selection Manager
     this._initializeSelectionManager();
+    // Initialize Config Panel Manager
+    this._initializeConfigPanelManager();
   }
 
   protected emitReady() {
@@ -117,6 +122,11 @@ export class CircuitController extends AbstractCircuitController {
   protected onDispose(): void {
     this.setEditMode(false); // Ensure edit mode and all tools are disabled
 
+    // dispose ConfigPanelManager
+    if (this._configPanelManager) {
+      this._configPanelManager.dispose();
+      this._configPanelManager = null;
+    }
     // dispose SelectionManager
     if (this._selectionManager) {
       this._selectionManager.dispose();
@@ -289,6 +299,47 @@ export class CircuitController extends AbstractCircuitController {
     });
 
     this._container.addEventListener('pointerdown', this.handlePointerDown);
+  }
+
+  /**
+   * Initialize ConfigPanelManager (T013)
+   * @private
+   */
+  private _initializeConfigPanelManager(): void {
+    if (!this._scene || !this._camera || !this._container) {
+      throw new Error('Scene, camera and container must be initialized before ConfigPanelManager');
+    }
+
+    // Create ConfigPanelManager instance
+    this._configPanelManager = new ConfigPanelManager(
+      this.factoryRegistry,
+      (componentId: UUID) => this.getObject3D('component', componentId),
+      this._camera,
+      this._container
+    );
+  }
+
+  /**
+   * Open the config panel for a component (T014)
+   *
+   * @param componentId - UUID of the component to edit
+   * @param screenPosition - Screen coordinates for panel positioning
+   * @returns true if panel opened, false if component has no config
+   */
+  openConfigPanel(componentId: UUID, screenPosition: { x: number; y: number }): boolean {
+    this._checkInitialized();
+    if (!this._configPanelManager) {
+      throw new Error('ConfigPanelManager not initialized');
+    }
+    if(!this._circuit) {
+      return false;
+    }
+    const component = this._circuit.getComponent(componentId);
+    if (!component) {
+      console.warn(`ConfigPanelManager.open: Component ${componentId} not found`);
+      return false;
+    }
+    return this._configPanelManager.open(component, screenPosition);
   }
 
   /**

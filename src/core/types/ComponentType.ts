@@ -79,7 +79,8 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTy
       ['output', undefined],
     ]),
     config: new Map([
-        ['initialState', 'open']
+        ['initialState', 'open'],
+        ['size', '1']
     ]),
   },
   [ComponentType.Battery]: {
@@ -98,7 +99,9 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTy
       ['pin1', undefined],
       ['pin2', undefined],
     ]),
-    config: new Map([]),
+    config: new Map([
+      ['size', '1']
+    ]),
   },
   [ComponentType.Relay]: {
     id: ComponentType.Relay,
@@ -136,6 +139,7 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTy
       ['mode', 'symmetric'],
       ['activeColor', 'red'],
       ['idleColor', 'black'],
+      ['size', '1']
     ]),
   },
   [ComponentType.RectangleLED]: {
@@ -149,6 +153,7 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTy
       ['mode', 'symmetric'],
       ['activeColor', 'red'],
       ['idleColor', 'black'],
+      ['size', '1']
     ]),
   },
   [ComponentType.Cube]: {

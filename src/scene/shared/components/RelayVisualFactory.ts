@@ -2,6 +2,7 @@ import { ComponentVisualFactoryBase } from './ComponentVisualFactory';
 import type { Component } from '@/core/Component';
 import type { ComponentState } from '@/core/simulation/states/ComponentState';
 import type { RelayState } from '@/core/simulation/states/RelayState';
+import type { ConfigFormDefinition } from '../types/ConfigTypes';
 import * as THREE from 'three';
 
 /**
@@ -164,6 +165,51 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
     // take config into account
     this.updateFromConfiguration(group, component.config);
     return group;
+  }
+
+  /**
+   * Get config form definition for Relay (T025)
+   *
+   * @returns Form definition with activationLogic boolean field
+   */
+  override getConfigFormDefinition(): ConfigFormDefinition | null {
+    return {
+      fields: [
+        {
+          key: 'activationLogic',
+          label: 'Activation Logic',
+          type: 'boolean',
+        },
+      ],
+    };
+  }
+
+  /**
+   * Map core config to form data (T025)
+   * Converts "positive"/"negative" strings to boolean
+   *
+   * @param config - Core component config
+   * @returns Form data with boolean activationLogic
+   */
+  override mapCoreConfigToForm(config: Map<string, string>): Map<string, any> {
+    const formData = new Map<string, any>();
+    const activationLogic = config.get('activationLogic');
+    formData.set('activationLogic', activationLogic === 'positive');
+    return formData;
+  }
+
+  /**
+   * Map form data to core config (T025)
+   * Converts boolean to "positive"/"negative" strings
+   *
+   * @param formData - Form data with boolean activationLogic
+   * @returns Core config with string activationLogic
+   */
+  override mapFormToCoreConfig(formData: Map<string, any>): Map<string, string> {
+    const config = new Map<string, string>();
+    const activationLogic = formData.get('activationLogic');
+    config.set('activationLogic', activationLogic ? 'positive' : 'negative');
+    return config;
   }
 
   override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>){
