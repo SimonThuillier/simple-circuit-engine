@@ -146,7 +146,7 @@ check_existing_branches() {
         spec_dirs=$(find "$specs_dir" -maxdepth 1 -type d -name "[0-9]*-${short_name}" 2>/dev/null | xargs -n1 basename 2>/dev/null | sed 's/-.*//' | sort -n)
     fi
     
-    # Combine all sources and get the highest number
+    # Combine all pinSources and get the highest number
     local max_num=0
     for num in $remote_branches $local_branches $spec_dirs; do
         if [ "$num" -gt "$max_num" ]; then

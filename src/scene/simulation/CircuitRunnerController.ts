@@ -167,6 +167,19 @@ export class CircuitRunnerController extends AbstractCircuitController {
     }
     this._runner = null;
 
+    // When using shared resources, skip visual management (edit controller handles it)
+    // Just update circuit reference and create runner
+    if (this._useSharedResources) {
+      this._circuit = circuit;
+      this.wireVisualManager.setCircuit(circuit);
+      if (circuit) {
+        this._gridHalfSize = Math.ceil(circuit.metadata.size / 2);
+        this._runner = new CircuitRunner(circuit, this._behaviorRegistry);
+      }
+      return;
+    }
+
+    // Standalone mode: full visual management
     this._setCircuit(circuit);
   }
 
@@ -529,12 +542,6 @@ export class CircuitRunnerController extends AbstractCircuitController {
       }
       for (const enode of enodes) {
         this._createEnodeObject3D(enode);
-        // For edited pin enodes, update source type visual (component creates them only in their default mode)
-        if (enode.type === ENodeType.Pin && enode.source) {
-          const pinGroup = this._enodeObject3Ds.get(enode.id);
-          if (!pinGroup) continue;
-          this.factoryRegistry.getFallbackFactory().updatePinSourceType(pinGroup, enode.source);
-        }
       }
       for (const wire of wires) {
         this._createWireObject3D(wire);
@@ -577,6 +584,15 @@ export class CircuitRunnerController extends AbstractCircuitController {
 
       this._scene!.add(mesh);
       this._indexComponentObject3D(component.id, mesh);
+
+      // For edited pin enodes, update source type visual (component visual factory creates them only in their default mode)
+      for(const pinId of component.pins) {
+        const enode = this._circuit!.getENode(pinId);
+        if (!enode || !enode.source) continue;
+        const pinGroup = this._enodeObject3Ds.get(enode.id);
+        if (!pinGroup) continue;
+        this.factoryRegistry.getFallbackFactory().updatePinSourceType(pinGroup, enode.source);
+      }
     } catch (error) {
       const err = error as Error;
       console.warn(`Failed to create mesh for component ${component.id}:`, err.message);

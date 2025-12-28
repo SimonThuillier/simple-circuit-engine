@@ -34,7 +34,6 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
       false, 0, Math.PI * 2);
 
   createVisual(component: Component): THREE.Object3D {
-    console.log('Creating small Transistor visual for component', component.id);
     // Root group (not rendered, just organizational)
     const group = new THREE.Group();
     group.userData = {

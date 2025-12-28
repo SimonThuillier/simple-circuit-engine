@@ -146,6 +146,10 @@ export class Component {
     return Array.from(pinLabels)[pinIndex] || undefined;
   }
 
+  setAllParameters(config: Map<string, string>): void {
+    this.config = new Map<string, string>(config);
+  }
+
   setParameter(key: string, value: string): void {
     this.config.set(key, value);
   }

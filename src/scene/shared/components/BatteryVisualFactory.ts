@@ -14,7 +14,6 @@ import { ENodeSourceType } from '@/core/types/ENodeSourceType';
  */
 export class BatteryVisualFactory extends ComponentVisualFactoryBase {
   createVisual(component: Component): THREE.Object3D {
-    console.log('Creating battery visual for component', component.id);
     // Root group (not rendered, just organizational)
     const group = new THREE.Group();
     group.userData = {

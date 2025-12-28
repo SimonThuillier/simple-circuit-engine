@@ -123,7 +123,7 @@ interface NodeElectricalState {
 
   /**
    * True only if the node is locked from state changes at circuit build time
-   * (ex: battery pins or other fixed-voltage/current sources).
+   * (ex: battery pins or other fixed-voltage/current pinSources).
    * Important: Those nodes should never have their electrical state modified by the simulation engine!
    * Always false for wires.
    */
@@ -532,14 +532,14 @@ console.log(`Events scheduled: ${result.scheduledEventCount}`);
 
 ### 9. ReachabilityResult
 
-Internal type used by `computeReachability()` to track which nodes and wires are reachable from voltage/current sources during conductivity propagation.
+Internal type used by `computeReachability()` to track which nodes and wires are reachable from voltage/current pinSources during conductivity propagation.
 
 ```typescript
 type ReachabilityResult = {
-  /** Set of ENode UUIDs reachable from sources */
+  /** Set of ENode UUIDs reachable from pinSources */
   nodes: Set<UUID>;
 
-  /** Set of Wire UUIDs reachable from sources */
+  /** Set of Wire UUIDs reachable from pinSources */
   wires: Set<UUID>;
 };
 ```
@@ -547,7 +547,7 @@ type ReachabilityResult = {
 **Usage**:
 - Internal to `CircuitRunner.propagateConductivity()`
 - Not exposed in public API
-- Used during BFS traversal from voltage/current sources
+- Used during BFS traversal from voltage/current pinSources
 
 ---
 

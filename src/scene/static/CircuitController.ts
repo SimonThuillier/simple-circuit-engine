@@ -432,17 +432,13 @@ export class CircuitController extends AbstractCircuitController {
     const wires = this._circuit.getAllWires();
     const enodes = this._circuit.getAllENodes();
 
+    console.log('full update');
+
     for (const component of components) {
       this._createComponentObject3D(component);
     }
     for (const enode of enodes) {
       this._createEnodeObject3D(enode);
-      // For edited pin enodes, update source type visual (component creates them only in their default mode)
-      if (enode.type === ENodeType.Pin && enode.source) {
-        const pinGroup = this._enodeObject3Ds.get(enode.id);
-        if (!pinGroup) continue;
-        this.factoryRegistry.getFallbackFactory().updatePinSourceType(pinGroup, enode.source);
-      }
     }
     for (const wire of wires) {
       this._createWireObject3D(wire);
@@ -465,6 +461,15 @@ export class CircuitController extends AbstractCircuitController {
 
       this._scene!.add(mesh);
       this._indexComponentObject3D(component.id, mesh);
+
+      // For edited pin enodes, update source type visual (component visual factory creates them only in their default mode)
+      for(const pinId of component.pins) {
+        const enode = this._circuit!.getENode(pinId);
+        if (!enode || !enode.source) continue;
+        const pinGroup = this._enodeObject3Ds.get(enode.id);
+        if (!pinGroup) continue;
+        this.factoryRegistry.getFallbackFactory().updatePinSourceType(pinGroup, enode.source);
+      }
     } catch (error) {
       const err = error as Error;
       console.warn(`Failed to create mesh for component ${component.id}:`, err.message);
@@ -559,8 +564,8 @@ export class CircuitController extends AbstractCircuitController {
     this._enodeObject3Ds.delete(id);
   }
 
-  addBranchingPoint(worldPosition: THREE.Vector3): ENode {
-    const branchingPoint = this.circuitWriter.saveAddBranchingPoint(worldPosition);
+  addBranchingPoint(worldPosition: THREE.Vector3, sourceType?: ENodeSourceType| undefined): ENode {
+    const branchingPoint = this.circuitWriter.saveAddBranchingPoint(worldPosition, sourceType);
     // Create and add bp visual to scene
     this._createEnodeObject3D(branchingPoint);
     return branchingPoint;
@@ -651,11 +656,21 @@ export class CircuitController extends AbstractCircuitController {
    * @param type - Component type to add
    * @param worldPosition - Position in 3D world coordinates (x, z)
    * @param rotation - 3D world rotation
+   * @param config - Optional configuration map for the component
+   * @param pinSources - Optional array of source types for the component pins
    * @returns The created Component
    */
-  addComponent(type: ComponentType, worldPosition: THREE.Vector3, rotation: Euler): Component {
+  addComponent(
+      type: ComponentType,
+      worldPosition: THREE.Vector3,
+      rotation: Euler,
+      config?: Map<string, string> | undefined,
+      pinSources?: Array<ENodeSourceType | undefined | null> | undefined
+  ): Component {
     // Create component in circuit model
-    const component = this.circuitWriter.saveAddComponent(type, worldPosition, rotation);
+    const component = this.circuitWriter.saveAddComponent(
+        type, worldPosition, rotation,
+        config,pinSources);
     // Create and add visual to scene
     this._createComponentObject3D(component);
     return component;

@@ -177,6 +177,7 @@ export class Circuit {
    * @param type - Component type (Battery, Switch, LED, etc.)
    * @param position - Grid position (x, y integers)
    * @param rotation - Orientation angle (integer degrees)
+   * @param config - Optional configuration map for component-specific settings
    * @returns The created Component
    * @throws {TypeError} If position/rotation coordinates are not integers
    *
@@ -193,12 +194,20 @@ export class Circuit {
    * console.log(lightbulb.position.x);  // 10
    * ```
    */
-  addComponent(type: ComponentType, position: Position, rotation: Rotation): Component {
+  addComponent(
+      type: ComponentType,
+      position: Position,
+      rotation: Rotation,
+      config?: Map<string, string> | undefined,
+  ): Component {
     // Get component type metadata
     const metadata = getComponentTypeMetadata(type);
 
     // Create component first (to get its ID)
     const component = new Component(type, position, rotation, []);
+    if (config) {
+      component.config = new Map(config);
+    }
 
     // Create pin ENodes for the component using metadata pin labels
     const pins: UUID[] = [];

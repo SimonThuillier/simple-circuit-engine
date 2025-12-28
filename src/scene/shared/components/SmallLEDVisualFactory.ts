@@ -24,7 +24,6 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
   private static readonly LED_LIT_INTENSITY = 1.0;
 
   createVisual(component: Component): THREE.Object3D {
-    console.log('Creating small LED visual for component', component.id);
     // Root group (not rendered, just organizational)
     const group = new THREE.Group();
     group.userData = {

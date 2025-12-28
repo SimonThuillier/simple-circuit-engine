@@ -27,7 +27,6 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
   private static readonly OPEN_ROTATION = new THREE.Euler(0.5, 1.3, 0.5);
 
   createVisual(component: Component): THREE.Object3D {
-    console.log('Creating switch visual for component', component.id);
     // Root group (not rendered, just organizational)
     const group = new THREE.Group();
     group.userData = {

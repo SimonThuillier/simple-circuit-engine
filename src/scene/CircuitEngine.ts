@@ -396,7 +396,6 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
    */
   setCircuit(circuit: Circuit | null): void {
     this._checkInitialized();
-
     // Load circuit via edit controller
     if (this._editController) {
       this._editController.setCircuit(circuit);

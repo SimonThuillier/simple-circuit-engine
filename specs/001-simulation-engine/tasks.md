@@ -68,7 +68,7 @@
 
 ## Phase 3: User Story 1 - Basic Circuit State Simulation (Priority: P1) 🎯 MVP ✅ COMPLETE
 
-**Goal**: Simulate simple circuits with binary state propagation from voltage sources through wires to components
+**Goal**: Simulate simple circuits with binary state propagation from voltage pinSources through wires to components
 
 **Independent Test**: Create battery → wire → LED circuit, run one step, verify LED turns on and wire is powered
 

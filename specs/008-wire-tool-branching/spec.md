@@ -91,7 +91,7 @@ A user wants to connect a wire from a component pin to an existing branching poi
 
 A user wants to configure a branching point as a voltage source or current source for simulation purposes. They double-click on an existing branching point to cycle through source types: no source → voltage source → current source → no source. The cone material color changes to reflect the current state: white (no source), red (voltage source), blue (current source).
 
-**Why this priority**: Source type configuration is essential for circuit simulation. Branching points acting as sources are a core modeling capability.
+**Why this priority**: Source type configuration is essential for circuit simulation. Branching points acting as pinSources are a core modeling capability.
 
 **Independent Test**: Can be fully tested by creating a branching point, double-clicking to cycle through states, and verifying both the ENode.sourceType attribute and visual cone color update correctly.
 

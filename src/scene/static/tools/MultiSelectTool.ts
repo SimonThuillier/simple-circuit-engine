@@ -17,6 +17,7 @@ import {
   worldToGridPosition,
 } from '../../shared/GeometryUtils';
 import { Rotation } from '@/core/types/Rotation';
+import type {ENodeSourceType} from "@/core/types/ENodeSourceType";
 
 /**
  * Operating modes for the MultiSelectTool
@@ -87,6 +88,10 @@ export interface ClipboardComponent {
   rotation: number;
   /** Original element ID for wire remapping during paste */
   originalId: UUID;
+  /** Original configuration data for the component */
+  config: Map<string, string>;
+  /** Original pins sourceTypes */
+  pinSources: Array<ENodeSourceType | undefined | null>;
 }
 
 /**
@@ -97,6 +102,8 @@ export interface ClipboardBranchingPoint {
   relativePosition: { x: number; y: number };
   /** Original element ID for wire remapping during paste */
   originalId: UUID;
+  /** Source type of the branching point */
+  source?: ENodeSourceType | undefined
 }
 
 /**
@@ -1083,6 +1090,10 @@ export class MultiSelectTool implements IEditingTool {
       const component = circuit.getComponent(componentId);
       if (component) {
         const pos = component.position;
+        const sources = component.pins.map((pinId) => {
+            const enode = circuit.getENode(pinId);
+            return enode ? enode.source : null;
+        })
         clipboardComponents.push({
           type: component.type,
           relativePosition: {
@@ -1091,6 +1102,8 @@ export class MultiSelectTool implements IEditingTool {
           },
           rotation: component.rotation.angle,
           originalId: componentId,
+          pinSources: sources,
+          config: new Map(component.config), // Deep copy of config
         });
       }
     }
@@ -1107,6 +1120,7 @@ export class MultiSelectTool implements IEditingTool {
             y: pos.y - anchor.y,
           },
           originalId: enodeId,
+          source: enode.source
         });
       }
     }
@@ -1214,8 +1228,11 @@ export class MultiSelectTool implements IEditingTool {
         const newComponent = this.controller.addComponent(
           clipComponent.type as ComponentType,
           worldPos,
-          rotation
+          rotation,
+          clipComponent.config,
+          clipComponent.pinSources
         );
+
         createdComponentIds.push(newComponent.id);
 
         // Map original component ID → new component ID
@@ -1250,7 +1267,7 @@ export class MultiSelectTool implements IEditingTool {
       const worldPos = gridToWorldPosition(newGridPos);
 
       try {
-        const newEnode = this.controller.addBranchingPoint(worldPos);
+        const newEnode = this.controller.addBranchingPoint(worldPos, clipBP.source);
         createdBranchingPointIds.push(newEnode.id);
 
         // Map original BP ID → new BP ID

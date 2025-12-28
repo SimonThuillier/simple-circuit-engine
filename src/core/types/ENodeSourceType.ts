@@ -1,13 +1,13 @@
 /**
  * ENode Source Type Enumeration
  *
- * Defines the two types of electrical sources in the circuit model.
+ * Defines the two types of electrical pinSources in the circuit model.
  *
  * @module core/types/ENodeSourceType
  */
 
 /**
- * Type of electrical sources in the circuit.
+ * Type of electrical pinSources in the circuit.
  *
  * ENodes have a sourceType which can be undefined or one of the following:
  *
@@ -21,12 +21,12 @@
  */
 export enum ENodeSourceType {
   /**
-   * Voltage sources
+   * Voltage pinSources
    */
   Voltage = 'Voltage',
 
   /**
-   * Current sources
+   * Current pinSources
    */
   Current = 'Current',
 }
