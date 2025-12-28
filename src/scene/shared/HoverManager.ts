@@ -13,7 +13,7 @@ import { HitboxLayers } from './LayerConstants';
 /**
  * Callback type for hover state changes
  */
-export type HoverCallback = (element: HoveredElement | null) => void;
+export type HoverCallback = (element: HoveredElement | null, previousElement: HoveredElement | null) => void;
 
 /**
  * HoverManager Class
@@ -30,6 +30,7 @@ export class HoverManager {
   private currentlyHovered: HoveredElement | null = null;
   private callbacks: Set<HoverCallback> = new Set();
   private enabled: boolean = true;
+  private initialized: boolean = false;
   private lastMouseX: number = 0;
   private lastMouseY: number = 0;
   private lastUpdateTime: number = 0;
@@ -191,6 +192,21 @@ export class HoverManager {
   }
 
   /**
+   * Set initialization state (to prevent double init)
+   * @param initialized
+   */
+  setInitialized(initialized: boolean): void {
+    this.initialized = initialized;
+  }
+
+  /**
+   * Check if HoverManager is initialized (to prevent double init)
+   */
+  isInitialized(): boolean {
+    return this.initialized;
+  }
+
+  /**
    * Clean up resources
    *
    * Removes all callbacks and clears state.
@@ -199,6 +215,7 @@ export class HoverManager {
   dispose(): void {
     this.clear();
     this.callbacks.clear();
+    this.initialized = false;
   }
 
   // ==========================================
@@ -271,11 +288,12 @@ export class HoverManager {
     const hasChanged = !this._isSameHover(this.currentlyHovered, newHit);
 
     if (hasChanged) {
+      const previousHit = this.currentlyHovered;
       this.currentlyHovered = newHit;
 
       // Trigger all registered callbacks
       for (const callback of this.callbacks) {
-        callback(newHit);
+        callback(newHit, previousHit);
       }
     }
   }

@@ -12,7 +12,7 @@ import type { ENode } from '../../core/ENode';
 import type { UUID } from '../../core/types/Identifier';
 import { ENodeType } from '../../core/types/ENodeType';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
-import type { ToolType, SelectionData } from '../shared/types';
+import type { ToolType, SelectionData, SharedResources } from '../shared/types';
 import {
   createGridHelper,
   gridToWorldPosition,
@@ -56,10 +56,11 @@ export class CircuitController extends AbstractCircuitController {
    * Create a new Static Circuit Controller
    *
    * @param factoryRegistry - Component visual factory registry
+   * @param sharedResources - Optional shared resources for facade pattern (CircuitEngine)
    * @throws {TypeError} factoryRegistry is null/undefined
    */
-  constructor(factoryRegistry: IFactoryRegistry) {
-    super(factoryRegistry);
+  constructor(factoryRegistry: IFactoryRegistry, sharedResources?: SharedResources) {
+    super(factoryRegistry, sharedResources);
 
     this.circuitWriter = new CircuitWriter(this);
 
@@ -124,6 +125,18 @@ export class CircuitController extends AbstractCircuitController {
     // dispose own wireVisualManager
     this.wireVisualManager.dispose();
   }
+
+  onSetActive(active: boolean): void {
+    if (!active) {
+      // Deactivate edit mode (which deactivates active tool and emits toolDeactivated)
+      this.setEditMode(false);
+      this._selectionManager?.deselect();
+    }
+    else {
+        // no specific logic on activate
+    }
+  }
+
 
   setCircuit(circuit: Circuit | null): void {
     this._setCircuit(circuit);
@@ -204,7 +217,7 @@ export class CircuitController extends AbstractCircuitController {
 
     if (components) {
       for (const [id, _data] of components) {
-        const object3D = this.componentObject3Ds.get(id);
+        const object3D = this._componentObject3Ds.get(id);
         if (!object3D) {
           continue;
         }
@@ -226,7 +239,7 @@ export class CircuitController extends AbstractCircuitController {
     }
     if (enodes) {
       for (const [id, _data] of enodes) {
-        const object3D = this.enodeObject3Ds.get(id);
+        const object3D = this._enodeObject3Ds.get(id);
         if (!object3D) {
           continue;
         }
@@ -419,17 +432,13 @@ export class CircuitController extends AbstractCircuitController {
     const wires = this._circuit.getAllWires();
     const enodes = this._circuit.getAllENodes();
 
+    console.log('full update');
+
     for (const component of components) {
       this._createComponentObject3D(component);
     }
     for (const enode of enodes) {
       this._createEnodeObject3D(enode);
-      // For edited pin enodes, update source type visual (component creates them only in their default mode)
-      if (enode.type === ENodeType.Pin && enode.source) {
-        const pinGroup = this.enodeObject3Ds.get(enode.id);
-        if (!pinGroup) continue;
-        this.factoryRegistry.getFallbackFactory().updatePinSourceType(pinGroup, enode.source);
-      }
     }
     for (const wire of wires) {
       this._createWireObject3D(wire);
@@ -452,6 +461,15 @@ export class CircuitController extends AbstractCircuitController {
 
       this._scene!.add(mesh);
       this._indexComponentObject3D(component.id, mesh);
+
+      // For edited pin enodes, update source type visual (component visual factory creates them only in their default mode)
+      for(const pinId of component.pins) {
+        const enode = this._circuit!.getENode(pinId);
+        if (!enode || !enode.source) continue;
+        const pinGroup = this._enodeObject3Ds.get(enode.id);
+        if (!pinGroup) continue;
+        this.factoryRegistry.getFallbackFactory().updatePinSourceType(pinGroup, enode.source);
+      }
     } catch (error) {
       const err = error as Error;
       console.warn(`Failed to create mesh for component ${component.id}:`, err.message);
@@ -466,19 +484,19 @@ export class CircuitController extends AbstractCircuitController {
    * @private
    */
   private _indexComponentObject3D(componentId: string, object3D: THREE.Object3D): void {
-    this.componentObject3Ds.set(componentId, object3D);
+    this._componentObject3Ds.set(componentId, object3D);
     object3D.traverse((obj) => {
       if (obj.userData && obj.userData.type === 'enodeGroup') {
         const enodeId = obj.userData.enodeId;
         if (enodeId) {
-          this.enodeObject3Ds.set(enodeId, obj as THREE.Group);
+          this._enodeObject3Ds.set(enodeId, obj as THREE.Group);
         }
       }
     });
   }
 
   private _removeComponentObject3D(id: string): void {
-    const group = this.componentObject3Ds.get(id);
+    const group = this._componentObject3Ds.get(id);
     if (!group) {
       return;
     }
@@ -501,7 +519,7 @@ export class CircuitController extends AbstractCircuitController {
         }
       }
     });
-    this.componentObject3Ds.delete(id);
+    this._componentObject3Ds.delete(id);
   }
 
   /**
@@ -522,11 +540,11 @@ export class CircuitController extends AbstractCircuitController {
     group.position.copy(gridToWorldPosition(enode.getPosition(this._circuit!)));
 
     this._scene!.add(group);
-    this.enodeObject3Ds.set(enode.id, group);
+    this._enodeObject3Ds.set(enode.id, group);
   }
 
   private _removeEnodeObject3D(id: string): void {
-    const group = this.enodeObject3Ds.get(id);
+    const group = this._enodeObject3Ds.get(id);
     if (!group) return;
     group?.traverse((obj) => {
       if (obj instanceof THREE.Mesh) {
@@ -543,11 +561,11 @@ export class CircuitController extends AbstractCircuitController {
       }
     });
     this._scene!.remove(group);
-    this.enodeObject3Ds.delete(id);
+    this._enodeObject3Ds.delete(id);
   }
 
-  addBranchingPoint(worldPosition: THREE.Vector3): ENode {
-    const branchingPoint = this.circuitWriter.saveAddBranchingPoint(worldPosition);
+  addBranchingPoint(worldPosition: THREE.Vector3, sourceType?: ENodeSourceType| undefined): ENode {
+    const branchingPoint = this.circuitWriter.saveAddBranchingPoint(worldPosition, sourceType);
     // Create and add bp visual to scene
     this._createEnodeObject3D(branchingPoint);
     return branchingPoint;
@@ -591,7 +609,7 @@ export class CircuitController extends AbstractCircuitController {
     const result = this.circuitWriter.saveDeleteBranchingPoint(enodeId);
     if (!result) return;
     this._removeEnodeObject3D(enodeId);
-    this.enodeObject3Ds.delete(enodeId);
+    this._enodeObject3Ds.delete(enodeId);
     if (result.deletedWires) {
       for (const wireId of result.deletedWires) {
         this._removeWireObject3D(wireId);
@@ -638,11 +656,21 @@ export class CircuitController extends AbstractCircuitController {
    * @param type - Component type to add
    * @param worldPosition - Position in 3D world coordinates (x, z)
    * @param rotation - 3D world rotation
+   * @param config - Optional configuration map for the component
+   * @param pinSources - Optional array of source types for the component pins
    * @returns The created Component
    */
-  addComponent(type: ComponentType, worldPosition: THREE.Vector3, rotation: Euler): Component {
+  addComponent(
+      type: ComponentType,
+      worldPosition: THREE.Vector3,
+      rotation: Euler,
+      config?: Map<string, string> | undefined,
+      pinSources?: Array<ENodeSourceType | undefined | null> | undefined
+  ): Component {
     // Create component in circuit model
-    const component = this.circuitWriter.saveAddComponent(type, worldPosition, rotation);
+    const component = this.circuitWriter.saveAddComponent(
+        type, worldPosition, rotation,
+        config,pinSources);
     // Create and add visual to scene
     this._createComponentObject3D(component);
     return component;
@@ -661,7 +689,7 @@ export class CircuitController extends AbstractCircuitController {
     if(!result.hasChanged) {
         return false;
     }
-    const object3D = this.componentObject3Ds.get(componentId);
+    const object3D = this._componentObject3Ds.get(componentId);
     if(!object3D) return false;
     // Update visuals if component hasChanged
     const factory = this.factoryRegistry.get(result.component.type);
@@ -692,7 +720,7 @@ export class CircuitController extends AbstractCircuitController {
    * @param sourceType - New source type (null for no source)
    */
   updateEnodeSourceType(enodeId: UUID, sourceType: ENodeSourceType | null): void {
-    const object3D = this.enodeObject3Ds.get(enodeId);
+    const object3D = this._enodeObject3Ds.get(enodeId);
     if (!object3D) return;
     if (object3D.userData.lockedSourceType) return; // do not update locked source types
 
@@ -734,7 +762,7 @@ export class CircuitController extends AbstractCircuitController {
   }
 
   private _removeWireObject3D(id: string): void {
-    if (this.wireObject3Ds.has(id)) {
+    if (this._wireObject3Ds.has(id)) {
       // Use WireVisualManager to remove wire (handles all disposal and delete from map)
       this.wireVisualManager.removeWire(id);
     }
@@ -742,15 +770,15 @@ export class CircuitController extends AbstractCircuitController {
 
   protected _removeAllVisuals(): void {
     // Remove all wire meshes
-    for (const id of Array.from(this.wireObject3Ds.keys())) {
+    for (const id of Array.from(this._wireObject3Ds.keys())) {
       this._removeWireObject3D(id);
     }
     // Remove all enode meshes
-    for (const id of Array.from(this.enodeObject3Ds.keys())) {
+    for (const id of Array.from(this._enodeObject3Ds.keys())) {
       this._removeEnodeObject3D(id);
     }
     // Remove all component meshes
-    for (const id of Array.from(this.componentObject3Ds.keys())) {
+    for (const id of Array.from(this._componentObject3Ds.keys())) {
       this._removeComponentObject3D(id);
     }
     // remove grid

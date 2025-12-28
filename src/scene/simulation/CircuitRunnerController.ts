@@ -7,7 +7,7 @@
  */
 
 import * as THREE from 'three';
-import type { CircuitRunner } from '../../core/simulation/CircuitRunner';
+import { CircuitRunner } from '../../core/simulation/CircuitRunner';
 import type { Component } from '../../core/Component';
 import type { Wire } from '../../core/Wire';
 import type { ENode } from '../../core/ENode';
@@ -15,6 +15,7 @@ import { ENodeType } from '../../core/types/ENodeType';
 import { ComponentType } from '../../core/types/ComponentType';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
 import type { UserCommand } from '../../core/simulation/types/UserCommand';
+import type { SharedResources } from '../shared/types';
 import { AbstractCircuitController } from '../shared/AbstractCircuitController';
 import {
   createGridHelper,
@@ -22,6 +23,8 @@ import {
   gridToWorldRotation,
 } from '../shared/GeometryUtils';
 import type { HoveredElement } from '../shared/types';
+import type {Circuit} from "@/core/Circuit";
+import {BehaviorRegistry} from "@/core/simulation/behaviors";
 
 /**
  * Simulation Circuit Runner Controller Implementation
@@ -32,6 +35,7 @@ import type { HoveredElement } from '../shared/types';
  */
 export class CircuitRunnerController extends AbstractCircuitController {
   private _runner: CircuitRunner | null = null;
+  private _behaviorRegistry: BehaviorRegistry;
 
   // Playback control state
   private _isPlaying: boolean = false;
@@ -43,15 +47,19 @@ export class CircuitRunnerController extends AbstractCircuitController {
    * Create a new Simulation Circuit Controller
    *
    * @param factoryRegistry - Component visual factory registry
+   * @param behaviorRegistry - Component behavior registry
+   * @param sharedResources - Optional shared resources for facade pattern (CircuitEngine)
    * @throws {TypeError} If factoryRegistry is null/undefined
    */
-  constructor(factoryRegistry: IFactoryRegistry) {
-    super(factoryRegistry);
-    if (!factoryRegistry) {
-      throw new TypeError('FactoryRegistry is required');
+  constructor(
+      factoryRegistry: IFactoryRegistry,
+      behaviorRegistry: BehaviorRegistry,
+      sharedResources?: SharedResources) {
+    super(factoryRegistry, sharedResources);
+    if (!behaviorRegistry) {
+      throw new TypeError('BehaviorRegistry is required');
     }
-
-    // TODO instanciate simulation-specific fields here if needed
+    this._behaviorRegistry = behaviorRegistry;
   }
 
   /**
@@ -129,42 +137,50 @@ export class CircuitRunnerController extends AbstractCircuitController {
       this._container.removeEventListener('click', this._clickHandler);
       this._clickHandler = null;
     }
-    // if (this._pointerDownHandler && this._container) {
-    //   this._container.removeEventListener('pointerdown', this._pointerDownHandler);
-    //   this._pointerDownHandler = null;
-    // }
 
     // Clear runner reference
     this._runner = null;
   }
 
-  /**
-   * Load a circuit runner for simulation and visualization
-   * Replaces any existing circuit and stops ongoing simulation
-   *
-   * @param runner - CircuitRunner instance to visualize, or null to clear
-   */
-  setCircuitRunner(runner: CircuitRunner | null): void {
+  onSetActive(active: boolean): void {
+    if (!active) {
+      this.stop();
+      this._runner = null;
+      this._removeSimulationStateVisuals();
+    }
+    else {
+      if(!this._circuit) return;
+      // recreate runner for the current circuit (which can have been modified in edit mode while this controller was inactive)
+      this._runner = new CircuitRunner(this._circuit, this._behaviorRegistry);
+      this._fullUpdate();
+      // no specific logic on activate
+    }
+  }
+
+  setCircuit(circuit: Circuit | null): void {
     this._checkInitialized();
-    if (runner === this._runner) return;
+    if (circuit === this._circuit) return;
 
     // Stop current simulation if playing
     if (this._isPlaying) {
-      this.pause();
+      this.stop();
+    }
+    this._runner = null;
+
+    // When using shared resources, skip visual management (edit controller handles it)
+    // Just update circuit reference and create runner
+    if (this._useSharedResources) {
+      this._circuit = circuit;
+      this.wireVisualManager.setCircuit(circuit);
+      if (circuit) {
+        this._gridHalfSize = Math.ceil(circuit.metadata.size / 2);
+        this._runner = new CircuitRunner(circuit, this._behaviorRegistry);
+      }
+      return;
     }
 
-    if (this._runner) {
-      // Clear previous circuit and visuals
-      this._setCircuit(null);
-      this._runner = null;
-      this.emit('simulationStopped', { tick: 0 });
-    }
-
-    if (runner) {
-      this._runner = runner;
-      // Load new circuit and create visuals
-      this._setCircuit(runner.circuit);
-    }
+    // Standalone mode: full visual management
+    this._setCircuit(circuit);
   }
 
   /**
@@ -172,7 +188,12 @@ export class CircuitRunnerController extends AbstractCircuitController {
    * @protected
    */
   protected onSetCircuit() {
-    this._fullUpdate();
+    if(!this._circuit) return;
+    this._runner = new CircuitRunner(this._circuit, this._behaviorRegistry);
+    if(!this._useSharedResources){
+      // if standalone mode, activate immediately
+      this.setActive(true);
+    }
   }
 
   /**
@@ -267,7 +288,7 @@ export class CircuitRunnerController extends AbstractCircuitController {
     }
     this._runner.reset();
     // Update visuals to initial state
-    this._fullVisualUpdateFromSimulationState();
+    this._visualUpdateFromSimulationState();
     const result = this._runner.getCurrentTick();
 
     this.emit('simulationStopped', { tick: result });
@@ -308,7 +329,7 @@ export class CircuitRunnerController extends AbstractCircuitController {
 
     // Update each dirty component's visual animation
     for (const componentId of dirty.components) {
-      const object3D = this.componentObject3Ds.get(componentId);
+      const object3D = this._componentObject3Ds.get(componentId);
       if (!object3D) continue;
 
       // Get component and its current state
@@ -370,7 +391,7 @@ export class CircuitRunnerController extends AbstractCircuitController {
       if (!enodeState) continue;
 
       // Get enode visual object (could be pin group or branching point)
-      const enodeObject = this.enodeObject3Ds.get(enodeId);
+      const enodeObject = this._enodeObject3Ds.get(enodeId);
       if (!enodeObject) continue;
 
       enodeObject.userData;
@@ -405,11 +426,44 @@ export class CircuitRunnerController extends AbstractCircuitController {
   }
 
   /**
+   * rollback wires/enodes/components visuals to edition state (no simulation state)
+   */
+  _removeSimulationStateVisuals(): void {
+    for(const wireId of this._wireObject3Ds.keys()) {
+        this.wireVisualManager.applyElectricalState(wireId, 'idle');
+    }
+    for(const enodeId of this._enodeObject3Ds.keys()) {
+      const enodeObject = this._enodeObject3Ds.get(enodeId);
+      if (!enodeObject) continue;
+      enodeObject.userData.electricalState = 'idle';
+      enodeObject.traverse((obj) => {
+        if (obj instanceof THREE.Mesh && obj.material) {
+          const material = obj.material as THREE.MeshStandardMaterial;
+          if (material.emissive) {
+            material.emissive.setHex(0x000000);
+            material.emissiveIntensity = 0;
+          }
+        }
+      });
+    }
+    for(const componentId of this._componentObject3Ds.keys()) {
+      const componentObject = this._componentObject3Ds.get(componentId);
+      if (!componentObject) continue;
+      // Get component and its current state
+      const component = this._circuit?.getComponent(componentId);
+      if (!component) continue;
+      const factory = this.factoryRegistry.get(component.type);
+      factory.updateAnimation(componentObject, null);
+    }
+  }
+
+  /**
    * Handle click events for component interaction
    * @param event
    * @private
    */
   private _handleClick(event: MouseEvent): void {
+    if(!this._active) return;
     // Only handle left clicks
     if (event.button !== 0) return;
     const hoveredElement = this.getHoveredElement();
@@ -459,6 +513,9 @@ export class CircuitRunnerController extends AbstractCircuitController {
   /**
    * recreate all visuals based on circuit data
    * Should be called on an already cleared scene
+   *
+   * When using shared resources (CircuitEngine facade), skips visual creation
+   * if visuals already exist in the shared maps (created by edit controller).
    * @private
    */
   private _fullUpdate(): void {
@@ -466,39 +523,40 @@ export class CircuitRunnerController extends AbstractCircuitController {
 
     if (!this._circuit) return;
 
-    // 1. Add circuit sized grid
-    this._grid = createGridHelper(this._circuit.metadata.size, this._circuit.metadata.divisions);
-    this._scene!.add(this._grid);
+    // When using shared resources and visuals already exist, skip creation
+    // The edit controller has already created all visuals
+    const visualsPrePopulated = this._useSharedResources && this._componentObject3Ds.size > 0;
 
-    // Create visuals for all circuit elements
-    const components = this._circuit.getAllComponents();
-    const wires = this._circuit.getAllWires();
-    const enodes = this._circuit.getAllENodes();
+    if (!visualsPrePopulated) {
+      // 1. Add circuit sized grid
+      this._grid = createGridHelper(this._circuit.metadata.size, this._circuit.metadata.divisions);
+      this._scene!.add(this._grid);
 
-    for (const component of components) {
-      this._createComponentObject3D(component);
-    }
-    for (const enode of enodes) {
-      this._createEnodeObject3D(enode);
-      // For edited pin enodes, update source type visual (component creates them only in their default mode)
-      if (enode.type === ENodeType.Pin && enode.source) {
-        const pinGroup = this.enodeObject3Ds.get(enode.id);
-        if (!pinGroup) continue;
-        this.factoryRegistry.getFallbackFactory().updatePinSourceType(pinGroup, enode.source);
+      // Create visuals for all circuit elements
+      const components = this._circuit.getAllComponents();
+      const wires = this._circuit.getAllWires();
+      const enodes = this._circuit.getAllENodes();
+
+      for (const component of components) {
+        this._createComponentObject3D(component);
+      }
+      for (const enode of enodes) {
+        this._createEnodeObject3D(enode);
+      }
+      for (const wire of wires) {
+        this._createWireObject3D(wire);
       }
     }
-    for (const wire of wires) {
-      this._createWireObject3D(wire);
-    }
-    // finally consider all elements dirty to set their initial simulation visual state
-    this._fullVisualUpdateFromSimulationState();
+
+    // Always update simulation visual state (colors, animations) from simulation state
+    this._visualUpdateFromSimulationState();
   }
 
   /**
    * Consider all elements as dirty to update all visual state according to simulation state
    * @private
    */
-  private _fullVisualUpdateFromSimulationState(): void {
+  private _visualUpdateFromSimulationState(): void {
     if (!this._circuit || !this._runner) return;
 
     const components = this._circuit.getAllComponents();
@@ -526,6 +584,15 @@ export class CircuitRunnerController extends AbstractCircuitController {
 
       this._scene!.add(mesh);
       this._indexComponentObject3D(component.id, mesh);
+
+      // For edited pin enodes, update source type visual (component visual factory creates them only in their default mode)
+      for(const pinId of component.pins) {
+        const enode = this._circuit!.getENode(pinId);
+        if (!enode || !enode.source) continue;
+        const pinGroup = this._enodeObject3Ds.get(enode.id);
+        if (!pinGroup) continue;
+        this.factoryRegistry.getFallbackFactory().updatePinSourceType(pinGroup, enode.source);
+      }
     } catch (error) {
       const err = error as Error;
       console.warn(`Failed to create mesh for component ${component.id}:`, err.message);
@@ -540,12 +607,12 @@ export class CircuitRunnerController extends AbstractCircuitController {
    * @private
    */
   private _indexComponentObject3D(componentId: string, object3D: THREE.Object3D): void {
-    this.componentObject3Ds.set(componentId, object3D);
+    this._componentObject3Ds.set(componentId, object3D);
     object3D.traverse((obj) => {
       if (obj.userData && obj.userData.type === 'enodeGroup') {
         const enodeId = obj.userData.enodeId;
         if (enodeId) {
-          this.enodeObject3Ds.set(enodeId, obj as THREE.Group);
+          this._enodeObject3Ds.set(enodeId, obj as THREE.Group);
         }
       }
     });
@@ -569,7 +636,7 @@ export class CircuitRunnerController extends AbstractCircuitController {
     group.position.copy(gridToWorldPosition(enode.getPosition(this._circuit!)));
 
     this._scene!.add(group);
-    this.enodeObject3Ds.set(enode.id, group);
+    this._enodeObject3Ds.set(enode.id, group);
   }
 
   private _createWireObject3D(wire: Wire): void {
@@ -587,7 +654,7 @@ export class CircuitRunnerController extends AbstractCircuitController {
   }
 
   private _removeComponentObject3D(id: string): void {
-    const group = this.componentObject3Ds.get(id);
+    const group = this._componentObject3Ds.get(id);
     if (!group) {
       return;
     }
@@ -612,11 +679,11 @@ export class CircuitRunnerController extends AbstractCircuitController {
         }
       }
     });
-    this.componentObject3Ds.delete(id);
+    this._componentObject3Ds.delete(id);
   }
 
   private _removeEnodeObject3D(id: string): void {
-    const group = this.enodeObject3Ds.get(id);
+    const group = this._enodeObject3Ds.get(id);
     if (!group) return;
 
     // TODO : see if there are specific disposals to do (animations ?)
@@ -636,11 +703,11 @@ export class CircuitRunnerController extends AbstractCircuitController {
       }
     });
     this._scene!.remove(group);
-    this.enodeObject3Ds.delete(id);
+    this._enodeObject3Ds.delete(id);
   }
 
   private _removeWireObject3D(id: string): void {
-    if (this.wireObject3Ds.has(id)) {
+    if (this._wireObject3Ds.has(id)) {
       // TODO : see if there are specific disposals to do (animations ?)
       // Use WireVisualManager to remove wire (handles all disposal and delete from map)
       this.wireVisualManager.removeWire(id);
@@ -650,15 +717,15 @@ export class CircuitRunnerController extends AbstractCircuitController {
   protected _removeAllVisuals(): void {
     // TODO : see if there are specific disposals to do (animations ?)
     // Remove all wire meshes
-    for (const id of Array.from(this.wireObject3Ds.keys())) {
+    for (const id of Array.from(this._wireObject3Ds.keys())) {
       this._removeWireObject3D(id);
     }
     // Remove all enode meshes
-    for (const id of Array.from(this.enodeObject3Ds.keys())) {
+    for (const id of Array.from(this._enodeObject3Ds.keys())) {
       this._removeEnodeObject3D(id);
     }
     // Remove all component meshes
-    for (const id of Array.from(this.componentObject3Ds.keys())) {
+    for (const id of Array.from(this._componentObject3Ds.keys())) {
       this._removeComponentObject3D(id);
     }
     // remove grid

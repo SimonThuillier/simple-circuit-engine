@@ -86,14 +86,18 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
    * @remarks
    * Applies yellow emissive glow when Lightbulb is lit (state.isLit === true)
    */
-  override updateAnimation(object3D: THREE.Object3D, state: ComponentState): void {
-    const lightbulbState = state as LightbulbState;
+  override updateAnimation(object3D: THREE.Object3D, state: ComponentState | null): void {
     const bulbMesh = this.findBulbMesh(object3D);
-
-    if (!bulbMesh) {
+    if (!bulbMesh) return;
+    if(!state){
+      bulbMesh.userData.materialLocked = false;
+      bulbMesh.material.opacity = 0.55;
+      bulbMesh.material.emissive.setHex(0x000000);
+      bulbMesh.material.emissiveIntensity = 0;
       return;
     }
 
+    const lightbulbState = state as LightbulbState;
     if (lightbulbState.isLit) {
       // Apply LED glow
       bulbMesh.userData.materialLocked = true;
@@ -119,7 +123,7 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
    * Searches for a mesh with userData.part === 'bulb'
    */
   private findBulbMesh(
-    object3D: THREE.Object3D
+      object3D: THREE.Object3D
   ): (THREE.Mesh & { material: THREE.MeshStandardMaterial }) | null {
     let bulbMesh: (THREE.Mesh & { material: THREE.MeshStandardMaterial }) | null = null;
 

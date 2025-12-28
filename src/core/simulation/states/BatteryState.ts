@@ -8,7 +8,7 @@ import type { UUID } from '@/core/types/Identifier.js';
 
 /**
  * Simulation state for Battery components.
- * Batteries are stateless always-on sources.
+ * Batteries are stateless always-on pinSources.
  *
  * @public
  */

@@ -15,7 +15,7 @@ This document captures key architectural decisions, algorithms, and patterns sel
 
 **Rationale**:
 - Binary electrical states (voltage/current) propagate deterministically from source pins (batteries, power supplies)
-- BFS traversal from sources ensures all reachable nodes are marked exactly once per step
+- BFS traversal from pinSources ensures all reachable nodes are marked exactly once per step
 - O(V + E) complexity scales linearly with circuit size (ideal for 300+ component target)
 - No convergence iterations needed (unlike analog circuit solvers)
 - Separates voltage and current propagation for accurate modeling
@@ -25,8 +25,8 @@ This document captures key architectural decisions, algorithms, and patterns sel
 2. Build adjacency graph: ENode → connected ENodes via Wires and Components
 3. Each step:
    - Clear all electrical states (reset to unpowered/unlocked nodes)
-   - Run `computeReachability()` - BFS from voltage sources to find all voltage-reachable nodes
-   - Run `computeReachability()` - BFS from current sources to find all current-reachable nodes
+   - Run `computeReachability()` - BFS from voltage pinSources to find all voltage-reachable nodes
+   - Run `computeReachability()` - BFS from current pinSources to find all current-reachable nodes
    - `propagateConductivity()` marks nodes/wires based on reachability results
    - Component behaviors use `allowConductivity()` to control if current can flow through them
 

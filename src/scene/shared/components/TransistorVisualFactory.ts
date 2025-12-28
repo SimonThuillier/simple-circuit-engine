@@ -34,7 +34,6 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
       false, 0, Math.PI * 2);
 
   createVisual(component: Component): THREE.Object3D {
-    console.log('Creating small Transistor visual for component', component.id);
     // Root group (not rendered, just organizational)
     const group = new THREE.Group();
     group.userData = {
@@ -59,7 +58,7 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
     envelope.position.set(0, -0.05, 0);
     group.add(envelope);
 
-    const fillerMaterial = new THREE.MeshStandardMaterial({ 
+    const fillerMaterial = new THREE.MeshStandardMaterial({
       color: TransistorVisualFactory.TRANSISTOR_CLOSED_COLOR,
       transparent: true,
       opacity: 0,
@@ -74,7 +73,7 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
     };
     filler.position.set(0, 0.12, 0);
     group.add(filler);
-    
+
     // Collector pin group
     const collectorGroup = this.createPinGroup(component.id, component.pins[0]!, 'collector');
     collectorGroup.position.set(0.05, 0, -0.4);
@@ -100,24 +99,15 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
 
   override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>){
     const fillerMesh = this.findFillerMesh(object3D);
-    if(fillerMesh){
-      if(config.get('activationLogic') === 'negative'){
-        fillerMesh.userData.initialState = 'closed';
-        fillerMesh.position.set(0, 0.18, 0);
-        fillerMesh.material.visible=true;
-        fillerMesh.material.opacity = 1;
-        fillerMesh.material.emissive.setHex(TransistorVisualFactory.TRANSISTOR_CLOSED_COLOR);
-        fillerMesh.material.emissiveIntensity = TransistorVisualFactory.TRANSISTOR_CLOSED_INTENSITY;
-      }
-      else {
-        fillerMesh.userData.initialState = 'open';
-        fillerMesh.position.set(0, 0.12, 0);
-        fillerMesh.material.visible=false;
-        fillerMesh.material.opacity = 0;
-        fillerMesh.material.emissive.setHex(0x000000);
-        fillerMesh.material.emissiveIntensity = 0;
-      }
+    if(!fillerMesh) return;
+
+    if(config.get('activationLogic') === 'negative'){
+      fillerMesh.userData.initialState = 'closed';
     }
+    else {
+      fillerMesh.userData.initialState = 'open';
+    }
+    this.updateAnimation(object3D, null);
   }
 
   /**
@@ -126,11 +116,28 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
    * @param object3D - The Object3D created by createVisual()
    * @param state - The Transistor's current simulation state
    */
-  override updateAnimation(object3D: THREE.Object3D, state: ComponentState): void {
-    const transistorState = state as TransistorState;
+  override updateAnimation(object3D: THREE.Object3D, state: ComponentState | null): void {
     const fillerMesh = this.findFillerMesh(object3D);
     if (!fillerMesh) return;
+    if(!state){
+      if(fillerMesh.userData.initialState === 'closed'){
+        fillerMesh.position.set(0, 0.18, 0);
+        fillerMesh.material.visible=true;
+        fillerMesh.material.opacity = 1;
+        fillerMesh.material.emissive.setHex(TransistorVisualFactory.TRANSISTOR_CLOSED_COLOR);
+        fillerMesh.material.emissiveIntensity = TransistorVisualFactory.TRANSISTOR_CLOSED_INTENSITY;
+      }
+      else {
+        fillerMesh.position.set(0, 0.12, 0);
+        fillerMesh.material.visible=false;
+        fillerMesh.material.opacity = 0;
+        fillerMesh.material.emissive.setHex(0x000000);
+        fillerMesh.material.emissiveIntensity = 0;
+      }
+      return;
+    }
 
+    const transistorState = state as TransistorState;
     if (transistorState.isClosed) {
       fillerMesh.userData.materialLocked = true;
       fillerMesh.position.set(0, 0.18, 0);

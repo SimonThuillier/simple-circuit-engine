@@ -171,13 +171,12 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
     if(contactorGroup){
       if(config.get('activationLogic') === 'negative'){
         contactorGroup.userData.initialState = 'closed';
-        contactorGroup.rotation.copy(RelayVisualFactory.CLOSED_ROTATION);
       }
       else {
         contactorGroup.userData.initialState = 'open';
-        contactorGroup.rotation.copy(RelayVisualFactory.OPEN_ROTATION);
       }
     }
+    this.updateAnimation(object3D, null);
   }
 
   /**
@@ -189,9 +188,29 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
    * @remarks
    * Rotates the contactor group to visually represent open/closed state
    */
-  override updateAnimation(object3D: THREE.Object3D, state: ComponentState): void {
-    const relayState = state as RelayState;
+  override updateAnimation(object3D: THREE.Object3D, state: ComponentState | null): void {
     const contactorGroup = this.findContactorGroup(object3D);
+    const coil = this.findCoil(object3D);
+
+    if(!state){
+        // Edition mode - set to initial state
+        if (contactorGroup) {
+            if (contactorGroup.userData.initialState === 'closed') {
+                contactorGroup.rotation.copy(RelayVisualFactory.CLOSED_ROTATION);
+            }
+            else {
+                contactorGroup.rotation.copy(RelayVisualFactory.OPEN_ROTATION);
+            }
+        }
+        if(coil && coil.material instanceof THREE.MeshStandardMaterial){
+          coil.material.emissive.setHex(0x000000);
+          coil.material.emissiveIntensity = 0;
+          coil.userData.materialLocked = false;
+        }
+        return;
+    }
+
+    const relayState = state as RelayState;
     if (contactorGroup) {
       if (relayState.isInTransition) {
         const targetRotation = contactorGroup.userData.initialState === 'closed' ?
@@ -207,7 +226,7 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
         contactorGroup.rotation.copy(targetRotation);
       }
     }
-    const coil = this.findCoil(object3D);
+
     if (coil && coil.material instanceof THREE.MeshStandardMaterial) {
       if (relayState.isInTransition) {
         coil.material.emissive.setHex(0xff00ff);

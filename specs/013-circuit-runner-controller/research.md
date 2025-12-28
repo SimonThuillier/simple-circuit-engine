@@ -79,7 +79,7 @@ updateAnimation(object3D: THREE.Object3D, state: ComponentState): void
 
 ### 5. ENode Visual State
 
-**Current Implementation**: Pins use color based on `ENodeSourceType` (bronze/red/blue for none/voltage/current sources).
+**Current Implementation**: Pins use color based on `ENodeSourceType` (bronze/red/blue for none/voltage/current pinSources).
 
 **Decision**: Extend pin coloring to reflect electrical state during simulation:
 - Blue emissive when `hasCurrent`

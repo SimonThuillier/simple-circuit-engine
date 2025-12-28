@@ -129,9 +129,9 @@ CircuitRunnerController
     │        ├──► DirtyTracker (1:1)
     │        └──► SimulationState (current)
     │
-    ├──► componentObject3Ds: Map<UUID, Object3D>
-    ├──► wireObject3Ds: Map<UUID, Line2>
-    ├──► enodeObject3Ds: Map<UUID, Object3D>
+    ├──► _componentObject3Ds: Map<UUID, Object3D>
+    ├──► _wireObject3Ds: Map<UUID, Line2>
+    ├──► _enodeObject3Ds: Map<UUID, Object3D>
     │
     └──► WireVisualManager
              └──► wireMaterials: Map<WireMaterialState, LineMaterial>

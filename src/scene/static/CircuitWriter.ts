@@ -23,10 +23,11 @@ export class CircuitWriter {
   /**
    * add branching point to the core circuit model and emits the appropriate event.
    * @param position - the world position to add the branching point at
+   * @param sourceType - optional source type for the branching point
    * @throws Error
    * @return The circuit enode
    */
-  saveAddBranchingPoint(position: Vector3) {
+  saveAddBranchingPoint(position: Vector3, sourceType?: ENodeSourceType| undefined) {
     const circuit = this._controller.getCircuit();
     try {
       if (!circuit) {
@@ -34,7 +35,7 @@ export class CircuitWriter {
       }
 
       const modelPosition = worldToGridPosition(position);
-      const circuitEnode = circuit.addBranchingPoint(modelPosition);
+      const circuitEnode = circuit.addBranchingPoint(modelPosition, sourceType);
 
       const event: ControllerEventMap['circuitElementAction'] = {
         type: 'enode',
@@ -43,6 +44,7 @@ export class CircuitWriter {
         error: null,
         data: {
           position: modelPosition,
+          sourceType: sourceType
         },
       };
       this._controller.emit('circuitElementAction', event);
@@ -366,10 +368,19 @@ export class CircuitWriter {
    * @param type - Component type to add
    * @param position - world Position
    * @param rotation - world Rotation
+   * @param config - optional initial component configuration
+   * @param pinSources - optional array of ENode source types for each component pin
    * @returns The created Component
    * @throws Error if circuit is not available or component creation fails
    */
-  saveAddComponent(type: ComponentType, position: Vector3, rotation: Euler): Component {
+  saveAddComponent(
+      type: ComponentType,
+      position: Vector3,
+      rotation: Euler,
+      config?: Map<string, string> | undefined,
+      pinSources?: Array<ENodeSourceType | undefined | null> | undefined
+
+  ): Component {
     const circuit = this._controller.getCircuit();
     try {
       if (!circuit) {
@@ -378,7 +389,20 @@ export class CircuitWriter {
       // convert 3D world position to 2D grid position with Grid snapping
       const modelPosition = worldToGridPosition(position);
       const modelRotation = worldToGridRotation(rotation);
-      const component = circuit.addComponent(type, modelPosition, modelRotation);
+      const component = circuit.addComponent(type, modelPosition, modelRotation, config);
+
+      if(pinSources){
+        for(const pinIdx in component.pins) {
+          if (!pinSources[pinIdx]) continue;
+          const customSource = pinSources[pinIdx];
+
+          const cmpPinId = component.pins[pinIdx];
+          if(!cmpPinId) continue;
+          const pin = circuit.getENode(cmpPinId);
+          if(!pin) continue;
+          pin.setSourceType(customSource);
+        }
+      }
 
       const event: ControllerEventMap['circuitElementAction'] = {
         type: 'component',
@@ -390,6 +414,8 @@ export class CircuitWriter {
           componentType: type,
           position: modelPosition,
           rotation: modelRotation,
+          config: config,
+          pinSources: pinSources
         },
       };
       this._controller.emit('circuitElementAction', event);

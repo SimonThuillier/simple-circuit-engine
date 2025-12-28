@@ -17,7 +17,7 @@ export interface NodeElectricalState {
   hasCurrent: boolean;
 
   /**
-   * True only if the node is locked from state changes at circuit build time (ex: battery pins or other fixed-voltage/current sources).
+   * True only if the node is locked from state changes at circuit build time (ex: battery pins or other fixed-voltage/current pinSources).
    * Important: Those nodes should never have their electrical state modified by the simulation engine!
    * Always false for wires
    */

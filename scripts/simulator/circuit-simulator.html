@@ -470,7 +470,9 @@
         alert('ERROR: CircuitRunnerController failed to load. Check browser console for details.');
       }
 
-      const runnerController = new window.CircuitRunnerController(window.componentsFactoryRegistry);
+      const runnerController = new window.CircuitRunnerController(
+              window.componentsFactoryRegistry,
+              window.behaviorRegistry);
       runnerController.on('ready', (e) => console.log('ready', e));
       runnerController.on('error', (e) => console.error('error', e));
       runnerController.initialize(viewerContainer);
@@ -562,8 +564,7 @@
         try {
           const circuitData = JSON.parse(json);
           const circuit = window.Circuit.fromJSON(circuitData);
-          const runner = new window.CircuitRunner(circuit, window.behaviorRegistry);
-          runnerController.setCircuitRunner(runner);
+          runnerController.setCircuit(circuit);
           window.renderer.render(runnerController.getScene(), runnerController.getCamera());
           errorDisplay.classList.add('hidden');
           resizeRenderer();
@@ -583,7 +584,7 @@
       });
 
       document.getElementById('clear-btn').addEventListener('click', () => {
-        runnerController.setCircuitRunner(null);
+        runnerController.setCircuit(null);
         document.getElementById('circuit-input').value = '';
         document.getElementById('error-display').classList.add('hidden');
         resizeRenderer();

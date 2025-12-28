@@ -24,7 +24,6 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
   private static readonly LED_LIT_INTENSITY = 1.0;
 
   createVisual(component: Component): THREE.Object3D {
-    console.log('Creating small LED visual for component', component.id);
     // Root group (not rendered, just organizational)
     const group = new THREE.Group();
     group.userData = {
@@ -75,14 +74,17 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
    * @remarks
    * Applies yellow emissive glow when LED is lit (state.isLit === true)
    */
-  override updateAnimation(object3D: THREE.Object3D, state: ComponentState): void {
-    const ledState = state as SmallLEDState;
+  override updateAnimation(object3D: THREE.Object3D, state: ComponentState | null): void {
     const ledMesh = this.findLedMesh(object3D);
-
-    if (!ledMesh) {
+    if (!ledMesh) return;
+    if(!state){
+      ledMesh.userData.materialLocked = false;
+      ledMesh.material.emissive.setHex(0x000000);
+      ledMesh.material.emissiveIntensity = 0;
       return;
     }
 
+    const ledState = state as SmallLEDState;
     if (ledState.isLit) {
       // Apply LED glow
       ledMesh.userData.materialLocked = true;

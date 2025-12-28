@@ -52,40 +52,25 @@ function createMockComponentGroup(
   return group;
 }
 
-/**
- * Create a mock CircuitController for testing
- */
-function createMockController(
-  circuit: Circuit,
-  scene: THREE.Scene,
-  componentGroups: Map<UUID, THREE.Object3D>,
-  wireLines: Map<UUID, Line2>
-) {
-  return {
-    getCircuit: () => circuit,
-    getScene: () => scene,
-    getCamera: () => new THREE.PerspectiveCamera(),
-    getContainer: () => document.createElement('div'),
-    componentObject3Ds: componentGroups,
-    wireObject3Ds: wireLines,
-  };
-}
 
 describe('WireVisualManager', () => {
   let wireManager: WireVisualManager;
   let scene: THREE.Scene;
+  let camera: THREE.PerspectiveCamera;
   let circuit: Circuit;
   let componentGroups: Map<UUID, THREE.Object3D>;
   let wireLines: Map<UUID, Line2>;
-  let mockController: any;
 
   beforeEach(() => {
     scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera();
     circuit = new Circuit('Test Circuit');
     componentGroups = new Map();
     wireLines = new Map();
-    mockController = createMockController(circuit, scene, componentGroups, wireLines);
-    wireManager = new WireVisualManager(mockController);
+    wireManager = new WireVisualManager(componentGroups, wireLines);
+    // Set up scene, camera, circuit, and resolution for tests
+    wireManager.setSceneAndCamera(scene, camera);
+    wireManager.setCircuit(circuit);
     // Set resolution for Line2 rendering (required for LineMaterial)
     wireManager.setResolution(800, 600);
   });

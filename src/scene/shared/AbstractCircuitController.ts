@@ -21,7 +21,7 @@ import type {
   WireHitboxUserData,
   ComponentHitboxUserData,
   EnodeHitboxUserData,
-  CircuitSceneObjectType,
+  SharedResources,
 } from './types';
 import { createPerspectiveCamera } from './CameraUtils';
 import { setupSceneLights } from './LightingUtils';
@@ -63,6 +63,7 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
 
   // State flags
   protected _initialized: boolean = false;
+  protected _active: boolean = false;
   protected _disposed: boolean = false;
   protected _gridHalfSize: number = 20;
 
@@ -71,9 +72,9 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
   public readonly branchingPointVisualFactory: BranchingPointVisualFactory;
 
   // Scene objects tracking
-  public readonly componentObject3Ds: Map<UUID, THREE.Object3D> = new Map();
-  public readonly enodeObject3Ds: Map<UUID, THREE.Object3D> = new Map();
-  public readonly wireObject3Ds: Map<UUID, Line2> = new Map();
+  protected _componentObject3Ds: Map<UUID, THREE.Object3D> = new Map();
+  protected _enodeObject3Ds: Map<UUID, THREE.Object3D> = new Map();
+  protected _wireObject3Ds: Map<UUID, Line2> = new Map();
 
   // Hover system
   protected _hoverManager: HoverManager | null = null;
@@ -81,22 +82,51 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
   protected _mouseLeaveHandler: ((event: MouseEvent) => void) | null = null;
   protected _mapControlsChangeHandler: (() => void) | null = null;
 
+  // Shared resources injection
+  protected _sharedResources: SharedResources | null = null;
+  protected _useSharedResources: boolean = false;
+
   /**
    * Create a new circuit controller
    *
    * @param factoryRegistry - Component visual factory registry
+   * @param sharedResources - Optional shared resources for facade pattern (CircuitEngine)
    * @throws {TypeError} If factoryRegistry is null/undefined
    */
-  constructor(factoryRegistry: IFactoryRegistry) {
+  constructor(factoryRegistry: IFactoryRegistry, sharedResources?: SharedResources) {
     super();
 
     if (!factoryRegistry) {
       throw new TypeError('FactoryRegistry is required');
     }
 
-    this.factoryRegistry = factoryRegistry;
-    this.branchingPointVisualFactory = new BranchingPointVisualFactory();
-    this.wireVisualManager = new WireVisualManager(this);
+    // If shared resources provided, store them for use in initialize()
+    if (sharedResources) {
+      this._sharedResources = sharedResources;
+      this._useSharedResources = true;
+
+      this.factoryRegistry = sharedResources.factoryRegistry;
+      this.branchingPointVisualFactory = sharedResources.branchingPointVisualFactory;
+      this.wireVisualManager = sharedResources.wireVisualManager;
+    }
+    else {
+      this._useSharedResources = false;
+      this.factoryRegistry = factoryRegistry;
+      this.branchingPointVisualFactory = new BranchingPointVisualFactory();
+      this.wireVisualManager = new WireVisualManager(this._componentObject3Ds, this._wireObject3Ds);
+    }
+  }
+
+  get componentObject3Ds(): Map<UUID, THREE.Object3D> {
+    return this._componentObject3Ds;
+  }
+
+  get enodeObject3Ds(): Map<UUID, THREE.Object3D> {
+    return this._enodeObject3Ds;
+  }
+
+  get wireObject3Ds(): Map<UUID, Line2> {
+    return this._wireObject3Ds;
   }
 
   // ==========================================
@@ -106,6 +136,9 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
   /**
    * Initialize the controller with a DOM container.
    * Creates scene, camera, lights, MapControls, and HoverManager.
+   *
+   * When sharedResources were provided in constructor, uses those instead
+   * of creating new resources. This enables the CircuitEngine facade pattern.
    *
    * @param container - HTMLElement to attach scene to
    * @param options - Optional configuration
@@ -125,28 +158,65 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
     try {
       this._container = container;
 
-      // Create scene
-      this._scene = new THREE.Scene();
-      this._scene.background = new THREE.Color(this.getSceneBackgroundColor());
-      setupSceneLights(this._scene);
+      if (this._useSharedResources && this._sharedResources) {
+        // Use injected shared resources
+        this._componentObject3Ds = this._sharedResources.componentObject3Ds;
+        this._enodeObject3Ds = this._sharedResources.enodeObject3Ds;
+        this._wireObject3Ds = this._sharedResources.wireObject3Ds;
 
-      // Create camera
-      const aspect = container.clientWidth / container.clientHeight || 1;
-      this._camera = createPerspectiveCamera(options, aspect);
-      // Configure camera layers to only render layer 0 (visual layer)
-      // This prevents hitbox meshes (layers 1, 2, 3) from being rendered
-      this._camera.layers.set(0);
-      // Initialize MapControls
-      this._initializeMapControls(options?.mapControls);
 
-      // Initialize WireVisualManager resolution (Line2 rendering)
-      this.wireVisualManager.setResolution(
-        this._container!.clientWidth,
-        this._container!.clientHeight
-      );
+        this._scene = this._sharedResources.scene;
+        this._camera = this._sharedResources.camera;
+        this._mapControls = this._sharedResources.mapControls;
+        this._grid = this._sharedResources.grid;
+        this._hoverManager = this._sharedResources.hoverManager;
+        // Note: factoryRegistry, branchingPointVisualFactory and WireVisualManager are already set from constructor
 
-      // Initialize HoverManager
-      this._initializeHoverManager();
+        // Initialize WireVisualManager resolution (Line2 rendering)
+        this.wireVisualManager.setResolution(
+          this._container!.clientWidth,
+          this._container!.clientHeight
+        );
+
+        // Setup hover change callback for this controller
+        if(!this._hoverManager.isInitialized()){
+            this._initializeHoverManager();
+        }
+        // Setup mouse event callbacks
+        this._setupMouseCallbacks();
+      } else {
+        // Create own resources (standalone mode)
+        // Create scene
+        this._scene = new THREE.Scene();
+        this._scene.background = new THREE.Color(this.getSceneBackgroundColor());
+        setupSceneLights(this._scene);
+
+        // Create camera
+        const aspect = container.clientWidth / container.clientHeight || 1;
+        this._camera = createPerspectiveCamera(options, aspect);
+        // Configure camera layers to only render layer 0 (visual layer)
+        // This prevents hitbox meshes (layers 1, 2, 3) from being rendered
+        this._camera.layers.set(0);
+        // Initialize MapControls
+        this._initializeMapControls(options?.mapControls);
+
+        // Initialize WireVisualManager
+        this.wireVisualManager.setContainer(this._container!);
+        this.wireVisualManager.setResolution(
+          this._container!.clientWidth,
+          this._container!.clientHeight
+        );
+        this.wireVisualManager.setSceneAndCamera(this._scene, this._camera);
+
+        // Create HoverManager instance
+        this._hoverManager = new HoverManager(this._scene, this._camera);
+        // Initialize HoverManager
+        this._initializeHoverManager();
+        // Setup mouse event callbacks
+        this._setupMouseCallbacks();
+        // in standalone mode set active
+        this._active = true;
+      }
 
       // Allow subclasses to perform additional initialization
       this.onInitialize(options);
@@ -209,6 +279,9 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
   /**
    * Clean up all WebGL resources.
    * Disposes geometries, materials, controls, and clears event listeners.
+   *
+   * When using shared resources, does not dispose scene, camera, controls, or hover manager
+   * as those are owned by the CircuitEngine facade.
    */
   dispose(): void {
     this._checkInitialized();
@@ -217,7 +290,7 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
       // Allow subclasses to clean up first
       this.onDispose();
 
-      // Remove DOM event listeners
+      // Remove DOM event listeners (always owned by this controller)
       if (this._container) {
         if (this._mouseMoveHandler) {
           this._container.removeEventListener('mousemove', this._mouseMoveHandler);
@@ -229,30 +302,43 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
         }
       }
 
-      // Dispose HoverManager
-      if (this._hoverManager) {
-        this._hoverManager.dispose();
-        this._hoverManager = null;
-      }
-
-      // Remove all visuals
-      this._removeAllVisuals();
-
-      // Clear tracking maps
-      this.componentObject3Ds.clear();
-      this.enodeObject3Ds.clear();
-      this.wireObject3Ds.clear();
-      // dispose own wireVisualManager
-      this.wireVisualManager.dispose();
-
-      // Dispose MapControls
-      if (this._mapControls) {
-        if (this._mapControlsChangeHandler) {
-          this._mapControls.removeEventListener('change', this._mapControlsChangeHandler);
-          this._mapControlsChangeHandler = null;
+      // Only dispose resources we own (not shared ones)
+      if (!this._useSharedResources) {
+        // Dispose HoverManager
+        if (this._hoverManager) {
+          this._hoverManager.dispose();
+          this._hoverManager = null;
         }
-        this._mapControls.dispose();
+
+        // Remove all visuals
+        this._removeAllVisuals();
+
+        // Clear tracking maps
+        this._componentObject3Ds.clear();
+        this._enodeObject3Ds.clear();
+        this._wireObject3Ds.clear();
+
+        // dispose own wireVisualManager
+        this.wireVisualManager.dispose();
+
+        // Dispose MapControls
+        if (this._mapControls) {
+          if (this._mapControlsChangeHandler) {
+            this._mapControls.removeEventListener('change', this._mapControlsChangeHandler);
+            this._mapControlsChangeHandler = null;
+          }
+          this._mapControls.dispose();
+          this._mapControls = null;
+        }
+      } else {
+        // When using shared resources, just clear our references
+        // The CircuitEngine will handle actual disposal
+        this._hoverManager = null;
+        this._scene = null;
+        this._camera = null;
         this._mapControls = null;
+        this._grid = null;
+        // Note: visual maps are shared, so we don't clear them
       }
 
       // Clear event listeners
@@ -325,6 +411,19 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
     }
   }
 
+  public setActive(active: boolean): void {
+    this._active = active;
+    this.onSetActive(active);
+  }
+
+  protected abstract onSetActive(active: boolean): void;
+
+  /**
+   * Set the current circuit to visualize or null to clear the scene
+   * @param circuit
+   */
+  abstract setCircuit(circuit: Circuit | null): void;
+
   /**
    * Get the current circuit being visualized
    */
@@ -346,12 +445,14 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
       this._removeAllVisuals();
       const oldCircuitName = this._circuit.metadata.name || 'Unnamed Circuit';
       this._circuit = null;
+      this.wireVisualManager.setCircuit(null);
       this.emit('circuitCleared', { name: oldCircuitName });
     }
 
     if (circuit !== null) {
       // Perform full update with new circuit
       this._circuit = circuit;
+      this.wireVisualManager.setCircuit(circuit);
       this._gridHalfSize = Math.ceil(circuit.metadata.size / 2);
       this._scene!.name = this._circuit!.metadata.name || 'Circuit Scene';
       this.onSetCircuit();
@@ -367,11 +468,11 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
   getObject3D(type: HoverableType, id: UUID): THREE.Object3D | undefined {
     switch (type) {
       case 'component':
-        return this.componentObject3Ds.get(id);
+        return this._componentObject3Ds.get(id);
       case 'enode':
-        return this.enodeObject3Ds.get(id);
+        return this._enodeObject3Ds.get(id);
       case 'wire':
-        return this.wireObject3Ds.get(id);
+        return this._wireObject3Ds.get(id);
       default:
         return undefined;
     }
@@ -411,31 +512,29 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
    * @private
    */
   private _initializeHoverManager(): void {
-    if (!this._scene || !this._camera || !this._container) {
-      throw new Error('Scene, camera, and container must be initialized before HoverManager');
+    if (!this._hoverManager) {
+      throw new Error('HoverManager must be constructed before initialization');
     }
-    // Create HoverManager instance
-    this._hoverManager = new HoverManager(this._scene, this._camera);
-    // Track previous hover state for unhover events
-    let previousElement: {
-      objectId: UUID;
-      objectType: any;
-      userData: HitboxUserData;
-    } | null = null;
+    if (!this._container) {
+      throw new Error('Container must be defined to initialize HoverManager');
+    }
 
-    const unhoverPreviousElement = (element: {
-      objectId: string;
-      objectType: CircuitSceneObjectType;
-      userData: HitboxUserData;
-    }) => {
+    // Track previous hover state for unhover events
+    // let previousElement: {
+    //   objectId: UUID;
+    //   objectType: any;
+    //   userData: HitboxUserData;
+    // } | null = null;
+
+    const unhoverPreviousElement = (element: HoveredElement) => {
       if (element.objectType === 'enodeHitbox') {
-        const userData = element.userData as EnodeHitboxUserData;
+        const userData = element.object3D.userData as EnodeHitboxUserData;
         const enodeId = userData.enodeId;
         if (!enodeId) {
           console.warn('Failed to apply unhover effect (missing enodeId)');
           return;
         }
-        const enodeGroup = this.enodeObject3Ds.get(enodeId);
+        const enodeGroup = this._enodeObject3Ds.get(enodeId);
         if (!enodeGroup) {
           console.warn('Failed to apply unhover effect (enodeGroup not found)');
           return;
@@ -452,13 +551,13 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
         }
         return;
       } else if (element.objectType === 'componentHitbox') {
-        const userData = element.userData as ComponentHitboxUserData;
+        const userData = element.object3D.userData as ComponentHitboxUserData;
         const componentId = userData.componentId;
         if (!componentId) {
           console.warn('Failed to apply unhover effect (missing componentId)');
           return;
         }
-        const componentGroup = this.componentObject3Ds.get(componentId);
+        const componentGroup = this._componentObject3Ds.get(componentId);
         if (!componentGroup) {
           console.warn('Failed to apply unhover effect (componentGroup not found)');
           return;
@@ -471,13 +570,13 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
         }
         return;
       } else if (element.objectType === 'wire') {
-        const userData = element.userData as WireHitboxUserData;
+        const userData = element.object3D.userData as WireHitboxUserData;
         const wireId = userData.wireId;
         if (!wireId) {
           console.warn('Failed to apply unhover effect (missing wireId)');
           return;
         }
-        const wire = this.wireObject3Ds.get(wireId);
+        const wire = this._wireObject3Ds.get(wireId);
         if (!wire) {
           console.warn('Failed to apply unhover effect (wire not found)');
           return;
@@ -494,7 +593,7 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
           console.warn('Failed to apply hover effect (missing enodeId)');
           return;
         }
-        const enodeGroup = this.enodeObject3Ds.get(enodeId);
+        const enodeGroup = this._enodeObject3Ds.get(enodeId);
         if (!enodeGroup) {
           console.warn('Failed to apply hover effect (enodeGroup not found)');
           return;
@@ -517,7 +616,7 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
           console.warn('Failed to apply hover effect (missing componentId)');
           return;
         }
-        const componentGroup = this.componentObject3Ds.get(componentId);
+        const componentGroup = this._componentObject3Ds.get(componentId);
         if (!componentGroup) {
           console.warn('Failed to apply hover effect (componentGroup not found)');
           return;
@@ -536,7 +635,7 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
           console.warn('Failed to apply hover effect (missing wireId)');
           return;
         }
-        const wire = this.wireObject3Ds.get(wireId);
+        const wire = this._wireObject3Ds.get(wireId);
         if (!wire) {
           console.warn('Failed to apply hover effect (wire not found)');
           return;
@@ -546,29 +645,55 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
     };
 
     // Register callback to emit hover/unhover events
-    this._hoverManager.onHoverChange((element) => {
+    this._hoverManager.onHoverChange((element, previousElement) => {
       // Emit unhover for previous element if it exists
-      if (previousElement && (!element || element.id !== previousElement.objectId)) {
+      if (previousElement && (!element || element.id !== previousElement.id)) {
         unhoverPreviousElement(previousElement);
-        this.emit('unhover', { ...previousElement });
+        this.emit('unhover', {
+            objectId: previousElement.id,
+            objectType: previousElement.objectType,
+            userData: previousElement.object3D.userData as HitboxUserData,
+        });
         previousElement = null;
       }
 
       // Emit hover for new element
       if (element) {
         hoverElement(element);
-        previousElement = {
+        this.emit('hover', {
           objectId: element.id,
           objectType: element.objectType,
           userData: element.object3D.userData as HitboxUserData,
-        };
-        this.emit('hover', { ...previousElement });
+        });
       }
     });
 
+    // Setup MapControls 'change' listener to refresh hover on camera movement
+    if (this._mapControls) {
+      this._mapControlsChangeHandler = () => {
+        if (this._hoverManager) {
+          this._hoverManager.refresh();
+        }
+      };
+      this._mapControls.addEventListener('change', this._mapControlsChangeHandler);
+    }
+
+    console.log('HoverManager initialized');
+
+    this._hoverManager.setInitialized(true);
+  }
+
+  protected _setupMouseCallbacks(): void {
+    if (!this._hoverManager) {
+      throw new Error('HoverManager must be constructed before setting up mouse callbacks');
+    }
+    if (!this._container) {
+      throw new Error('Container must be defined to setup mouse callbacks');
+    }
+
     // Setup mousemove event listener : must always be active so that current world position can be queried
     this._mouseMoveHandler = (event: MouseEvent) => {
-      if (!this._container || !this._hoverManager) return;
+      if (!this._active || !this._container || !this._hoverManager) return;
       const rect = this._container.getBoundingClientRect();
       const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -580,7 +705,6 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
         this.emit('gridPositionMove', newPosition);
       }
     };
-
     this._container.addEventListener('mousemove', this._mouseMoveHandler);
 
     // Setup mouseleave event listener
@@ -589,27 +713,9 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
         this._hoverManager.clear();
       }
     };
-
     this._container.addEventListener('mouseleave', this._mouseLeaveHandler);
-
-    // Setup MapControls 'change' listener to refresh hover on camera movement (Phase 4)
-    if (this._mapControls) {
-      this._mapControlsChangeHandler = () => {
-        if (this._hoverManager) {
-          this._hoverManager.refresh();
-        }
-      };
-      this._mapControls.addEventListener('change', this._mapControlsChangeHandler);
-    }
   }
 
-  /**
-   * Hook for subclasses to handle mouse move.
-   * Default implementation updates hover manager.
-   */
-  protected onMouseMove(normalizedX: number, normalizedY: number, _event: MouseEvent): void {
-    this._hoverManager?.updateFromMouse(normalizedX, normalizedY);
-  }
 
   /**
    * Get the currently hovered element.

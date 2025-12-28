@@ -91,8 +91,8 @@ Users need to simulate circuits with hundreds of components efficiently, with si
 
 - Q: What happens when a circuit has loops (e.g., wire path from A → B → C → A)? A: this will typically occurs in real circuits, the simulation engine must handle them gracefully without infinite recursion or crashes.
 - Q: How does the system handle floating nodes (components with no path to voltage source or ground)? A: these nodes should remain unpowered (no voltage/current flow) throughout the simulation.
-- Q: What happens when a component has conflicting states (e.g., multiple voltage sources with different values) A: voltage or current levels are boolean, no conflicts should arise, but the system must define a clear precedence rule if needed.
-- Q: How does simulation behave when a circuit has no voltage sources or current sources? A: nothing happens, all components remain unpowered.
+- Q: What happens when a component has conflicting states (e.g., multiple voltage pinSources with different values) A: voltage or current levels are boolean, no conflicts should arise, but the system must define a clear precedence rule if needed.
+- Q: How does simulation behave when a circuit has no voltage pinSources or current pinSources? A: nothing happens, all components remain unpowered.
 - Q: What happens when components are added/removed during an active simulation? A: this feature is out of scope. For the initial version, circuit topology is static during simulation.
 - Q: How does the system handle invalid component configurations (e.g., short circuit)? A: system shouldn't handle electrical risks: for example a wire between the two pins of battery will simply be considered under voltage with current flowing.
 
@@ -104,7 +104,7 @@ Users need to simulate circuits with hundreds of components efficiently, with si
 - **FR-002**: System MUST maintain two binary electrical state (voltage or not and current flowing or not) for each Wire in the circuit
 - **FR-003**: System MUST maintain component-specific state for each Component (e.g., switch opening/open/closing/closed, transistor inactive/activating/active/deactivating ...)
 - **FR-004**: System MUST identify voltage source pins at simulation initialization based on component type and configuration
-- **FR-005**: System MUST propagate electrical state from voltage sources through connected wires and enodes using single-pass topological ordering in each simulation step
+- **FR-005**: System MUST propagate electrical state from voltage pinSources through connected wires and enodes using single-pass topological ordering in each simulation step
 - **FR-006**: System MUST evaluate each component's behavior based on its input pin states and update component state accordingly
 - **FR-007**: System MUST support component state transitions that occur immediately (same step as input change)
 - **FR-008**: System MUST support component state transitions that occur after a configured delay (integer N steps after input change)

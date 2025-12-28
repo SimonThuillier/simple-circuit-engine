@@ -10,6 +10,12 @@ import type { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import type { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import type { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import type { UserCommand } from '@/core/simulation';
+import type { MapControls } from 'three/addons/controls/MapControls.js';
+import type { IFactoryRegistry } from './components/ComponentVisualFactory';
+import type { BranchingPointVisualFactory } from './components/BranchingPointVisualFactory';
+import type { WireVisualManager } from './WireVisualManager';
+import type { HoverManager } from './HoverManager';
+import type { RunnerOptions } from '@/core/simulation/types/RunnerOptions';
 
 // Re-export Line2 types for convenience
 export type { Line2, LineGeometry, LineMaterial };
@@ -68,7 +74,7 @@ export type ControllerEvent =
  * Event payload map for type-safe event emission
  */
 export interface ControllerEventMap {
-  ready: { controllerType: 'static' | 'simulation' };
+  ready: { controllerType: 'static' | 'simulation' | 'engine' };
   error: { message: string; error?: Error };
   circuitLoaded: { name: string };
   circuitCleared: { name: string };
@@ -352,4 +358,90 @@ export interface IEditingTool {
    * @returns Array of Three.js objects to render as previews
    */
   getPreviewObjects(): THREE.Object3D[];
+}
+
+// ============================================================================
+// CircuitEngine Types (014-circuit-engine)
+// ============================================================================
+
+/**
+ * Operating mode of the CircuitEngine
+ * - 'edit': Static circuit editing mode (tools, selection, manipulation)
+ * - 'simulation': Live simulation mode (playback, animation, user commands)
+ */
+export type EngineMode = 'edit' | 'simulation';
+
+/**
+ * Resources shared between edit and simulation controllers.
+ * Created by CircuitEngine and injected into both controllers.
+ */
+export interface SharedResources {
+  /** Three.js scene containing all circuit visuals */
+  scene: THREE.Scene;
+
+  /** Perspective camera for rendering */
+  camera: THREE.PerspectiveCamera;
+
+  /** MapControls for pan/zoom/rotate interaction */
+  mapControls: MapControls;
+
+  /** Grid helper (may be null before circuit loaded) */
+  grid: THREE.GridHelper | null;
+
+  /** Registry of component visual factories */
+  factoryRegistry: IFactoryRegistry;
+
+  /** Factory for branching point visuals */
+  branchingPointVisualFactory: BranchingPointVisualFactory;
+
+  /** Manager for wire Line2 visuals */
+  wireVisualManager: WireVisualManager;
+
+  /** Manager for hover detection */
+  hoverManager: HoverManager;
+
+  /** Map of component UUIDs to their Object3D groups */
+  componentObject3Ds: Map<UUID, THREE.Object3D>;
+
+  /** Map of enode UUIDs to their Object3D groups */
+  enodeObject3Ds: Map<UUID, THREE.Object3D>;
+
+  /** Map of wire UUIDs to their Line2 objects */
+  wireObject3Ds: Map<UUID, Line2>;
+}
+
+/**
+ * Event emitted when engine mode changes
+ */
+export interface ModeChangedEvent {
+  /** New active mode */
+  mode: EngineMode;
+  /** Previous mode before transition */
+  previousMode: EngineMode;
+}
+
+/**
+ * Combined event map for CircuitEngine.
+ * Includes all controller events plus engine-specific events.
+ */
+export interface CircuitEngineEventMap extends ControllerEventMap {
+  /** Emitted after mode transition completes */
+  modeChanged: ModeChangedEvent;
+}
+
+/**
+ * Configuration options for CircuitEngine initialization
+ */
+export interface CircuitEngineOptions extends ControllerOptions {
+  /**
+   * Initial operating mode
+   * @default 'edit'
+   */
+  initialMode?: EngineMode;
+
+  /**
+   * Options passed to CircuitRunner when created
+   * @default { enableHistory: false }
+   */
+  runnerOptions?: RunnerOptions;
 }

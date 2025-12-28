@@ -152,15 +152,18 @@ export class InterpolationController {
 
     // Object: Interpolate each numeric property
     if (typeof current === 'object' && typeof previous === 'object') {
-      const result: { [key: string]: number } = {};
+      const result: { [key: string]: number | unknown } = {};
       for (const key in current) {
-        if (typeof current[key] === 'number' && typeof previous[key] === 'number') {
-          result[key] = lerp(previous[key] as number, current[key] as number, progress);
+        const currentVal = current[key];
+        const previousVal = previous[key];
+        if (typeof currentVal === 'number' && typeof previousVal === 'number') {
+          result[key] = lerp(previousVal, currentVal, progress);
         } else {
-          result[key] = current[key];
+          // Non-numeric properties use current value
+          result[key] = currentVal;
         }
       }
-      return result;
+      return result as { [key: string]: number };
     }
 
     // Fallback: Return current state

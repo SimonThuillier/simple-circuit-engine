@@ -90,7 +90,7 @@
 
 - [x] T022 [US5] Add click event listener registration in onInitialize() in src/scene/simulation/CircuitRunnerController.ts
 - [x] T023 [US5] Implement _handlePointerDown(event) method to detect component clicks in src/scene/simulation/CircuitRunnerController.ts
-- [x] T024 [US5] Check if clicked component is Switch type using componentObject3Ds userData in src/scene/simulation/CircuitRunnerController.ts
+- [x] T024 [US5] Check if clicked component is Switch type using _componentObject3Ds userData in src/scene/simulation/CircuitRunnerController.ts
 - [x] T025 [US5] Create UserCommand {type: 'toggle_switch', targetId, scheduledAtTick} for Switch clicks in src/scene/simulation/CircuitRunnerController.ts
 - [x] T026 [US5] Submit command via runner.submitCommand() in src/scene/simulation/CircuitRunnerController.ts
 - [x] T027 [US5] Remove click event listener in onDispose() in src/scene/simulation/CircuitRunnerController.ts
