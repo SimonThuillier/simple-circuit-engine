@@ -32,6 +32,7 @@ export enum ComponentType {
   SmallLED = 'smallLED',
   RectangleLED = 'rectangleLED',
   Cube = 'cube', // no pins component for testing purposes mainly
+  Label = 'label', // decorative text label with no pins
 }
 
 /**
@@ -161,6 +162,15 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTy
     name: 'Cube',
     pins: new Map([]),
     config: new Map([['color', 'red']]),
+  },
+  [ComponentType.Label]: {
+    id: ComponentType.Label,
+    name: 'Label',
+    pins: new Map([]),
+    config: new Map([
+      ['text', 'Label'],
+      ['size', '1'],
+    ]),
   },
 };
 

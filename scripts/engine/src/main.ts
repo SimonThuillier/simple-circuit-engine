@@ -27,6 +27,7 @@ import {
   SmallLEDVisualFactory,
   SwitchVisualFactory,
   TransistorVisualFactory,
+  LabelVisualFactory,
 } from '@/scene/shared/components';
 
 // Export to window object for use in HTML
@@ -55,6 +56,7 @@ if (typeof window !== 'undefined') {
   componentsFactoryRegistry.register(ComponentType.Switch, new SwitchVisualFactory());
   componentsFactoryRegistry.register(ComponentType.SmallLED, new SmallLEDVisualFactory());
   componentsFactoryRegistry.register(ComponentType.Transistor, new TransistorVisualFactory());
+  componentsFactoryRegistry.register(ComponentType.Label, new LabelVisualFactory());
 
   // Create behavior registry with all component behaviors
   const behaviorRegistry = new BehaviorRegistry();
