@@ -5,6 +5,8 @@ Auto-generated from all feature plans. Last updated: 2025-11-28
 ## Active Technologies
 - TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (scene, camera, controls, Line2) (014-circuit-engine)
 - N/A (in-memory circuit model, no persistence in this feature) (014-circuit-engine)
+- TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+, lil-gui (new dependency to add) (015-component-config-editor)
+- N/A (in-memory config map on Component instances) (015-component-config-editor)
 
 - TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (for 3D scene interaction and Line2 wire rendering) (013-circuit-runner-controller)
 
@@ -86,11 +88,11 @@ function badExample(input: number | null): string {
 ```
 
 ## Recent Changes
+- 015-component-config-editor: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+, lil-gui (new dependency to add)
 - 014-circuit-engine: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (scene, camera, controls, Line2)
 
 - 013-circuit-runner-controller: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (for 3D scene interaction and Line2 wire rendering)
 
-- 012-ctrl-click-source-cycle: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (already installed)
 
 
 <!-- MANUAL ADDITIONS START -->
