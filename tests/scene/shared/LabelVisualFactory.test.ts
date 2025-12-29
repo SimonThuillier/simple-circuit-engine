@@ -13,20 +13,25 @@ import * as THREE from 'three';
 
 // Create factory function for mock canvas to get unique instances
 function createMockCanvas() {
+  const canvas = {
+    width: 100,
+    height: 50,
+    getContext: vi.fn(),
+  };
+
   const ctx = {
     font: '',
     fillStyle: '',
     textAlign: '',
     textBaseline: '',
-    measureText: vi.fn(() => ({ width: 80 })),
+    // Simulate text measurement: ~10 pixels per character (approximation)
+    measureText: vi.fn((text: string) => ({ width: text.length * 10 })),
     fillText: vi.fn(),
     clearRect: vi.fn(),
   };
-  return {
-    width: 100,
-    height: 50,
-    getContext: vi.fn(() => ctx),
-  };
+
+  canvas.getContext = vi.fn(() => ctx);
+  return canvas;
 }
 
 vi.stubGlobal('document', {
@@ -399,6 +404,152 @@ describe('LabelVisualFactory', () => {
       const config = factory.mapFormToCoreConfig(formData);
 
       expect(config.get('size')).toBe('4');
+    });
+  });
+
+  // ============================================
+  // Hover and Selection Effects
+  // ============================================
+
+  describe('applyHover / removeHover', () => {
+    it('sets isHovered flag on group userData', () => {
+      const component = new Component(
+        ComponentType.Label,
+        new Position(0, 0),
+        new Rotation(0),
+        []
+      );
+      const visual = factory.createVisual(component);
+
+      expect(visual.userData.isHovered).toBeUndefined();
+
+      factory.applyHover(visual);
+      expect(visual.userData.isHovered).toBe(true);
+
+      factory.removeHover(visual);
+      expect(visual.userData.isHovered).toBe(false);
+    });
+
+    it('does not change text color when selected (selection takes precedence)', () => {
+      const component = new Component(
+        ComponentType.Label,
+        new Position(0, 0),
+        new Rotation(0),
+        []
+      );
+      const visual = factory.createVisual(component);
+
+      // First select, then hover
+      factory.applySelection(visual);
+      factory.applyHover(visual);
+
+      // Should still be marked as hovered for state tracking
+      expect(visual.userData.isHovered).toBe(true);
+      expect(visual.userData.isSelected).toBe(true);
+    });
+  });
+
+  describe('applySelection / removeSelection', () => {
+    it('sets isSelected flag on group userData', () => {
+      const component = new Component(
+        ComponentType.Label,
+        new Position(0, 0),
+        new Rotation(0),
+        []
+      );
+      const visual = factory.createVisual(component);
+
+      expect(visual.userData.isSelected).toBeUndefined();
+
+      factory.applySelection(visual);
+      expect(visual.userData.isSelected).toBe(true);
+
+      factory.removeSelection(visual);
+      expect(visual.userData.isSelected).toBe(false);
+    });
+
+    it('restores hover color if hovered when selection is removed', () => {
+      const component = new Component(
+        ComponentType.Label,
+        new Position(0, 0),
+        new Rotation(0),
+        []
+      );
+      const visual = factory.createVisual(component);
+
+      // Hover first, then select
+      factory.applyHover(visual);
+      factory.applySelection(visual);
+
+      // Remove selection - should still be hovered
+      factory.removeSelection(visual);
+
+      expect(visual.userData.isHovered).toBe(true);
+      expect(visual.userData.isSelected).toBe(false);
+    });
+  });
+
+  // ============================================
+  // Text Resize on Update
+  // ============================================
+
+  describe('updateFromConfiguration - text resize', () => {
+    it('resizes geometry when text becomes longer', () => {
+      const component = new Component(
+        ComponentType.Label,
+        new Position(0, 0),
+        new Rotation(0),
+        []
+      );
+      component.config.set('text', 'A');
+      const visual = factory.createVisual(component);
+
+      // Get initial geometry width
+      const textMesh = visual.children.find(
+        (child) => child.userData.part === 'text'
+      ) as THREE.Mesh;
+      const initialGeometry = textMesh.geometry as THREE.PlaneGeometry;
+      const initialWidth = initialGeometry.parameters.width;
+
+      // Update with longer text
+      const newConfig = new Map([
+        ['text', 'A much longer label text here'],
+        ['size', '1'],
+      ]);
+      factory.updateFromConfiguration(visual, newConfig);
+
+      // Geometry should be wider
+      const updatedGeometry = textMesh.geometry as THREE.PlaneGeometry;
+      expect(updatedGeometry.parameters.width).toBeGreaterThan(initialWidth);
+    });
+
+    it('updates hitbox dimensions when text changes', () => {
+      const component = new Component(
+        ComponentType.Label,
+        new Position(0, 0),
+        new Rotation(0),
+        []
+      );
+      component.config.set('text', 'Short');
+      const visual = factory.createVisual(component);
+
+      // Get initial hitbox dimensions
+      const hitbox = visual.children.find(
+        (child) => child.userData.type === 'componentHitbox'
+      ) as THREE.Mesh;
+      const initialHitboxGeometry = hitbox.geometry as THREE.PlaneGeometry;
+      const initialHitboxWidth = initialHitboxGeometry.parameters.width;
+
+      // Update with longer text
+      const newConfig = new Map([
+        ['text', 'A much longer label text that extends the hitbox'],
+        ['size', '1'],
+      ]);
+      factory.updateFromConfiguration(visual, newConfig);
+
+      // Hitbox should be wider
+      const updatedHitboxGeometry = hitbox.geometry as THREE.PlaneGeometry;
+      expect(updatedHitboxGeometry.parameters.width).toBeGreaterThan(initialHitboxWidth);
     });
   });
 });

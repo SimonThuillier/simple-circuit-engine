@@ -10,6 +10,7 @@ import { ComponentVisualFactoryBase } from './ComponentVisualFactory';
 import type { Component } from '@/core/Component';
 import type { ConfigFormDefinition } from '../types/ConfigTypes';
 import * as THREE from 'three';
+import {BoxGeometry} from "three";
 
 /**
  * Visual factory for Label components
@@ -43,6 +44,12 @@ export class LabelVisualFactory extends ComponentVisualFactoryBase {
 
   /** Text color (dark gray for readability) */
   private static readonly TEXT_COLOR = '#333333';
+
+  /** Hover text color (blue tint matching other components) */
+  private static readonly HOVER_COLOR = '#4488ff';
+
+  /** Selection text color (orange tint matching other components) */
+  private static readonly SELECTION_COLOR = '#ff8800';
 
   /** Base font size in pixels */
   private static readonly BASE_FONT_SIZE = 32;
@@ -79,7 +86,8 @@ export class LabelVisualFactory extends ComponentVisualFactoryBase {
     const textGeometry = textMesh.geometry as THREE.PlaneGeometry;
     const width = textGeometry.parameters.width;
     const height = textGeometry.parameters.height;
-    const hitbox = this.createComponentHitbox(component.id, group.id, width, height, 0.1);
+    const hitbox = this.createComponentHitbox(component.id, group.id, width, height, 0.2);
+    hitbox.userData.componentType = component.type;
     group.add(hitbox);
 
     // Apply initial configuration (size scaling)
@@ -136,7 +144,9 @@ export class LabelVisualFactory extends ComponentVisualFactoryBase {
    * @returns THREE.Mesh with text texture
    */
   private createTextMesh(text: string): THREE.Mesh {
-    const canvas = this.createTextCanvas(text);
+    const displayText = this.normalizeDisplayText(text);
+
+    const canvas = this.createTextCanvas(displayText);
     const texture = new THREE.CanvasTexture(canvas);
     texture.minFilter = THREE.LinearFilter;
     texture.magFilter = THREE.LinearFilter;
@@ -159,7 +169,7 @@ export class LabelVisualFactory extends ComponentVisualFactoryBase {
     // Store canvas and texture references for updates
     mesh.userData.canvas = canvas;
     mesh.userData.texture = texture;
-    mesh.userData.text = text;
+    mesh.userData.text = displayText;
 
     // Position slightly above ground plane
     mesh.position.set(0, 0.01, 0);
@@ -185,38 +195,60 @@ export class LabelVisualFactory extends ComponentVisualFactoryBase {
   }
 
   /**
+   * Normalize display text by truncating and providing default
+   * @param text
+   * @private
+   */
+  private normalizeDisplayText(text: string): string {
+    const displayText = text.slice(0, LabelVisualFactory.MAX_TEXT_LENGTH) || 'Label';
+    return displayText;
+  }
+
+  /**
    * Update the text mesh with new text content
+   *
+   * Resizes canvas and geometry to fit the new text, then redraws.
    *
    * @param mesh - The text mesh to update
    * @param text - New text content
+   * @param group - The parent group containing the hitbox to update
    */
-  private updateTextMesh(mesh: THREE.Mesh, text: string): void {
-    const canvas = mesh.userData.canvas as HTMLCanvasElement;
-    const texture = mesh.userData.texture as THREE.CanvasTexture;
+  private updateTextMesh(mesh: THREE.Mesh, text: string, group: THREE.Object3D): void {
+    const displayText = this.normalizeDisplayText(text);
+    if(displayText === mesh.userData.text) return;
 
-    if (!canvas || !texture) {
-      return;
+    mesh.geometry.dispose();
+
+    const canvas = this.createTextCanvas(displayText);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+
+    const material = new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+
+    // Calculate world-space dimensions
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+    const worldWidth = (canvas.width / pixelRatio) / 50; // Scale factor for scene units
+    const worldHeight = (canvas.height / pixelRatio) / 50;
+
+    mesh.geometry = new THREE.PlaneGeometry(worldWidth, worldHeight);
+    mesh.material = material;
+
+    // Update hitbox size
+    const hitbox = this.findHitbox(group);
+    if(hitbox){
+        hitbox.geometry.dispose();
+        hitbox.geometry = new BoxGeometry(worldWidth, 0.1, worldHeight);
     }
 
-    const ctx = canvas.getContext('2d')!;
-    const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
-    const scaledFontSize = LabelVisualFactory.BASE_FONT_SIZE * pixelRatio;
-
-    // Truncate and fallback to default
-    const displayText = (text.slice(0, LabelVisualFactory.MAX_TEXT_LENGTH)) || 'Label';
-
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Redraw text
-    ctx.font = `bold ${scaledFontSize}px ${LabelVisualFactory.FONT_FAMILY}`;
-    ctx.fillStyle = LabelVisualFactory.TEXT_COLOR;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(displayText, canvas.width / 2, canvas.height / 2);
-
-    // Update texture
-    texture.needsUpdate = true;
+    // Store canvas and texture references for updates
+    mesh.userData.canvas = canvas;
+    mesh.userData.texture = texture;
     mesh.userData.text = displayText;
   }
 
@@ -232,7 +264,7 @@ export class LabelVisualFactory extends ComponentVisualFactoryBase {
     if (textMesh) {
       const newText = config.get('text') || 'Label';
       if (textMesh.userData.text !== newText) {
-        this.updateTextMesh(textMesh, newText);
+        this.updateTextMesh(textMesh, newText, object3D);
       }
     }
 
@@ -302,5 +334,97 @@ export class LabelVisualFactory extends ComponentVisualFactoryBase {
     config.set('size', String(size));
 
     return config;
+  }
+
+  /**
+   * Apply hover visual effect to the Label
+   *
+   * Changes text color to hover color (blue) by redrawing the canvas.
+   *
+   * @param object3D - The component group
+   */
+  override applyHover(object3D: THREE.Object3D): void {
+    object3D.userData.isHovered = true;
+    // Selection takes precedence over hover
+    if (object3D.userData.isSelected) return;
+    this.redrawTextWithColor(object3D, LabelVisualFactory.HOVER_COLOR);
+  }
+
+  /**
+   * Remove hover visual effect from the Label
+   *
+   * Restores text color to default by redrawing the canvas.
+   *
+   * @param object3D - The component group
+   */
+  override removeHover(object3D: THREE.Object3D): void {
+    object3D.userData.isHovered = false;
+    // Keep selection color if selected
+    if (object3D.userData.isSelected) return;
+    this.redrawTextWithColor(object3D, LabelVisualFactory.TEXT_COLOR);
+  }
+
+  /**
+   * Apply selection visual effect to the Label
+   *
+   * Changes text color to selection color (orange) by redrawing the canvas.
+   *
+   * @param object3D - The component group
+   */
+  override applySelection(object3D: THREE.Object3D): void {
+    object3D.userData.isSelected = true;
+    this.redrawTextWithColor(object3D, LabelVisualFactory.SELECTION_COLOR);
+  }
+
+  /**
+   * Remove selection visual effect from the Label
+   *
+   * Restores text color based on hover state.
+   *
+   * @param object3D - The component group
+   */
+  override removeSelection(object3D: THREE.Object3D): void {
+    object3D.userData.isSelected = false;
+
+    if (object3D.userData.isHovered) {
+      this.redrawTextWithColor(object3D, LabelVisualFactory.HOVER_COLOR);
+    } else {
+      this.redrawTextWithColor(object3D, LabelVisualFactory.TEXT_COLOR);
+    }
+  }
+
+  /**
+   * Redraw the text canvas with a specific color
+   *
+   * @param object3D - The component group
+   * @param color - The CSS color string to use
+   */
+  private redrawTextWithColor(object3D: THREE.Object3D, color: string): void {
+    const textMesh = this.findTextMesh(object3D);
+    if (!textMesh) {
+      return;
+    }
+
+    const canvas = textMesh.userData.canvas as HTMLCanvasElement;
+    const texture = textMesh.userData.texture as THREE.CanvasTexture;
+    const displayText = textMesh.userData.text as string;
+
+    if (!canvas || !texture || !displayText) {
+      return;
+    }
+
+    const ctx = canvas.getContext('2d')!;
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+    const scaledFontSize = LabelVisualFactory.BASE_FONT_SIZE * pixelRatio;
+
+    // Clear and redraw with new color
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.font = `bold ${scaledFontSize}px ${LabelVisualFactory.FONT_FAMILY}`;
+    ctx.fillStyle = color;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(displayText, canvas.width / 2, canvas.height / 2);
+
+    texture.needsUpdate = true;
   }
 }

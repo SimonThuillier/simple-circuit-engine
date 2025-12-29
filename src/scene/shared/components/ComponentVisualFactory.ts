@@ -459,6 +459,16 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     return hitbox;
   }
 
+  protected findHitbox(object3D: THREE.Object3D): THREE.Mesh | null {
+    let hitbox: THREE.Mesh | null = null;
+    object3D.traverse((child) => {
+      if (child.userData.type === 'componentHitbox' && child instanceof THREE.Mesh) {
+        hitbox = child;
+      }
+    });
+    return hitbox;
+  }
+
   protected pinColorForSourceType(sourceType: ENodeSourceType | null): number {
     if (!sourceType) {
       return 0xb87333; // Bronze for no source
