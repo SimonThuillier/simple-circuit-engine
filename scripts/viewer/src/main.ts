@@ -19,7 +19,8 @@ import {
   RelayVisualFactory,
   SmallLEDVisualFactory,
   SwitchVisualFactory,
-  TransistorVisualFactory
+  TransistorVisualFactory,
+  LabelVisualFactory
 } from '../../../src/scene/shared/components';
 
 
@@ -52,6 +53,7 @@ if (typeof window !== 'undefined') {
   componentsFactoryRegistry.register(ComponentType.Switch, new SwitchVisualFactory());
   componentsFactoryRegistry.register(ComponentType.SmallLED, new SmallLEDVisualFactory());
   componentsFactoryRegistry.register(ComponentType.Transistor, new TransistorVisualFactory());
+  componentsFactoryRegistry.register(ComponentType.Label, new LabelVisualFactory());
 
   window.renderer = new WebGLRenderer({ antialias: false, alpha: false });
   window.renderer.setClearColor(0x222290);

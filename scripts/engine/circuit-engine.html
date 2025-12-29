@@ -728,7 +728,7 @@
       });
 
       document.getElementById('clear-btn').addEventListener('click', () => {
-        engine.setCircuit(null);
+        engine.setCircuit(new window.Circuit());
         document.getElementById('circuit-input').value = '';
         document.getElementById('status-circuit').textContent = 'Not loaded';
         document.getElementById('tick-count').textContent = '0';
