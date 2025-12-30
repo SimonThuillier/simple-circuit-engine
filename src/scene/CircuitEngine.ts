@@ -548,6 +548,34 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
     }
   }
 
+  /**
+   * Simulation speed in ticks per second.
+   * Range: 1-20 TPS. Works in both edit and simulation modes.
+   */
+  get simulationSpeed(): number {
+    return this._simulationController?.simulationSpeed ?? 5;
+  }
+
+  set simulationSpeed(tps: number) {
+    if (this._simulationController) {
+      this._simulationController.simulationSpeed = tps;
+    }
+  }
+
+  /**
+   * Minimum allowed simulation speed in ticks per second.
+   */
+  get minSimulationSpeed(): number {
+    return this._simulationController?.minSimulationSpeed ?? 1;
+  }
+
+  /**
+   * Maximum allowed simulation speed in ticks per second.
+   */
+  get maxSimulationSpeed(): number {
+    return this._simulationController?.maxSimulationSpeed ?? 20;
+  }
+
   // ============================================================================
   // Three.js Access
   // ============================================================================

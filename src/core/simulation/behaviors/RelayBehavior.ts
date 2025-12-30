@@ -11,6 +11,20 @@ import { ComponentType } from '@/core/types/ComponentType';
 import { RelayState } from '@/core/simulation/states/RelayState';
 import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
 import type { NodeElectricalState, ScheduledEvent, UserCommand } from '@/core/simulation';
+import { TRANSITION_DEFAULTS } from '../types/SimulationConstants';
+
+/**
+ * Get the transition span from component config.
+ * @param config - Component config map
+ * @returns Number of ticks for transition (minimum 1)
+ */
+function getTransitionSpan(config: Map<string, string>): number {
+  const value = parseInt(config.get('transitionSpan') || '', 10);
+  if (isNaN(value) || value < 1) {
+    return TRANSITION_DEFAULTS.TRANSITION_SPAN_TICKS;
+  }
+  return value;
+}
 
 /**
  * Behavior implementation for relays components.
@@ -83,12 +97,12 @@ export class RelayBehavior implements ComponentBehavior {
         (pinStates.get('cmd_in')!.hasVoltage && pinStates.get('cmd_out')!.hasCurrent) ||
         (pinStates.get('cmd_out')!.hasVoltage && pinStates.get('cmd_in')!.hasCurrent);
 
-    console.log(component.config.get('activationLogic'));
     const shouldBeClosed = component.config.get('activationLogic') === 'negative'
         ? !isCommanded: isCommanded;
 
     let hasChanged = false;
     const scheduledEvents: ScheduledEvent[] = [];
+    const transitionSpan = getTransitionSpan(component.config);
 
     if (shouldBeClosed) {
       if (state.state === 'open' || state.state === 'opening') {
@@ -98,7 +112,7 @@ export class RelayBehavior implements ComponentBehavior {
         scheduledEvents.push({
           targetId: component.id,
           scheduledAtTick: targetTick,
-          readyAtTick: targetTick + 1, // TODO handle component config later
+          readyAtTick: targetTick + transitionSpan,
           type: 'ClosingEnd',
           parameters: undefined,
         });
@@ -111,7 +125,7 @@ export class RelayBehavior implements ComponentBehavior {
         scheduledEvents.push({
           targetId: component.id,
           scheduledAtTick: targetTick,
-          readyAtTick: targetTick + 1, // TODO handle component config later
+          readyAtTick: targetTick + transitionSpan,
           type: 'OpeningEnd',
           parameters: undefined,
         });

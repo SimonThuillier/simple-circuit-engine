@@ -11,6 +11,8 @@ const btnPlay = document.getElementById('btn-play');
 const btnPause = document.getElementById('btn-pause');
 const btnStep = document.getElementById('btn-step');
 const btnReset = document.getElementById('btn-reset');
+const speedSlider = document.getElementById('speed-slider') as HTMLInputElement | null;
+const speedDisplay = document.getElementById('speed-display');
 
 if (!container || !status || !btnPlay || !btnPause || !btnStep || !btnReset) {
   throw new Error('Required DOM elements not found');
@@ -43,6 +45,26 @@ btnReset.addEventListener('click', () => {
   engine.reset();
   updateStatus('Reset');
 });
+
+// Speed slider control
+if (speedSlider && speedDisplay) {
+  // Initialize slider with engine's current speed
+  speedSlider.value = String(engine.simulationSpeed);
+  speedDisplay.textContent = String(engine.simulationSpeed);
+
+  // Update engine speed when slider changes
+  speedSlider.addEventListener('input', () => {
+    const speed = parseInt(speedSlider.value, 10);
+    engine.simulationSpeed = speed;
+    speedDisplay.textContent = String(speed);
+  });
+
+  // Also listen for simulationSpeedChanged events to keep slider in sync
+  engine.on('simulationSpeedChanged', (event: { newSpeed: number }) => {
+    speedSlider.value = String(event.newSpeed);
+    speedDisplay.textContent = String(event.newSpeed);
+  });
+}
 
 // Listen to engine events
 engine.on('tick', () => {

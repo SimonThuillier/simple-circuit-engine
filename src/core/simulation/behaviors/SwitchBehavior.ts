@@ -11,6 +11,23 @@ import { ComponentType } from '@/core/types/ComponentType';
 import { SwitchState } from '@/core/simulation/states/SwitchState';
 import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
 import type { NodeElectricalState, ScheduledEvent, UserCommand } from '@/core/simulation';
+import { TRANSITION_DEFAULTS } from '../types/SimulationConstants';
+
+/**
+ * Get the tick count from command parameters.
+ * @param parameters - Command parameters map
+ * @returns Number of ticks for transition (minimum 1)
+ */
+function getTickCount(parameters: Map<string, string> | null | undefined): number {
+  if (!parameters) {
+    return TRANSITION_DEFAULTS.TRANSITION_SPAN_TICKS;
+  }
+  const value = parseInt(parameters.get('tickCount') || '', 10);
+  if (isNaN(value) || value < 1) {
+    return TRANSITION_DEFAULTS.TRANSITION_SPAN_TICKS;
+  }
+  return value;
+}
 
 /**
  * Behavior implementation for switches components.
@@ -73,10 +90,11 @@ export class SwitchBehavior implements ComponentBehavior {
       state.startTick = command.scheduledAtTick + 1;
       hasChanged = true;
 
+      const tickCount = getTickCount(command.parameters);
       scheduledEvents.push({
         targetId: component.id,
         scheduledAtTick: state.startTick,
-        readyAtTick: state.startTick + 1, // TODO handle component config later
+        readyAtTick: state.startTick + tickCount,
         type: state.state === 'closing' ? 'ClosingEnd' : 'OpeningEnd',
         parameters: undefined,
       });

@@ -9,6 +9,8 @@ Auto-generated from all feature plans. Last updated: 2025-11-28
 - N/A (in-memory config map on Component instances) (015-component-config-editor)
 - TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (for 3D text rendering via TextGeometry or CanvasTexture) (016-label-component)
 - N/A (in-memory circuit model, persisted via existing JSON serialization) (016-label-component)
+- TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (scene/UI), core simulation is dependency-free (017-simulation-speed)
+- N/A (in-memory ComponentState map within CircuitRunner) (017-simulation-speed)
 
 - TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (for 3D scene interaction and Line2 wire rendering) (013-circuit-runner-controller)
 
@@ -90,9 +92,9 @@ function badExample(input: number | null): string {
 ```
 
 ## Recent Changes
+- 017-simulation-speed: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (scene/UI), core simulation is dependency-free
 - 016-label-component: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (for 3D text rendering via TextGeometry or CanvasTexture)
 - 015-component-config-editor: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+, lil-gui (new dependency to add)
-- 014-circuit-engine: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (scene, camera, controls, Line2)
 
 
 

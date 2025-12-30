@@ -25,6 +25,7 @@ import {
 import type { HoveredElement } from '../shared/types';
 import type {Circuit} from "@/core/Circuit";
 import {BehaviorRegistry} from "@/core/simulation/behaviors";
+import { SIMULATION_SPEED, TRANSITION_DEFAULTS } from '../../core/simulation/types/SimulationConstants';
 
 /**
  * Simulation Circuit Runner Controller Implementation
@@ -39,7 +40,7 @@ export class CircuitRunnerController extends AbstractCircuitController {
 
   // Playback control state
   private _isPlaying: boolean = false;
-  private _tickIntervalMs: number = 500;
+  private _tickIntervalMs: number = SIMULATION_SPEED.DEFAULT_INTERVAL_MS;
   private _simulationLoopId: number | null = null;
   private _clickHandler: ((event: MouseEvent) => void) | null = null;
 
@@ -96,6 +97,89 @@ export class CircuitRunnerController extends AbstractCircuitController {
       this.pause();
       this.play();
     }
+  }
+
+  /**
+   * Get current simulation speed in ticks per second.
+   * Range: 1-20 TPS
+   */
+  get simulationSpeed(): number {
+    return Math.round(1000 / this._tickIntervalMs);
+  }
+
+  /**
+   * Set simulation speed in ticks per second.
+   * Value is clamped to range 1-20 TPS.
+   * If simulation is playing, restarts the interval with new value.
+   * Emits 'simulationSpeedChanged' event when speed changes.
+   *
+   * @param tps - Ticks per second (1-20)
+   */
+  set simulationSpeed(tps: number) {
+    const previousSpeed = this.simulationSpeed;
+    const clampedTps = Math.max(
+      SIMULATION_SPEED.MIN_TPS,
+      Math.min(SIMULATION_SPEED.MAX_TPS, tps)
+    );
+
+    // Skip if no change
+    if (clampedTps === previousSpeed) {
+      return;
+    }
+
+    // Convert TPS to interval and apply
+    this._tickIntervalMs = Math.round(1000 / clampedTps);
+
+    // If playing, restart interval with new value
+    if (this._isPlaying) {
+      this.pause();
+      this.play();
+    }
+
+    // Emit speed changed event
+    this.emit('simulationSpeedChanged', {
+      previousSpeed,
+      newSpeed: clampedTps,
+    });
+  }
+
+  /**
+   * Minimum allowed simulation speed in ticks per second.
+   */
+  get minSimulationSpeed(): number {
+    return SIMULATION_SPEED.MIN_TPS;
+  }
+
+  /**
+   * Maximum allowed simulation speed in ticks per second.
+   */
+  get maxSimulationSpeed(): number {
+    return SIMULATION_SPEED.MAX_TPS;
+  }
+
+  /**
+   * Compute the number of ticks required for a transition given its duration in milliseconds.
+   * Formula: ceil(transitionUserSpanMs × simulationSpeed / 1000), minimum 1.
+   *
+   * @param transitionUserSpanMs - Transition duration in milliseconds
+   * @returns Number of ticks for the transition (minimum 1)
+   */
+  computeTickCount(transitionUserSpanMs: number): number {
+    const tickCount = Math.ceil(transitionUserSpanMs * this.simulationSpeed / 1000);
+    return Math.max(1, tickCount);
+  }
+
+  /**
+   * Get the transition duration from component config for user-driven transitions.
+   * @param config - Component config map
+   * @returns Transition duration in milliseconds (defaults to TRANSITION_USER_SPAN_MS)
+   */
+  private _getTransitionUserSpan(config: Map<string, string>): number {
+    const value = parseInt(config.get('transitionUserSpan') || '', 10);
+    if (isNaN(value) || value < 0) {
+      return TRANSITION_DEFAULTS.TRANSITION_USER_SPAN_MS;
+    }
+    return value;
   }
 
   /**
@@ -499,11 +583,19 @@ export class CircuitRunnerController extends AbstractCircuitController {
     const componentId = componentGroup.userData.componentId;
     switch (componentType) {
       case ComponentType.Switch: {
+        // Get component to read its config
+        const component = this._circuit?.getComponent(componentId);
+        if (!component) return;
+
+        // Compute tickCount from transitionUserSpan and simulationSpeed
+        const transitionUserSpan = this._getTransitionUserSpan(component.config);
+        const tickCount = this.computeTickCount(transitionUserSpan);
+
         const command: UserCommand = {
           type: 'toggle_switch',
           targetId: componentId,
           scheduledAtTick: this._runner.getCurrentTick(),
-          parameters: null,
+          parameters: new Map<string, string>([['tickCount', String(tickCount)]]),
         };
         // Submit command to runner and emit event
         this._runner.submitCommand(command);
