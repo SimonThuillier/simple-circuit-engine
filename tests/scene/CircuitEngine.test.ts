@@ -290,8 +290,8 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
       engine.initialize(container);
 
-      // Default should be 5 TPS (from SIMULATION_SPEED.DEFAULT_TPS)
-      expect(engine.simulationSpeed).toBe(5);
+      // Default should be 2q TPS (from SIMULATION_SPEED.DEFAULT_TPS)
+      expect(engine.simulationSpeed).toBe(2);
     });
 
     it('should delegate simulationSpeed setter to controller', () => {

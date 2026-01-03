@@ -937,6 +937,7 @@
 
       // Also listen for simulationSpeedChanged events to keep slider in sync
       engine.on('simulationSpeedChanged', ({ newSpeed }) => {
+        console.log('Simulation speed changed to:', newSpeed);
         speedSlider.value = String(newSpeed);
         speedDisplay.textContent = String(newSpeed);
       });

@@ -26,7 +26,7 @@ export const SIMULATION_SPEED = {
   /**
    * Default tick interval in milliseconds (1000 / DEFAULT_TPS)
    */
-  DEFAULT_INTERVAL_MS: 200,
+  DEFAULT_INTERVAL_MS: 500,
 } as const;
 
 /**

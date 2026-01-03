@@ -63,9 +63,9 @@ describe('CircuitRunnerController - Simulation Speed (017-simulation-speed)', ()
     });
 
     it('should convert between TPS and tickIntervalMs correctly', () => {
-      // 5 TPS = 200ms interval
-      controller.simulationSpeed = 5;
-      expect(controller.tickInterval).toBe(200);
+      // 2 TPS = 500ms interval
+      controller.simulationSpeed = 2;
+      expect(controller.tickInterval).toBe(500);
 
       // 10 TPS = 100ms interval
       controller.simulationSpeed = 10;

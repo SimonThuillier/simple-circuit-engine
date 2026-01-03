@@ -553,7 +553,7 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
    * Range: 1-20 TPS. Works in both edit and simulation modes.
    */
   get simulationSpeed(): number {
-    return this._simulationController?.simulationSpeed ?? 5;
+    return this._simulationController?.simulationSpeed ?? 2;
   }
 
   set simulationSpeed(tps: number) {
