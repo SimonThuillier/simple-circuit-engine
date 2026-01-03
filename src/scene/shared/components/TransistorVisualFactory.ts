@@ -111,6 +111,11 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
           label: 'Activation Logic',
           type: 'boolean',
         },
+        {
+          key: 'transitionSpan',
+          label: 'Transition Span (ticks)',
+          type: 'number',
+        }
       ],
     };
   }
@@ -126,6 +131,7 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
     const formData = new Map<string, any>();
     const activationLogic = config.get('activationLogic');
     formData.set('activationLogic', activationLogic === 'positive');
+    formData.set('transitionSpan', parseFloat(config.get('transitionSpan') || '1'));
     return formData;
   }
 
@@ -140,6 +146,7 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
     const config = new Map<string, string>();
     const activationLogic = formData.get('activationLogic');
     config.set('activationLogic', activationLogic ? 'positive' : 'negative');
+    config.set('transitionSpan', formData.get('transitionSpan').toString());
     return config;
   }
 

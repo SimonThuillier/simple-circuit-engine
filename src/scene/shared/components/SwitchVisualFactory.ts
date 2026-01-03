@@ -188,8 +188,6 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
 
     const scale = parseFloat(config.get('size') || '1');
     object3D.scale.set(scale, scale, scale);
-
-
     this.updateAnimation(object3D, null);
   }
 

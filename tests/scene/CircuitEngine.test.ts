@@ -284,6 +284,66 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
     });
   });
 
+  // T004: Unit test for simulationSpeed facade property
+  describe('T004: simulationSpeed facade property', () => {
+    it('should delegate simulationSpeed getter to controller', () => {
+      engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
+      engine.initialize(container);
+
+      // Default should be 2q TPS (from SIMULATION_SPEED.DEFAULT_TPS)
+      expect(engine.simulationSpeed).toBe(2);
+    });
+
+    it('should delegate simulationSpeed setter to controller', () => {
+      engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
+      engine.initialize(container);
+
+      engine.simulationSpeed = 10;
+
+      expect(engine.simulationSpeed).toBe(10);
+      // Also verify the underlying controller has the correct tickInterval
+      expect(engine.tickInterval).toBe(100); // 1000 / 10 = 100ms
+    });
+
+    it('should work in edit mode', () => {
+      engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
+      engine.initialize(container);
+
+      // Edit mode (default)
+      expect(engine.mode).toBe('edit');
+
+      // Should be able to set/get simulation speed even in edit mode
+      engine.simulationSpeed = 15;
+      expect(engine.simulationSpeed).toBe(15);
+    });
+
+    it('should work in simulation mode', () => {
+      engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
+      engine.initialize(container);
+
+      const circuit = createTestCircuit();
+      engine.setCircuit(circuit);
+      engine.setMode('simulation');
+
+      engine.simulationSpeed = 20;
+      expect(engine.simulationSpeed).toBe(20);
+    });
+
+    it('should expose minSimulationSpeed from controller', () => {
+      engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
+      engine.initialize(container);
+
+      expect(engine.minSimulationSpeed).toBe(1);
+    });
+
+    it('should expose maxSimulationSpeed from controller', () => {
+      engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
+      engine.initialize(container);
+
+      expect(engine.maxSimulationSpeed).toBe(20);
+    });
+  });
+
   describe('Simulation playback delegates', () => {
     it('should delegate play() to simulation controller', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);

@@ -507,6 +507,12 @@
           </div>
           <div class="section-content">
             <div class="sim-controls">
+              <div class="speed-control" style="margin-top: 0.75rem;">
+                <label for="speed-slider" style="display: block; margin-bottom: 0.25rem; font-size: 0.75rem; color: #888;">
+                  Speed: <span id="speed-display">2</span> TPS
+                </label>
+                <input type="range" id="speed-slider" min="1" max="20" value="2" style="width: 100%;">
+              </div>
               <button id="play-pause-btn" class="sim-btn" disabled>Play</button>
               <button id="step-btn" class="sim-btn" disabled>Step</button>
               <button id="stop-btn" class="sim-btn" disabled>Stop / Reset</button>
@@ -913,6 +919,27 @@
       engine.on('simulationStopped', ({ tick }) => {
         document.getElementById('tick-count').textContent = tick;
         updatePlayPauseButton();
+      });
+
+      const speedSlider = document.getElementById('speed-slider');
+      const speedDisplay = document.getElementById('speed-display');
+
+      speedSlider.value = String(engine.simulationSpeed);
+      speedDisplay.textContent = String(engine.simulationSpeed);
+
+      // Update engine speed when slider changes
+      speedSlider.addEventListener('input', () => {
+        const speed = parseInt(speedSlider.value, 10);
+        console.log(speed);
+        engine.simulationSpeed = speed;
+        speedDisplay.textContent = String(speed);
+      });
+
+      // Also listen for simulationSpeedChanged events to keep slider in sync
+      engine.on('simulationSpeedChanged', ({ newSpeed }) => {
+        console.log('Simulation speed changed to:', newSpeed);
+        speedSlider.value = String(newSpeed);
+        speedDisplay.textContent = String(newSpeed);
       });
 
       // Initial UI state

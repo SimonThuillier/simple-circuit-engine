@@ -68,7 +68,8 @@ export type ControllerEvent =
   | 'simulationStepped'
   | 'simulationTick'
   | 'simulationUserCommand'
-  | 'simulationStopped';
+  | 'simulationStopped'
+  | 'simulationSpeedChanged';
 
 /**
  * Event payload map for type-safe event emission
@@ -129,6 +130,7 @@ export interface ControllerEventMap {
   simulationTick: { tick: number; dirty: unknown };
   simulationUserCommand: UserCommand;
   simulationStopped: { tick: number };
+  simulationSpeedChanged: { previousSpeed: number; newSpeed: number };
 }
 
 /**
