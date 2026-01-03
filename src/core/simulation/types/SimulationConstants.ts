@@ -21,7 +21,7 @@ export const SIMULATION_SPEED = {
   /**
    * Default simulation speed in ticks per second
    */
-  DEFAULT_TPS: 5,
+  DEFAULT_TPS: 2,
 
   /**
    * Default tick interval in milliseconds (1000 / DEFAULT_TPS)

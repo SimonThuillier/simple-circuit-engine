@@ -173,6 +173,7 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
    * @returns Form definition with activationLogic boolean field
    */
   override getConfigFormDefinition(): ConfigFormDefinition | null {
+
     return {
       fields: [
         {
@@ -180,6 +181,16 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
           label: 'Activation Logic',
           type: 'boolean',
         },
+        {
+          key: 'transitionSpan',
+          label: 'Transition Span (ticks)',
+          type: 'number',
+        },
+        {
+          key: 'size',
+          label: 'Size',
+          type: 'number',
+        }
       ],
     };
   }
@@ -195,6 +206,8 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
     const formData = new Map<string, any>();
     const activationLogic = config.get('activationLogic');
     formData.set('activationLogic', activationLogic === 'positive');
+    formData.set('transitionSpan', parseFloat(config.get('transitionSpan') || '1'));
+    formData.set('size', parseFloat(config.get('size') || '1'));
     return formData;
   }
 
@@ -209,6 +222,8 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
     const config = new Map<string, string>();
     const activationLogic = formData.get('activationLogic');
     config.set('activationLogic', activationLogic ? 'positive' : 'negative');
+    config.set('transitionSpan', formData.get('transitionSpan').toString());
+    config.set('size', formData.get('size').toString());
     return config;
   }
 
@@ -222,6 +237,8 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
         contactorGroup.userData.initialState = 'open';
       }
     }
+    const scale = parseFloat(config.get('size') || '1');
+    object3D.scale.set(scale, scale, scale);
     this.updateAnimation(object3D, null);
   }
 
