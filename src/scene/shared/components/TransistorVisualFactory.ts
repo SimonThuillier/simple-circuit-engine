@@ -115,6 +115,11 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
           key: 'transitionSpan',
           label: 'Transition Span (ticks)',
           type: 'number',
+        },
+        {
+          key: 'initializationPriority',
+          label: 'Init Priority',
+          type: 'number',
         }
       ],
     };
@@ -132,6 +137,7 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
     const activationLogic = config.get('activationLogic');
     formData.set('activationLogic', activationLogic === 'positive');
     formData.set('transitionSpan', parseFloat(config.get('transitionSpan') || '1'));
+    formData.set('initializationPriority', parseFloat(config.get('initializationPriority') || '0'));
     return formData;
   }
 
@@ -147,6 +153,7 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
     const activationLogic = formData.get('activationLogic');
     config.set('activationLogic', activationLogic ? 'positive' : 'negative');
     config.set('transitionSpan', formData.get('transitionSpan').toString());
+    config.set('initializationPriority', formData.get('initializationPriority').toString() || null);
     return config;
   }
 

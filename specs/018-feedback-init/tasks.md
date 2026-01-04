@@ -19,7 +19,7 @@
 
 **Purpose**: Project initialization - minimal for this feature as infrastructure already exists
 
-- [ ] T001 Create test directory structure at tests/core/simulation/feedback-init/
+- [X] T001 Create test directory structure at tests/core/simulation/feedback-init/
 
 ---
 
@@ -29,8 +29,8 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T002 Add `initializationPriority` config parameter to Transistor metadata in src/core/types/ComponentType.ts
-- [ ] T003 [P] Add `initializationPriority` config parameter to Relay metadata in src/core/types/ComponentType.ts
+- [X] T002 Add `initializationPriority` config parameter to Transistor metadata in src/core/types/ComponentType.ts
+- [X] T003 [P] Add `initializationPriority` config parameter to Relay metadata in src/core/types/ComponentType.ts
 
 **Checkpoint**: Foundation ready - user story implementation can now begin
 
@@ -46,16 +46,16 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T004 [P] [US1] Unit test: CircuitRunner initializes RS flip-flop to valid stable state in tests/core/simulation/feedback-init/FeedbackInitialization.test.ts
-- [ ] T005 [P] [US1] Unit test: Multiple independent feedback loops each resolve to valid stable states in tests/core/simulation/feedback-init/FeedbackInitialization.test.ts
-- [ ] T006 [P] [US1] Unit test: Nested feedback loops reach globally consistent stable state in tests/core/simulation/feedback-init/FeedbackInitialization.test.ts
-- [ ] T007 [P] [US1] Unit test: Circuits without feedback loops initialize identically to before (backward compatibility) in tests/core/simulation/feedback-init/FeedbackInitialization.test.ts
+- [X] T004 [P] [US1] Unit test: CircuitRunner initializes RS flip-flop to valid stable state in tests/core/simulation/feedback-init/FeedbackInitialization.test.ts
+- [X] T005 [P] [US1] Unit test: Multiple independent feedback loops each resolve to valid stable states in tests/core/simulation/feedback-init/FeedbackInitialization.test.ts
+- [X] T006 [P] [US1] Unit test: Nested feedback loops reach globally consistent stable state in tests/core/simulation/feedback-init/FeedbackInitialization.test.ts
+- [X] T007 [P] [US1] Unit test: Circuits without feedback loops initialize identically to before (backward compatibility) in tests/core/simulation/feedback-init/FeedbackInitialization.test.ts
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] Create helper function `getInitializationPriority(config: Map<string, string>): number` in src/core/simulation/CircuitRunner.ts
-- [ ] T009 [US1] Modify `initializeState()` to sort components by initializationPriority (descending), then UUID (ascending) for determinism in src/core/simulation/CircuitRunner.ts
-- [ ] T010 [US1] Modify `initializeState()` to run `propagateConductivity()` after each priority group instead of once at the end in src/core/simulation/CircuitRunner.ts
+- [X] T008 [US1] Create helper function `getInitializationPriority(config: Map<string, string>): number` in src/core/simulation/CircuitRunner.ts
+- [X] T009 [US1] Modify `initializeState()` to sort components by initializationPriority (descending), then UUID (ascending) for determinism in src/core/simulation/CircuitRunner.ts
+- [X] T010 [US1] Modify `initializeState()` to run `propagateConductivity()` after each priority group instead of once at the end in src/core/simulation/CircuitRunner.ts
 
 **Checkpoint**: User Story 1 complete - RS flip-flops and feedback circuits initialize to valid stable states automatically
 
@@ -71,15 +71,15 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T011 [P] [US2] Unit test: Higher initializationPriority component processed first, determines initial state in tests/core/simulation/feedback-init/FeedbackInitialization.test.ts
-- [ ] T012 [P] [US2] Unit test: Null/empty initializationPriority defaults to 0 in tests/core/simulation/feedback-init/FeedbackInitialization.test.ts
-- [ ] T013 [P] [US2] Unit test: Equal priorities tie-broken by UUID alphabetical order ascending in tests/core/simulation/feedback-init/FeedbackInitialization.test.ts
-- [ ] T014 [P] [US2] Unit test: Negative initializationPriority values work correctly (processed after 0) in tests/core/simulation/feedback-init/FeedbackInitialization.test.ts
+- [X] T011 [P] [US2] Unit test: Higher initializationPriority component processed first, determines initial state in tests/core/simulation/feedback-init/FeedbackInitialization.test.ts
+- [X] T012 [P] [US2] Unit test: Null/empty initializationPriority defaults to 0 in tests/core/simulation/feedback-init/FeedbackInitialization.test.ts
+- [X] T013 [P] [US2] Unit test: Equal priorities tie-broken by UUID alphabetical order ascending in tests/core/simulation/feedback-init/FeedbackInitialization.test.ts
+- [X] T014 [P] [US2] Unit test: Negative initializationPriority values work correctly (processed after 0) in tests/core/simulation/feedback-init/FeedbackInitialization.test.ts
 
 ### Implementation for User Story 2
 
-- [ ] T015 [US2] Verify TransistorBehavior.createInitialState() reads initializationPriority from config in src/core/simulation/behaviors/TransistorBehavior.ts
-- [ ] T016 [P] [US2] Verify RelayBehavior.createInitialState() reads initializationPriority from config in src/core/simulation/behaviors/RelayBehavior.ts
+- [X] T015 [US2] Verify TransistorBehavior.createInitialState() reads initializationPriority from config in src/core/simulation/behaviors/TransistorBehavior.ts
+- [X] T016 [P] [US2] Verify RelayBehavior.createInitialState() reads initializationPriority from config in src/core/simulation/behaviors/RelayBehavior.ts
 
 **Checkpoint**: User Story 2 complete - users can control feedback initialization via priority config
 
@@ -89,10 +89,10 @@
 
 **Purpose**: Final validation and cross-story verification
 
-- [ ] T017 Run quickstart.md validation scenarios manually
-- [ ] T018 Verify backward compatibility: existing circuit JSON files load without migration
-- [ ] T019 Run full test suite to ensure no regressions (`npm test`)
-- [ ] T020 Run linting (`npm run lint`)
+- [X] T017 Run quickstart.md validation scenarios manually
+- [X] T018 Verify backward compatibility: existing circuit JSON files load without migration
+- [X] T019 Run full test suite to ensure no regressions (`npm test`)
+- [X] T020 Run linting (`npm run lint`)
 
 ---
 

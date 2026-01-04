@@ -14,7 +14,7 @@ import { Component } from './Component.js';
 import { ENode } from './ENode.js';
 import { ENodeType } from './types/ENodeType.js';
 import { Wire } from './Wire.js';
-import type { ComponentType } from './types/ComponentType.js';
+import {COMPONENT_TYPE_METADATA, type ComponentType} from './types/ComponentType.js';
 import { getComponentTypeMetadata } from './types/ComponentType.js';
 import { Position3D } from '@/core/types/Position3D';
 import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
@@ -857,6 +857,27 @@ export class Circuit {
       }
     }
     return componentIds;
+  }
+
+  /**
+   * Get a component's pin ENode by its label.
+   * @param component
+   * @param pinLabel
+   */
+  getComponentPinByLabel(component: Component, pinLabel: string): ENode | undefined {
+    let pinIndex = 0;
+    const typeMetadata = COMPONENT_TYPE_METADATA[component.type];
+    const pinLabels = Array.from(typeMetadata.pins.keys());
+    for (const pinId of component.pins) {
+      const enode = this.enodes.get(pinId);
+      const label = pinLabels[pinIndex];
+      if (!label) continue;
+      if (enode && label === pinLabel) {
+        return enode;
+      }
+      pinIndex++;
+    }
+    return undefined;
   }
 
   /**

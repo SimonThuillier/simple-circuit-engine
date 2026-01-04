@@ -114,7 +114,8 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTy
       ['power_out', undefined],
     ]),
     config: new Map([
-        ['activationLogic', 'positive']
+        ['activationLogic', 'positive'],
+        ['initializationPriority', '']
     ]),
   },
   [ComponentType.Transistor]: {
@@ -126,7 +127,8 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTy
       ['emitter', undefined],
     ]),
     config: new Map([
-        ['activationLogic', 'positive']
+        ['activationLogic', 'positive'],
+        ['initializationPriority', '']
     ]),
   },
   [ComponentType.SmallLED]: {

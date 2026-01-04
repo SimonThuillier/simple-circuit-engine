@@ -264,16 +264,40 @@ export class CircuitRunner {
   }
 
   /**
+   * Helper function to extract initializationPriority from component config.
+   * Returns numeric priority value, with empty string or null defaulting to 0.
+   *
+   * @param config - Component configuration map
+   * @returns Priority value (higher = processed first)
+   */
+  private getInitializationPriority(config: Map<string, string>): number {
+    const value = config.get('initializationPriority');
+    if (!value || value === '') return 0;
+    const parsed = parseInt(value, 10);
+    return isNaN(parsed) ? 0 : parsed;
+  }
+
+  /**
    * Initialize simulation state for all components.
    * Called on construction and reset.
+   *
+   * Uses priority-based initialization to resolve feedback loops:
+   * 1. Components are grouped by initializationPriority (higher = processed LAST = prevails)
+   * 2. Within each group, components are sorted by UUID (ascending) for determinism
+   * 3. Conductivity is propagated after each component
+   *
+   * In feedback circuits, the component processed LAST "wins" because earlier
+   * components react to the initial symmetric state and open, while later
+   * components see the updated (asymmetric) state and stay closed.
    */
   private initializeState(): RunnerResult {
     const currentState = this.stateManager.getCurrentState();
 
     // Initialize component states using behaviors
     for (const component of this.circuit.getAllComponents()) {
-      const behavior = this.behaviorRegistry.get(component.type);
+      if(component.pins.length < 1) continue;
 
+      const behavior = this.behaviorRegistry.get(component.type);
       if (!behavior) {
         console.warn(
           `No behavior registered for component type '${component.type}' (${component.id})`
@@ -305,6 +329,93 @@ export class CircuitRunner {
       });
     }
 
+    // Priority-based initialization for feedback loop resolution
+    // Group components by priority level
+    const allComponents = this.circuit.getAllComponents();
+    const componentsByPriority = new Map<number, Component[]>();
+
+    for (const component of allComponents) {
+      const priority = this.getInitializationPriority(component.config);
+      const group = componentsByPriority.get(priority) ?? [];
+      group.push(component);
+      componentsByPriority.set(priority, group);
+    }
+
+    // Sort priority levels (ascending - lower priority first, higher priority last = prevails)
+    const sortedPriorities = Array.from(componentsByPriority.keys()).sort((a, b) => a - b);
+
+    // Sort components within each priority group by UUID for determinism
+    for (const priority of sortedPriorities) {
+      const group = componentsByPriority.get(priority)!;
+      group.sort((a, b) => a.id.localeCompare(b.id));
+    }
+
+    // Iterate until stable state is reached (for feedback loop resolution)
+    // This is necessary because feedback circuits may require multiple passes
+    // to reach equilibrium after initial state changes propagate through the loop.
+    //
+    // KEY: During initialization, we fire events IMMEDIATELY after each component
+    // processes (bypassing the normal tick delay). This allows the first component
+    // in a feedback loop to complete its transition before the next component sees
+    // the state, thereby breaking symmetry in cross-coupled feedback circuits.
+    let hasChanges = true;
+    let iterations = 0;
+    const maxIterations = 100; // Safety limit to prevent infinite loops
+
+    while (hasChanges && iterations < maxIterations) {
+      hasChanges = false;
+      iterations++;
+
+      // Process each priority group sequentially
+      for (const priority of sortedPriorities) {
+        const group = componentsByPriority.get(priority)!;
+
+        // Process each component sequentially with immediate event firing
+        for (const component of group) {
+          const behavior = this.behaviorRegistry.get(component.type);
+          if (!behavior) continue;
+
+          const componentState = currentState.componentStates.get(component.id);
+          if (!componentState) continue;
+
+          // Propagate before processing this component so it sees current electrical state
+          this.propagateConductivity();
+
+          // Let the component react to current pin states
+          const result = behavior.onPinsChange(
+            component,
+            componentState,
+            currentState.nodeStates,
+            0
+          );
+
+          // Update component state if it changed
+          if (result.hasChanged) {
+            hasChanges = true;
+            (currentState.componentStates as Map<UUID, ComponentState>).set(
+              component.id,
+              result.componentState
+            );
+          }
+
+          // During initialization, fire any scheduled events IMMEDIATELY
+          // This is the key to breaking feedback symmetry: the first component
+          // completes its full transition (e.g., opening → open) before the
+          // next component in the feedback loop sees the new electrical state.
+          for (const event of result.scheduledEvents) {
+            const eventResult = behavior.onEventFiring(component, componentState, event);
+            if (eventResult.hasChanged) {
+              hasChanges = true;
+              (currentState.componentStates as Map<UUID, ComponentState>).set(
+                component.id,
+                eventResult.componentState
+              );
+            }
+          }
+        }
+      }
+    }
+
     const result = this.updateState(0);
 
     // at initialization everything is dirty
@@ -332,7 +443,26 @@ export class CircuitRunner {
     const updatedComponents = new Set<UUID>();
     let eventCount = 0;
 
-    for (const componentId of componentsToAssess) {
+    // During initialization (tick 0), sort components by priority to resolve feedback loops
+    let sortedComponentIds = Array.from(componentsToAssess);
+    if (targetTick === 0) {
+      sortedComponentIds = sortedComponentIds.sort((idA, idB) => {
+        const compA = this.circuit.getComponent(idA) as Component;
+        const compB = this.circuit.getComponent(idB) as Component;
+        const priorityA = this.getInitializationPriority(compA.config);
+        const priorityB = this.getInitializationPriority(compB.config);
+
+        // Lower priority first, higher priority last (ascending) = higher priority prevails
+        if (priorityA !== priorityB) {
+          return priorityA - priorityB;
+        }
+
+        // Tie-break by UUID (ascending)
+        return idA.localeCompare(idB);
+      });
+    }
+
+    for (const componentId of sortedComponentIds) {
       const component = this.circuit.getComponent(componentId) as Component;
       const behavior = this.behaviorRegistry.get(component.type);
       if (!behavior) {
