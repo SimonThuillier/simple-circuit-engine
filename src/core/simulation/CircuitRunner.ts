@@ -264,14 +264,14 @@ export class CircuitRunner {
   }
 
   /**
-   * Helper function to extract initializationPriority from component config.
-   * Returns numeric priority value, with empty string or null defaulting to 0.
+   * Helper function to extract initializationOrder from component config.
+   * Returns numeric order value, with empty string or null defaulting to 0.
    *
    * @param config - Component configuration map
-   * @returns Priority value (higher = processed first)
+   * @returns Order value (lower = processed first)
    */
-  private getInitializationPriority(config: Map<string, string>): number {
-    const value = config.get('initializationPriority');
+  private getInitializationOrder(config: Map<string, string>): number {
+    const value = config.get('initializationOrder');
     if (!value || value === '') return 0;
     const parsed = parseInt(value, 10);
     return isNaN(parsed) ? 0 : parsed;
@@ -281,8 +281,8 @@ export class CircuitRunner {
    * Initialize simulation state for all components.
    * Called on construction and reset.
    *
-   * Uses priority-based initialization to resolve feedback loops:
-   * 1. Components are grouped by initializationPriority (higher = processed LAST = prevails)
+   * Uses order-based initialization to resolve feedback loops:
+   * 1. Components are grouped by initializationOrder (higher = processed LAST)
    * 2. Within each group, components are sorted by UUID (ascending) for determinism
    * 3. Conductivity is propagated after each component
    *
@@ -329,24 +329,24 @@ export class CircuitRunner {
       });
     }
 
-    // Priority-based initialization for feedback loop resolution
-    // Group components by priority level
+    // Order-based initialization for feedback loop resolution
+    // Group components by order level
     const allComponents = this.circuit.getAllComponents();
-    const componentsByPriority = new Map<number, Component[]>();
+    const componentsByOrder = new Map<number, Component[]>();
 
     for (const component of allComponents) {
-      const priority = this.getInitializationPriority(component.config);
-      const group = componentsByPriority.get(priority) ?? [];
+      const order = this.getInitializationOrder(component.config);
+      const group = componentsByOrder.get(order) ?? [];
       group.push(component);
-      componentsByPriority.set(priority, group);
+      componentsByOrder.set(order, group);
     }
 
-    // Sort priority levels (ascending - lower priority first, higher priority last = prevails)
-    const sortedPriorities = Array.from(componentsByPriority.keys()).sort((a, b) => a - b);
+    // Sort order levels (ascending - lower order first, higher order last)
+    const sortedOrders = Array.from(componentsByOrder.keys()).sort((a, b) => a - b);
 
-    // Sort components within each priority group by UUID for determinism
-    for (const priority of sortedPriorities) {
-      const group = componentsByPriority.get(priority)!;
+    // Sort components within each order group by UUID for determinism
+    for (const order of sortedOrders) {
+      const group = componentsByOrder.get(order)!;
       group.sort((a, b) => a.id.localeCompare(b.id));
     }
 
@@ -366,9 +366,9 @@ export class CircuitRunner {
       hasChanges = false;
       iterations++;
 
-      // Process each priority group sequentially
-      for (const priority of sortedPriorities) {
-        const group = componentsByPriority.get(priority)!;
+      // Process each order group sequentially
+      for (const order of sortedOrders) {
+        const group = componentsByOrder.get(order)!;
 
         // Process each component sequentially with immediate event firing
         for (const component of group) {
@@ -443,18 +443,18 @@ export class CircuitRunner {
     const updatedComponents = new Set<UUID>();
     let eventCount = 0;
 
-    // During initialization (tick 0), sort components by priority to resolve feedback loops
+    // During initialization (tick 0), sort components by order to resolve feedback loops
     let sortedComponentIds = Array.from(componentsToAssess);
     if (targetTick === 0) {
       sortedComponentIds = sortedComponentIds.sort((idA, idB) => {
         const compA = this.circuit.getComponent(idA) as Component;
         const compB = this.circuit.getComponent(idB) as Component;
-        const priorityA = this.getInitializationPriority(compA.config);
-        const priorityB = this.getInitializationPriority(compB.config);
+        const orderA = this.getInitializationOrder(compA.config);
+        const orderB = this.getInitializationOrder(compB.config);
 
-        // Lower priority first, higher priority last (ascending) = higher priority prevails
-        if (priorityA !== priorityB) {
-          return priorityA - priorityB;
+        // Lower order first, higher order last (ascending)
+        if (orderA !== orderB) {
+          return orderA - orderB;
         }
 
         // Tie-break by UUID (ascending)

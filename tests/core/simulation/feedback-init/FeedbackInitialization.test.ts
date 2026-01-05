@@ -180,8 +180,8 @@ describe('Feedback Loop Initialization', () => {
         expect(nor2_t2State2!.state).toBe('open');   // RESET = HIGH → opens
       });
     });
-    describe('Phase4 - initializationPriority controls RS flip-flop initial state', () => {
-      it('changing initializationPriority well inverts default RS initial State', () => {
+    describe('Phase4 - initializationOrder controls RS flip-flop initial state', () => {
+      it('changing initializationOrder well inverts default RS initial State', () => {
         const circuit = new Circuit('RS Flip-Flop');
         circuit.metadata = new CircuitMetadata(
             'RS Flip-Flop Test', 20, 20, new Position3D(0, 0, 50));
@@ -214,17 +214,17 @@ describe('Feedback Loop Initialization', () => {
         // Q = HIGH means nor1_t2 = closed (NOR1 conducts), nor2_t1 = open (NOR2 broken)
         // Q = LOW means nor1_t2 = open (NOR1 broken), nor2_t1 = closed (NOR2 conducts)
         //
-        // Priority semantics: HIGHER priority = processed LAST = output PREVAILS
-        // To invert, give the OTHER NOR gate higher priority so it prevails instead
+        // Priority semantics: HIGHER order = processed LAST = output PREVAILS
+        // To invert, give the OTHER NOR gate higher order so it prevails instead
         const qIsHigh = nor1_t2State!.state === 'closed';
 
         if (qIsHigh) {
           // Initial: Q = HIGH (NOR1 prevailed due to UUID order)
-          // To INVERT to Q = LOW: give NOR2 higher priority so NOR2 prevails
+          // To INVERT to Q = LOW: give NOR2 higher order so NOR2 prevails
           // NOR1 processed first → nor1_t2 opens → Q = LOW
           // NOR2 processed last → nor2_t1 stays closed → Q' = HIGH
-          nor2_t1.setParameter('initializationPriority', '1');
-          nor2_t2.setParameter('initializationPriority', '1');
+          nor2_t1.setParameter('initializationOrder', '1');
+          nor2_t2.setParameter('initializationOrder', '1');
           const runner2 = new CircuitRunner(circuit, createBehaviorRegistry());
           const state2 = runner2.getCurrentState();
 
@@ -241,11 +241,11 @@ describe('Feedback Loop Initialization', () => {
         }
         else {
           // Initial: Q = LOW (NOR2 prevailed due to UUID order)
-          // To INVERT to Q = HIGH: give NOR1 higher priority so NOR1 prevails
+          // To INVERT to Q = HIGH: give NOR1 higher order so NOR1 prevails
           // NOR2 processed first → nor2_t1 opens → Q' = LOW
           // NOR1 processed last → nor1_t2 stays closed → Q = HIGH
-          nor1_t1.setParameter('initializationPriority', '1');
-          nor1_t2.setParameter('initializationPriority', '1');
+          nor1_t1.setParameter('initializationOrder', '1');
+          nor1_t2.setParameter('initializationOrder', '1');
           const runner2 = new CircuitRunner(circuit, createBehaviorRegistry());
           const state2 = runner2.getCurrentState();
 

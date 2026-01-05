@@ -117,8 +117,8 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
           type: 'number',
         },
         {
-          key: 'initializationPriority',
-          label: 'Init Priority',
+          key: 'initializationOrder',
+          label: 'Init Order',
           type: 'number',
         }
       ],
@@ -137,7 +137,7 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
     const activationLogic = config.get('activationLogic');
     formData.set('activationLogic', activationLogic === 'positive');
     formData.set('transitionSpan', parseFloat(config.get('transitionSpan') || '1'));
-    formData.set('initializationPriority', parseFloat(config.get('initializationPriority') || '0'));
+    formData.set('initializationOrder', parseFloat(config.get('initializationOrder') || '0'));
     return formData;
   }
 
@@ -153,7 +153,7 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
     const activationLogic = formData.get('activationLogic');
     config.set('activationLogic', activationLogic ? 'positive' : 'negative');
     config.set('transitionSpan', formData.get('transitionSpan').toString());
-    config.set('initializationPriority', formData.get('initializationPriority').toString() || null);
+    config.set('initializationOrder', formData.get('initializationOrder').toString() || null);
     return config;
   }
 
