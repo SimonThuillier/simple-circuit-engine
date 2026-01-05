@@ -190,6 +190,11 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
           key: 'size',
           label: 'Size',
           type: 'number',
+        },
+        {
+          key: 'initializationOrder',
+          label: 'Init Order',
+          type: 'number',
         }
       ],
     };
@@ -208,6 +213,7 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
     formData.set('activationLogic', activationLogic === 'positive');
     formData.set('transitionSpan', parseFloat(config.get('transitionSpan') || '1'));
     formData.set('size', parseFloat(config.get('size') || '1'));
+    formData.set('initializationOrder', parseFloat(config.get('initializationOrder') || '0'));
     return formData;
   }
 
@@ -224,6 +230,7 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
     config.set('activationLogic', activationLogic ? 'positive' : 'negative');
     config.set('transitionSpan', formData.get('transitionSpan').toString());
     config.set('size', formData.get('size').toString());
+    config.set('initializationOrder', formData.get('initializationOrder').toString() || null);
     return config;
   }
 

@@ -92,9 +92,9 @@ function badExample(input: number | null): string {
 ```
 
 ## Recent Changes
+- 018-feedback-init: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (scene/UI), core simulation is dependency-free
 - 017-simulation-speed: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (scene/UI), core simulation is dependency-free
 - 016-label-component: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (for 3D text rendering via TextGeometry or CanvasTexture)
-- 015-component-config-editor: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+, lil-gui (new dependency to add)
 
 
 

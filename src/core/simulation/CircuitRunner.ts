@@ -264,16 +264,40 @@ export class CircuitRunner {
   }
 
   /**
+   * Helper function to extract initializationOrder from component config.
+   * Returns numeric order value, with empty string or null defaulting to 0.
+   *
+   * @param config - Component configuration map
+   * @returns Order value (lower = processed first)
+   */
+  private getInitializationOrder(config: Map<string, string>): number {
+    const value = config.get('initializationOrder');
+    if (!value || value === '') return 0;
+    const parsed = parseInt(value, 10);
+    return isNaN(parsed) ? 0 : parsed;
+  }
+
+  /**
    * Initialize simulation state for all components.
    * Called on construction and reset.
+   *
+   * Uses order-based initialization to resolve feedback loops:
+   * 1. Components are grouped by initializationOrder (higher = processed LAST)
+   * 2. Within each group, components are sorted by UUID (ascending) for determinism
+   * 3. Conductivity is propagated after each component
+   *
+   * In feedback circuits, the component processed LAST "wins" because earlier
+   * components react to the initial symmetric state and open, while later
+   * components see the updated (asymmetric) state and stay closed.
    */
   private initializeState(): RunnerResult {
     const currentState = this.stateManager.getCurrentState();
 
     // Initialize component states using behaviors
     for (const component of this.circuit.getAllComponents()) {
-      const behavior = this.behaviorRegistry.get(component.type);
+      if(component.pins.length < 1) continue;
 
+      const behavior = this.behaviorRegistry.get(component.type);
       if (!behavior) {
         console.warn(
           `No behavior registered for component type '${component.type}' (${component.id})`
@@ -305,6 +329,93 @@ export class CircuitRunner {
       });
     }
 
+    // Order-based initialization for feedback loop resolution
+    // Group components by order level
+    const allComponents = this.circuit.getAllComponents();
+    const componentsByOrder = new Map<number, Component[]>();
+
+    for (const component of allComponents) {
+      const order = this.getInitializationOrder(component.config);
+      const group = componentsByOrder.get(order) ?? [];
+      group.push(component);
+      componentsByOrder.set(order, group);
+    }
+
+    // Sort order levels (ascending - lower order first, higher order last)
+    const sortedOrders = Array.from(componentsByOrder.keys()).sort((a, b) => a - b);
+
+    // Sort components within each order group by UUID for determinism
+    for (const order of sortedOrders) {
+      const group = componentsByOrder.get(order)!;
+      group.sort((a, b) => a.id.localeCompare(b.id));
+    }
+
+    // Iterate until stable state is reached (for feedback loop resolution)
+    // This is necessary because feedback circuits may require multiple passes
+    // to reach equilibrium after initial state changes propagate through the loop.
+    //
+    // KEY: During initialization, we fire events IMMEDIATELY after each component
+    // processes (bypassing the normal tick delay). This allows the first component
+    // in a feedback loop to complete its transition before the next component sees
+    // the state, thereby breaking symmetry in cross-coupled feedback circuits.
+    let hasChanges = true;
+    let iterations = 0;
+    const maxIterations = 100; // Safety limit to prevent infinite loops
+
+    while (hasChanges && iterations < maxIterations) {
+      hasChanges = false;
+      iterations++;
+
+      // Process each order group sequentially
+      for (const order of sortedOrders) {
+        const group = componentsByOrder.get(order)!;
+
+        // Process each component sequentially with immediate event firing
+        for (const component of group) {
+          const behavior = this.behaviorRegistry.get(component.type);
+          if (!behavior) continue;
+
+          const componentState = currentState.componentStates.get(component.id);
+          if (!componentState) continue;
+
+          // Propagate before processing this component so it sees current electrical state
+          this.propagateConductivity();
+
+          // Let the component react to current pin states
+          const result = behavior.onPinsChange(
+            component,
+            componentState,
+            currentState.nodeStates,
+            0
+          );
+
+          // Update component state if it changed
+          if (result.hasChanged) {
+            hasChanges = true;
+            (currentState.componentStates as Map<UUID, ComponentState>).set(
+              component.id,
+              result.componentState
+            );
+          }
+
+          // During initialization, fire any scheduled events IMMEDIATELY
+          // This is the key to breaking feedback symmetry: the first component
+          // completes its full transition (e.g., opening → open) before the
+          // next component in the feedback loop sees the new electrical state.
+          for (const event of result.scheduledEvents) {
+            const eventResult = behavior.onEventFiring(component, componentState, event);
+            if (eventResult.hasChanged) {
+              hasChanges = true;
+              (currentState.componentStates as Map<UUID, ComponentState>).set(
+                component.id,
+                eventResult.componentState
+              );
+            }
+          }
+        }
+      }
+    }
+
     const result = this.updateState(0);
 
     // at initialization everything is dirty
@@ -332,7 +443,26 @@ export class CircuitRunner {
     const updatedComponents = new Set<UUID>();
     let eventCount = 0;
 
-    for (const componentId of componentsToAssess) {
+    // During initialization (tick 0), sort components by order to resolve feedback loops
+    let sortedComponentIds = Array.from(componentsToAssess);
+    if (targetTick === 0) {
+      sortedComponentIds = sortedComponentIds.sort((idA, idB) => {
+        const compA = this.circuit.getComponent(idA) as Component;
+        const compB = this.circuit.getComponent(idB) as Component;
+        const orderA = this.getInitializationOrder(compA.config);
+        const orderB = this.getInitializationOrder(compB.config);
+
+        // Lower order first, higher order last (ascending)
+        if (orderA !== orderB) {
+          return orderA - orderB;
+        }
+
+        // Tie-break by UUID (ascending)
+        return idA.localeCompare(idB);
+      });
+    }
+
+    for (const componentId of sortedComponentIds) {
       const component = this.circuit.getComponent(componentId) as Component;
       const behavior = this.behaviorRegistry.get(component.type);
       if (!behavior) {
