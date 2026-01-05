@@ -13,7 +13,7 @@ import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
 import type { NodeElectricalState, ScheduledEvent, UserCommand } from '@/core/simulation';
 
 export class SmallLEDBehavior implements ComponentBehavior {
-  readonly componentType = ComponentType.SmallLED;
+  componentType = ComponentType.SmallLED;
 
   /**
    * Create initial state for a smallLED.

@@ -29,6 +29,8 @@ import {
   TransistorVisualFactory,
   LabelVisualFactory,
 } from '@/scene/shared/components';
+import {RectangleLEDVisualFactory} from "../../../src/scene/shared/components/RectangleLEDVisualFactory";
+import {RectangleLEDBehavior} from "../../../src/core/simulation/behaviors/RectangleLEDBehavior";
 
 // Export to window object for use in HTML
 declare global {
@@ -55,6 +57,7 @@ if (typeof window !== 'undefined') {
   componentsFactoryRegistry.register(ComponentType.Relay, new RelayVisualFactory());
   componentsFactoryRegistry.register(ComponentType.Switch, new SwitchVisualFactory());
   componentsFactoryRegistry.register(ComponentType.SmallLED, new SmallLEDVisualFactory());
+  componentsFactoryRegistry.register(ComponentType.RectangleLED, new RectangleLEDVisualFactory());
   componentsFactoryRegistry.register(ComponentType.Transistor, new TransistorVisualFactory());
   componentsFactoryRegistry.register(ComponentType.Label, new LabelVisualFactory());
 
@@ -65,6 +68,7 @@ if (typeof window !== 'undefined') {
   behaviorRegistry.register(new RelayBehavior());
   behaviorRegistry.register(new SwitchBehavior());
   behaviorRegistry.register(new SmallLEDBehavior());
+  behaviorRegistry.register(new RectangleLEDBehavior());
   behaviorRegistry.register(new TransistorBehavior());
 
   // Create WebGL renderer

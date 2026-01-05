@@ -424,6 +424,25 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
   }
 
   /**
+   * Find pin group by label within a component Object3D
+   * @param object3D
+   * @param label
+   */
+  findPinGroup(object3D: THREE.Object3D, label: string): THREE.Group | null {
+    let pinGroup: THREE.Group | null = null;
+    object3D.traverse((child) => {
+      if (
+        child.userData.type === 'enodeGroup' &&
+        child.userData.label === label &&
+        child instanceof THREE.Group
+      ) {
+        pinGroup = child;
+      }
+    });
+    return pinGroup;
+  }
+
+  /**
    * Create component hitbox mesh
    *
    * Helper to create standard component hitbox with proper userData and layer.

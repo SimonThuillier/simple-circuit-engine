@@ -154,9 +154,11 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTy
     ]),
     config: new Map([
       ['mode', 'symmetric'],
-      ['activeColor', 'red'],
-      ['idleColor', 'black'],
-      ['size', '1']
+      ['idleColor', 'white'],
+      ['activeColor', '#ffff00'],
+      ['size', '1'],
+      ['hwRatio', '1'],
+      ['ywRatio', '1']
     ]),
   },
   [ComponentType.Cube]: {
