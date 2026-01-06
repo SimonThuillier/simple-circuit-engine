@@ -234,7 +234,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
   /**
    * By default no visual configuration-based updates is needed
    */
-  updateFromConfiguration(_object3D: THREE.Object3D, _config: Map<string, string>){
+  updateFromConfiguration(_object3D: THREE.Object3D, _config: Map<string, string>) {
     // Default: no-op
   }
 
@@ -420,6 +420,25 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     };
     pinGroup.add(visual);
 
+    return pinGroup;
+  }
+
+  /**
+   * Find pin group by label within a component Object3D
+   * @param object3D
+   * @param label
+   */
+  findPinGroup(object3D: THREE.Object3D, label: string): THREE.Group | null {
+    let pinGroup: THREE.Group | null = null;
+    object3D.traverse((child) => {
+      if (
+        child.userData.type === 'enodeGroup' &&
+        child.userData.label === label &&
+        child instanceof THREE.Group
+      ) {
+        pinGroup = child;
+      }
+    });
     return pinGroup;
   }
 

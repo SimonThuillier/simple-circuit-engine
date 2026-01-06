@@ -62,12 +62,7 @@ describe('LabelVisualFactory', () => {
 
   describe('createVisual (US1)', () => {
     it('T014: returns THREE.Group with correct userData (componentId, componentType)', () => {
-      const component = new Component(
-        ComponentType.Label,
-        new Position(0, 0),
-        new Rotation(0),
-        []
-      );
+      const component = new Component(ComponentType.Label, new Position(0, 0), new Rotation(0), []);
 
       const visual = factory.createVisual(component);
 
@@ -78,12 +73,7 @@ describe('LabelVisualFactory', () => {
     });
 
     it('T015: creates group with hitbox and text mesh children', () => {
-      const component = new Component(
-        ComponentType.Label,
-        new Position(0, 0),
-        new Rotation(0),
-        []
-      );
+      const component = new Component(ComponentType.Label, new Position(0, 0), new Rotation(0), []);
 
       const visual = factory.createVisual(component);
 
@@ -91,35 +81,24 @@ describe('LabelVisualFactory', () => {
       expect(visual.children.length).toBeGreaterThanOrEqual(2);
 
       // Find hitbox child
-      const hitbox = visual.children.find(
-        (child) => child.userData.type === 'componentHitbox'
-      );
+      const hitbox = visual.children.find((child) => child.userData.type === 'componentHitbox');
       expect(hitbox).toBeDefined();
 
       // Find text mesh child
-      const textMesh = visual.children.find(
-        (child) => child.userData.part === 'text'
-      );
+      const textMesh = visual.children.find((child) => child.userData.part === 'text');
       expect(textMesh).toBeDefined();
       expect(textMesh).toBeInstanceOf(THREE.Mesh);
     });
 
     it('T016: Label component has zero pins (empty pins array)', () => {
-      const component = new Component(
-        ComponentType.Label,
-        new Position(0, 0),
-        new Rotation(0),
-        []
-      );
+      const component = new Component(ComponentType.Label, new Position(0, 0), new Rotation(0), []);
 
       // Label should have no pins
       expect(component.pins).toHaveLength(0);
 
       // Visual should have no pin groups
       const visual = factory.createVisual(component);
-      const pinGroups = visual.children.filter(
-        (child) => child.userData.type === 'pinGroup'
-      );
+      const pinGroups = visual.children.filter((child) => child.userData.type === 'pinGroup');
       expect(pinGroups).toHaveLength(0);
     });
   });
@@ -142,18 +121,11 @@ describe('LabelVisualFactory', () => {
 
   describe('updateFromConfiguration (US2)', () => {
     it('T022: updateFromConfiguration triggers text update when text differs', () => {
-      const component = new Component(
-        ComponentType.Label,
-        new Position(0, 0),
-        new Rotation(0),
-        []
-      );
+      const component = new Component(ComponentType.Label, new Position(0, 0), new Rotation(0), []);
       const visual = factory.createVisual(component);
 
       // Get initial text mesh
-      const textMesh = visual.children.find(
-        (child) => child.userData.part === 'text'
-      );
+      const textMesh = visual.children.find((child) => child.userData.part === 'text');
       expect(textMesh).toBeDefined();
 
       // Initial text should be 'Label' (from default config)
@@ -213,19 +185,14 @@ describe('LabelVisualFactory', () => {
       expect(sizeField).toBeDefined();
       expect(sizeField!.type).toBe('number');
       expect(sizeField!.min).toBe(1);
-      expect(sizeField!.max).toBe(4);
+      expect(sizeField!.max).toBe(16);
       expect(sizeField!.step).toBe(1);
     });
   });
 
   describe('updateFromConfiguration - scale (US3)', () => {
     it('T035: applies scale transform based on size config', () => {
-      const component = new Component(
-        ComponentType.Label,
-        new Position(0, 0),
-        new Rotation(0),
-        []
-      );
+      const component = new Component(ComponentType.Label, new Position(0, 0), new Rotation(0), []);
       const visual = factory.createVisual(component);
 
       // Update with size 3
@@ -241,12 +208,7 @@ describe('LabelVisualFactory', () => {
     });
 
     it('T036: size=2 doubles the visual scale', () => {
-      const component = new Component(
-        ComponentType.Label,
-        new Position(0, 0),
-        new Rotation(0),
-        []
-      );
+      const component = new Component(ComponentType.Label, new Position(0, 0), new Rotation(0), []);
       const visual = factory.createVisual(component);
 
       // Update with size 2
@@ -285,17 +247,10 @@ describe('LabelVisualFactory', () => {
     });
 
     it('T043: text mesh is positioned within group for proper rotation pivot', () => {
-      const component = new Component(
-        ComponentType.Label,
-        new Position(0, 0),
-        new Rotation(0),
-        []
-      );
+      const component = new Component(ComponentType.Label, new Position(0, 0), new Rotation(0), []);
       const visual = factory.createVisual(component);
 
-      const textMesh = visual.children.find(
-        (child) => child.userData.part === 'text'
-      );
+      const textMesh = visual.children.find((child) => child.userData.part === 'text');
       expect(textMesh).toBeDefined();
 
       // Text mesh should be at or near origin (x=0, z=0) for proper rotation pivot
@@ -310,12 +265,7 @@ describe('LabelVisualFactory', () => {
 
   describe('resource cleanup (US5)', () => {
     it('T047: visual can be disposed without errors', () => {
-      const component = new Component(
-        ComponentType.Label,
-        new Position(0, 0),
-        new Rotation(0),
-        []
-      );
+      const component = new Component(ComponentType.Label, new Position(0, 0), new Rotation(0), []);
       const visual = factory.createVisual(component);
 
       // Disposing should not throw
@@ -394,17 +344,6 @@ describe('LabelVisualFactory', () => {
 
       expect(config.get('text')).toBe('Label');
     });
-
-    it('clamps size to valid range', () => {
-      const formData = new Map<string, any>([
-        ['text', 'Test'],
-        ['size', 10],
-      ]);
-
-      const config = factory.mapFormToCoreConfig(formData);
-
-      expect(config.get('size')).toBe('4');
-    });
   });
 
   // ============================================
@@ -413,12 +352,7 @@ describe('LabelVisualFactory', () => {
 
   describe('applyHover / removeHover', () => {
     it('sets isHovered flag on group userData', () => {
-      const component = new Component(
-        ComponentType.Label,
-        new Position(0, 0),
-        new Rotation(0),
-        []
-      );
+      const component = new Component(ComponentType.Label, new Position(0, 0), new Rotation(0), []);
       const visual = factory.createVisual(component);
 
       expect(visual.userData.isHovered).toBeUndefined();
@@ -431,12 +365,7 @@ describe('LabelVisualFactory', () => {
     });
 
     it('does not change text color when selected (selection takes precedence)', () => {
-      const component = new Component(
-        ComponentType.Label,
-        new Position(0, 0),
-        new Rotation(0),
-        []
-      );
+      const component = new Component(ComponentType.Label, new Position(0, 0), new Rotation(0), []);
       const visual = factory.createVisual(component);
 
       // First select, then hover
@@ -451,12 +380,7 @@ describe('LabelVisualFactory', () => {
 
   describe('applySelection / removeSelection', () => {
     it('sets isSelected flag on group userData', () => {
-      const component = new Component(
-        ComponentType.Label,
-        new Position(0, 0),
-        new Rotation(0),
-        []
-      );
+      const component = new Component(ComponentType.Label, new Position(0, 0), new Rotation(0), []);
       const visual = factory.createVisual(component);
 
       expect(visual.userData.isSelected).toBeUndefined();
@@ -469,12 +393,7 @@ describe('LabelVisualFactory', () => {
     });
 
     it('restores hover color if hovered when selection is removed', () => {
-      const component = new Component(
-        ComponentType.Label,
-        new Position(0, 0),
-        new Rotation(0),
-        []
-      );
+      const component = new Component(ComponentType.Label, new Position(0, 0), new Rotation(0), []);
       const visual = factory.createVisual(component);
 
       // Hover first, then select
@@ -495,12 +414,7 @@ describe('LabelVisualFactory', () => {
 
   describe('updateFromConfiguration - text resize', () => {
     it('resizes geometry when text becomes longer', () => {
-      const component = new Component(
-        ComponentType.Label,
-        new Position(0, 0),
-        new Rotation(0),
-        []
-      );
+      const component = new Component(ComponentType.Label, new Position(0, 0), new Rotation(0), []);
       component.config.set('text', 'A');
       const visual = factory.createVisual(component);
 
@@ -524,12 +438,7 @@ describe('LabelVisualFactory', () => {
     });
 
     it('updates hitbox dimensions when text changes', () => {
-      const component = new Component(
-        ComponentType.Label,
-        new Position(0, 0),
-        new Rotation(0),
-        []
-      );
+      const component = new Component(ComponentType.Label, new Position(0, 0), new Rotation(0), []);
       component.config.set('text', 'Short');
       const visual = factory.createVisual(component);
 

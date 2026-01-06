@@ -18,15 +18,23 @@ import * as THREE from 'three';
  */
 export class RelayVisualFactory extends ComponentVisualFactoryBase {
   /** Rotation for open relay (contactor misaligned) */
-  private static readonly OPEN_ROTATION = new THREE.Euler(0.2, -0.6*Math.PI/2, 0.2);
+  private static readonly OPEN_ROTATION = new THREE.Euler(0.2, (-0.6 * Math.PI) / 2, 0.2);
   /** Rotation for opening/closing relay */
-  private static readonly INTERMEDIATE_ROTATION = new THREE.Euler(0.1, -0.8*Math.PI/2, 0.1);
+  private static readonly INTERMEDIATE_ROTATION = new THREE.Euler(0.1, (-0.8 * Math.PI) / 2, 0.1);
   /** Rotation for closed relay (contactor aligned) */
-  private static readonly CLOSED_ROTATION = new THREE.Euler(0, -Math.PI/2, 0);
+  private static readonly CLOSED_ROTATION = new THREE.Euler(0, -Math.PI / 2, 0);
   /** Rotation for opening/closing negative activation logic relay */
-  private static readonly INVERTED_INTERMEDIATE_ROTATION = new THREE.Euler(-0.1, -1.2*Math.PI/2, -0.1);
+  private static readonly INVERTED_INTERMEDIATE_ROTATION = new THREE.Euler(
+    -0.1,
+    (-1.2 * Math.PI) / 2,
+    -0.1
+  );
   /** Rotation for open negative activation logic relay (contactor misaligned toward the coil) */
-  private static readonly INVERTED_OPEN_ROTATION = new THREE.Euler(-0.2, -1.4*Math.PI/2, -0.2);
+  private static readonly INVERTED_OPEN_ROTATION = new THREE.Euler(
+    -0.2,
+    (-1.4 * Math.PI) / 2,
+    -0.2
+  );
 
   createVisual(component: Component): THREE.Object3D {
     // Root group (not rendered, just organizational)
@@ -41,7 +49,6 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
     const hitbox = this.createComponentHitbox(component.id, group.id, 2, 1, 2);
     group.add(hitbox);
 
-
     // Visual: input parts
     const coilGeometry = new THREE.CylinderGeometry(0.4, 0.4, 1.2, 24);
     const coilMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
@@ -49,44 +56,26 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
     coil.userData = {
       type: 'component',
       componentId: component.id,
-      part: 'coil'
+      part: 'coil',
     };
     coil.rotateX(Math.PI / 2);
     coil.position.set(-0.7, 0, 0);
     group.add(coil);
 
     // cmd in pin
-    const cmdInGroup = this.createPinGroup(
-        component.id,
-        component.pins[0]!,
-        'cmd_in'
-    );
+    const cmdInGroup = this.createPinGroup(component.id, component.pins[0]!, 'cmd_in');
     cmdInGroup.position.set(-0.8, 0, -0.6);
     cmdInGroup.rotateX(-Math.PI / 2);
     // addition to group after to avoid z-fighting
 
     // cmd out pin
-    const cmdOutGroup = this.createPinGroup(
-        component.id,
-        component.pins[1]!,
-        'cmd_out'
-    );
+    const cmdOutGroup = this.createPinGroup(component.id, component.pins[1]!, 'cmd_out');
     cmdOutGroup.position.set(-0.8, 0, 0.6);
     cmdOutGroup.rotateX(Math.PI / 2);
     group.add(cmdOutGroup);
 
-
-
     // Visual: output parts
-    const powerInGeometry = new THREE.SphereGeometry(
-      0.3,
-      16,
-      8,
-      Math.PI / 2,
-      Math.PI,
-      0,
-      Math.PI
-    );
+    const powerInGeometry = new THREE.SphereGeometry(0.3, 16, 8, Math.PI / 2, Math.PI, 0, Math.PI);
     const powerMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
     const powerInPole = new THREE.Mesh(powerInGeometry, powerMaterial);
     powerInPole.userData = {
@@ -100,11 +89,13 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
     //  power in pin
     const powerInGroup = this.createPinGroup(component.id, component.pins[2]!, 'power_in');
     powerInGroup.position.set(0.6, 0, -0.5);
-    powerInGroup.rotateZ(Math.PI/2);
-    powerInGroup.rotateX(-Math.PI/2);
+    powerInGroup.rotateZ(Math.PI / 2);
+    powerInGroup.rotateX(-Math.PI / 2);
     // to avoid z-fighting
     powerInGroup.renderOrder = 1;
-    powerInGroup.children.forEach(child => {child.renderOrder=1;})
+    powerInGroup.children.forEach((child) => {
+      child.renderOrder = 1;
+    });
     group.add(powerInGroup);
     group.add(cmdInGroup);
 
@@ -122,13 +113,13 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
     const powerOutGroup = this.createPinGroup(component.id, component.pins[3]!, 'power_out');
     powerOutGroup.position.set(0.6, 0, 1);
     powerOutGroup.rotateZ(-Math.PI / 2);
-    powerOutGroup.rotateX(Math.PI/2);
+    powerOutGroup.rotateX(Math.PI / 2);
     group.add(powerOutGroup);
 
     // Contactor
     const contactorGroup = new THREE.Mesh(
       new THREE.BoxGeometry(2, 1, 1),
-        //new THREE.MeshStandardMaterial({ color: 0x00ff00, transparent: true, opacity: 0.2 })
+      //new THREE.MeshStandardMaterial({ color: 0x00ff00, transparent: true, opacity: 0.2 })
       new THREE.MeshBasicMaterial({
         transparent: false,
         visible: false,
@@ -138,7 +129,7 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
       type: 'component',
       componentId: component.id,
       part: 'contactor',
-      initialState: 'open'
+      initialState: 'open',
     };
 
     const contactorMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
@@ -173,7 +164,6 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
    * @returns Form definition with activationLogic boolean field
    */
   override getConfigFormDefinition(): ConfigFormDefinition | null {
-
     return {
       fields: [
         {
@@ -190,12 +180,15 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
           key: 'size',
           label: 'Size',
           type: 'number',
+          min: 1,
+          max: 16,
+          step: 1,
         },
         {
           key: 'initializationOrder',
           label: 'Init Order',
           type: 'number',
-        }
+        },
       ],
     };
   }
@@ -234,13 +227,12 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
     return config;
   }
 
-  override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>){
+  override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>) {
     const contactorGroup = this.findContactorGroup(object3D);
-    if(contactorGroup){
-      if(config.get('activationLogic') === 'negative'){
+    if (contactorGroup) {
+      if (config.get('activationLogic') === 'negative') {
         contactorGroup.userData.initialState = 'closed';
-      }
-      else {
+      } else {
         contactorGroup.userData.initialState = 'open';
       }
     }
@@ -262,37 +254,40 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
     const contactorGroup = this.findContactorGroup(object3D);
     const coil = this.findCoil(object3D);
 
-    if(!state){
-        // Edition mode - set to initial state
-        if (contactorGroup) {
-            if (contactorGroup.userData.initialState === 'closed') {
-                contactorGroup.rotation.copy(RelayVisualFactory.CLOSED_ROTATION);
-            }
-            else {
-                contactorGroup.rotation.copy(RelayVisualFactory.OPEN_ROTATION);
-            }
+    if (!state) {
+      // Edition mode - set to initial state
+      if (contactorGroup) {
+        if (contactorGroup.userData.initialState === 'closed') {
+          contactorGroup.rotation.copy(RelayVisualFactory.CLOSED_ROTATION);
+        } else {
+          contactorGroup.rotation.copy(RelayVisualFactory.OPEN_ROTATION);
         }
-        if(coil && coil.material instanceof THREE.MeshStandardMaterial){
-          coil.material.emissive.setHex(0x000000);
-          coil.material.emissiveIntensity = 0;
-          coil.userData.materialLocked = false;
-        }
-        return;
+      }
+      if (coil && coil.material instanceof THREE.MeshStandardMaterial) {
+        coil.material.emissive.setHex(0x000000);
+        coil.material.emissiveIntensity = 0;
+        coil.userData.materialLocked = false;
+      }
+      return;
     }
 
     const relayState = state as RelayState;
     if (contactorGroup) {
       if (relayState.isInTransition) {
-        const targetRotation = contactorGroup.userData.initialState === 'closed' ?
-            RelayVisualFactory.INVERTED_INTERMEDIATE_ROTATION : RelayVisualFactory.INTERMEDIATE_ROTATION;
+        const targetRotation =
+          contactorGroup.userData.initialState === 'closed'
+            ? RelayVisualFactory.INVERTED_INTERMEDIATE_ROTATION
+            : RelayVisualFactory.INTERMEDIATE_ROTATION;
         contactorGroup.rotation.copy(targetRotation);
       } else if (relayState.isClosed) {
         // Closed position - contactor aligned
         contactorGroup.rotation.copy(RelayVisualFactory.CLOSED_ROTATION);
       } else {
         // Open position - contactor misaligned
-        const targetRotation = contactorGroup.userData.initialState === 'closed' ?
-            RelayVisualFactory.INVERTED_OPEN_ROTATION : RelayVisualFactory.OPEN_ROTATION;
+        const targetRotation =
+          contactorGroup.userData.initialState === 'closed'
+            ? RelayVisualFactory.INVERTED_OPEN_ROTATION
+            : RelayVisualFactory.OPEN_ROTATION;
         contactorGroup.rotation.copy(targetRotation);
       }
     }
@@ -312,7 +307,6 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
         coil.userData.materialLocked = false;
       }
     }
-
   }
 
   /**
@@ -355,5 +349,4 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
     });
     return coil;
   }
-
 }

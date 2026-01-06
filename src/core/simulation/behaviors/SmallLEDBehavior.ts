@@ -13,7 +13,7 @@ import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
 import type { NodeElectricalState, ScheduledEvent, UserCommand } from '@/core/simulation';
 
 export class SmallLEDBehavior implements ComponentBehavior {
-  readonly componentType = ComponentType.SmallLED;
+  componentType = ComponentType.SmallLED;
 
   /**
    * Create initial state for a smallLED.
@@ -59,10 +59,10 @@ export class SmallLEDBehavior implements ComponentBehavior {
     }
 
     let activationCondition =
-        (pinStates.get('anode')!.hasVoltage && pinStates.get('anode')!.hasCurrent) ||
-    (pinStates.get('cathode')!.hasVoltage && pinStates.get('cathode')!.hasCurrent) ||
-    (pinStates.get('anode')!.hasVoltage && pinStates.get('cathode')!.hasCurrent) ||
-    (pinStates.get('cathode')!.hasVoltage && pinStates.get('anode')!.hasCurrent);
+      (pinStates.get('anode')!.hasVoltage && pinStates.get('anode')!.hasCurrent) ||
+      (pinStates.get('cathode')!.hasVoltage && pinStates.get('cathode')!.hasCurrent) ||
+      (pinStates.get('anode')!.hasVoltage && pinStates.get('cathode')!.hasCurrent) ||
+      (pinStates.get('cathode')!.hasVoltage && pinStates.get('anode')!.hasCurrent);
 
     let hasChanged = false;
     const scheduledEvents: ScheduledEvent[] = [];

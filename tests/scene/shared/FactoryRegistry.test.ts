@@ -10,7 +10,7 @@ import { createMockCircuit } from '../helpers';
 import {
   type IComponentVisualFactory,
   FactoryRegistry,
-  DefaultVisualFactory
+  DefaultVisualFactory,
 } from '../../../src/scene/shared/components';
 
 describe('FactoryRegistry', () => {

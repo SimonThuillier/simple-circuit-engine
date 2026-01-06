@@ -1,9 +1,9 @@
 import { ComponentVisualFactoryBase } from './ComponentVisualFactory';
 import type { Component } from '@/core/Component';
 import type { ComponentState } from '@/core/simulation/states/ComponentState';
-import {LightbulbState} from "@/core/simulation/states";
+import { LightbulbState } from '@/core/simulation/states';
 import * as THREE from 'three';
-import type {ConfigFormDefinition} from "../types/ConfigTypes";
+import type { ConfigFormDefinition } from '../types/ConfigTypes';
 
 /**
  * Visual factory for Lightbulb components
@@ -86,9 +86,7 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
    */
   override getConfigFormDefinition(): ConfigFormDefinition | null {
     return {
-      fields: [
-        { key: 'size', label: 'Size', type: 'number' }
-      ],
+      fields: [{ key: 'size', label: 'Size', type: 'number', min: 1, max: 16, step: 1 }],
     };
   }
 
@@ -111,12 +109,11 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
     return config;
   }
 
-  override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>){
+  override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>) {
     const scale = parseFloat(config.get('size') || '1');
     object3D.scale.set(scale, scale, scale);
     this.updateAnimation(object3D, null);
   }
-
 
   /**
    * Update Lightbulb animation based on simulation state
@@ -130,7 +127,7 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
   override updateAnimation(object3D: THREE.Object3D, state: ComponentState | null): void {
     const bulbMesh = this.findBulbMesh(object3D);
     if (!bulbMesh) return;
-    if(!state){
+    if (!state) {
       bulbMesh.userData.materialLocked = false;
       bulbMesh.material.opacity = 0.55;
       bulbMesh.material.emissive.setHex(0x000000);
@@ -164,7 +161,7 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
    * Searches for a mesh with userData.part === 'bulb'
    */
   private findBulbMesh(
-      object3D: THREE.Object3D
+    object3D: THREE.Object3D
   ): (THREE.Mesh & { material: THREE.MeshStandardMaterial }) | null {
     let bulbMesh: (THREE.Mesh & { material: THREE.MeshStandardMaterial }) | null = null;
 

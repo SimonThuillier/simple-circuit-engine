@@ -477,12 +477,12 @@ export class AddComponentTool implements IEditingTool {
    * @param ctrlKey
    */
   handleScroll(delta: number, ctrlKey: boolean): void {
-    if(ctrlKey){
-        // Cycle through component types while ctrl is held
-        this.cycleComponentTypes(delta > 0);
-        this._controller.getControls()!.enablePan = false;
-        this._controller.getControls()!.enableZoom = false;
-        return;
+    if (ctrlKey) {
+      // Cycle through component types while ctrl is held
+      this.cycleComponentTypes(delta > 0);
+      this._controller.getControls()!.enablePan = false;
+      this._controller.getControls()!.enableZoom = false;
+      return;
     }
 
     // Rotate preview by 90 degrees

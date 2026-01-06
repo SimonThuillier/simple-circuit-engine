@@ -44,7 +44,7 @@ export class RelayBehavior implements ComponentBehavior {
     if (component.type !== ComponentType.Relay) {
       throw new Error(`Invalid component type for RelayBehavior: ${component.type}`);
     }
-    const state = component.config.get('activationLogic') === 'negative'? 'closed': 'open';
+    const state = component.config.get('activationLogic') === 'negative' ? 'closed' : 'open';
     return new RelayState(component.id, state);
   }
 
@@ -61,12 +61,10 @@ export class RelayBehavior implements ComponentBehavior {
     if (!pinLabel || !otherPinLabel) return false;
     const pinLabels = [pinLabel, otherPinLabel];
 
-    if(pinLabels.includes('cmd_in') &&
-        pinLabels.includes('cmd_out')){
+    if (pinLabels.includes('cmd_in') && pinLabels.includes('cmd_out')) {
       return true;
     }
-    if(pinLabels.includes('power_in') &&
-        pinLabels.includes('power_out')){
+    if (pinLabels.includes('power_in') && pinLabels.includes('power_out')) {
       return state.state === 'closed' || state.state === 'opening';
     }
     return false;
@@ -92,13 +90,13 @@ export class RelayBehavior implements ComponentBehavior {
     }
 
     const isCommanded =
-        (pinStates.get('cmd_in')!.hasVoltage && pinStates.get('cmd_in')!.hasCurrent) ||
-        (pinStates.get('cmd_out')!.hasVoltage && pinStates.get('cmd_out')!.hasCurrent) ||
-        (pinStates.get('cmd_in')!.hasVoltage && pinStates.get('cmd_out')!.hasCurrent) ||
-        (pinStates.get('cmd_out')!.hasVoltage && pinStates.get('cmd_in')!.hasCurrent);
+      (pinStates.get('cmd_in')!.hasVoltage && pinStates.get('cmd_in')!.hasCurrent) ||
+      (pinStates.get('cmd_out')!.hasVoltage && pinStates.get('cmd_out')!.hasCurrent) ||
+      (pinStates.get('cmd_in')!.hasVoltage && pinStates.get('cmd_out')!.hasCurrent) ||
+      (pinStates.get('cmd_out')!.hasVoltage && pinStates.get('cmd_in')!.hasCurrent);
 
-    const shouldBeClosed = component.config.get('activationLogic') === 'negative'
-        ? !isCommanded: isCommanded;
+    const shouldBeClosed =
+      component.config.get('activationLogic') === 'negative' ? !isCommanded : isCommanded;
 
     let hasChanged = false;
     const scheduledEvents: ScheduledEvent[] = [];
@@ -139,7 +137,11 @@ export class RelayBehavior implements ComponentBehavior {
     };
   }
 
-  onUserCommand(_component: Component, state: ComponentState, _command: UserCommand): BehaviorResult {
+  onUserCommand(
+    _component: Component,
+    state: ComponentState,
+    _command: UserCommand
+  ): BehaviorResult {
     return {
       componentState: state,
       hasChanged: false,

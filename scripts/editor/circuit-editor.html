@@ -824,8 +824,9 @@
           const allItems = componentList.querySelectorAll('.component-item');
           allItems.forEach((item) => item.classList.remove('selected'));
           const itemElement = document.getElementById(
-                  `btn-addComponent-type-${e.componentType || 'none'}`);
-          if(itemElement.classList) {
+            `btn-addComponent-type-${e.componentType || 'none'}`
+          );
+          if (itemElement.classList) {
             itemElement.classList.add('selected');
           }
         });

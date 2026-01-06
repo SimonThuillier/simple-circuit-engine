@@ -9,15 +9,7 @@ import GUI from 'lil-gui';
 import type { UUID } from '@/core/types/Identifier';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
 import type { ConfigFormDefinition } from '../shared/types/ConfigTypes';
-import { EventEmitter } from '../shared/EventEmitter';
-import type {Component} from "@/core/Component";
-
-/**
- * Event map for ConfigPanelManager
- */
-interface ConfigPanelEventMap {
-  changed: { componentId: UUID };
-}
+import type { Component } from '@/core/Component';
 
 /**
  * Manages lil-gui configuration panel for component config editing
@@ -30,10 +22,9 @@ interface ConfigPanelEventMap {
  * - onChange event wiring to update component config
  * - Event emission for config changes
  */
-export class ConfigPanelManager extends EventEmitter<ConfigPanelEventMap> {
-
+export class ConfigPanelManager {
   private factoryRegistry: IFactoryRegistry;
-  private getObject3D: (componentId: UUID) => any | undefined;
+  private readonly editComponentConfig: (componentId: UUID, newConfig: Map<string, string>) => void;
 
   // Panel state
   private _isOpen: boolean = false;
@@ -50,19 +41,18 @@ export class ConfigPanelManager extends EventEmitter<ConfigPanelEventMap> {
    * Create a new ConfigPanelManager
    *
    * @param factoryRegistry - Factory registry for getting component factories
-   * @param getObject3D - Function to get Object3D by component ID
+   * @param editComponentConfig - Function to edit component config
    * @param _camera - Three.js camera (reserved for future use)
    * @param _domElement - Container DOM element (reserved for future use)
    */
   constructor(
     factoryRegistry: IFactoryRegistry,
-    getObject3D: (componentId: UUID) => any | undefined,
+    editComponentConfig: (componentId: UUID, newConfig: Map<string, string>) => void,
     _camera: unknown,
     _domElement: unknown
   ) {
-    super();
     this.factoryRegistry = factoryRegistry;
-    this.getObject3D = getObject3D;
+    this.editComponentConfig = editComponentConfig;
   }
 
   /**
@@ -197,11 +187,7 @@ export class ConfigPanelManager extends EventEmitter<ConfigPanelEventMap> {
   /**
    * Build lil-gui from form definition
    */
-  private buildGui(
-    formDef: ConfigFormDefinition,
-    component: any,
-    factory: any
-  ): void {
+  private buildGui(formDef: ConfigFormDefinition, component: any, factory: any): void {
     if (!this.container) return;
 
     // Create lil-gui instance
@@ -267,35 +253,20 @@ export class ConfigPanelManager extends EventEmitter<ConfigPanelEventMap> {
    * Handle value change in the config form (T016, T020, T021)
    * Maps form data back to core config and updates the component
    *
-   * @param component - Component being edited
+   * @param _component - Component being edited
    * @param factory - Visual factory for the component
    */
-  private onValueChange(component: any, factory: any): void {
+  private onValueChange(_component: any, factory: any): void {
     // Convert formDataObject back to Map for mapping
     const formDataMap = new Map<string, any>();
     for (const [key, value] of Object.entries(this.formDataObject)) {
       formDataMap.set(key, value);
     }
-
     // Map form data back to core config format
-    const coreConfig = factory.mapFormToCoreConfig(formDataMap);
-
-    // Update component config
-    for (const [key, value] of coreConfig.entries()) {
-      component.config.set(key, value); // TODO : make it pass by the CircuitWriter later
-    }
-
-    // Update visual if component has Object3D (T021)
+    const coreConfig = factory.mapFormToCoreConfig(formDataMap) as Map<string, string>;
+    // call editComponentConfig to update the component
     if (this._currentComponentId) {
-      const object3D = this.getObject3D(this._currentComponentId);
-      if (object3D) {
-        factory.updateFromConfiguration(object3D, component.config);
-      }
-    }
-
-    // Emit changed event (T020)
-    if (this._currentComponentId) {
-      this.emit('changed', { componentId: this._currentComponentId });
+      this.editComponentConfig(this._currentComponentId, coreConfig);
     }
   }
 

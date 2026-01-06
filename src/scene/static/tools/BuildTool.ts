@@ -363,10 +363,9 @@ export class BuildTool implements IEditingTool {
 
       // Handle Ctrl+click for sourceType or fast component config cycling
       if ((event.ctrlKey || event.metaKey) && hoveredElement) {
-        if(hoveredElement.type === 'enode'){
+        if (hoveredElement.type === 'enode') {
           this.cycleEnodeSourceType(hoveredElement.id, hoveredElement.object3D);
-        }
-        else if (hoveredElement.type === 'component') {
+        } else if (hoveredElement.type === 'component') {
           this._controller.cycleComponentConfig(hoveredElement.id);
         }
         // TODO: for wire maybe implement a path regularization feature later
@@ -1406,7 +1405,7 @@ export class BuildTool implements IEditingTool {
     const sources = component.pins.map((pinId) => {
       const enode = circuit.getENode(pinId);
       return enode ? enode.source : null;
-    })
+    });
 
     this.clipboard = {
       componentType: component.type,

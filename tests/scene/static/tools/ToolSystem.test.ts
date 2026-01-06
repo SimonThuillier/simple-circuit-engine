@@ -7,10 +7,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CircuitController } from '../../../../src/scene/static/CircuitController';
 import type { ToolType } from '../../../../src/scene/shared/types';
-import {
-  FactoryRegistry,
-  DefaultVisualFactory
-} from '../../../../src/scene/shared/components';
+import { FactoryRegistry, DefaultVisualFactory } from '../../../../src/scene/shared/components';
 
 // Mock Three.js - use importOriginal to get real THREE classes
 // This avoids having to mock everything, we just use the real THREE.js

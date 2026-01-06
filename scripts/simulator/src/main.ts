@@ -16,7 +16,7 @@ import {
   RelayBehavior,
   SmallLEDBehavior,
   SwitchBehavior,
-  TransistorBehavior
+  TransistorBehavior,
 } from '../../../src/core/simulation/behaviors';
 
 import {
@@ -29,7 +29,7 @@ import {
   SmallLEDVisualFactory,
   SwitchVisualFactory,
   TransistorVisualFactory,
-  LabelVisualFactory
+  LabelVisualFactory,
 } from '../../../src/scene/shared/components';
 
 // Export to window object for use in HTML

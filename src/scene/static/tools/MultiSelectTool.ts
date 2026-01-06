@@ -17,7 +17,7 @@ import {
   worldToGridPosition,
 } from '../../shared/GeometryUtils';
 import { Rotation } from '@/core/types/Rotation';
-import type {ENodeSourceType} from "@/core/types/ENodeSourceType";
+import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
 
 /**
  * Operating modes for the MultiSelectTool
@@ -103,7 +103,7 @@ export interface ClipboardBranchingPoint {
   /** Original element ID for wire remapping during paste */
   originalId: UUID;
   /** Source type of the branching point */
-  source?: ENodeSourceType | undefined
+  source?: ENodeSourceType | undefined;
 }
 
 /**
@@ -1091,9 +1091,9 @@ export class MultiSelectTool implements IEditingTool {
       if (component) {
         const pos = component.position;
         const sources = component.pins.map((pinId) => {
-            const enode = circuit.getENode(pinId);
-            return enode ? enode.source : null;
-        })
+          const enode = circuit.getENode(pinId);
+          return enode ? enode.source : null;
+        });
         clipboardComponents.push({
           type: component.type,
           relativePosition: {
@@ -1120,7 +1120,7 @@ export class MultiSelectTool implements IEditingTool {
             y: pos.y - anchor.y,
           },
           originalId: enodeId,
-          source: enode.source
+          source: enode.source,
         });
       }
     }

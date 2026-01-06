@@ -49,9 +49,7 @@ export class DefaultVisualFactory extends ComponentVisualFactoryBase {
   override getConfigFormDefinition(): ConfigFormDefinition | null {
     // Default factory is used for Cube, which has a simple color config
     return {
-      fields: [
-        { key: 'color', label: 'Color', type: 'color' },
-      ],
+      fields: [{ key: 'color', label: 'Color', type: 'color' }],
     };
   }
 

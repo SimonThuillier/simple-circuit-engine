@@ -10,7 +10,7 @@ import * as THREE from 'three';
  * Visual factory for SmallLED components
  *
  * Creates:
- * - LED cylinder mesh
+ * - LED box mesh
  * - Input pin group
  * - Output pin group
  * - Component hitbox for raycasting
@@ -18,7 +18,7 @@ import * as THREE from 'three';
  * Animation:
  * - Emissive glow when LED is lit (based on simulation state)
  */
-export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
+export class RectangleLEDVisualFactory extends ComponentVisualFactoryBase {
   /** LED lit color (yellow glow) */
   private static readonly LED_LIT_COLOR = 0xffff00;
 
@@ -35,33 +35,33 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
     };
 
     // Component hitbox (invisible, raycastable)
-    const hitbox = this.createComponentHitbox(component.id, group.id, 1, 1, 1);
+    const hitbox = this.createComponentHitbox(component.id, group.id, 1, 1.5, 1);
     group.add(hitbox);
 
     // Visual LED
     const ledMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
-    const ledGeometry = new THREE.CylinderGeometry(0.25, 0.25, 1, 16, 4, false, 0, Math.PI * 2);
+    const ledGeometry = new THREE.BoxGeometry(1, 1, 1);
     const led = new THREE.Mesh(ledGeometry, ledMaterial);
     led.userData = {
       type: 'component',
       componentId: component.id,
       part: 'led',
       idleColorHex: 0xffffff,
-      activeColorHex: SmallLEDVisualFactory.LED_LIT_COLOR,
+      activeColorHex: RectangleLEDVisualFactory.LED_LIT_COLOR,
     };
     led.position.set(0, 0.25, 0);
     group.add(led);
 
     // Input pin group
     const inputPinGroup = this.createPinGroup(component.id, component.pins[0]!, 'input');
-    inputPinGroup.position.set(-0.25, 0, 0);
+    inputPinGroup.position.set(-0.5, 0, 0);
     inputPinGroup.rotateZ(Math.PI / 2);
     inputPinGroup.rotateY(Math.PI);
     group.add(inputPinGroup);
 
     // Output pin group
     const outputPinGroup = this.createPinGroup(component.id, component.pins[1]!, 'output');
-    outputPinGroup.position.set(0.25, 0, 0);
+    outputPinGroup.position.set(0.5, 0, 0);
     outputPinGroup.rotateZ(-Math.PI / 2);
     outputPinGroup.rotateY(Math.PI);
     group.add(outputPinGroup);
@@ -81,6 +81,7 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
         { key: 'idleColor', label: 'Idle Color', type: 'color' },
         { key: 'activeColor', label: 'Active Color', type: 'color' },
         { key: 'size', label: 'Size', type: 'number', min: 1, max: 16, step: 1 },
+        { key: 'hwRatio', label: 'Ratio H/W', type: 'number' },
         { key: 'ywRatio', label: 'Ratio Y/W', type: 'number' },
       ],
     };
@@ -95,13 +96,14 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
    */
   override mapCoreConfigToForm(config: Map<string, string>): Map<string, any> {
     const formData = new Map<string, any>();
-    const activeColor = config.get('activeColor') || '#ffff00';
     const idleColor = config.get('idleColor') || '#ffffff';
+    const activeColor = config.get('activeColor') || '#ffff00';
 
     // Convert preset names to hex if needed
     formData.set('idleColor', presetOrHexToHex(idleColor));
     formData.set('activeColor', presetOrHexToHex(activeColor));
     formData.set('size', parseFloat(config.get('size') || '1'));
+    formData.set('hwRatio', parseFloat(config.get('hwRatio') || '1'));
     formData.set('ywRatio', parseFloat(config.get('ywRatio') || '1'));
 
     return formData;
@@ -128,6 +130,7 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
     }
 
     config.set('size', formData.get('size').toString());
+    config.set('hwRatio', formData.get('hwRatio').toString());
     config.set('ywRatio', formData.get('ywRatio').toString());
     return config;
   }
@@ -145,8 +148,10 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
    */
   override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>): void {
     const ledMesh = this.findLedMesh(object3D);
+    const inputPin = this.findPinGroup(object3D, 'input');
+    const outputPin = this.findPinGroup(object3D, 'output');
     const hitbox = this.findHitbox(object3D);
-    if (!ledMesh || !hitbox) return;
+    if (!ledMesh || !inputPin || !outputPin || !hitbox) return;
 
     // changing colors
     const idleColor = config.get('idleColor');
@@ -165,22 +170,19 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
       );
     }
     // changing geometry
+    const hwRatio = parseFloat(config.get('hwRatio') || '1');
     const ywRatio = parseFloat(config.get('ywRatio') || '1');
     ledMesh.geometry.dispose();
-    ledMesh.geometry = new THREE.CylinderGeometry(
-      0.25,
-      0.25,
-      ywRatio,
-      16,
-      4,
-      false,
-      0,
-      Math.PI * 2
-    );
+    ledMesh.geometry = new THREE.BoxGeometry(1, ywRatio, hwRatio);
     ledMesh.position.set(0, 0.25 * ywRatio, 0);
     hitbox.geometry.dispose();
-    hitbox.geometry = new THREE.BoxGeometry(1, 1.5 * ywRatio, 1);
+    hitbox.geometry = new THREE.BoxGeometry(1, 1.5 * ywRatio, hwRatio);
+    // scaling the pins (1 if hwRatio>=0.5, else scaled down to fit better)
+    const pinScale = hwRatio >= 0.5 ? 1 : hwRatio * 2;
+    inputPin.scale.set(pinScale, pinScale, pinScale);
+    outputPin.scale.set(pinScale, pinScale, pinScale);
 
+    // scaling
     const scale = parseFloat(config.get('size') || '1');
     object3D.scale.set(scale, scale, scale);
   }
@@ -209,7 +211,7 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
       // Apply LED glow
       ledMesh.userData.materialLocked = true;
       ledMesh.material.emissive.setHex(ledMesh.userData.activeColorHex);
-      ledMesh.material.emissiveIntensity = SmallLEDVisualFactory.LED_LIT_INTENSITY;
+      ledMesh.material.emissiveIntensity = RectangleLEDVisualFactory.LED_LIT_INTENSITY;
     } else {
       // Remove glow
       ledMesh.userData.materialLocked = false;

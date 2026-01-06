@@ -52,7 +52,6 @@ function createMockComponentGroup(
   return group;
 }
 
-
 describe('WireVisualManager', () => {
   let wireManager: WireVisualManager;
   let scene: THREE.Scene;

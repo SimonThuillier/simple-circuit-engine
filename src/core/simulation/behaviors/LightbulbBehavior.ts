@@ -57,10 +57,10 @@ export class LightbulbBehavior implements ComponentBehavior {
     }
 
     let activationCondition =
-        (pinStates.get('pin1')!.hasVoltage && pinStates.get('pin1')!.hasCurrent) ||
-        (pinStates.get('pin2')!.hasVoltage && pinStates.get('pin2')!.hasCurrent) ||
-        (pinStates.get('pin1')!.hasVoltage && pinStates.get('pin2')!.hasCurrent) ||
-        (pinStates.get('pin2')!.hasVoltage && pinStates.get('pin1')!.hasCurrent);
+      (pinStates.get('pin1')!.hasVoltage && pinStates.get('pin1')!.hasCurrent) ||
+      (pinStates.get('pin2')!.hasVoltage && pinStates.get('pin2')!.hasCurrent) ||
+      (pinStates.get('pin1')!.hasVoltage && pinStates.get('pin2')!.hasCurrent) ||
+      (pinStates.get('pin2')!.hasVoltage && pinStates.get('pin1')!.hasCurrent);
 
     let hasChanged = false;
     const scheduledEvents: ScheduledEvent[] = [];

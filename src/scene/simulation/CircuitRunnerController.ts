@@ -23,9 +23,12 @@ import {
   gridToWorldRotation,
 } from '../shared/GeometryUtils';
 import type { HoveredElement } from '../shared/types';
-import type {Circuit} from "@/core/Circuit";
-import {BehaviorRegistry} from "@/core/simulation/behaviors";
-import { SIMULATION_SPEED, TRANSITION_DEFAULTS } from '../../core/simulation/types/SimulationConstants';
+import type { Circuit } from '@/core/Circuit';
+import { BehaviorRegistry } from '@/core/simulation/behaviors';
+import {
+  SIMULATION_SPEED,
+  TRANSITION_DEFAULTS,
+} from '../../core/simulation/types/SimulationConstants';
 
 /**
  * Simulation Circuit Runner Controller Implementation
@@ -53,9 +56,10 @@ export class CircuitRunnerController extends AbstractCircuitController {
    * @throws {TypeError} If factoryRegistry is null/undefined
    */
   constructor(
-      factoryRegistry: IFactoryRegistry,
-      behaviorRegistry: BehaviorRegistry,
-      sharedResources?: SharedResources) {
+    factoryRegistry: IFactoryRegistry,
+    behaviorRegistry: BehaviorRegistry,
+    sharedResources?: SharedResources
+  ) {
     super(factoryRegistry, sharedResources);
     if (!behaviorRegistry) {
       throw new TypeError('BehaviorRegistry is required');
@@ -117,10 +121,7 @@ export class CircuitRunnerController extends AbstractCircuitController {
    */
   set simulationSpeed(tps: number) {
     const previousSpeed = this.simulationSpeed;
-    const clampedTps = Math.max(
-      SIMULATION_SPEED.MIN_TPS,
-      Math.min(SIMULATION_SPEED.MAX_TPS, tps)
-    );
+    const clampedTps = Math.max(SIMULATION_SPEED.MIN_TPS, Math.min(SIMULATION_SPEED.MAX_TPS, tps));
 
     // Skip if no change
     if (clampedTps === previousSpeed) {
@@ -165,7 +166,7 @@ export class CircuitRunnerController extends AbstractCircuitController {
    * @returns Number of ticks for the transition (minimum 1)
    */
   computeTickCount(transitionUserSpanMs: number): number {
-    const tickCount = Math.ceil(transitionUserSpanMs * this.simulationSpeed / 1000);
+    const tickCount = Math.ceil((transitionUserSpanMs * this.simulationSpeed) / 1000);
     return Math.max(1, tickCount);
   }
 
@@ -231,9 +232,8 @@ export class CircuitRunnerController extends AbstractCircuitController {
       this.stop();
       this._runner = null;
       this._removeSimulationStateVisuals();
-    }
-    else {
-      if(!this._circuit) return;
+    } else {
+      if (!this._circuit) return;
       // recreate runner for the current circuit (which can have been modified in edit mode while this controller was inactive)
       this._runner = new CircuitRunner(this._circuit, this._behaviorRegistry);
       this._fullUpdate();
@@ -272,9 +272,9 @@ export class CircuitRunnerController extends AbstractCircuitController {
    * @protected
    */
   protected onSetCircuit() {
-    if(!this._circuit) return;
+    if (!this._circuit) return;
     this._runner = new CircuitRunner(this._circuit, this._behaviorRegistry);
-    if(!this._useSharedResources){
+    if (!this._useSharedResources) {
       // if standalone mode, activate immediately
       this.setActive(true);
     }
@@ -513,10 +513,10 @@ export class CircuitRunnerController extends AbstractCircuitController {
    * rollback wires/enodes/components visuals to edition state (no simulation state)
    */
   _removeSimulationStateVisuals(): void {
-    for(const wireId of this._wireObject3Ds.keys()) {
-        this.wireVisualManager.applyElectricalState(wireId, 'idle');
+    for (const wireId of this._wireObject3Ds.keys()) {
+      this.wireVisualManager.applyElectricalState(wireId, 'idle');
     }
-    for(const enodeId of this._enodeObject3Ds.keys()) {
+    for (const enodeId of this._enodeObject3Ds.keys()) {
       const enodeObject = this._enodeObject3Ds.get(enodeId);
       if (!enodeObject) continue;
       enodeObject.userData.electricalState = 'idle';
@@ -530,7 +530,7 @@ export class CircuitRunnerController extends AbstractCircuitController {
         }
       });
     }
-    for(const componentId of this._componentObject3Ds.keys()) {
+    for (const componentId of this._componentObject3Ds.keys()) {
       const componentObject = this._componentObject3Ds.get(componentId);
       if (!componentObject) continue;
       // Get component and its current state
@@ -547,7 +547,7 @@ export class CircuitRunnerController extends AbstractCircuitController {
    * @private
    */
   private _handleClick(event: MouseEvent): void {
-    if(!this._active) return;
+    if (!this._active) return;
     // Only handle left clicks
     if (event.button !== 0) return;
     const hoveredElement = this.getHoveredElement();
@@ -568,14 +568,13 @@ export class CircuitRunnerController extends AbstractCircuitController {
     if (!this._runner) return; // only process if we have a runner
     if (clickedElement.type === 'wire') return;
     let componentGroup = null;
-    if( clickedElement.type === 'component'){
+    if (clickedElement.type === 'component') {
       componentGroup = clickedElement.object3D.parent;
-    }
-    else if (clickedElement.type === 'enode') {
+    } else if (clickedElement.type === 'enode') {
       // for pin enodes, get parent component
       const enode = this._circuit?.getENode(clickedElement.id);
       if (!enode) return;
-      if(!enode.component) return;
+      if (!enode.component) return;
       componentGroup = this._componentObject3Ds.get(enode.component);
     }
     if (!componentGroup) return;
@@ -688,7 +687,7 @@ export class CircuitRunnerController extends AbstractCircuitController {
       this._indexComponentObject3D(component.id, mesh);
 
       // For edited pin enodes, update source type visual (component visual factory creates them only in their default mode)
-      for(const pinId of component.pins) {
+      for (const pinId of component.pins) {
         const enode = this._circuit!.getENode(pinId);
         if (!enode || !enode.source) continue;
         const pinGroup = this._enodeObject3Ds.get(enode.id);

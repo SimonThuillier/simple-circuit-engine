@@ -4,14 +4,13 @@ import type { ComponentState } from '@/core/simulation/states/ComponentState';
 import type { TransistorState } from '@/core/simulation/states/TransistorState';
 import type { ConfigFormDefinition } from '../types/ConfigTypes';
 import * as THREE from 'three';
-import {RingGeometry} from "../GeometryUtils";
+import { RingGeometry } from '../GeometryUtils';
 
 /**
  * Visual factory for Transistor components
  *
  * Creates:
  * - Transistor Ring mesh
- * - Transistor filler cylinder mesh
  * - Collector, Base and Emitter pin group
  * - Component hitbox for raycasting
  *
@@ -23,16 +22,12 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
   private static readonly TRANSISTOR_CLOSED_COLOR = 0xffffff;
   /** Transistor lit emissive intensity */
   private static readonly TRANSISTOR_CLOSED_INTENSITY = 0.3;
-  /** Shared Transistor envelope geometry */
-  private readonly envelopeGeometry = RingGeometry(0.4, 0.5, 0.4, 16);
-  /** Shared Transistor filler geometry */
-  private readonly fillerGeometry = new THREE.CylinderGeometry(
-      0.42,
-      0.42,
-      0.44,
-      12,
-      1,
-      false, 0, Math.PI * 2);
+  /** Shared open Transistor envelope geometry */
+  private readonly openGeometry = RingGeometry(0.4, 0.5, 0.4, 16);
+  /** Shared transient Transistor envelope geometry */
+  private readonly transientGeometry = RingGeometry(0.2, 0.5, 0.4, 16);
+  /** Shared transient Transistor envelope geometry */
+  private readonly closedGeometry = RingGeometry(0.01, 0.5, 0.4, 16);
 
   createVisual(component: Component): THREE.Object3D {
     // Root group (not rendered, just organizational)
@@ -49,31 +44,18 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
 
     // Visual Transistor
     const envelopeMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
-    const envelope = new THREE.Mesh(this.envelopeGeometry, envelopeMaterial);
+    envelopeMaterial.emissive.setHex(TransistorVisualFactory.TRANSISTOR_CLOSED_COLOR);
+    envelopeMaterial.emissiveIntensity = 0;
+    const envelope = new THREE.Mesh(this.openGeometry, envelopeMaterial);
     envelope.userData = {
       type: 'component',
       componentId: component.id,
       part: 'envelope',
+      initialState: 'open',
     };
     envelope.rotateX(-Math.PI / 2);
     envelope.position.set(0, -0.05, 0);
     group.add(envelope);
-
-    const fillerMaterial = new THREE.MeshStandardMaterial({
-      color: TransistorVisualFactory.TRANSISTOR_CLOSED_COLOR,
-      transparent: true,
-      opacity: 0,
-      visible: false
-    });
-    const filler = new THREE.Mesh(this.fillerGeometry, fillerMaterial);
-    filler.userData = {
-      type: 'component',
-      componentId: component.id,
-      part: 'filler',
-      initialState: 'open'
-    };
-    filler.position.set(0, 0.12, 0);
-    group.add(filler);
 
     // Collector pin group
     const collectorGroup = this.createPinGroup(component.id, component.pins[0]!, 'collector');
@@ -91,7 +73,7 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
     // Emitter pin group
     const emitterGroup = this.createPinGroup(component.id, component.pins[2]!, 'emitter');
     emitterGroup.position.set(0.05, 0, 0.4);
-    emitterGroup.rotateX(Math.PI / 2)
+    emitterGroup.rotateX(Math.PI / 2);
     group.add(emitterGroup);
 
     this.updateFromConfiguration(group, component.config);
@@ -120,7 +102,7 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
           key: 'initializationOrder',
           label: 'Init Order',
           type: 'number',
-        }
+        },
       ],
     };
   }
@@ -157,15 +139,16 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
     return config;
   }
 
-  override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>){
-    const fillerMesh = this.findFillerMesh(object3D);
-    if(!fillerMesh) return;
+  override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>) {
+    // const fillerMesh = this.findFillerMesh(object3D);
+    // if(!fillerMesh) return;
+    const envelopeMesh = this.findEnvelopeMesh(object3D);
+    if (!envelopeMesh) return;
 
-    if(config.get('activationLogic') === 'negative'){
-      fillerMesh.userData.initialState = 'closed';
-    }
-    else {
-      fillerMesh.userData.initialState = 'open';
+    if (config.get('activationLogic') === 'negative') {
+      envelopeMesh.userData.initialState = 'closed';
+    } else {
+      envelopeMesh.userData.initialState = 'open';
     }
     this.updateAnimation(object3D, null);
   }
@@ -177,75 +160,55 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
    * @param state - The Transistor's current simulation state
    */
   override updateAnimation(object3D: THREE.Object3D, state: ComponentState | null): void {
-    const fillerMesh = this.findFillerMesh(object3D);
-    if (!fillerMesh) return;
-    if(!state){
-      if(fillerMesh.userData.initialState === 'closed'){
-        fillerMesh.position.set(0, 0.18, 0);
-        fillerMesh.material.visible=true;
-        fillerMesh.material.opacity = 1;
-        fillerMesh.material.emissive.setHex(TransistorVisualFactory.TRANSISTOR_CLOSED_COLOR);
-        fillerMesh.material.emissiveIntensity = TransistorVisualFactory.TRANSISTOR_CLOSED_INTENSITY;
-      }
-      else {
-        fillerMesh.position.set(0, 0.12, 0);
-        fillerMesh.material.visible=false;
-        fillerMesh.material.opacity = 0;
-        fillerMesh.material.emissive.setHex(0x000000);
-        fillerMesh.material.emissiveIntensity = 0;
+    const envelopeMesh = this.findEnvelopeMesh(object3D);
+    if (!envelopeMesh) return;
+    if (!state) {
+      if (envelopeMesh.userData.initialState === 'closed') {
+        envelopeMesh.geometry = this.closedGeometry;
+        envelopeMesh.material.emissiveIntensity =
+          TransistorVisualFactory.TRANSISTOR_CLOSED_INTENSITY;
+      } else {
+        envelopeMesh.geometry = this.openGeometry;
+        envelopeMesh.material.emissiveIntensity = 0;
       }
       return;
     }
 
     const transistorState = state as TransistorState;
     if (transistorState.isClosed) {
-      fillerMesh.userData.materialLocked = true;
-      fillerMesh.position.set(0, 0.18, 0);
-      fillerMesh.material.visible=true;
-      fillerMesh.material.opacity = 1;
-      fillerMesh.material.emissive.setHex(TransistorVisualFactory.TRANSISTOR_CLOSED_COLOR);
-      fillerMesh.material.emissiveIntensity = TransistorVisualFactory.TRANSISTOR_CLOSED_INTENSITY;
-    }
-    else if (transistorState.isInTransition) {
-      fillerMesh.userData.materialLocked = true;
-      fillerMesh.position.set(0, 0.15, 0);
-      fillerMesh.material.visible=true;
-      fillerMesh.material.opacity = 0.6;
-      fillerMesh.material.emissive.setHex(TransistorVisualFactory.TRANSISTOR_CLOSED_COLOR);
-      fillerMesh.material.emissiveIntensity = TransistorVisualFactory.TRANSISTOR_CLOSED_INTENSITY/1.8;
-    }
-    else {
-      fillerMesh.userData.materialLocked = false;
-      fillerMesh.position.set(0, 0.12, 0);
-      fillerMesh.material.visible=false;
-      fillerMesh.material.opacity = 0;
-      fillerMesh.material.emissive.setHex(0x000000);
-      fillerMesh.material.emissiveIntensity = 0;
+      envelopeMesh.geometry = this.closedGeometry;
+      envelopeMesh.material.emissiveIntensity = TransistorVisualFactory.TRANSISTOR_CLOSED_INTENSITY;
+    } else if (transistorState.isInTransition) {
+      envelopeMesh.geometry = this.transientGeometry;
+      envelopeMesh.material.emissiveIntensity =
+        0.5 * TransistorVisualFactory.TRANSISTOR_CLOSED_INTENSITY;
+    } else {
+      envelopeMesh.geometry = this.openGeometry;
+      envelopeMesh.material.emissiveIntensity = 0;
     }
   }
 
   /**
-   * Find the filler mesh within the component group
+   * Find the envelope mesh within the component group
    *
    * @param object3D - The Object3D group created by createVisual()
-   * @returns The filler mesh if found, null otherwise
+   * @returns The envelope mesh if found, null otherwise
    *
    * @remarks
-   * Searches for a mesh with userData.part === 'filler'
+   * Searches for a mesh with userData.part === 'envelope'
    */
-  private findFillerMesh(
-      object3D: THREE.Object3D
+  private findEnvelopeMesh(
+    object3D: THREE.Object3D
   ): (THREE.Mesh & { material: THREE.MeshStandardMaterial }) | null {
-    let fillerMesh: (THREE.Mesh & { material: THREE.MeshStandardMaterial }) | null = null;
+    let envelopeMesh: (THREE.Mesh & { material: THREE.MeshStandardMaterial }) | null = null;
 
     object3D.traverse((child) => {
-      if (child instanceof THREE.Mesh && child.userData.part === 'filler') {
+      if (child instanceof THREE.Mesh && child.userData.part === 'envelope') {
         if (child.material instanceof THREE.MeshStandardMaterial) {
-          fillerMesh = child as THREE.Mesh & { material: THREE.MeshStandardMaterial };
+          envelopeMesh = child as THREE.Mesh & { material: THREE.MeshStandardMaterial };
         }
       }
     });
-
-    return fillerMesh;
+    return envelopeMesh;
   }
 }

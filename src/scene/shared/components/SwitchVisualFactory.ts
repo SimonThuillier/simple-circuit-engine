@@ -42,13 +42,13 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
 
     // Visual: poles
     const inputPoleGeometry = new THREE.SphereGeometry(
-        0.3,
-        16,
-        8,
-        Math.PI / 2,
-        Math.PI,
-        0,
-        Math.PI
+      0.3,
+      16,
+      8,
+      Math.PI / 2,
+      Math.PI,
+      0,
+      Math.PI
     );
     const poleMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
 
@@ -71,29 +71,29 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
 
     // Contactor
     const contactorGroup = new THREE.Mesh(
-        new THREE.BoxGeometry(2, 1, 1),
-        new THREE.MeshBasicMaterial({
-          transparent: false,
-          visible: false,
-        })
+      new THREE.BoxGeometry(2, 1, 1),
+      new THREE.MeshBasicMaterial({
+        transparent: false,
+        visible: false,
+      })
     );
     contactorGroup.userData = {
       type: 'component',
       componentId: component.id,
       part: 'contactor',
-      initialState: 'open'
+      initialState: 'open',
     };
 
     const contactorMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
     const contactorGeometry = new THREE.CylinderGeometry(
-        0.2,
-        0.12,
-        1.5,
-        8,
-        4,
-        false,
-        0,
-        Math.PI * 2
+      0.2,
+      0.12,
+      1.5,
+      8,
+      4,
+      false,
+      0,
+      Math.PI * 2
     );
     const contactor = new THREE.Mesh(contactorGeometry, contactorMaterial);
 
@@ -140,7 +140,10 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
           key: 'size',
           label: 'Size',
           type: 'number',
-        }
+          min: 1,
+          max: 16,
+          step: 1,
+        },
       ],
     };
   }
@@ -175,14 +178,13 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
     return config;
   }
 
-  override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>){
+  override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>) {
     const contactorGroup = this.findContactorGroup(object3D);
-    if(!contactorGroup) return;
+    if (!contactorGroup) return;
 
-    if(config.get('initialState') === 'closed'){
+    if (config.get('initialState') === 'closed') {
       contactorGroup.userData.initialState = 'closed';
-    }
-    else {
+    } else {
       contactorGroup.userData.initialState = 'open';
     }
 
@@ -203,11 +205,10 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
   override updateAnimation(object3D: THREE.Object3D, state: ComponentState | null): void {
     const contactorGroup = this.findContactorGroup(object3D);
     if (!contactorGroup) return;
-    if(!state){
-      if(contactorGroup.userData.initialState === 'closed'){
+    if (!state) {
+      if (contactorGroup.userData.initialState === 'closed') {
         contactorGroup.rotation.copy(SwitchVisualFactory.CLOSED_ROTATION);
-      }
-      else{
+      } else {
         contactorGroup.rotation.copy(SwitchVisualFactory.OPEN_ROTATION);
       }
       return;

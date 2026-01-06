@@ -19,12 +19,7 @@ import type { UserCommand } from '../../../../src/core/simulation';
  */
 function createMockSwitch(): Component {
   const pins = ['pin-in', 'pin-out'];
-  return new Component(
-    ComponentType.Switch,
-    new Position(0, 0),
-    new Rotation(0),
-    pins
-  );
+  return new Component(ComponentType.Switch, new Position(0, 0), new Rotation(0), pins);
 }
 
 /**
@@ -35,9 +30,8 @@ function createToggleCommand(
   scheduledAtTick: number,
   tickCount?: number
 ): UserCommand {
-  const parameters = tickCount !== undefined
-    ? new Map<string, string>([['tickCount', String(tickCount)]])
-    : null;
+  const parameters =
+    tickCount !== undefined ? new Map<string, string>([['tickCount', String(tickCount)]]) : null;
 
   return {
     type: 'toggle_switch',
