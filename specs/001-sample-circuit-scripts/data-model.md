@@ -43,7 +43,7 @@ This feature uses existing data models from the `core/` module. No new entities 
 - `name: string` - Human-readable circuit name
 - `size: number` - Grid size (integer)
 - `divisions: number` - Grid divisions (integer)
-- `cameraStartup: Position3D` - Initial camera position for rendering
+- `cameraOptions: Position3D` - Initial camera position for rendering
 
 **Validation Rules**:
 - `size` must be integer
@@ -150,7 +150,7 @@ This feature uses existing data models from the `core/` module. No new entities 
     "name": "Simple LED Circuit",
     "size": 30,
     "divisions": 10,
-    "cameraStartup": { "x": 0, "y": 0, "z": 50 }
+    "cameraOptions": { "x": 0, "y": 0, "z": 50 }
   },
   "components": [
     {

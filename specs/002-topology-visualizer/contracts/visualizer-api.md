@@ -136,7 +136,7 @@ class RenderError extends VisualizerError {
     "name": "string",
     "size": "number",
     "divisions": "number",
-    "cameraStartup": { "x": "number", "y": "number", "z": "number" }
+    "cameraOptions": { "x": "number", "y": "number", "z": "number" }
   },
   "components": [
     {

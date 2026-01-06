@@ -2,7 +2,7 @@ import { ComponentVisualFactoryBase } from './ComponentVisualFactory';
 import type { Component } from '@/core/Component';
 import type { ComponentState } from '@/core/simulation/states/ComponentState';
 import type { RelayState } from '@/core/simulation/states/RelayState';
-import type { ConfigFormDefinition } from '../types/ConfigTypes';
+import type { ConfigFormDefinition } from '../utils/ConfigPanelTypes';
 import * as THREE from 'three';
 
 /**

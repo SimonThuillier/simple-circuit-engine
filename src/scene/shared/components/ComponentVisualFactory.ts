@@ -12,7 +12,7 @@ import type { ComponentState } from '@/core/simulation/states/ComponentState';
 import { ENodeSourceType } from '@/core/types/ENodeSourceType';
 import * as THREE from 'three';
 import { HitboxLayers } from '../utils/LayerConstants';
-import type { ConfigFormDefinition } from '../types/ConfigTypes';
+import type { ConfigFormDefinition } from '../utils/ConfigPanelTypes';
 
 /**
  * Interface for component visual factories

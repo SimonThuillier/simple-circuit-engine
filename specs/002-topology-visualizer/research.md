@@ -140,7 +140,7 @@ digraph circuit {
 ### Circuit JSON Structure Reference
 
 Based on feature 001 sample circuits:
-- `metadata`: { name, size, divisions, cameraStartup }
+- `metadata`: { name, size, divisions, cameraOptions }
 - `components`: Array of { id, type, position, rotation, pins[] }
 - `enodes`: Array of { id, type, source, component?, pinLabel? }
 - `wires`: Array of { id, node1, node2, intermediatePositions[] }

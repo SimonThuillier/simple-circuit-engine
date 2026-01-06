@@ -71,7 +71,7 @@ As a developer, I need to verify that generated sample circuits can be successfu
 - **FR-003**: Sample circuits MUST only use ComponentTypes defined in ComponentType.ts (Battery, Switch, Lightbulb, Relay, Transistor, SmallLED, RectangleLED, Cube)
 - **FR-004**: Each sample circuit MUST be exported as a valid JSON file compatible with Circuit.fromJSON()
 - **FR-005**: All generated JSON files MUST be saved to a single designated test output directory
-- **FR-006**: Sample circuits MUST include circuit metadata (name, size, divisions, cameraStartup)
+- **FR-006**: Sample circuits MUST include circuit metadata (name, size, divisions, cameraOptions)
 - **FR-007**: Sample circuits MUST include properly connected components via wires and ENodes
 - **FR-008**: Generation MUST be deterministic (same input produces same output)
 - **FR-009**: Each sample circuit MUST demonstrate different component combinations or topologies
