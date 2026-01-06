@@ -234,7 +234,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
   /**
    * By default no visual configuration-based updates is needed
    */
-  updateFromConfiguration(_object3D: THREE.Object3D, _config: Map<string, string>){
+  updateFromConfiguration(_object3D: THREE.Object3D, _config: Map<string, string>) {
     // Default: no-op
   }
 

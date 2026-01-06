@@ -80,8 +80,8 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
       fields: [
         { key: 'idleColor', label: 'Idle Color', type: 'color' },
         { key: 'activeColor', label: 'Active Color', type: 'color' },
-        { key: 'size', label: 'Size', type: 'number' },
-        { key: 'ywRatio', label: 'Ratio Y/W', type: 'number' }
+        { key: 'size', label: 'Size', type: 'number', min: 1, max: 16, step: 1 },
+        { key: 'ywRatio', label: 'Ratio Y/W', type: 'number' },
       ],
     };
   }
@@ -159,15 +159,27 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
     const activeColor = config.get('activeColor');
     if (activeColor) {
       // Convert preset to hex if needed, then parse
-      ledMesh.userData.activeColorHex = parseInt(presetOrHexToHex(activeColor).replace('#', ''), 16);
+      ledMesh.userData.activeColorHex = parseInt(
+        presetOrHexToHex(activeColor).replace('#', ''),
+        16
+      );
     }
     // changing geometry
     const ywRatio = parseFloat(config.get('ywRatio') || '1');
     ledMesh.geometry.dispose();
-    ledMesh.geometry = new THREE.CylinderGeometry(0.25, 0.25, ywRatio, 16 ,4, false, 0, Math.PI * 2);
+    ledMesh.geometry = new THREE.CylinderGeometry(
+      0.25,
+      0.25,
+      ywRatio,
+      16,
+      4,
+      false,
+      0,
+      Math.PI * 2
+    );
     ledMesh.position.set(0, 0.25 * ywRatio, 0);
     hitbox.geometry.dispose();
-    hitbox.geometry = new THREE.BoxGeometry(1, 1.5*ywRatio, 1);
+    hitbox.geometry = new THREE.BoxGeometry(1, 1.5 * ywRatio, 1);
 
     const scale = parseFloat(config.get('size') || '1');
     object3D.scale.set(scale, scale, scale);
@@ -185,7 +197,7 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
   override updateAnimation(object3D: THREE.Object3D, state: ComponentState | null): void {
     const ledMesh = this.findLedMesh(object3D);
     if (!ledMesh) return;
-    if(!state){
+    if (!state) {
       ledMesh.userData.materialLocked = false;
       ledMesh.material.emissive.setHex(0x000000);
       ledMesh.material.emissiveIntensity = 0;

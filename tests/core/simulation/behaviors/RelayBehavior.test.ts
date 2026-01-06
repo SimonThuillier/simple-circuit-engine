@@ -20,12 +20,7 @@ import type { UUID } from '../../../../src/core/types/Identifier';
  */
 function createMockRelay(transitionSpan?: number): Component {
   const pins = ['pin-cmd-in', 'pin-cmd-out', 'pin-power-in', 'pin-power-out'];
-  const relay = new Component(
-    ComponentType.Relay,
-    new Position(0, 0),
-    new Rotation(0),
-    pins
-  );
+  const relay = new Component(ComponentType.Relay, new Position(0, 0), new Rotation(0), pins);
 
   if (transitionSpan !== undefined) {
     relay.config.set('transitionSpan', String(transitionSpan));
@@ -37,10 +32,7 @@ function createMockRelay(transitionSpan?: number): Component {
 /**
  * Create node states for relay pins
  */
-function createNodeStates(
-  relay: Component,
-  cmdPowered: boolean
-): Map<UUID, NodeElectricalState> {
+function createNodeStates(relay: Component, cmdPowered: boolean): Map<UUID, NodeElectricalState> {
   const states = new Map<UUID, NodeElectricalState>();
 
   // cmd_in and cmd_out both need voltage AND current for relay to be "commanded"

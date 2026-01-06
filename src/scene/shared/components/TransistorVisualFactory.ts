@@ -4,7 +4,7 @@ import type { ComponentState } from '@/core/simulation/states/ComponentState';
 import type { TransistorState } from '@/core/simulation/states/TransistorState';
 import type { ConfigFormDefinition } from '../types/ConfigTypes';
 import * as THREE from 'three';
-import {RingGeometry} from "../GeometryUtils";
+import { RingGeometry } from '../GeometryUtils';
 
 /**
  * Visual factory for Transistor components
@@ -51,7 +51,7 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
       type: 'component',
       componentId: component.id,
       part: 'envelope',
-      initialState: 'open'
+      initialState: 'open',
     };
     envelope.rotateX(-Math.PI / 2);
     envelope.position.set(0, -0.05, 0);
@@ -73,7 +73,7 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
     // Emitter pin group
     const emitterGroup = this.createPinGroup(component.id, component.pins[2]!, 'emitter');
     emitterGroup.position.set(0.05, 0, 0.4);
-    emitterGroup.rotateX(Math.PI / 2)
+    emitterGroup.rotateX(Math.PI / 2);
     group.add(emitterGroup);
 
     this.updateFromConfiguration(group, component.config);
@@ -102,7 +102,7 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
           key: 'initializationOrder',
           label: 'Init Order',
           type: 'number',
-        }
+        },
       ],
     };
   }
@@ -139,16 +139,15 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
     return config;
   }
 
-  override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>){
+  override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>) {
     // const fillerMesh = this.findFillerMesh(object3D);
     // if(!fillerMesh) return;
     const envelopeMesh = this.findEnvelopeMesh(object3D);
-    if(!envelopeMesh) return;
+    if (!envelopeMesh) return;
 
-    if(config.get('activationLogic') === 'negative'){
+    if (config.get('activationLogic') === 'negative') {
       envelopeMesh.userData.initialState = 'closed';
-    }
-    else {
+    } else {
       envelopeMesh.userData.initialState = 'open';
     }
     this.updateAnimation(object3D, null);
@@ -163,12 +162,12 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
   override updateAnimation(object3D: THREE.Object3D, state: ComponentState | null): void {
     const envelopeMesh = this.findEnvelopeMesh(object3D);
     if (!envelopeMesh) return;
-    if(!state){
-      if(envelopeMesh.userData.initialState === 'closed'){
+    if (!state) {
+      if (envelopeMesh.userData.initialState === 'closed') {
         envelopeMesh.geometry = this.closedGeometry;
-        envelopeMesh.material.emissiveIntensity = TransistorVisualFactory.TRANSISTOR_CLOSED_INTENSITY;
-      }
-      else {
+        envelopeMesh.material.emissiveIntensity =
+          TransistorVisualFactory.TRANSISTOR_CLOSED_INTENSITY;
+      } else {
         envelopeMesh.geometry = this.openGeometry;
         envelopeMesh.material.emissiveIntensity = 0;
       }
@@ -177,15 +176,14 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
 
     const transistorState = state as TransistorState;
     if (transistorState.isClosed) {
-        envelopeMesh.geometry = this.closedGeometry;
+      envelopeMesh.geometry = this.closedGeometry;
       envelopeMesh.material.emissiveIntensity = TransistorVisualFactory.TRANSISTOR_CLOSED_INTENSITY;
-    }
-    else if (transistorState.isInTransition) {
-        envelopeMesh.geometry = this.transientGeometry;
-      envelopeMesh.material.emissiveIntensity = 0.5*TransistorVisualFactory.TRANSISTOR_CLOSED_INTENSITY;
-    }
-    else {
-        envelopeMesh.geometry = this.openGeometry;
+    } else if (transistorState.isInTransition) {
+      envelopeMesh.geometry = this.transientGeometry;
+      envelopeMesh.material.emissiveIntensity =
+        0.5 * TransistorVisualFactory.TRANSISTOR_CLOSED_INTENSITY;
+    } else {
+      envelopeMesh.geometry = this.openGeometry;
       envelopeMesh.material.emissiveIntensity = 0;
     }
   }
@@ -200,7 +198,7 @@ export class TransistorVisualFactory extends ComponentVisualFactoryBase {
    * Searches for a mesh with userData.part === 'envelope'
    */
   private findEnvelopeMesh(
-      object3D: THREE.Object3D
+    object3D: THREE.Object3D
   ): (THREE.Mesh & { material: THREE.MeshStandardMaterial }) | null {
     let envelopeMesh: (THREE.Mesh & { material: THREE.MeshStandardMaterial }) | null = null;
 

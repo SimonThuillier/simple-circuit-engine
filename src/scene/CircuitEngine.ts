@@ -159,11 +159,10 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
 
     // Set initial mode
     this._mode = options?.initialMode ?? 'edit';
-    if(this._mode === 'edit') {
-        this._editController.setActive(true);
-    }
-    else {
-        this._simulationController.setActive(true);
+    if (this._mode === 'edit') {
+      this._editController.setActive(true);
+    } else {
+      this._simulationController.setActive(true);
     }
 
     this._initialized = true;

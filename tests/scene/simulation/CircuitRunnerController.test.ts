@@ -88,10 +88,9 @@ describe('CircuitRunnerController - Simulation Speed (017-simulation-speed)', ()
       expect(controller.simulationSpeed).toBe(SIMULATION_SPEED.MIN_TPS);
     });
 
-    it('should clamp speed to maximum (20 TPS)', () => {
-      controller.simulationSpeed = 25;
+    it('should clamp speed to maximum (50 TPS)', () => {
+      controller.simulationSpeed = 50;
       expect(controller.simulationSpeed).toBe(SIMULATION_SPEED.MAX_TPS);
-
       controller.simulationSpeed = 100;
       expect(controller.simulationSpeed).toBe(SIMULATION_SPEED.MAX_TPS);
     });

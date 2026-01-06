@@ -29,8 +29,8 @@ import {
   TransistorVisualFactory,
   LabelVisualFactory,
 } from '@/scene/shared/components';
-import {RectangleLEDVisualFactory} from "../../../src/scene/shared/components/RectangleLEDVisualFactory";
-import {RectangleLEDBehavior} from "../../../src/core/simulation/behaviors/RectangleLEDBehavior";
+import { RectangleLEDVisualFactory } from '../../../src/scene/shared/components/RectangleLEDVisualFactory';
+import { RectangleLEDBehavior } from '../../../src/core/simulation/behaviors/RectangleLEDBehavior';
 
 // Export to window object for use in HTML
 declare global {
@@ -51,7 +51,9 @@ declare global {
 // Immediately assign to window (for IIFE bundles)
 if (typeof window !== 'undefined') {
   // Create component factory registry with all visual factories
-  const componentsFactoryRegistry: IFactoryRegistry = new FactoryRegistry(new DefaultVisualFactory());
+  const componentsFactoryRegistry: IFactoryRegistry = new FactoryRegistry(
+    new DefaultVisualFactory()
+  );
   componentsFactoryRegistry.register(ComponentType.Battery, new BatteryVisualFactory());
   componentsFactoryRegistry.register(ComponentType.Lightbulb, new LightbulbVisualFactory());
   componentsFactoryRegistry.register(ComponentType.Relay, new RelayVisualFactory());

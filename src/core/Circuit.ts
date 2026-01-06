@@ -14,7 +14,7 @@ import { Component } from './Component.js';
 import { ENode } from './ENode.js';
 import { ENodeType } from './types/ENodeType.js';
 import { Wire } from './Wire.js';
-import {COMPONENT_TYPE_METADATA, type ComponentType} from './types/ComponentType.js';
+import { COMPONENT_TYPE_METADATA, type ComponentType } from './types/ComponentType.js';
 import { getComponentTypeMetadata } from './types/ComponentType.js';
 import { Position3D } from '@/core/types/Position3D';
 import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
@@ -195,10 +195,10 @@ export class Circuit {
    * ```
    */
   addComponent(
-      type: ComponentType,
-      position: Position,
-      rotation: Rotation,
-      config?: Map<string, string> | undefined,
+    type: ComponentType,
+    position: Position,
+    rotation: Rotation,
+    config?: Map<string, string> | undefined
   ): Component {
     // Get component type metadata
     const metadata = getComponentTypeMetadata(type);
@@ -972,7 +972,7 @@ export class Circuit {
    * @param margin - optional margin to add to the size
    * @returns size that allows to enclose all elements plus margin
    */
-  getEnclosingSize(margin:number =0): number{
+  getEnclosingSize(margin: number = 0): number {
     let maxPos = 0;
     for (const component of this.components.values()) {
       maxPos = Math.max(maxPos, Math.abs(component.position.x), Math.abs(component.position.y));
@@ -988,7 +988,7 @@ export class Circuit {
         maxPos = Math.max(maxPos, Math.abs(pos.x), Math.abs(pos.y));
       }
     }
-    return Math.ceil(maxPos*2 + Math.max(margin, 0));
+    return Math.ceil(maxPos * 2 + Math.max(margin, 0));
   }
 
   /**

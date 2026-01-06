@@ -1,4 +1,4 @@
-import {SmallLEDState} from "@/core/simulation";
+import { SmallLEDState } from '@/core/simulation';
 
 /**
  * Simulation state for RectangleLED components. Same as SmallLEDState.

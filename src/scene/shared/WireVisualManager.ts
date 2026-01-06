@@ -63,7 +63,6 @@ export class WireVisualManager {
   private _wireObject3Ds: Map<UUID, Line2>;
   private _container: HTMLElement | null = null;
   private _circuit: Circuit | null = null;
-  
 
   //private _controller: AbstractCircuitController;
   /** Shared LineMaterials for all wires (memory efficient, consistent styling) */
@@ -71,10 +70,7 @@ export class WireVisualManager {
   /** Preview wire for wire creation mode */
   private previewWire: Line2 | null = null;
 
-  constructor(
-      componentObject3Ds: Map<UUID, THREE.Object3D>,
-      wireObject3Ds: Map<UUID, Line2>,
-  ) {
+  constructor(componentObject3Ds: Map<UUID, THREE.Object3D>, wireObject3Ds: Map<UUID, Line2>) {
     this._componentObject3Ds = componentObject3Ds;
     this._wireObject3Ds = wireObject3Ds;
     // Create shared LineMaterial with default white color and 2px width
@@ -100,8 +96,6 @@ export class WireVisualManager {
   setCircuit(circuit: Circuit | null): void {
     this._circuit = circuit;
   }
-
-
 
   /**
    * Set the resolution for LineMaterial rendering
@@ -168,7 +162,7 @@ export class WireVisualManager {
    * @returns The created/updated Line2 object
    */
   createOrUpdateWire(wire: Wire): Line2 {
-    if(!this._scene) {
+    if (!this._scene) {
       throw new Error('WireVisualManager scene is not set');
     }
 
@@ -315,8 +309,8 @@ export class WireVisualManager {
    * @param wireId - Wire ID to remove
    */
   removeWire(wireId: UUID): void {
-    if(!this._scene) {
-        throw new Error('WireVisualManager scene is not set');
+    if (!this._scene) {
+      throw new Error('WireVisualManager scene is not set');
     }
 
     const wireLines = this._wireObject3Ds;
@@ -343,7 +337,7 @@ export class WireVisualManager {
     const wireLines = this._wireObject3Ds;
     const scene = this._scene;
     for (const [_wireId, line] of wireLines) {
-      if(scene) scene.remove(line);
+      if (scene) scene.remove(line);
       line.geometry.dispose();
       // Individual wire materials are NOT disposed here - only geometries
     }
@@ -378,7 +372,7 @@ export class WireVisualManager {
    * @returns Line2 object for preview
    */
   createPreviewWire(startPosition: THREE.Vector3): Line2 {
-    if(!this._scene) {
+    if (!this._scene) {
       throw new Error('WireVisualManager scene is not set');
     }
 
@@ -674,7 +668,7 @@ export class WireVisualManager {
    * @returns Screen position as Vector2
    */
   private worldToScreen(worldPosition: THREE.Vector3): THREE.Vector2 {
-    if(!this._camera) {
+    if (!this._camera) {
       throw new Error('WireVisualManager camera is not set');
     }
 
@@ -708,7 +702,7 @@ export class WireVisualManager {
    * @returns Position relative to the container's top-left corner
    */
   private clientToContainerCoords(clientPos: THREE.Vector2): THREE.Vector2 {
-    if(!this._container) {
+    if (!this._container) {
       throw new Error('WireVisualManager container is not set');
     }
     const container = this._container;

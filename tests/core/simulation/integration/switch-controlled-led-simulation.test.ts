@@ -16,7 +16,8 @@ import {
   BehaviorRegistry,
   BatteryBehavior,
   SmallLEDBehavior,
-  SwitchBehavior} from '@/core/simulation/behaviors';
+  SwitchBehavior,
+} from '@/core/simulation/behaviors';
 import type { Component } from '@/core/Component';
 
 function createBehaviorRegistry(): BehaviorRegistry {

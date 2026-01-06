@@ -59,10 +59,10 @@ export class SmallLEDBehavior implements ComponentBehavior {
     }
 
     let activationCondition =
-        (pinStates.get('anode')!.hasVoltage && pinStates.get('anode')!.hasCurrent) ||
-    (pinStates.get('cathode')!.hasVoltage && pinStates.get('cathode')!.hasCurrent) ||
-    (pinStates.get('anode')!.hasVoltage && pinStates.get('cathode')!.hasCurrent) ||
-    (pinStates.get('cathode')!.hasVoltage && pinStates.get('anode')!.hasCurrent);
+      (pinStates.get('anode')!.hasVoltage && pinStates.get('anode')!.hasCurrent) ||
+      (pinStates.get('cathode')!.hasVoltage && pinStates.get('cathode')!.hasCurrent) ||
+      (pinStates.get('anode')!.hasVoltage && pinStates.get('cathode')!.hasCurrent) ||
+      (pinStates.get('cathode')!.hasVoltage && pinStates.get('anode')!.hasCurrent);
 
     let hasChanged = false;
     const scheduledEvents: ScheduledEvent[] = [];

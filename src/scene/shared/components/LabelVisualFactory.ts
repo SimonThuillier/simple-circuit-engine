@@ -10,7 +10,7 @@ import { ComponentVisualFactoryBase } from './ComponentVisualFactory';
 import type { Component } from '@/core/Component';
 import type { ConfigFormDefinition } from '../types/ConfigTypes';
 import * as THREE from 'three';
-import {BoxGeometry} from "three";
+import { BoxGeometry } from 'three';
 
 /**
  * Visual factory for Label components
@@ -160,8 +160,8 @@ export class LabelVisualFactory extends ComponentVisualFactoryBase {
 
     // Calculate world-space dimensions
     const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
-    const worldWidth = (canvas.width / pixelRatio) / 50; // Scale factor for scene units
-    const worldHeight = (canvas.height / pixelRatio) / 50;
+    const worldWidth = canvas.width / pixelRatio / 50; // Scale factor for scene units
+    const worldHeight = canvas.height / pixelRatio / 50;
 
     const geometry = new THREE.PlaneGeometry(worldWidth, worldHeight);
     const mesh = new THREE.Mesh(geometry, material);
@@ -215,7 +215,7 @@ export class LabelVisualFactory extends ComponentVisualFactoryBase {
    */
   private updateTextMesh(mesh: THREE.Mesh, text: string, group: THREE.Object3D): void {
     const displayText = this.normalizeDisplayText(text);
-    if(displayText === mesh.userData.text) return;
+    if (displayText === mesh.userData.text) return;
 
     mesh.geometry.dispose();
 
@@ -233,17 +233,17 @@ export class LabelVisualFactory extends ComponentVisualFactoryBase {
 
     // Calculate world-space dimensions
     const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
-    const worldWidth = (canvas.width / pixelRatio) / 50; // Scale factor for scene units
-    const worldHeight = (canvas.height / pixelRatio) / 50;
+    const worldWidth = canvas.width / pixelRatio / 50; // Scale factor for scene units
+    const worldHeight = canvas.height / pixelRatio / 50;
 
     mesh.geometry = new THREE.PlaneGeometry(worldWidth, worldHeight);
     mesh.material = material;
 
     // Update hitbox size
     const hitbox = this.findHitbox(group);
-    if(hitbox){
-        hitbox.geometry.dispose();
-        hitbox.geometry = new BoxGeometry(worldWidth, 0.1, worldHeight);
+    if (hitbox) {
+      hitbox.geometry.dispose();
+      hitbox.geometry = new BoxGeometry(worldWidth, 0.1, worldHeight);
     }
 
     // Store canvas and texture references for updates
@@ -292,7 +292,7 @@ export class LabelVisualFactory extends ComponentVisualFactoryBase {
           label: 'Size',
           type: 'number',
           min: 1,
-          max: 12,
+          max: 16,
           step: 1,
         },
       ],

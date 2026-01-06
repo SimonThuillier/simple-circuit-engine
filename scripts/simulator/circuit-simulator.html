@@ -471,8 +471,9 @@
       }
 
       const runnerController = new window.CircuitRunnerController(
-              window.componentsFactoryRegistry,
-              window.behaviorRegistry);
+        window.componentsFactoryRegistry,
+        window.behaviorRegistry
+      );
       runnerController.on('ready', (e) => console.log('ready', e));
       runnerController.on('error', (e) => console.error('error', e));
       runnerController.initialize(viewerContainer);

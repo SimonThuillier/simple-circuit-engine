@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { Position } from '../../core/types/Position';
 import { Rotation } from '@/core/types/Rotation';
-import {ExtrudeGeometry} from "three";
+import { ExtrudeGeometry } from 'three';
 
 /**
  * Create a grid helper for the scene
@@ -37,30 +37,30 @@ export function createGridHelper(
  * @param size
  */
 export function computeDivisionsForSize(size: number): number {
-  if(size <= 10) return size;
+  if (size <= 10) return size;
   let basis = 10;
   let threshold = 10;
-  if(size <= 30){
+  if (size <= 30) {
     return basis + Math.floor((size - threshold) / 2);
   }
   basis = 20;
   threshold = 30;
-  if(size <= 70){
+  if (size <= 70) {
     return basis + Math.floor((size - threshold) / 4);
   }
   basis = 30;
   threshold = 70;
-  if(size <= 150){
+  if (size <= 150) {
     return basis + Math.floor((size - threshold) / 8);
   }
   basis = 40;
   threshold = 150;
-  if(size <= 310){
+  if (size <= 310) {
     return basis + Math.floor((size - threshold) / 16);
   }
   basis = 50;
   threshold = 310;
-  if(size <= 630){
+  if (size <= 630) {
     return basis + Math.floor((size - threshold) / 32);
   }
   basis = 60;
@@ -204,10 +204,11 @@ export function isObjectInScreenRect(
  * @constructor
  */
 export function RingGeometry(
-    innerRadius: number,
-    outerRadius: number,
-    height:number,
-    steps: number): ExtrudeGeometry {
+  innerRadius: number,
+  outerRadius: number,
+  height: number,
+  steps: number
+): ExtrudeGeometry {
   // Create the outer ring shape
   const shape = new THREE.Shape();
   shape.moveTo(outerRadius, 0);

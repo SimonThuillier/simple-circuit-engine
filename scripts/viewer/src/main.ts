@@ -20,10 +20,8 @@ import {
   SmallLEDVisualFactory,
   SwitchVisualFactory,
   TransistorVisualFactory,
-  LabelVisualFactory
+  LabelVisualFactory,
 } from '../../../src/scene/shared/components';
-
-
 
 // Export to window object for use in HTML
 declare global {
@@ -44,9 +42,7 @@ declare global {
 
 // Immediately assign to window (for IIFE bundles)
 if (typeof window !== 'undefined') {
-  const componentsFactoryRegistry = new FactoryRegistry(
-    new DefaultVisualFactory()
-  );
+  const componentsFactoryRegistry = new FactoryRegistry(new DefaultVisualFactory());
   componentsFactoryRegistry.register(ComponentType.Battery, new BatteryVisualFactory());
   componentsFactoryRegistry.register(ComponentType.Lightbulb, new LightbulbVisualFactory());
   componentsFactoryRegistry.register(ComponentType.Relay, new RelayVisualFactory());

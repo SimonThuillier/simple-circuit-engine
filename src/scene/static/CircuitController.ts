@@ -141,12 +141,10 @@ export class CircuitController extends AbstractCircuitController {
       // Deactivate edit mode (which deactivates active tool and emits toolDeactivated)
       this.setEditMode(false);
       this._selectionManager?.deselect();
-    }
-    else {
-        // no specific logic on activate
+    } else {
+      // no specific logic on activate
     }
   }
-
 
   setCircuit(circuit: Circuit | null): void {
     this._setCircuit(circuit);
@@ -313,7 +311,7 @@ export class CircuitController extends AbstractCircuitController {
     // Create ConfigPanelManager instance
     this._configPanelManager = new ConfigPanelManager(
       this.factoryRegistry,
-      (componentId: UUID) => this.getObject3D('component', componentId),
+      this.editComponentConfig.bind(this),
       this._camera,
       this._container
     );
@@ -331,7 +329,7 @@ export class CircuitController extends AbstractCircuitController {
     if (!this._configPanelManager) {
       throw new Error('ConfigPanelManager not initialized');
     }
-    if(!this._circuit) {
+    if (!this._circuit) {
       return false;
     }
     const component = this._circuit.getComponent(componentId);
@@ -514,7 +512,7 @@ export class CircuitController extends AbstractCircuitController {
       this._indexComponentObject3D(component.id, mesh);
 
       // For edited pin enodes, update source type visual (component visual factory creates them only in their default mode)
-      for(const pinId of component.pins) {
+      for (const pinId of component.pins) {
         const enode = this._circuit!.getENode(pinId);
         if (!enode || !enode.source) continue;
         const pinGroup = this._enodeObject3Ds.get(enode.id);
@@ -615,7 +613,7 @@ export class CircuitController extends AbstractCircuitController {
     this._enodeObject3Ds.delete(id);
   }
 
-  addBranchingPoint(worldPosition: THREE.Vector3, sourceType?: ENodeSourceType| undefined): ENode {
+  addBranchingPoint(worldPosition: THREE.Vector3, sourceType?: ENodeSourceType | undefined): ENode {
     const branchingPoint = this.circuitWriter.saveAddBranchingPoint(worldPosition, sourceType);
     // Create and add bp visual to scene
     this._createEnodeObject3D(branchingPoint);
@@ -712,36 +710,61 @@ export class CircuitController extends AbstractCircuitController {
    * @returns The created Component
    */
   addComponent(
-      type: ComponentType,
-      worldPosition: THREE.Vector3,
-      rotation: Euler,
-      config?: Map<string, string> | undefined,
-      pinSources?: Array<ENodeSourceType | undefined | null> | undefined
+    type: ComponentType,
+    worldPosition: THREE.Vector3,
+    rotation: Euler,
+    config?: Map<string, string> | undefined,
+    pinSources?: Array<ENodeSourceType | undefined | null> | undefined
   ): Component {
     // Create component in circuit model
     const component = this.circuitWriter.saveAddComponent(
-        type, worldPosition, rotation,
-        config,pinSources);
+      type,
+      worldPosition,
+      rotation,
+      config,
+      pinSources
+    );
     // Create and add visual to scene
     this._createComponentObject3D(component);
     return component;
   }
 
   /**
+   * edit component config and update visuals if necessary
+   *
+   * @param componentId
+   * @param newConfig - map of parameters to be merged into the current config
+   */
+  editComponentConfig(componentId: UUID, newConfig: Map<string, string>) {
+    const component = this.circuitWriter.saveEditComponentConfig(componentId, newConfig);
+    if (!component) return;
+
+    const object3D = this._componentObject3Ds.get(componentId);
+    if (!object3D) return;
+    // Update visuals if component hasChanged
+    const factory = this.factoryRegistry.get(component.type);
+    factory.updateFromConfiguration(object3D, component.config);
+    // if config change, update wires connected to component
+    // TODO optimize to do it only if necessary (size, ...)
+    this.wireVisualManager.updateWiresForComponent(component.id);
+    return;
+  }
+
+  /**
    * cycle component config and update visuals if necessary
    * have effect only on components that supports fast config cycle (used to invert logic or initial state of switches)
-   * else use the (yet to implement) method editComponentConfig()
+   * else use editComponentConfig
    *
    * @returns if the component has changed config
    * @param componentId
    */
   cycleComponentConfig(componentId: UUID): boolean {
     const result = this.circuitWriter.cycleComponentConfig(componentId);
-    if(!result.hasChanged) {
-        return false;
+    if (!result.hasChanged) {
+      return false;
     }
     const object3D = this._componentObject3Ds.get(componentId);
-    if(!object3D) return false;
+    if (!object3D) return false;
     // Update visuals if component hasChanged
     const factory = this.factoryRegistry.get(result.component.type);
     factory.updateFromConfiguration(object3D, result.component.config);
@@ -799,7 +822,7 @@ export class CircuitController extends AbstractCircuitController {
   autoAdjustCircuitGridSize() {
     this._checkInitialized();
     if (!this._circuit) return;
-    if(this.circuitWriter.saveAutoAdjustCircuitSize()){
+    if (this.circuitWriter.saveAutoAdjustCircuitSize()) {
       // Update halfSize
       this._gridHalfSize = Math.ceil(this._circuit.metadata.size / 2);
       // Update grid helper

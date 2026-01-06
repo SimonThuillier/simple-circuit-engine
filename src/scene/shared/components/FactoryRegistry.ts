@@ -7,10 +7,7 @@
  */
 
 import type { ComponentType } from '@/core/types/ComponentType';
-import type {
-  IComponentVisualFactory,
-  IFactoryRegistry,
-} from './ComponentVisualFactory';
+import type { IComponentVisualFactory, IFactoryRegistry } from './ComponentVisualFactory';
 
 /**
  * Registry mapping ComponentType to ComponentVisualFactory

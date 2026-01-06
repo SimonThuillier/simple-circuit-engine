@@ -63,14 +63,12 @@ export class CircuitRunner {
     this.dirtyTracker = new DirtyTracker();
 
     // Initialize simulation state
-    try{
+    try {
       this.initializeState();
-    }
-    catch(e){
-      console.error("Error during CircuitRunner initialization:", e);
+    } catch (e) {
+      console.error('Error during CircuitRunner initialization:', e);
       throw e;
     }
-
   }
 
   /**
@@ -295,7 +293,7 @@ export class CircuitRunner {
 
     // Initialize component states using behaviors
     for (const component of this.circuit.getAllComponents()) {
-      if(component.pins.length < 1) continue;
+      if (component.pins.length < 1) continue;
 
       const behavior = this.behaviorRegistry.get(component.type);
       if (!behavior) {

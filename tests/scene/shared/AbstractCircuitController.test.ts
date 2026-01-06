@@ -159,26 +159,42 @@ describe('AbstractCircuitController - Shared Resources Injection', () => {
 
   describe('CircuitRunnerController with shared resources', () => {
     it('should accept sharedResources in constructor', () => {
-      const controller = new CircuitRunnerController(factoryRegistry, behaviorRegistry, sharedResources);
+      const controller = new CircuitRunnerController(
+        factoryRegistry,
+        behaviorRegistry,
+        sharedResources
+      );
       expect(controller).toBeDefined();
     });
 
     it('should use shared scene when initialized with sharedResources', () => {
-      const controller = new CircuitRunnerController(factoryRegistry, behaviorRegistry, sharedResources);
+      const controller = new CircuitRunnerController(
+        factoryRegistry,
+        behaviorRegistry,
+        sharedResources
+      );
       controller.initialize(container);
 
       expect(controller.getScene()).toBe(sharedResources.scene);
     });
 
     it('should use shared camera when initialized with sharedResources', () => {
-      const controller = new CircuitRunnerController(factoryRegistry, behaviorRegistry, sharedResources);
+      const controller = new CircuitRunnerController(
+        factoryRegistry,
+        behaviorRegistry,
+        sharedResources
+      );
       controller.initialize(container);
 
       expect(controller.getCamera()).toBe(sharedResources.camera);
     });
 
     it('should emit ready event when initialized with shared resources', () => {
-      const controller = new CircuitRunnerController(factoryRegistry, behaviorRegistry, sharedResources);
+      const controller = new CircuitRunnerController(
+        factoryRegistry,
+        behaviorRegistry,
+        sharedResources
+      );
       const readyHandler = vi.fn();
       controller.on('ready', readyHandler);
 
@@ -188,7 +204,11 @@ describe('AbstractCircuitController - Shared Resources Injection', () => {
     });
 
     it('should not dispose shared resources when controller is disposed', () => {
-      const controller = new CircuitRunnerController(factoryRegistry, behaviorRegistry, sharedResources);
+      const controller = new CircuitRunnerController(
+        factoryRegistry,
+        behaviorRegistry,
+        sharedResources
+      );
       controller.initialize(container);
 
       // Store references before dispose
@@ -264,7 +284,7 @@ describe('EventEmitter.onAny()', () => {
     controller.initialize(testContainer);
 
     // Should have captured the 'ready' event
-    expect(forwardedEvents.some(e => e.event === 'ready')).toBe(true);
+    expect(forwardedEvents.some((e) => e.event === 'ready')).toBe(true);
 
     cleanup();
     controller.dispose();
@@ -289,7 +309,7 @@ describe('EventEmitter.onAny()', () => {
     controller.initialize(testContainer);
 
     // Should NOT have captured the 'ready' event after cleanup
-    expect(forwardedEvents.some(e => e.event === 'ready')).toBe(false);
+    expect(forwardedEvents.some((e) => e.event === 'ready')).toBe(false);
 
     controller.dispose();
     document.body.removeChild(testContainer);

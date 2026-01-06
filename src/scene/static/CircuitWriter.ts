@@ -8,7 +8,11 @@ import type { ENode } from '@/core/ENode';
 import type { Wire } from '@/core/Wire';
 import { ComponentType } from '@/core/types/ComponentType';
 import type { Component } from '@/core/Component';
-import {computeDivisionsForSize, worldToGridPosition, worldToGridRotation} from '../shared/GeometryUtils';
+import {
+  computeDivisionsForSize,
+  worldToGridPosition,
+  worldToGridRotation,
+} from '../shared/GeometryUtils';
 
 /**
  * Manages editing operations of 3D models from the circuit scene into the core circuit model.
@@ -27,7 +31,7 @@ export class CircuitWriter {
    * @throws Error
    * @return The circuit enode
    */
-  saveAddBranchingPoint(position: Vector3, sourceType?: ENodeSourceType| undefined) {
+  saveAddBranchingPoint(position: Vector3, sourceType?: ENodeSourceType | undefined) {
     const circuit = this._controller.getCircuit();
     try {
       if (!circuit) {
@@ -44,7 +48,7 @@ export class CircuitWriter {
         error: null,
         data: {
           position: modelPosition,
-          sourceType: sourceType
+          sourceType: sourceType,
         },
       };
       this._controller.emit('circuitElementAction', event);
@@ -374,12 +378,11 @@ export class CircuitWriter {
    * @throws Error if circuit is not available or component creation fails
    */
   saveAddComponent(
-      type: ComponentType,
-      position: Vector3,
-      rotation: Euler,
-      config?: Map<string, string> | undefined,
-      pinSources?: Array<ENodeSourceType | undefined | null> | undefined
-
+    type: ComponentType,
+    position: Vector3,
+    rotation: Euler,
+    config?: Map<string, string> | undefined,
+    pinSources?: Array<ENodeSourceType | undefined | null> | undefined
   ): Component {
     const circuit = this._controller.getCircuit();
     try {
@@ -391,15 +394,15 @@ export class CircuitWriter {
       const modelRotation = worldToGridRotation(rotation);
       const component = circuit.addComponent(type, modelPosition, modelRotation, config);
 
-      if(pinSources){
-        for(const pinIdx in component.pins) {
+      if (pinSources) {
+        for (const pinIdx in component.pins) {
           if (!pinSources[pinIdx]) continue;
           const customSource = pinSources[pinIdx];
 
           const cmpPinId = component.pins[pinIdx];
-          if(!cmpPinId) continue;
+          if (!cmpPinId) continue;
           const pin = circuit.getENode(cmpPinId);
-          if(!pin) continue;
+          if (!pin) continue;
           pin.setSourceType(customSource);
         }
       }
@@ -415,7 +418,7 @@ export class CircuitWriter {
           position: modelPosition,
           rotation: modelRotation,
           config: config,
-          pinSources: pinSources
+          pinSources: pinSources,
         },
       };
       this._controller.emit('circuitElementAction', event);
@@ -474,9 +477,9 @@ export class CircuitWriter {
   /**
    * Save edits made to a component configuration in the circuit model and emit the appropriate event
    * @param componentId
-   * @param config - full new component configuration map
+   * @param parameters - updated configuration parameters
    */
-  saveEditComponentConfig(componentId: UUID, config: Map<string, string>): Component {
+  saveEditComponentConfig(componentId: UUID, parameters: Map<string, string>): Component {
     // Logic to save the current state of the scene component into the core model
     const circuit = this._controller.getCircuit();
     if (!circuit) {
@@ -487,15 +490,15 @@ export class CircuitWriter {
       throw new Error(`Component with ID ${componentId} not found in the circuit.`);
     }
 
-    component.config = new Map(config); // replace full config
+    component.config = new Map([...component.config, ...parameters]);
     this._controller.emit('circuitElementAction', {
-        type: 'component',
-        action: 'edit',
-        id: componentId,
-        error: null,
-        data: {
-          config: config
-        },
+      type: 'component',
+      action: 'edit',
+      id: componentId,
+      error: null,
+      data: {
+        config: component.config,
+      },
     });
     return component;
   }
@@ -508,7 +511,7 @@ export class CircuitWriter {
    * @returns object with hasChanged boolean and updated component
    * @throws Error if circuit is not available or component not found
    */
-  cycleComponentConfig(componentId: UUID): {hasChanged: boolean, component: Component} {
+  cycleComponentConfig(componentId: UUID): { hasChanged: boolean; component: Component } {
     // Logic to save the current state of the scene component into the core model
     const circuit = this._controller.getCircuit();
     if (!circuit) {
@@ -519,24 +522,29 @@ export class CircuitWriter {
       throw new Error(`Component with ID ${componentId} not found in the circuit.`);
     }
     const config = component.config;
-    switch(component.type) {
+    switch (component.type) {
       case ComponentType.Switch:
         config.set('initialState', config.get('initialState') === 'open' ? 'closed' : 'open');
         this.saveEditComponentConfig(component.id, config);
-        return {hasChanged: true, component: component};
+        return { hasChanged: true, component: component };
       case ComponentType.Relay:
-        config.set('activationLogic', config.get('activationLogic') === 'positive' ? 'negative' : 'positive');
+        config.set(
+          'activationLogic',
+          config.get('activationLogic') === 'positive' ? 'negative' : 'positive'
+        );
         this.saveEditComponentConfig(component.id, config);
-        return {hasChanged: true, component: component};
+        return { hasChanged: true, component: component };
       case ComponentType.Transistor:
-        config.set('activationLogic', config.get('activationLogic') === 'positive' ? 'negative' : 'positive');
+        config.set(
+          'activationLogic',
+          config.get('activationLogic') === 'positive' ? 'negative' : 'positive'
+        );
         this.saveEditComponentConfig(component.id, config);
-        return {hasChanged: true, component: component};
+        return { hasChanged: true, component: component };
       default:
-        return {hasChanged: false, component: component};
+        return { hasChanged: false, component: component };
     }
   }
-
 
   /**
    * Delete a component from the circuit model and emit the appropriate event
@@ -590,14 +598,14 @@ export class CircuitWriter {
    * Automatically adjust the circuit size and divisions based on positions of all core circuit elements.
    * @return if the size/division has been updated or not
    */
-  saveAutoAdjustCircuitSize() : boolean {
+  saveAutoAdjustCircuitSize(): boolean {
     const circuit = this._controller.getCircuit();
     if (!circuit) {
       throw new Error('No circuit available in the scene controllerType.');
     }
 
     const newSize = Math.max(10, circuit.getEnclosingSize(1));
-    if(circuit.metadata.size === newSize){
+    if (circuit.metadata.size === newSize) {
       return false; // no change
     }
 
@@ -607,12 +615,12 @@ export class CircuitWriter {
     circuit.metadata.divisions = divisions;
 
     this._controller.emit('circuitMetadataEdition', {
-        circuitName: circuit.name,
-        data: {
-            size: newSize,
-            divisions: divisions
-        }
+      circuitName: circuit.name,
+      data: {
+        size: newSize,
+        divisions: divisions,
+      },
     });
-    return true
+    return true;
   }
 }

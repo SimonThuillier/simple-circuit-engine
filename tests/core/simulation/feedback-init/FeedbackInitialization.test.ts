@@ -20,7 +20,7 @@ import {
   SmallLEDBehavior,
 } from '@/core/simulation/behaviors';
 import type { Component } from '@/core/Component';
-import {ENodeSourceType} from "../../../../src/core/types/ENodeSourceType";
+import { ENodeSourceType } from '../../../../src/core/types/ENodeSourceType';
 
 function createBehaviorRegistry(): BehaviorRegistry {
   const registry = new BehaviorRegistry();
@@ -31,25 +31,33 @@ function createBehaviorRegistry(): BehaviorRegistry {
   return registry;
 }
 
-const makeNorGate = (circuit: Circuit): {
-  nor_t1: Component,
-  nor_t2: Component
+const makeNorGate = (
+  circuit: Circuit
+): {
+  nor_t1: Component;
+  nor_t2: Component;
 } => {
   const nor_t1 = circuit.addComponent(
-      ComponentType.Transistor, new Position(0, 0), new Rotation(0),
-      new Map([['activationLogic', 'negative']])); // closed when no base current
+    ComponentType.Transistor,
+    new Position(0, 0),
+    new Rotation(0),
+    new Map([['activationLogic', 'negative']])
+  ); // closed when no base current
   const nor_t1_collector = circuit.getComponentPinByLabel(nor_t1, 'collector');
   circuit.updateENodeSourceType(nor_t1_collector!.id, ENodeSourceType.Voltage); // powering up first transistor collector
   const nor_t1_emitter = circuit.getComponentPinByLabel(nor_t1, 'emitter');
 
   const nor_t2 = circuit.addComponent(
-      ComponentType.Transistor, new Position(0, 1), new Rotation(0),
-      new Map([['activationLogic', 'negative']])); // closed when no base current
+    ComponentType.Transistor,
+    new Position(0, 1),
+    new Rotation(0),
+    new Map([['activationLogic', 'negative']])
+  ); // closed when no base current
   const nor_t2_collector = circuit.getComponentPinByLabel(nor_t2, 'collector');
   circuit.addWire(nor_t1_emitter!.id, nor_t2_collector!.id); // wiring the two transistors to produce NOR configuration
 
-  return { nor_t1: nor_t1, nor_t2: nor_t2  };
-}
+  return { nor_t1: nor_t1, nor_t2: nor_t2 };
+};
 
 describe('Feedback Loop Initialization', () => {
   describe('User Story 1: Automatic Feedback Loop Resolution', () => {
@@ -58,7 +66,11 @@ describe('Feedback Loop Initialization', () => {
         // Create end of a simple RS flip-flop circuit using two NOR gates
         const circuit = new Circuit('RS Flip-Flop');
         circuit.metadata = new CircuitMetadata(
-            'RS Flip-Flop Test', 20, 20, new Position3D(0, 0, 50));
+          'RS Flip-Flop Test',
+          20,
+          20,
+          new Position3D(0, 0, 50)
+        );
 
         // Two NOR gates forming feedback loop
         // NOR1: Controls Q output
@@ -99,7 +111,8 @@ describe('Feedback Loop Initialization', () => {
         // Stable state 2 (Q=LOW, Q'=HIGH): nor1_t2=open, nor2_t1=closed
         // Invalid: both feedback transistors in same state causes oscillation
         const feedbackBothOpen = nor1_t2State!.state === 'open' && nor2_t1State!.state === 'open';
-        const feedbackBothClosed = nor1_t2State!.state === 'closed' && nor2_t1State!.state === 'closed';
+        const feedbackBothClosed =
+          nor1_t2State!.state === 'closed' && nor2_t1State!.state === 'closed';
 
         // Non-feedback transistors should always be closed (unconnected base with negative logic)
         expect(nor1_t1State!.state).toBe('closed');
@@ -111,7 +124,11 @@ describe('Feedback Loop Initialization', () => {
       it('RS flip-flop has the desired initial state when one of the input is on', () => {
         const circuit = new Circuit('RS Flip-Flop');
         circuit.metadata = new CircuitMetadata(
-            'RS Flip-Flop Test', 20, 20, new Position3D(0, 0, 50));
+          'RS Flip-Flop Test',
+          20,
+          20,
+          new Position3D(0, 0, 50)
+        );
 
         // Two NOR gates forming feedback loop
         // NOR1: Controls Q output
@@ -148,8 +165,8 @@ describe('Feedback Loop Initialization', () => {
         //   - nor2_t1 closes (base = Q = LOW) → NOR2 chain conducts → Q' = HIGH
         //   - nor1_t2 opens (base = Q' = HIGH)
         //   - nor2_t2 closes (base not connected = LOW)
-        expect(nor1_t1State!.state).toBe('open');   // SET = HIGH → opens
-        expect(nor1_t2State!.state).toBe('open');   // Q' = HIGH → opens (negative logic!)
+        expect(nor1_t1State!.state).toBe('open'); // SET = HIGH → opens
+        expect(nor1_t2State!.state).toBe('open'); // Q' = HIGH → opens (negative logic!)
         expect(nor2_t1State!.state).toBe('closed'); // Q = LOW → closes
         expect(nor2_t2State!.state).toBe('closed'); // base not connected → closes
 
@@ -176,15 +193,19 @@ describe('Feedback Loop Initialization', () => {
         //   - nor1_t1 closes (base not connected = LOW, SET removed)
         expect(nor1_t1State2!.state).toBe('closed'); // SET removed, base not connected → closes
         expect(nor1_t2State2!.state).toBe('closed'); // Q' = LOW → closes
-        expect(nor2_t1State2!.state).toBe('open');   // Q = HIGH → opens (negative logic!)
-        expect(nor2_t2State2!.state).toBe('open');   // RESET = HIGH → opens
+        expect(nor2_t1State2!.state).toBe('open'); // Q = HIGH → opens (negative logic!)
+        expect(nor2_t2State2!.state).toBe('open'); // RESET = HIGH → opens
       });
     });
     describe('Phase4 - initializationOrder controls RS flip-flop initial state', () => {
       it('changing initializationOrder well inverts default RS initial State', () => {
         const circuit = new Circuit('RS Flip-Flop');
         circuit.metadata = new CircuitMetadata(
-            'RS Flip-Flop Test', 20, 20, new Position3D(0, 0, 50));
+          'RS Flip-Flop Test',
+          20,
+          20,
+          new Position3D(0, 0, 50)
+        );
 
         // Two NOR gates forming feedback loop
         // NOR1: Controls Q output
@@ -235,11 +256,10 @@ describe('Feedback Loop Initialization', () => {
 
           // Q should now be LOW (inverted from HIGH)
           expect(nor1_t1State2!.state).toBe('closed');
-          expect(nor1_t2State2!.state).toBe('open');   // Q = LOW (inverted!)
+          expect(nor1_t2State2!.state).toBe('open'); // Q = LOW (inverted!)
           expect(nor2_t1State2!.state).toBe('closed'); // Q' = HIGH (NOR2 prevailed)
           expect(nor2_t2State2!.state).toBe('closed');
-        }
-        else {
+        } else {
           // Initial: Q = LOW (NOR2 prevailed due to UUID order)
           // To INVERT to Q = HIGH: give NOR1 higher order so NOR1 prevails
           // NOR2 processed first → nor2_t1 opens → Q' = LOW
@@ -257,7 +277,7 @@ describe('Feedback Loop Initialization', () => {
           // Q should now be HIGH (inverted from LOW)
           expect(nor1_t1State2!.state).toBe('closed');
           expect(nor1_t2State2!.state).toBe('closed'); // Q = HIGH (NOR1 prevailed)
-          expect(nor2_t1State2!.state).toBe('open');   // Q' = LOW (inverted!)
+          expect(nor2_t1State2!.state).toBe('open'); // Q' = LOW (inverted!)
           expect(nor2_t2State2!.state).toBe('closed');
         }
       });

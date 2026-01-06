@@ -428,7 +428,8 @@
             <span class="section-chevron">&#9662;</span>
           </div>
           <div class="section-content">
-            <textarea id="circuit-input" placeholder="Paste circuit JSON here...">{
+            <textarea id="circuit-input" placeholder="Paste circuit JSON here...">
+{
   "metadata": {
     "name": "Switch-Controlled LED Circuit",
     "size": 20,
@@ -474,7 +475,8 @@
     { "id": "f8d4e220-6376-4002-be89-e8190d19607b", "node1": "db83437e-efba-419a-8b8e-cdf3b1b25745", "node2": "ddf99ca2-8426-4a02-8b13-b05560806564", "intermediatePositions": [] },
     { "id": "e4b1e554-2a6c-4615-a72b-2d4a1a90a3d4", "node1": "295298ee-5ecc-4474-9acb-9be1feee059f", "node2": "75360089-6b35-4c9a-a08e-4257a2d34968", "intermediatePositions": [] }
   ]
-}</textarea>
+}</textarea
+            >
             <div class="json-buttons">
               <button id="load-btn">Load</button>
               <button id="serialize-btn">Export</button>
@@ -507,11 +509,21 @@
           </div>
           <div class="section-content">
             <div class="sim-controls">
-              <div class="speed-control" style="margin-top: 0.75rem;">
-                <label for="speed-slider" style="display: block; margin-bottom: 0.25rem; font-size: 0.75rem; color: #888;">
+              <div class="speed-control" style="margin-top: 0.75rem">
+                <label
+                  for="speed-slider"
+                  style="display: block; margin-bottom: 0.25rem; font-size: 0.75rem; color: #888"
+                >
                   Speed: <span id="speed-display">2</span> TPS
                 </label>
-                <input type="range" id="speed-slider" min="1" max="50" value="2" style="width: 100%;">
+                <input
+                  type="range"
+                  id="speed-slider"
+                  min="1"
+                  max="50"
+                  value="2"
+                  style="width: 100%"
+                />
               </div>
               <button id="play-pause-btn" class="sim-btn" disabled>Play</button>
               <button id="step-btn" class="sim-btn" disabled>Step</button>
@@ -621,7 +633,9 @@
 
         // Update mode buttons
         document.getElementById('mode-edit').classList.toggle('active', mode === 'edit');
-        document.getElementById('mode-simulation').classList.toggle('active', mode === 'simulation');
+        document
+          .getElementById('mode-simulation')
+          .classList.toggle('active', mode === 'simulation');
 
         // Update mode indicator
         const indicator = document.getElementById('mode-indicator');
@@ -629,7 +643,8 @@
         indicator.textContent = mode === 'edit' ? 'EDIT MODE' : 'SIMULATION MODE';
 
         // Update status
-        document.getElementById('status-mode').textContent = mode === 'edit' ? 'Edit' : 'Simulation';
+        document.getElementById('status-mode').textContent =
+          mode === 'edit' ? 'Edit' : 'Simulation';
 
         // Enable/disable sections
         const editSection = document.getElementById('edit-section');
@@ -810,9 +825,9 @@
 
         function selectType(type, element) {
           selectedType = type;
-          componentList.querySelectorAll('.component-item').forEach((el) =>
-            el.classList.remove('selected')
-          );
+          componentList
+            .querySelectorAll('.component-item')
+            .forEach((el) => el.classList.remove('selected'));
           element.classList.add('selected');
 
           try {

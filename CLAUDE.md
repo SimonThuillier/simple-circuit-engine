@@ -3,6 +3,7 @@
 Auto-generated from all feature plans. Last updated: 2025-11-28
 
 ## Active Technologies
+
 - TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (scene, camera, controls, Line2) (014-circuit-engine)
 - N/A (in-memory circuit model, no persistence in this feature) (014-circuit-engine)
 - TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+, lil-gui (new dependency to add) (015-component-config-editor)
@@ -92,12 +93,10 @@ function badExample(input: number | null): string {
 ```
 
 ## Recent Changes
+
 - 018-feedback-init: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (scene/UI), core simulation is dependency-free
 - 017-simulation-speed: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (scene/UI), core simulation is dependency-free
 - 016-label-component: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (for 3D text rendering via TextGeometry or CanvasTexture)
-
-
-
 
 <!-- MANUAL ADDITIONS START -->
 

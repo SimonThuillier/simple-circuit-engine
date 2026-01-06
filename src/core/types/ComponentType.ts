@@ -80,8 +80,8 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTy
       ['output', undefined],
     ]),
     config: new Map([
-        ['initialState', 'open'],
-        ['size', '1']
+      ['initialState', 'open'],
+      ['size', '1'],
     ]),
   },
   [ComponentType.Battery]: {
@@ -100,9 +100,7 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTy
       ['pin1', undefined],
       ['pin2', undefined],
     ]),
-    config: new Map([
-      ['size', '1']
-    ]),
+    config: new Map([['size', '1']]),
   },
   [ComponentType.Relay]: {
     id: ComponentType.Relay,
@@ -114,8 +112,8 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTy
       ['power_out', undefined],
     ]),
     config: new Map([
-        ['activationLogic', 'positive'],
-        ['initializationOrder', '']
+      ['activationLogic', 'positive'],
+      ['initializationOrder', ''],
     ]),
   },
   [ComponentType.Transistor]: {
@@ -127,8 +125,8 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTy
       ['emitter', undefined],
     ]),
     config: new Map([
-        ['activationLogic', 'positive'],
-        ['initializationOrder', '']
+      ['activationLogic', 'positive'],
+      ['initializationOrder', ''],
     ]),
   },
   [ComponentType.SmallLED]: {
@@ -143,7 +141,7 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTy
       ['idleColor', 'white'],
       ['activeColor', '#ffff00'],
       ['size', '1'],
-      ['ywRatio', '1']
+      ['ywRatio', '1'],
     ]),
   },
   [ComponentType.RectangleLED]: {
@@ -159,7 +157,7 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTy
       ['activeColor', '#ffff00'],
       ['size', '1'],
       ['hwRatio', '1'],
-      ['ywRatio', '1']
+      ['ywRatio', '1'],
     ]),
   },
   [ComponentType.Cube]: {

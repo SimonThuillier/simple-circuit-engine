@@ -108,8 +108,7 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
       this.factoryRegistry = sharedResources.factoryRegistry;
       this.branchingPointVisualFactory = sharedResources.branchingPointVisualFactory;
       this.wireVisualManager = sharedResources.wireVisualManager;
-    }
-    else {
+    } else {
       this._useSharedResources = false;
       this.factoryRegistry = factoryRegistry;
       this.branchingPointVisualFactory = new BranchingPointVisualFactory();
@@ -164,7 +163,6 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
         this._enodeObject3Ds = this._sharedResources.enodeObject3Ds;
         this._wireObject3Ds = this._sharedResources.wireObject3Ds;
 
-
         this._scene = this._sharedResources.scene;
         this._camera = this._sharedResources.camera;
         this._mapControls = this._sharedResources.mapControls;
@@ -179,8 +177,8 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
         );
 
         // Setup hover change callback for this controller
-        if(!this._hoverManager.isInitialized()){
-            this._initializeHoverManager();
+        if (!this._hoverManager.isInitialized()) {
+          this._initializeHoverManager();
         }
         // Setup mouse event callbacks
         this._setupMouseCallbacks();
@@ -496,11 +494,11 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
    */
   cursorGroundPlanePosition(bound: boolean = true): THREE.Vector3 {
     const vector = this._hoverManager!.getGroundPlanePosition().clone();
-    if(bound){
+    if (bound) {
       vector.set(
-          Math.min(Math.max(vector.x, -this._gridHalfSize), this._gridHalfSize),
-          0,
-          Math.min(Math.max(vector.z, -this._gridHalfSize), this._gridHalfSize)
+        Math.min(Math.max(vector.x, -this._gridHalfSize), this._gridHalfSize),
+        0,
+        Math.min(Math.max(vector.z, -this._gridHalfSize), this._gridHalfSize)
       );
     }
     return vector;
@@ -650,9 +648,9 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
       if (previousElement && (!element || element.id !== previousElement.id)) {
         unhoverPreviousElement(previousElement);
         this.emit('unhover', {
-            objectId: previousElement.id,
-            objectType: previousElement.objectType,
-            userData: previousElement.object3D.userData as HitboxUserData,
+          objectId: previousElement.id,
+          objectType: previousElement.objectType,
+          userData: previousElement.object3D.userData as HitboxUserData,
         });
         previousElement = null;
       }
@@ -715,7 +713,6 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
     };
     this._container.addEventListener('mouseleave', this._mouseLeaveHandler);
   }
-
 
   /**
    * Get the currently hovered element.

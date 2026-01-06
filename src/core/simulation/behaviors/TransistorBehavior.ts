@@ -44,7 +44,7 @@ export class TransistorBehavior implements ComponentBehavior {
     if (component.type !== ComponentType.Transistor) {
       throw new Error(`Invalid component type for TransistorBehavior: ${component.type}`);
     }
-    const state = component.config.get('activationLogic') === 'negative'? 'closed': 'open';
+    const state = component.config.get('activationLogic') === 'negative' ? 'closed' : 'open';
     return new TransistorState(component.id, state);
   }
 
@@ -61,8 +61,7 @@ export class TransistorBehavior implements ComponentBehavior {
     if (!pinLabel || !otherPinLabel) return false;
     const pinLabels = [pinLabel, otherPinLabel];
 
-    if(pinLabels.includes('collector') &&
-        pinLabels.includes('emitter')){
+    if (pinLabels.includes('collector') && pinLabels.includes('emitter')) {
       return state.state === 'closed' || state.state === 'opening';
     }
     return false;
@@ -89,8 +88,8 @@ export class TransistorBehavior implements ComponentBehavior {
 
     const isCommanded = pinStates.get('base')!.hasVoltage;
 
-    const shouldConduct = component.config.get('activationLogic') === 'negative'
-        ? !isCommanded: isCommanded;
+    const shouldConduct =
+      component.config.get('activationLogic') === 'negative' ? !isCommanded : isCommanded;
 
     let hasChanged = false;
     const scheduledEvents: ScheduledEvent[] = [];
@@ -131,7 +130,11 @@ export class TransistorBehavior implements ComponentBehavior {
     };
   }
 
-  onUserCommand(_component: Component, state: ComponentState, _command: UserCommand): BehaviorResult {
+  onUserCommand(
+    _component: Component,
+    state: ComponentState,
+    _command: UserCommand
+  ): BehaviorResult {
     return {
       componentState: state,
       hasChanged: false,
