@@ -98,8 +98,17 @@ export class HoverManager {
 
     // Priority 1: Check ENODE layer
     hitElement = this._raycastLayer(HitboxLayers.ENODE, 'enode', 'enodeHitbox');
+    // disambiguation for very closed components (transistors)
+    // if enode is a component pin, we check if the mouse is actually over the component hitbox too
+    // if they differ we prioritize the component hitbox
+    if(hitElement && hitElement.object3D.userData.componentId){
+        const componentHit = this._raycastLayer(HitboxLayers.COMPONENT, 'component', 'componentHitbox');
+        if(componentHit && componentHit.id !== hitElement.object3D.userData.componentId){
+          hitElement = componentHit;
+        }
+    }
 
-    // Priority 2: Check COMPONENT layer if no enode hit
+    // Priority 2: Check COMPONENT layer
     if (!hitElement) {
       hitElement = this._raycastLayer(HitboxLayers.COMPONENT, 'component', 'componentHitbox');
     }
