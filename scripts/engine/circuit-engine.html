@@ -563,10 +563,6 @@
       // Add axes helper
       engine.getScene().add(window.axesHelper);
 
-      // Setup camera layers for hover visibility
-      engine.getCamera().layers.enable(1); // enode hover layer
-      engine.getCamera().layers.enable(2); // component hover layer
-
       // Setup WebGL renderer
       const renderer = window.renderer;
       renderer.setSize(container.clientWidth, container.clientHeight);
@@ -716,6 +712,7 @@
         }
 
         try {
+          engine.beforeExport();
           const circuitJSON = circuit.toJSON();
           const formatted = JSON.stringify(circuitJSON, null, 2);
           document.getElementById('circuit-input').value = formatted;

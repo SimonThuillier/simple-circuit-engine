@@ -6,51 +6,52 @@
  */
 
 import * as THREE from 'three';
-import type { ControllerOptions } from '../types';
+import {CameraOptions} from "@/core/types/CameraOptions";
 
 /**
  * Create a perspective camera with default or custom parameters
  *
- * @param options - Optional renderer configuration
+ * @param options -
  * @param aspect - Camera aspect ratio (width / height)
  * @returns Configured PerspectiveCamera
  */
 export function createPerspectiveCamera(
-  options: ControllerOptions = {},
-  aspect: number = 1
+  aspect: number = 1,
+  options: CameraOptions = new CameraOptions(),
 ): THREE.PerspectiveCamera {
-  const fov = options.cameraFov ?? 75;
-  const near = options.cameraNear ?? 0.1;
-  const far = options.cameraFar ?? 1000;
 
-  const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-
+  const camera = new THREE.PerspectiveCamera(
+      options.fov,
+      aspect,
+      options.near,
+      options.far);
   // Default camera position for circuit viewing
-  camera.position.set(0, 15, 0);
-  camera.lookAt(0, 0, 0);
-
+  const camPos = options.position;
+  camera.position.set(camPos.x, camPos.y, camPos.z);
+  const camTarget = options.lookAtPosition;
+  camera.lookAt(camTarget.x, camTarget.y, camTarget.z);
   return camera;
 }
 
 /**
- * Setup camera position and target from circuit metadata
+ * update camera position and target from options
  *
  * @param camera - Camera to configure
- * @param circuitSize - Size of the circuit bounding box
- * @param circuitCenter - Center position of the circuit
+ * @param options
  */
-export function setupCameraFromMetadata(
+export function updateCamera(
   camera: THREE.PerspectiveCamera,
-  circuitSize: { width: number; height: number },
-  circuitCenter: THREE.Vector3
+  options: CameraOptions
 ): void {
-  // Calculate distance to fit circuit in view
-  const maxDim = Math.max(circuitSize.width, circuitSize.height);
-  const fov = camera.fov * (Math.PI / 180);
-  const distance = maxDim / (2 * Math.tan(fov / 2));
+  camera.fov = options.fov;
+  camera.near = options.near;
+  camera.far = options.far;
 
-  // Position camera above and away from circuit
-  camera.position.set(circuitCenter.x, circuitCenter.y, circuitCenter.z + distance * 1.2);
-  camera.lookAt(circuitCenter);
+  const camPos = options.position;
+  camera.position.set(camPos.x, camPos.y, camPos.z);
+  // NB : if controls are used, they may override the lookAt
+  // then you need to update their controls separately
+  const camTarget = options.lookAtPosition;
+  camera.lookAt(camTarget.x, camTarget.y, camTarget.z);
   camera.updateProjectionMatrix();
 }

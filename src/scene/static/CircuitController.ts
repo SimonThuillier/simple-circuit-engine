@@ -835,6 +835,20 @@ export class CircuitController extends AbstractCircuitController {
     }
   }
 
+  /**
+   * Hook called before exporting the circuit visualization.
+   * Saves world informations such as camera position, in the circuit metadata.
+   */
+  public beforeExport(): void {
+    if (!this._circuit || !this._camera || !this._mapControls) return;
+    try {
+      this.circuitWriter.saveCameraOptions();
+    }
+    catch (error) {
+      console.warn(error);
+    }
+  }
+
   private _removeWireObject3D(id: string): void {
     if (this._wireObject3Ds.has(id)) {
       // Use WireVisualManager to remove wire (handles all disposal and delete from map)

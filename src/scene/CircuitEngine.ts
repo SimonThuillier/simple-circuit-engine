@@ -15,7 +15,7 @@ import { CircuitRunnerController } from './simulation/CircuitRunnerController';
 import { HoverManager } from './shared/HoverManager';
 import { WireVisualManager } from './shared/WireVisualManager';
 import { BranchingPointVisualFactory } from './shared/components/BranchingPointVisualFactory';
-import { createPerspectiveCamera } from './shared/utils/CameraUtils';
+import {createPerspectiveCamera, updateCamera} from './shared/utils/CameraUtils';
 import { setupSceneLights } from './shared/utils/LightingUtils';
 import type { Circuit } from '../core/Circuit';
 import type { UUID } from '../core/types/Identifier';
@@ -176,7 +176,7 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
    */
   private _createSharedResources(
     container: HTMLElement,
-    options?: CircuitEngineOptions
+    _options?: CircuitEngineOptions
   ): SharedResources {
     // Create scene
     const scene = new THREE.Scene();
@@ -185,8 +185,10 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
 
     // Create camera
     const aspect = container.clientWidth / container.clientHeight || 1;
-    const camera = createPerspectiveCamera(options, aspect);
-    camera.layers.set(0); // Only render visual layer
+    const camera = createPerspectiveCamera(aspect);
+    camera.layers.set(0); // main visual layer
+    camera.layers.enable(1); // enode hover layer
+    camera.layers.enable(2); // component hover layer
 
     // Create MapControls
     const mapControls = new MapControls(camera, container);
@@ -400,6 +402,14 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
       this._editController.setCircuit(circuit);
       this._simulationController?.setCircuit(circuit);
     }
+    if(circuit && this._sharedResources?.camera){
+      updateCamera(this._sharedResources?.camera, circuit.metadata.cameraOptions);
+    }
+    if(circuit && this._sharedResources?.mapControls){
+      const controls = this._sharedResources?.mapControls;
+      const target = circuit.metadata.cameraOptions.lookAtPosition;
+      controls.target.set(target.x,target.y,target.z);
+    }
   }
 
   /**
@@ -607,6 +617,16 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
   getControls(): MapControls {
     this._checkInitialized();
     return this._sharedResources!.mapControls;
+  }
+
+  /**
+   * Hook called before exporting the circuit visualization.
+   * Saves world informations such as camera position, in the circuit metadata.
+   */
+  public beforeExport(): void {
+    console.log('CircuitEngine.beforeExport called');
+    if (!this._editController) return;
+    this._editController.beforeExport();
   }
 
   /**

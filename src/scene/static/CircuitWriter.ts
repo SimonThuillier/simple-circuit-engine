@@ -13,6 +13,8 @@ import {
   worldToGridPosition,
   worldToGridRotation,
 } from '../shared/utils/GeometryUtils';
+import {CameraOptions} from "@/core/types/CameraOptions";
+import {Position3D} from "@/core/types/Position3D";
 
 /**
  * Manages editing operations of 3D models from the circuit scene into the core circuit model.
@@ -35,7 +37,7 @@ export class CircuitWriter {
     const circuit = this._controller.getCircuit();
     try {
       if (!circuit) {
-        throw new Error('No circuit available in the scene controllerType.');
+        throw new Error('No circuit available in the scene controller.');
       }
 
       const modelPosition = worldToGridPosition(position);
@@ -77,7 +79,7 @@ export class CircuitWriter {
     const circuit = this._controller.getCircuit();
     try {
       if (!circuit) {
-        throw new Error('No circuit available in the scene controllerType.');
+        throw new Error('No circuit available in the scene controller.');
       }
       const circuitEnode = circuit.getENode(branchingPoint.userData.enodeId);
       if (!circuitEnode) {
@@ -131,7 +133,7 @@ export class CircuitWriter {
     const circuit = this._controller.getCircuit();
     try {
       if (!circuit) {
-        throw new Error('No circuit available in the scene controllerType.');
+        throw new Error('No circuit available in the scene controller.');
       }
       const result = circuit.removeBranchingPoint(enodeId);
 
@@ -170,7 +172,7 @@ export class CircuitWriter {
     const circuit = this._controller.getCircuit();
     try {
       if (!circuit) {
-        throw new Error('No circuit available in the scene controllerType.');
+        throw new Error('No circuit available in the scene controller.');
       }
       const addResult = circuit.addWire(sourceEnodeId, targetEnodeId);
       if (addResult instanceof Error) {
@@ -218,7 +220,7 @@ export class CircuitWriter {
   ): { branchingPoint: ENode; wires: Wire[] } {
     const circuit = this._controller.getCircuit();
     if (!circuit) {
-      throw new Error('No circuit available in the scene controllerType.');
+      throw new Error('No circuit available in the scene controller.');
     }
     // Convert world position to grid position
     const gridPosition = worldToGridPosition(worldPosition);
@@ -257,7 +259,7 @@ export class CircuitWriter {
     const circuit = this._controller.getCircuit();
     try {
       if (!circuit) {
-        throw new Error('No circuit available in the scene controllerType.');
+        throw new Error('No circuit available in the scene controller.');
       }
       circuit.removeWire(wireId);
       const event: ControllerEventMap['circuitElementAction'] = {
@@ -350,7 +352,7 @@ export class CircuitWriter {
   saveEditENodeSourceType(enodeId: UUID, sourceType: ENodeSourceType | null): void {
     const circuit = this._controller.getCircuit();
     if (!circuit) {
-      throw new Error('No circuit available in the scene controllerType.');
+      throw new Error('No circuit available in the scene controller.');
     }
 
     circuit.updateENodeSourceType(enodeId, sourceType);
@@ -387,7 +389,7 @@ export class CircuitWriter {
     const circuit = this._controller.getCircuit();
     try {
       if (!circuit) {
-        throw new Error('No circuit available in the scene controllerType.');
+        throw new Error('No circuit available in the scene controller.');
       }
       // convert 3D world position to 2D grid position with Grid snapping
       const modelPosition = worldToGridPosition(position);
@@ -446,7 +448,7 @@ export class CircuitWriter {
     // Logic to save the current state of the scene component into the core model
     const circuit = this._controller.getCircuit();
     if (!circuit) {
-      throw new Error('No circuit available in the scene controllerType.');
+      throw new Error('No circuit available in the scene controller.');
     }
     const component = circuit.getComponent(componentId);
     if (!component) {
@@ -483,7 +485,7 @@ export class CircuitWriter {
     // Logic to save the current state of the scene component into the core model
     const circuit = this._controller.getCircuit();
     if (!circuit) {
-      throw new Error('No circuit available in the scene controllerType.');
+      throw new Error('No circuit available in the scene controller.');
     }
     const component = circuit.getComponent(componentId);
     if (!component) {
@@ -515,7 +517,7 @@ export class CircuitWriter {
     // Logic to save the current state of the scene component into the core model
     const circuit = this._controller.getCircuit();
     if (!circuit) {
-      throw new Error('No circuit available in the scene controllerType.');
+      throw new Error('No circuit available in the scene controller.');
     }
     const component = circuit.getComponent(componentId);
     if (!component) {
@@ -559,7 +561,7 @@ export class CircuitWriter {
     const circuit = this._controller.getCircuit();
     try {
       if (!circuit) {
-        throw new Error('No circuit available in the scene controllerType.');
+        throw new Error('No circuit available in the scene controller.');
       }
 
       const component = circuit.getComponent(componentId);
@@ -601,7 +603,7 @@ export class CircuitWriter {
   saveAutoAdjustCircuitSize(): boolean {
     const circuit = this._controller.getCircuit();
     if (!circuit) {
-      throw new Error('No circuit available in the scene controllerType.');
+      throw new Error('No circuit available in the scene controller.');
     }
 
     const newSize = Math.max(10, circuit.getEnclosingSize(1));
@@ -622,5 +624,40 @@ export class CircuitWriter {
       },
     });
     return true;
+  }
+
+  /**
+   * Save current camera parameters, position and target into circuit metadata
+   */
+  saveCameraOptions(): void {
+    const circuit = this._controller.getCircuit();
+    if (!circuit) {
+      throw new Error('No circuit available in the scene controller.');
+    }
+    const camera = this._controller.getCamera();
+    if (!camera) {
+      throw new Error('No camera available in the scene controller.');
+    }
+    const controls = this._controller.getControls();
+    if (!controls) {
+      throw new Error('No controls available in the scene controller.');
+    }
+
+    const options = new CameraOptions(
+        new Position3D(camera.position.x, camera.position.y, camera.position.z),
+        new Position3D(controls.target.x, controls.target.y, controls.target.z),
+        camera.fov,
+        camera.near,
+        camera.far
+    );
+    circuit.metadata.cameraOptions = options;
+
+    this._controller.emit('circuitMetadataEdition', {
+      circuitName: circuit.name,
+      data: {
+        cameraOptions: options
+      },
+    });
+    return;
   }
 }

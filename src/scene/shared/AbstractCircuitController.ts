@@ -23,7 +23,7 @@ import type {
   EnodeHitboxUserData,
   SharedResources,
 } from './types';
-import { createPerspectiveCamera } from './utils/CameraUtils';
+import {createPerspectiveCamera, updateCamera} from './utils/CameraUtils';
 import { setupSceneLights } from './utils/LightingUtils';
 import { HoverManager } from './HoverManager';
 import type { Line2 } from 'three/examples/jsm/lines/Line2.js';
@@ -191,10 +191,10 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
 
         // Create camera
         const aspect = container.clientWidth / container.clientHeight || 1;
-        this._camera = createPerspectiveCamera(options, aspect);
-        // Configure camera layers to only render layer 0 (visual layer)
-        // This prevents hitbox meshes (layers 1, 2, 3) from being rendered
-        this._camera.layers.set(0);
+        this._camera = createPerspectiveCamera(aspect);
+        this._camera.layers.set(0); // main visual layer
+        this._camera.layers.enable(1); // enode hover layer
+        this._camera.layers.enable(2); // component hover layer
         // Initialize MapControls
         this._initializeMapControls(options?.mapControls);
 
@@ -453,6 +453,17 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
       this.wireVisualManager.setCircuit(circuit);
       this._gridHalfSize = Math.ceil(circuit.metadata.size / 2);
       this._scene!.name = this._circuit!.metadata.name || 'Circuit Scene';
+      // in standalone mode update camera according to circuit metadata
+      if(!this._useSharedResources){
+        if (this._camera){
+          updateCamera(this._camera, circuit.metadata.cameraOptions);
+        }
+        if(this._mapControls){
+          const controls = this._mapControls;
+          const target = circuit.metadata.cameraOptions.lookAtPosition;
+          controls.target.set(target.x,target.y,target.z);
+        }
+      }
       this.onSetCircuit();
       this.emit('circuitLoaded', { name: this._circuit.metadata.name || 'Unnamed Circuit' });
     }
