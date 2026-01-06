@@ -12,7 +12,7 @@ import {
   computeDivisionsForSize,
   worldToGridPosition,
   worldToGridRotation,
-} from '../shared/GeometryUtils';
+} from '../shared/utils/GeometryUtils';
 
 /**
  * Manages editing operations of 3D models from the circuit scene into the core circuit model.

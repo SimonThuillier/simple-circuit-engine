@@ -6,7 +6,7 @@
  */
 
 import * as THREE from 'three';
-import type { ControllerOptions } from './types';
+import type { ControllerOptions } from '../types';
 
 /**
  * Create a perspective camera with default or custom parameters

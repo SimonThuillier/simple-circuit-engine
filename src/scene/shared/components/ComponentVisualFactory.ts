@@ -11,7 +11,7 @@ import type { ComponentType } from '@/core/types/ComponentType';
 import type { ComponentState } from '@/core/simulation/states/ComponentState';
 import { ENodeSourceType } from '@/core/types/ENodeSourceType';
 import * as THREE from 'three';
-import { HitboxLayers } from '../LayerConstants';
+import { HitboxLayers } from '../utils/LayerConstants';
 import type { ConfigFormDefinition } from '../types/ConfigTypes';
 
 /**

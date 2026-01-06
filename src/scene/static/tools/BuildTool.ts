@@ -29,7 +29,7 @@ import {
   gridToWorldRotation,
   nearestWorldSnapPosition,
   worldToGridPosition,
-} from '../../shared/GeometryUtils';
+} from '../../shared/utils/GeometryUtils';
 import type { ComponentType } from '../../../core/types/ComponentType';
 import type { Euler } from 'three';
 

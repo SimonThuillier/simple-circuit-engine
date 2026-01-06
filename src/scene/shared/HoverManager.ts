@@ -8,7 +8,7 @@
 
 import * as THREE from 'three';
 import type { HoveredElement, HitboxUserData } from './types';
-import { HitboxLayers } from './LayerConstants';
+import { HitboxLayers } from './utils/LayerConstants';
 
 /**
  * Callback type for hover state changes

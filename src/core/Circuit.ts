@@ -592,15 +592,6 @@ export class Circuit {
 
     // Remove wire from circuit
     this.wires.delete(id);
-
-    // Clean up orphaned branching points
-    // Deprecated : branching Points can now exist without wires
-    // if (enode1 && enode1.type === ENodeType.BranchingPoint && enode1.wires.size === 0) {
-    //   this.enodes.delete(enode1.id);
-    // }
-    // if (enode2 && enode2.type === ENodeType.BranchingPoint && enode2.wires.size === 0) {
-    //   this.enodes.delete(enode2.id);
-    // }
   }
 
   /**

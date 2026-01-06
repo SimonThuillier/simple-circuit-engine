@@ -55,5 +55,5 @@ export type {
   IFactoryRegistry,
 } from './shared/components/ComponentVisualFactory';
 
-export { HitboxLayers } from './shared/LayerConstants';
-export type { HitboxLayerValue } from './shared/LayerConstants';
+export { HitboxLayers } from './shared/utils/LayerConstants';
+export type { HitboxLayerValue } from './shared/utils/LayerConstants';

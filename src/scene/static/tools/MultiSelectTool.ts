@@ -15,7 +15,7 @@ import {
   isPointInScreenRect,
   nearestWorldSnapPosition,
   worldToGridPosition,
-} from '../../shared/GeometryUtils';
+} from '../../shared/utils/GeometryUtils';
 import { Rotation } from '@/core/types/Rotation';
 import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
 

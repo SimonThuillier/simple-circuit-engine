@@ -4,7 +4,7 @@ import type { ComponentState } from '@/core/simulation/states/ComponentState';
 import type { TransistorState } from '@/core/simulation/states/TransistorState';
 import type { ConfigFormDefinition } from '../types/ConfigTypes';
 import * as THREE from 'three';
-import { RingGeometry } from '../GeometryUtils';
+import { RingGeometry } from '../utils/GeometryUtils';
 
 /**
  * Visual factory for Transistor components

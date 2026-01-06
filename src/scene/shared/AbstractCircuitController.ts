@@ -23,8 +23,8 @@ import type {
   EnodeHitboxUserData,
   SharedResources,
 } from './types';
-import { createPerspectiveCamera } from './CameraUtils';
-import { setupSceneLights } from './LightingUtils';
+import { createPerspectiveCamera } from './utils/CameraUtils';
+import { setupSceneLights } from './utils/LightingUtils';
 import { HoverManager } from './HoverManager';
 import type { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { BranchingPointVisualFactory } from './components/BranchingPointVisualFactory';

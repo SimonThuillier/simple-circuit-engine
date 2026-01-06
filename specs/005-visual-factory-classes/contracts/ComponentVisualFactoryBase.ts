@@ -13,7 +13,7 @@ import type { Component } from '../../../src/core/Component';
 import type { ComponentState } from '../../../src/core/simulation/states/ComponentState';
 import type { IComponentVisualFactory, ComponentVisualUserData } from './IComponentVisualFactory';
 import * as THREE from 'three';
-import { HitboxLayers } from '../../../src/scene/shared/LayerConstants';
+import { HitboxLayers } from '../../../src/scene/shared/utils/LayerConstants';
 
 /**
  * Abstract base class for component visual factories

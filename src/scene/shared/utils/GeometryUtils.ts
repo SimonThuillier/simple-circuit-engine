@@ -6,7 +6,7 @@
  */
 
 import * as THREE from 'three';
-import { Position } from '../../core/types/Position';
+import { Position } from '@/core/types/Position';
 import { Rotation } from '@/core/types/Rotation';
 import { ExtrudeGeometry } from 'three';
 

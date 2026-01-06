@@ -17,7 +17,7 @@ import {
   createGridHelper,
   gridToWorldPosition,
   gridToWorldRotation,
-} from '../shared/GeometryUtils';
+} from '../shared/utils/GeometryUtils';
 import { BuildTool } from './tools/BuildTool';
 import { AddComponentTool } from './tools/AddComponentTool';
 import { MultiSelectTool } from './tools/MultiSelectTool';

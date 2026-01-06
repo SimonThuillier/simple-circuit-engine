@@ -21,7 +21,7 @@ import {
   createGridHelper,
   gridToWorldPosition,
   gridToWorldRotation,
-} from '../shared/GeometryUtils';
+} from '../shared/utils/GeometryUtils';
 import type { HoveredElement } from '../shared/types';
 import type { Circuit } from '@/core/Circuit';
 import { BehaviorRegistry } from '@/core/simulation/behaviors';

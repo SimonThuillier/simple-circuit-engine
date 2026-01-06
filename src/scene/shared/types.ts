@@ -139,66 +139,6 @@ export interface ControllerEventMap {
 export type ControllerCallback<T = any> = (payload: T) => void;
 
 /**
- * Optional configuration for scene controllerType initialization
- */
-export interface ControllerOptions {
-  /** Background color for the scene (default: 0x000000) */
-  backgroundColor?: number;
-  /** Enable anti-aliasing (default: true) */
-  antialias?: boolean;
-  /** Camera field of view in degrees (default: 75) */
-  cameraFov?: number;
-  /** Camera near clipping plane (default: 0.1) */
-  cameraNear?: number;
-  /** Camera far clipping plane (default: 1000) */
-  cameraFar?: number;
-  /** Enable grid helper visualization (default: true) */
-  showGrid?: boolean;
-  /** Enable axes helper visualization (default: false) */
-  showAxes?: boolean;
-  /** MapControls configuration (optional) */
-  mapControls?: MapControlsOptions;
-}
-
-/**
- * Configuration options for MapControls integration
- *
- * All properties are optional with sensible defaults.
- *
- * @example
- * ```typescript
- * controllerType.initialize(container, {
- *   mapControls: {
- *     enableRotate: false,  // Disable rotation for 2D-only view
- *     maxDistance: 50,      // Limit zoom out
- *   }
- * });
- * ```
- */
-export interface MapControlsOptions {
-  /** Enable click-drag panning (default: true) */
-  enablePan?: boolean;
-  /** Enable scroll wheel zooming (default: true) */
-  enableZoom?: boolean;
-  /** Enable right-click rotation (default: true) */
-  enableRotate?: boolean;
-  /** Enable smooth deceleration when releasing controls (default: true) */
-  enableDamping?: boolean;
-  /** Damping strength (0 = instant stop, 1 = very slow stop) (default: 0.05) */
-  dampingFactor?: number;
-  /** Minimum zoom distance from target (default: 1) */
-  minDistance?: number;
-  /** Maximum zoom distance from target (default: 100) */
-  maxDistance?: number;
-  /** Pan speed multiplier (default: 1.0) */
-  panSpeed?: number;
-  /** Zoom speed multiplier (default: 1.0) */
-  zoomSpeed?: number;
-  /** Rotation speed multiplier (default: 1.0) */
-  rotateSpeed?: number;
-}
-
-/**
  * Represents the currently hovered circuit element
  *
  * @example
@@ -430,6 +370,72 @@ export interface CircuitEngineEventMap extends ControllerEventMap {
   /** Emitted after mode transition completes */
   modeChanged: ModeChangedEvent;
 }
+
+/**
+ * Configuration options for Controllers and Engine
+ **/
+
+/**
+ * Configuration options for MapControls integration
+ *
+ * All properties are optional with sensible defaults.
+ *
+ * @example
+ * ```typescript
+ * controllerType.initialize(container, {
+ *   mapControls: {
+ *     enableRotate: false,  // Disable rotation for 2D-only view
+ *     maxDistance: 50,      // Limit zoom out
+ *   }
+ * });
+ * ```
+ */
+export interface MapControlsOptions {
+  /** Enable click-drag panning (default: true) */
+  enablePan?: boolean;
+  /** Enable scroll wheel zooming (default: true) */
+  enableZoom?: boolean;
+  /** Enable right-click rotation (default: true) */
+  enableRotate?: boolean;
+  /** Enable smooth deceleration when releasing controls (default: true) */
+  enableDamping?: boolean;
+  /** Damping strength (0 = instant stop, 1 = very slow stop) (default: 0.05) */
+  dampingFactor?: number;
+  /** Minimum zoom distance from target (default: 1) */
+  minDistance?: number;
+  /** Maximum zoom distance from target (default: 100) */
+  maxDistance?: number;
+  /** Pan speed multiplier (default: 1.0) */
+  panSpeed?: number;
+  /** Zoom speed multiplier (default: 1.0) */
+  zoomSpeed?: number;
+  /** Rotation speed multiplier (default: 1.0) */
+  rotateSpeed?: number;
+}
+
+/**
+ * Optional configuration for scene controllerType initialization
+ */
+export interface ControllerOptions {
+  /** Background color for the scene (default: 0x000000) */
+  backgroundColor?: number;
+  /** Enable anti-aliasing (default: true) */
+  antialias?: boolean;
+  /** Camera field of view in degrees (default: 75) */
+  cameraFov?: number;
+  /** Camera near clipping plane (default: 0.1) */
+  cameraNear?: number;
+  /** Camera far clipping plane (default: 1000) */
+  cameraFar?: number;
+  /** Enable grid helper visualization (default: true) */
+  showGrid?: boolean;
+  /** Enable axes helper visualization (default: false) */
+  showAxes?: boolean;
+  /** MapControls configuration (optional) */
+  mapControls?: MapControlsOptions;
+}
+
+
 
 /**
  * Configuration options for CircuitEngine initialization
