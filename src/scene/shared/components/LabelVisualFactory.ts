@@ -22,7 +22,7 @@ import {BoxGeometry} from "three";
  *
  * Configuration:
  * - text: Display text content (max 64 characters, default "Label")
- * - size: Scale multiplier (1-4, default 1)
+ * - size: Scale multiplier (1-10, default 1)
  *
  * @example
  * ```typescript
@@ -270,7 +270,7 @@ export class LabelVisualFactory extends ComponentVisualFactoryBase {
 
     // Update scale
     const size = parseFloat(config.get('size') || '1');
-    const clampedSize = Math.max(1, Math.min(4, size));
+    const clampedSize = Math.max(1, size);
     object3D.scale.set(clampedSize, clampedSize, clampedSize);
   }
 
@@ -292,7 +292,7 @@ export class LabelVisualFactory extends ComponentVisualFactoryBase {
           label: 'Size',
           type: 'number',
           min: 1,
-          max: 4,
+          max: 12,
           step: 1,
         },
       ],
@@ -330,7 +330,7 @@ export class LabelVisualFactory extends ComponentVisualFactoryBase {
     config.set('text', text);
 
     // Handle size
-    const size = Math.max(1, Math.min(4, Number(formData.get('size')) || 1));
+    const size = Math.max(1, Number(formData.get('size')) || 1);
     config.set('size', String(size));
 
     return config;

@@ -46,8 +46,10 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
       type: 'component',
       componentId: component.id,
       part: 'led',
+      idleColorHex: 0xffffff,
+      activeColorHex: SmallLEDVisualFactory.LED_LIT_COLOR,
     };
-    led.position.set(0, 0.2, 0);
+    led.position.set(0, 0.25, 0);
     group.add(led);
 
     // Input pin group
@@ -76,9 +78,10 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
   override getConfigFormDefinition(): ConfigFormDefinition | null {
     return {
       fields: [
-        { key: 'activeColor', label: 'Active Color', type: 'color' },
         { key: 'idleColor', label: 'Idle Color', type: 'color' },
-        { key: 'size', label: 'Size', type: 'number' }
+        { key: 'activeColor', label: 'Active Color', type: 'color' },
+        { key: 'size', label: 'Size', type: 'number' },
+        { key: 'ywRatio', label: 'Ratio Y/W', type: 'number' }
       ],
     };
   }
@@ -96,9 +99,10 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
     const idleColor = config.get('idleColor') || '#ffffff';
 
     // Convert preset names to hex if needed
-    formData.set('activeColor', presetOrHexToHex(activeColor));
     formData.set('idleColor', presetOrHexToHex(idleColor));
+    formData.set('activeColor', presetOrHexToHex(activeColor));
     formData.set('size', parseFloat(config.get('size') || '1'));
+    formData.set('ywRatio', parseFloat(config.get('ywRatio') || '1'));
 
     return formData;
   }
@@ -124,6 +128,7 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
     }
 
     config.set('size', formData.get('size').toString());
+    config.set('ywRatio', formData.get('ywRatio').toString());
     return config;
   }
 
@@ -140,15 +145,29 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
    */
   override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>): void {
     const ledMesh = this.findLedMesh(object3D);
-    if (!ledMesh) return;
+    const hitbox = this.findHitbox(object3D);
+    if (!ledMesh || !hitbox) return;
 
+    // changing colors
+    const idleColor = config.get('idleColor');
+    if (idleColor) {
+      // Convert preset to hex if needed, then parse
+      const idleColorHex = parseInt(presetOrHexToHex(idleColor).replace('#', ''), 16);
+      ledMesh.material.color.setHex(idleColorHex);
+      ledMesh.userData.idleColorHex = idleColorHex;
+    }
     const activeColor = config.get('activeColor');
     if (activeColor) {
       // Convert preset to hex if needed, then parse
-      const hexColor = presetOrHexToHex(activeColor);
-      const colorHex = parseInt(hexColor.replace('#', ''), 16);
-      ledMesh.material.color.setHex(colorHex);
+      ledMesh.userData.activeColorHex = parseInt(presetOrHexToHex(activeColor).replace('#', ''), 16);
     }
+    // changing geometry
+    const ywRatio = parseFloat(config.get('ywRatio') || '1');
+    ledMesh.geometry.dispose();
+    ledMesh.geometry = new THREE.CylinderGeometry(0.25, 0.25, ywRatio, 16 ,4, false, 0, Math.PI * 2);
+    ledMesh.position.set(0, 0.25 * ywRatio, 0);
+    hitbox.geometry.dispose();
+    hitbox.geometry = new THREE.BoxGeometry(1, 1.5*ywRatio, 1);
 
     const scale = parseFloat(config.get('size') || '1');
     object3D.scale.set(scale, scale, scale);
@@ -177,7 +196,7 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
     if (ledState.isLit) {
       // Apply LED glow
       ledMesh.userData.materialLocked = true;
-      ledMesh.material.emissive.setHex(SmallLEDVisualFactory.LED_LIT_COLOR);
+      ledMesh.material.emissive.setHex(ledMesh.userData.activeColorHex);
       ledMesh.material.emissiveIntensity = SmallLEDVisualFactory.LED_LIT_INTENSITY;
     } else {
       // Remove glow
