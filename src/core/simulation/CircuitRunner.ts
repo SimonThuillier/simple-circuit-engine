@@ -1,5 +1,5 @@
 /**
- * Main simulation engine for discrete-time circuit simulation
+ * Main simulation controller for discrete-time circuit simulation
  * @module core/simulation
  */
 
@@ -23,7 +23,7 @@ import type { BehaviorResult } from '@/core/simulation/behaviors/ComponentBehavi
 import type { RunnerResult } from '@/core/simulation/types/RunnerResult';
 
 /**
- * Main circuit simulation engine.
+ * Main circuit simulation controller.
  * Manages discrete-time simulation with event-driven state propagation.
  *
  * Features:

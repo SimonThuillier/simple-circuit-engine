@@ -5,10 +5,11 @@
  * Provides Three.js-based Controllers for circuit visualization:
  * - CircuitController: Static circuit visualization with editing capabilities
  * - CircuitRunnerController: Live simulation visualization with animation
+ * And Engine that combines both controllers.
  *
  * @example
  * ```typescript
- * import { CircuitController, FactoryRegistry } from 'simple-circuit-engine/scene';
+ * import { CircuitController, FactoryRegistry } from 'simple-circuit-controller/scene';
  *
  * const registry = new FactoryRegistry(defaultFactory);
  * const controller = new CircuitController(registry);

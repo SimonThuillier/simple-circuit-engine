@@ -39,7 +39,7 @@ export class StateManager {
   /**
    * Get the current simulation state.
    *
-   * @returns Current state (mutable for simulation engine use)
+   * @returns Current state (mutable for simulation controller use)
    */
   getCurrentState(): SimulationState {
     return this.currentState;

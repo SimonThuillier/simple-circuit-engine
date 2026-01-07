@@ -28,6 +28,7 @@ import type {
   CircuitEngineOptions,
   ToolType,
 } from './shared/types';
+import {createGridHelper} from "./shared/utils/GeometryUtils";
 
 /**
  * CircuitEngine - Unified Facade for Circuit Editing and Simulation
@@ -180,7 +181,10 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
   ): SharedResources {
     // Create scene
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x1a1a2e); // Default dark background
+    scene.background = new THREE.Color(0x222230); // Default dark blue background
+    // Add default sized grid
+    const grid = createGridHelper(10, 10);
+    scene.add(grid);
     setupSceneLights(scene);
 
     // Create camera
@@ -214,7 +218,7 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
       scene,
       camera,
       mapControls,
-      grid: null,
+      grid: grid,
       factoryRegistry: this._factoryRegistry,
       branchingPointVisualFactory,
       wireVisualManager,
@@ -397,11 +401,23 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
    */
   setCircuit(circuit: Circuit | null): void {
     this._checkInitialized();
+
+    if(this._sharedResources?.grid) {
+      this._sharedResources?.grid?.dispose();
+      this._sharedResources?.scene.remove(this._sharedResources?.grid);
+    }
+
     // Load circuit via edit controller
     if (this._editController) {
       this._editController.setCircuit(circuit);
       this._simulationController?.setCircuit(circuit);
     }
+
+    const gridSize = circuit ? circuit.metadata.size : 10;
+    const gridDivisions = circuit ? circuit.metadata.divisions : 10;
+    this._sharedResources!.grid = createGridHelper(gridSize, gridDivisions);
+    this._sharedResources?.scene.add(this._sharedResources!.grid);
+
     if(circuit && this._sharedResources?.camera){
       updateCamera(this._sharedResources?.camera, circuit.metadata.cameraOptions);
     }
@@ -421,7 +437,7 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
   }
 
   // ============================================================================
-  // Controller Access
+  // Controllers Access
   // ============================================================================
 
   /**
@@ -662,7 +678,7 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
   // ============================================================================
 
   /**
-   * Check that engine is initialized and not disposed.
+   * Check that controller is initialized and not disposed.
    *
    * @throws {Error} If not initialized or disposed
    */
@@ -676,7 +692,7 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
   }
 
   /**
-   * Check that engine is in edit mode.
+   * Check that controller is in edit mode.
    *
    * @throws {Error} If not in edit mode
    */

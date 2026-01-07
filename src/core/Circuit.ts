@@ -147,7 +147,7 @@ export class Circuit {
    * Create a new empty circuit.
    */
   constructor(name: string = 'Untitled Circuit') {
-    this.metadata = new CircuitMetadata(name, 30, 10, new CameraOptions());
+    this.metadata = new CircuitMetadata(name, 10, 10, new CameraOptions());
 
     this.components = new Map();
     this.enodes = new Map();

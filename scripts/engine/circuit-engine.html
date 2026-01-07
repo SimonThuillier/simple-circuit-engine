@@ -881,6 +881,11 @@
         document.getElementById('status-tool').textContent = toolType || 'None';
       });
 
+      engine.on('toolValidationError', ({ toolType, errorMessage }) => {
+        console.error('Tool error:', toolType, errorMessage);
+        document.getElementById('status-tool').textContent = toolType || 'None';
+      });
+
       engine.on('toolDeactivated', ({ toolType }) => {
         console.log('Tool deactivated:', toolType);
         deactivateAllTools();
@@ -933,6 +938,8 @@
 
       // Initial UI state
       updateModeUI('edit');
+      // load the default circuit
+      document.getElementById('load-btn').click();
     </script>
   </body>
 </html>

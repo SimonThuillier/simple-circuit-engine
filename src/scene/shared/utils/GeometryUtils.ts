@@ -25,11 +25,11 @@ export function createGridHelper(
   colorCenterLine: number = 0xaaaaaa,
   colorGrid: number = 0x777777
 ): THREE.GridHelper {
-  const helper = new THREE.GridHelper(size, divisions, colorCenterLine, colorGrid);
-  helper.position.set(0, 0, 0);
+  const grid = new THREE.GridHelper(size, divisions, colorCenterLine, colorGrid);
+  grid.position.set(0, 0, 0);
   // set z-index to be behind other objects
-  helper.renderOrder = -1;
-  return helper;
+  grid.renderOrder = -1;
+  return grid;
 }
 
 /**

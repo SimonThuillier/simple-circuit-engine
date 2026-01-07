@@ -626,12 +626,11 @@ export class CircuitRunnerController extends AbstractCircuitController {
 
     // When using shared resources and visuals already exist, skip creation
     // The edit controller has already created all visuals
-    const visualsPrePopulated = this._useSharedResources && this._componentObject3Ds.size > 0;
 
-    if (!visualsPrePopulated) {
-      // 1. Add circuit sized grid
-      this._grid = createGridHelper(this._circuit.metadata.size, this._circuit.metadata.divisions);
-      this._scene!.add(this._grid);
+    if (this._useSharedResources) {
+      // Add circuit sized grid
+      this.grid = createGridHelper(this._circuit.metadata.size, this._circuit.metadata.divisions);
+      this._scene!.add(this.grid);
 
       // Create visuals for all circuit elements
       const components = this._circuit.getAllComponents();
@@ -830,9 +829,10 @@ export class CircuitRunnerController extends AbstractCircuitController {
       this._removeComponentObject3D(id);
     }
     // remove grid
-    if (this._grid) {
-      this._scene!.remove(this._grid);
-      this._grid.geometry.dispose();
+    if (this.grid) {
+      this._scene!.remove(this.grid);
+      this.grid.dispose();
+      this._grid = null;
     }
   }
 }

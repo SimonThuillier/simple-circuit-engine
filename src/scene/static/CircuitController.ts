@@ -472,10 +472,6 @@ export class CircuitController extends AbstractCircuitController {
 
     if (!this._circuit) return;
 
-    // 1. Add circuit sized grid
-    this._grid = createGridHelper(this._circuit.metadata.size, this._circuit.metadata.divisions);
-    this._scene!.add(this._grid);
-
     // Create visuals for all circuit elements
     const components = this._circuit.getAllComponents();
     const wires = this._circuit.getAllWires();
@@ -826,12 +822,12 @@ export class CircuitController extends AbstractCircuitController {
       // Update halfSize
       this._gridHalfSize = Math.ceil(this._circuit.metadata.size / 2);
       // Update grid helper
-      if (this._grid) {
-        this._scene!.remove(this._grid);
-        this._grid.geometry.dispose();
+      if (this.grid) {
+        this._scene!.remove(this.grid);
+        this.grid.geometry.dispose();
       }
-      this._grid = createGridHelper(this._circuit.metadata.size, this._circuit.metadata.divisions);
-      this._scene!.add(this._grid);
+      this.grid = createGridHelper(this._circuit.metadata.size, this._circuit.metadata.divisions);
+      this._scene!.add(this.grid);
     }
   }
 
@@ -870,9 +866,10 @@ export class CircuitController extends AbstractCircuitController {
       this._removeComponentObject3D(id);
     }
     // remove grid
-    if (this._grid) {
-      this._scene!.remove(this._grid);
-      this._grid.geometry.dispose();
+    if (this.grid) {
+      this._scene!.remove(this.grid);
+      this.grid.dispose();
+      this._grid = null;
     }
   }
 }

@@ -30,6 +30,7 @@ import type { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { BranchingPointVisualFactory } from './components/BranchingPointVisualFactory';
 import type { Circuit } from '@/core/Circuit';
 import { WireVisualManager } from './WireVisualManager';
+import {createGridHelper} from "./utils/GeometryUtils";
 
 /**
  * Abstract base class for circuit controllers.
@@ -128,6 +129,21 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
     return this._wireObject3Ds;
   }
 
+  protected get grid(): THREE.GridHelper | null {
+    if (this._useSharedResources) return this._sharedResources?.grid || null;
+    return this._grid;
+  }
+
+  protected set grid(grid: THREE.GridHelper) {
+    if (this._useSharedResources) {
+      if (this._sharedResources) {
+        this._sharedResources.grid = grid;
+      }
+    } else {
+      this._grid = grid;
+    }
+  }
+
   // ==========================================
   // Initialization and Lifecycle
   // ==========================================
@@ -166,7 +182,6 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
         this._scene = this._sharedResources.scene;
         this._camera = this._sharedResources.camera;
         this._mapControls = this._sharedResources.mapControls;
-        this._grid = this._sharedResources.grid;
         this._hoverManager = this._sharedResources.hoverManager;
         // Note: factoryRegistry, branchingPointVisualFactory and WireVisualManager are already set from constructor
 
@@ -186,7 +201,11 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
         // Create own resources (standalone mode)
         // Create scene
         this._scene = new THREE.Scene();
-        this._scene.background = new THREE.Color(this.getSceneBackgroundColor());
+        this._scene.background = new THREE.Color(0x222230);
+        // Add default sized grid
+        const grid = createGridHelper(10, 10);
+        this._scene.add(grid);
+
         setupSceneLights(this._scene);
 
         // Create camera
@@ -242,14 +261,6 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
    * Emit the ready event with controller-specific data.
    */
   protected abstract emitReady(): void;
-
-  /**
-   * Get the scene background color.
-   * Subclasses can override for different themes.
-   */
-  protected getSceneBackgroundColor(): number {
-    return 0x222230;
-  }
 
   /**
    * Emit an error event.
@@ -450,14 +461,18 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
     if (circuit !== null) {
       // Perform full update with new circuit
       this._circuit = circuit;
+      this._scene!.name = this._circuit!.metadata.name || 'Circuit Scene';
       this.wireVisualManager.setCircuit(circuit);
       this._gridHalfSize = Math.ceil(circuit.metadata.size / 2);
-      this._scene!.name = this._circuit!.metadata.name || 'Circuit Scene';
-      // in standalone mode update camera according to circuit metadata
+      // in standalone mode update grid, camera and controls according to circuit metadata
       if(!this._useSharedResources){
+        this._grid = createGridHelper(circuit.metadata.size, circuit.metadata.divisions);
+        this._scene!.add(this._grid);
+
         if (this._camera){
           updateCamera(this._camera, circuit.metadata.cameraOptions);
         }
+
         if(this._mapControls){
           const controls = this._mapControls;
           const target = circuit.metadata.cameraOptions.lookAtPosition;

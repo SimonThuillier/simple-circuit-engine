@@ -303,7 +303,7 @@ export interface IEditingTool {
 }
 
 // ============================================================================
-// CircuitEngine Types (014-circuit-engine)
+// CircuitEngine Types (014-circuit-controller)
 // ============================================================================
 
 /**
@@ -327,8 +327,8 @@ export interface SharedResources {
   /** MapControls for pan/zoom/rotate interaction */
   mapControls: MapControls;
 
-  /** Grid helper (may be null before circuit loaded) */
-  grid: THREE.GridHelper | null;
+  /** Grid helper */
+  grid: THREE.GridHelper;
 
   /** Registry of component visual factories */
   factoryRegistry: IFactoryRegistry;
@@ -353,7 +353,7 @@ export interface SharedResources {
 }
 
 /**
- * Event emitted when engine mode changes
+ * Event emitted when controller mode changes
  */
 export interface ModeChangedEvent {
   /** New active mode */
@@ -364,7 +364,7 @@ export interface ModeChangedEvent {
 
 /**
  * Combined event map for CircuitEngine.
- * Includes all controller events plus engine-specific events.
+ * Includes all controller events plus controller-specific events.
  */
 export interface CircuitEngineEventMap extends ControllerEventMap {
   /** Emitted after mode transition completes */
@@ -421,12 +421,6 @@ export interface ControllerOptions {
   backgroundColor?: number;
   /** Enable anti-aliasing (default: true) */
   antialias?: boolean;
-  /** Camera field of view in degrees (default: 75) */
-  cameraFov?: number;
-  /** Camera near clipping plane (default: 0.1) */
-  cameraNear?: number;
-  /** Camera far clipping plane (default: 1000) */
-  cameraFar?: number;
   /** Enable grid helper visualization (default: true) */
   showGrid?: boolean;
   /** Enable axes helper visualization (default: false) */
