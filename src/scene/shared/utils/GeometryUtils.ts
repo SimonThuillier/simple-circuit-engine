@@ -1,8 +1,8 @@
 /**
  * Geometry Utilities
- * @module rendering/shared/GeometryUtils
+ * @module scene/shared/utils/GeometryUtils
  *
- * Helper functions for creating Three.js geometries for circuit elements
+ * Helper functions for creating Three.js geometries for grid and circuit elements
  */
 
 import * as THREE from 'three';

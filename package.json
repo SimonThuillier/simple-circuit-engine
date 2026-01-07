@@ -37,7 +37,12 @@
     "lint": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "generate:samples": "tsx scripts/samples/generate-sample-circuits.ts"
+    "generate:samples": "tsx scripts/samples/generate-sample-circuits.ts",
+    "docs:audit": "typedoc --validation.notDocumented --emit none 2>&1 | grep 'not documented'",
+    "docs:generate": "typedoc",
+    "docs:validate": "typedoc --treatWarningsAsErrors --treatValidationWarningsAsErrors",
+    "lint:docs": "eslint src --ext .ts --rule 'tsdoc/syntax: error'",
+    "check:unused": "npx knip"
   },
   "keywords": [
     "circuit",
@@ -52,6 +57,8 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "d3": "^7.9.0",
+    "d3-graphviz": "^5.6.0",
     "@types/d3": "^7.4.3",
     "@types/d3-graphviz": "^2.6.10",
     "@types/node": "^22.10.2",
@@ -60,16 +67,16 @@
     "jsdom": "^27.0.1",
     "prettier": "3.7.1",
     "tsx": "^4.20.6",
+    "typedoc": "^0.28.15",
     "typescript": "^5.9.2",
     "vite": "^7.2.0",
     "vite-plugin-dts": "^4.3.0",
-    "vitest": "^4.0.15"
+    "vitest": "^4.0.15",
+    "knip": "^5.80.0"
   },
   "dependencies": {
-    "d3": "^7.9.0",
-    "d3-graphviz": "^5.6.0",
-    "lil-gui": "^0.21.0",
-    "three": "^0.181.0"
+    "three": "^0.181.0",
+    "lil-gui": "^0.21.0"
   },
   "engines": {
     "node": ">=18.0.0",

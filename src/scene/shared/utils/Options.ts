@@ -1,3 +1,8 @@
+/**
+ * Utility functions to provide default options for the 3D circuit scene controllers and engine
+ * @module scene/shared/utils/Options
+ */
+
 import type { ControllerOptions, EngineOptions, MapControlsOptions } from '../types';
 
 export function mapControlsOptions(

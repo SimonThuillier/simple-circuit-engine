@@ -1,6 +1,6 @@
 /**
- * Static Circuit Renderer
- * @module rendering/static/StaticCircuitRenderer
+ * Static Circuit Controller for editing circuits
+ * @module scene/static/CircuitController
  *
  * Manages static circuit THREE.js scene with support for editing tools.
  */

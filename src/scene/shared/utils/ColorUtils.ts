@@ -1,6 +1,6 @@
 /**
- * Color preset utilities for config form
- * @module scene/shared/utils/ColorPresets
+ * Color utilities
+ * @module scene/shared/utils/ColorUtils
  */
 
 /**

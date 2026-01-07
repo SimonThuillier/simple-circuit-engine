@@ -3,7 +3,8 @@ import type { Component } from '@/core/Component';
 import type { ComponentState } from '@/core/simulation/states/ComponentState';
 import { LightbulbState } from '@/core/simulation/states';
 import * as THREE from 'three';
-import type { ConfigFormDefinition } from '../utils/ConfigPanelTypes';
+
+import type {ConfigFormDefinition} from "../types";
 
 /**
  * Visual factory for Lightbulb components

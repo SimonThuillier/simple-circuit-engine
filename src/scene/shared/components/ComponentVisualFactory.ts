@@ -1,6 +1,6 @@
 /**
  * Component Visual Factory System
- * @module rendering/shared/ComponentVisualFactory
+ * @module scene/shared/ComponentVisualFactory
  *
  * Provides factory pattern for creating Three.js visuals from Circuit components.
  * Supports dynamic registration and fallback for unknown component types.
@@ -12,7 +12,8 @@ import type { ComponentState } from '@/core/simulation/states/ComponentState';
 import { ENodeSourceType } from '@/core/types/ENodeSourceType';
 import * as THREE from 'three';
 import { HitboxLayers } from '../utils/LayerConstants';
-import type { ConfigFormDefinition } from '../utils/ConfigPanelTypes';
+
+import type {ConfigFormDefinition} from "../types";
 
 /**
  * Interface for component visual factories

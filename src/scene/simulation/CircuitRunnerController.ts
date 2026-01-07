@@ -2,7 +2,7 @@
  * Simulation Circuit Controller
  * @module scene/simulation/CircuitRunnercontroller
  *
- * Renders live circuit simulation with real-time state updates and animated current flow.
+ * Controls live circuit simulation with real-time state updates and animated current flow.
  * Provides smooth interpolation between discrete simulation ticks for fluid animation.
  */
 

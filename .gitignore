@@ -47,5 +47,7 @@ TODO.local.md
 legacy/
 # draft-circuits
 draft-circuits/
-
+# scripts output
 output/
+# typedocs generated files
+docs/

@@ -1,6 +1,6 @@
 /**
  * Factory Registry Implementation
- * @module rendering/shared/FactoryRegistry
+ * @module scene/shared/FactoryRegistry
  *
  * Manages registration and retrieval of component visual factories
  * with fallback support for unknown component types.

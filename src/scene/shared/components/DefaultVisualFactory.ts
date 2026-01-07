@@ -1,8 +1,8 @@
 import { ComponentVisualFactoryBase } from './ComponentVisualFactory';
 import type { Component } from '@/core/Component';
-import type { ConfigFormDefinition } from '../utils/ConfigPanelTypes';
 import { presetOrHexToHex, hexToPresetOrHex } from '../utils/ColorUtils';
 import * as THREE from 'three';
+import type {ConfigFormDefinition} from "../types";
 
 /**
  * Default Visual factory for not yet defined components

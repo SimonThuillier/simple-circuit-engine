@@ -1,6 +1,6 @@
 /**
  * Camera Utilities
- * @module rendering/shared/CameraUtils
+ * @module scene/shared/utils/CameraUtils
  *
  * Helper functions for camera setup and management
  */

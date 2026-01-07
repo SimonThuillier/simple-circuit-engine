@@ -2,9 +2,9 @@ import { ComponentVisualFactoryBase } from './ComponentVisualFactory';
 import type { Component } from '@/core/Component';
 import type { ComponentState } from '@/core/simulation/states/ComponentState';
 import type { TransistorState } from '@/core/simulation/states/TransistorState';
-import type { ConfigFormDefinition } from '../utils/ConfigPanelTypes';
 import * as THREE from 'three';
 import { RingGeometry } from '../utils/GeometryUtils';
+import type {ConfigFormDefinition} from "../types";
 
 /**
  * Visual factory for Transistor components

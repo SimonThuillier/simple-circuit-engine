@@ -1,3 +1,8 @@
+/**
+ * CircuitWriter that centralizes all write operations on core circuit objects
+ * @module scene/static/CircuitWriter
+ */
+
 import type { CircuitController } from './CircuitController';
 import { Euler, Object3D, Vector3 } from 'three';
 import { Position } from '@/core/types/Position';
