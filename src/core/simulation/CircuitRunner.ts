@@ -1,5 +1,5 @@
 /**
- * Main simulation engine for discrete-time circuit simulation
+ * Main simulation controller for discrete-time circuit simulation
  * @module core/simulation
  */
 
@@ -23,7 +23,7 @@ import type { BehaviorResult } from '@/core/simulation/behaviors/ComponentBehavi
 import type { RunnerResult } from '@/core/simulation/types/RunnerResult';
 
 /**
- * Main circuit simulation engine.
+ * Main circuit simulation controller.
  * Manages discrete-time simulation with event-driven state propagation.
  *
  * Features:
@@ -297,9 +297,9 @@ export class CircuitRunner {
 
       const behavior = this.behaviorRegistry.get(component.type);
       if (!behavior) {
-        console.warn(
-          `No behavior registered for component type '${component.type}' (${component.id})`
-        );
+        // console.warn(
+        //   `No behavior registered for component type '${component.type}' (${component.id})`
+        // );
         continue;
       }
 
@@ -464,9 +464,9 @@ export class CircuitRunner {
       const component = this.circuit.getComponent(componentId) as Component;
       const behavior = this.behaviorRegistry.get(component.type);
       if (!behavior) {
-        console.warn(
-          `No behavior registered for component type '${component.type}' (${component.id})`
-        );
+        // console.warn(
+        //   `No behavior registered for component type '${component.type}' (${component.id})`
+        // );
         continue;
       }
       const res = behavior.onPinsChange(
@@ -640,9 +640,9 @@ export class CircuitRunner {
         const component = this.circuit.getComponent(node.component!) as Component;
         const behavior = this.behaviorRegistry.get(component.type);
         if (!behavior) {
-          console.warn(
-            `No behavior registered for component type '${component.type}' (${component.id})`
-          );
+          // console.warn(
+          //   `No behavior registered for component type '${component.type}' (${component.id})`
+          // );
           continue;
         }
 
@@ -691,9 +691,9 @@ export class CircuitRunner {
       const component = this.circuit.getComponent(event.targetId) as Component;
       const behavior = this.behaviorRegistry.get(component.type);
       if (!behavior) {
-        console.warn(
-          `No behavior registered for component type '${component.type}' (${component.id})`
-        );
+        // console.warn(
+        //   `No behavior registered for component type '${component.type}' (${component.id})`
+        // );
         continue;
       }
 

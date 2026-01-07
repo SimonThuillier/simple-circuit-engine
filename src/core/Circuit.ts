@@ -16,8 +16,15 @@ import { ENodeType } from './types/ENodeType.js';
 import { Wire } from './Wire.js';
 import { COMPONENT_TYPE_METADATA, type ComponentType } from './types/ComponentType.js';
 import { getComponentTypeMetadata } from './types/ComponentType.js';
-import { Position3D } from '@/core/types/Position3D';
 import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
+import { CameraOptions, type ICameraOptions } from '@/core/types/CameraOptions';
+
+export type ICircuitMetadata = {
+  name: string;
+  size: number;
+  divisions: number;
+  cameraOptions: ICameraOptions;
+};
 
 /**
  * Circuit metadata placeholder
@@ -29,14 +36,14 @@ export class CircuitMetadata {
    * @param name - Name of the circuit
    * @param size - Size of the circuit grid
    * @param divisions - Divisions in the circuit grid
-   * @param cameraStartup - Position3D for Camera at circuit rendering startup
+   * @param cameraOptions - Camera Options at startup
    * @throws {TypeError} If size or divisions are not integers
    */
   constructor(
     public name: string,
     public size: number,
     public divisions: number,
-    public cameraStartup: Position3D
+    public cameraOptions: CameraOptions
   ) {
     if (!Number.isInteger(size) || !Number.isInteger(divisions)) {
       throw new TypeError(
@@ -49,17 +56,13 @@ export class CircuitMetadata {
     name: string;
     size: number;
     divisions: number;
-    cameraStartup: { x: number; y: number; z: number };
+    cameraOptions: ICameraOptions;
   } {
     return {
       name: this.name,
       size: this.size,
       divisions: this.divisions,
-      cameraStartup: {
-        x: this.cameraStartup.x,
-        y: this.cameraStartup.y,
-        z: this.cameraStartup.z,
-      },
+      cameraOptions: this.cameraOptions.toJSON(),
     };
   }
 
@@ -67,18 +70,18 @@ export class CircuitMetadata {
     name: string;
     size: number;
     divisions: number;
-    cameraStartup: { x: number; y: number; z: number };
+    cameraOptions: ICameraOptions;
   }): CircuitMetadata {
     return new CircuitMetadata(
       json.name,
       json.size,
       json.divisions,
-      Position3D.fromJSON(json.cameraStartup)
+      CameraOptions.fromJSON(json.cameraOptions)
     );
   }
 
   toString(): string {
-    return `CircuitMetadata(${this.name}, ${this.size}, ${this.divisions}, ${this.cameraStartup.toString()})`;
+    return `CircuitMetadata(${this.name}, ${this.size}, ${this.divisions}, ${this.cameraOptions.toString()})`;
   }
 }
 
@@ -149,7 +152,7 @@ export class Circuit {
    * Create a new empty circuit.
    */
   constructor(name: string = 'Untitled Circuit') {
-    this.metadata = new CircuitMetadata(name, 30, 10, new Position3D(0, 0, 50));
+    this.metadata = new CircuitMetadata(name, 10, 10, new CameraOptions());
 
     this.components = new Map();
     this.enodes = new Map();
@@ -592,15 +595,6 @@ export class Circuit {
 
     // Remove wire from circuit
     this.wires.delete(id);
-
-    // Clean up orphaned branching points
-    // Deprecated : branching Points can now exist without wires
-    // if (enode1 && enode1.type === ENodeType.BranchingPoint && enode1.wires.size === 0) {
-    //   this.enodes.delete(enode1.id);
-    // }
-    // if (enode2 && enode2.type === ENodeType.BranchingPoint && enode2.wires.size === 0) {
-    //   this.enodes.delete(enode2.id);
-    // }
   }
 
   /**
@@ -1031,20 +1025,13 @@ export class Circuit {
    * ```
    */
   static fromJSON(json: {
-    metadata: object;
+    metadata: ICircuitMetadata;
     components: object[];
     enodes: object[];
     wires?: object[];
   }): Circuit {
     const circuit = new Circuit();
-    circuit.metadata = CircuitMetadata.fromJSON(
-      json.metadata as {
-        name: string;
-        size: number;
-        divisions: number;
-        cameraStartup: { x: number; y: number; z: number };
-      }
-    );
+    circuit.metadata = CircuitMetadata.fromJSON(json.metadata);
 
     // Restore components
     for (const compData of json.components) {

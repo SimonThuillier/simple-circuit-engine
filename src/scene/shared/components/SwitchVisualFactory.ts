@@ -2,7 +2,7 @@ import { ComponentVisualFactoryBase } from './ComponentVisualFactory';
 import type { Component } from '@/core/Component';
 import type { ComponentState } from '@/core/simulation/states/ComponentState';
 import type { SwitchState } from '@/core/simulation/states/SwitchState';
-import type { ConfigFormDefinition } from '../types/ConfigTypes';
+import type { ConfigFormDefinition } from '../utils/ConfigPanelTypes';
 import * as THREE from 'three';
 
 /**

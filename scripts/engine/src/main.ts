@@ -78,7 +78,7 @@ if (typeof window !== 'undefined') {
   window.renderer.setClearColor(0x1a1a2e);
 
   // Create axes helper for reference
-  window.axesHelper = new AxesHelper(10);
+  window.axesHelper = new AxesHelper(5);
 
   // Export to window
   window.CircuitEngine = CircuitEngine;

@@ -3,113 +3,137 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Circuit Editor</title>
+    <title>CircuitEditor Demo</title>
     <style>
+      * {
+        box-sizing: border-box;
+      }
+
       body {
         font-family:
           -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
           sans-serif;
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 20px;
-        background: #f5f5f5;
-      }
-
-      h1 {
-        color: #333;
-        margin-bottom: 20px;
-      }
-
-      .container {
-        background: white;
-        border-radius: 8px;
-        padding: 20px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      }
-
-      #circuit-input {
-        width: 100%;
-        min-height: 150px;
-        font-family: 'Courier New', monospace;
-        font-size: 12px;
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        resize: vertical;
-        margin-bottom: 10px;
-      }
-
-      .button-group {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 20px;
-      }
-
-      .tool-button {
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 6px;
-        border-radius: 4px;
-        transition: background-color 0.2s;
-      }
-
-      .tool-button:hover {
-        background-color: #f0f0f0;
-      }
-
-      .tool-button.active {
-        background-color: #e0e0e0;
-      }
-
-      #component-list {
-        display: none;
-        padding: 0;
         margin: 0;
-        list-style: none;
-        background: white;
-        border-left: 3px solid #4caf50;
+        padding: 0;
+        background: #f5f5f5;
+        height: 100vh;
+        overflow: hidden;
       }
 
-      #component-list.visible {
+      .app-container {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        grid-template-rows: 1fr;
+        height: 100vh;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        background: white;
+        border-right: 1px solid #ddd;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .sidebar-header {
+        padding: 16px;
+        border-bottom: 1px solid #ddd;
+        background: #f8f9fa;
+      }
+
+      .sidebar-header h1 {
+        margin: 0;
+        font-size: 18px;
+        color: #333;
+      }
+
+      .sidebar-header .subtitle {
+        margin: 4px 0 0;
+        font-size: 12px;
+        color: #666;
+      }
+
+      /* Sections */
+      .sidebar-section {
+        border-bottom: 1px solid #ddd;
+      }
+
+      .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        cursor: pointer;
+        background: #f8f9fa;
+        user-select: none;
+      }
+
+      .section-header:hover {
+        background: #f0f0f0;
+      }
+
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .section-chevron {
+        font-size: 12px;
+        transition: transform 0.2s;
+      }
+
+      .sidebar-section.collapsed .section-chevron {
+        transform: rotate(-90deg);
+      }
+
+      .section-content {
+        padding: 12px 16px;
         display: block;
       }
 
-      .component-item {
+      .sidebar-section.collapsed .section-content {
+        display: none;
+      }
+
+      /* JSON Input */
+      #circuit-input {
+        width: 100%;
+        min-height: 120px;
+        max-height: 200px;
+        font-family: 'Courier New', monospace;
+        font-size: 11px;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        resize: vertical;
+        margin-bottom: 8px;
+      }
+
+      .json-buttons {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .json-buttons button {
+        flex: 1;
+        min-width: 70px;
         padding: 8px 12px;
-        cursor: pointer;
-        font-size: 13px;
-        color: #555;
-        border-bottom: 1px solid #f0f0f0;
-        transition: background-color 0.15s;
-      }
-
-      .component-item:hover {
-        background-color: #f5f5f5;
-        color: #333;
-      }
-
-      .component-item.selected {
-        background-color: #e8f5e9;
-        color: #2e7d32;
-        font-weight: 500;
-      }
-
-      button {
-        padding: 10px 20px;
-        font-size: 14px;
+        font-size: 12px;
         border: none;
         border-radius: 4px;
         cursor: pointer;
         transition: background-color 0.2s;
       }
 
-      #visualize-btn {
+      #load-btn {
         background-color: #4caf50;
         color: white;
       }
 
-      #visualize-btn:hover {
+      #load-btn:hover {
         background-color: #45a049;
       }
 
@@ -119,7 +143,7 @@
       }
 
       #serialize-btn:hover {
-        background-color: #0b7dda;
+        background-color: #1976d2;
       }
 
       #clear-btn {
@@ -128,709 +152,486 @@
       }
 
       #clear-btn:hover {
-        background-color: #da190b;
+        background-color: #d32f2f;
       }
 
-      #error-display {
-        background-color: #ffebee;
-        color: #c62828;
-        padding: 15px;
-        border-radius: 4px;
-        margin-bottom: 20px;
-        border-left: 4px solid #c62828;
+      /* Edit Tools */
+      .tool-list {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
+        flex-direction: column;
+        gap: 4px;
       }
 
-      #error-display.hidden {
-        display: none;
-      }
-
-      #error-message {
-        flex: 1;
-      }
-
-      #clear-error-btn {
-        background: transparent;
-        border: none;
-        font-size: 20px;
-        color: #c62828;
-        cursor: pointer;
-        padding: 0;
-        width: 24px;
-        height: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      #clear-error-btn:hover {
-        background-color: rgba(198, 40, 40, 0.1);
-        border-radius: 4px;
-      }
-
-      /* Accordion styles for .input-container */
-      .input-container {
-        overflow: visible;
-      }
-      .input-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        cursor: pointer;
-        margin-bottom: 8px;
-      }
-      .toggle-btn {
-        background: transparent;
-        border: none;
-        padding: 8px 12px;
-        font-size: 16px;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        cursor: pointer;
-      }
-      .chev {
-        display: inline-block;
-        transition: transform 0.25s ease;
-        font-size: 14px;
-        line-height: 1;
-      }
-      .input-container.collapsed .chev {
-        transform: rotate(-90deg);
-      }
-
-      .input-body {
-        overflow: hidden;
-        transition:
-          max-height 0.35s ease,
-          opacity 0.25s ease,
-          padding 0.25s ease;
-        max-height: 2000px;
-        opacity: 1;
-      }
-      .input-container.collapsed .input-body {
-        max-height: 0;
-        opacity: 0;
-        padding-top: 0;
-        padding-bottom: 0;
-      }
-
-      /* Ensure viewer adapts smoothly */
-      /* viewer fixed to viewport edges (10px each side). top is computed in JS so the viewer sits
-         just below the top UI (.container). */
-      #editor-container {
-        box-sizing: border-box;
-        position: fixed; /* horizontal anchored to viewport */
-        left: 10px;
-        right: 10px;
-        /* top is set dynamically in JS (so it follows .container height) */
+      .tool-btn {
+        padding: 10px 12px;
         border: 1px solid #ddd;
         border-radius: 4px;
         background: white;
-        overflow: hidden;
-        transition:
-          height 0.25s ease,
-          top 0.25s ease;
-        min-height: 120px; /* fallback */
-        z-index: 4;
-        display: grid;
-        grid-template-columns: 1fr 5fr;
-        grid-template-rows: 1fr;
+        cursor: pointer;
+        font-size: 13px;
+        text-align: left;
+        transition: all 0.15s;
       }
 
-      #editor-menu {
-        border-right: 1px solid #ddd;
-        padding: 0px;
-        min-width: 170px;
-        width: 170px;
-        height: 100%;
-        overflow-y: auto;
+      .tool-btn:hover {
+        border-color: #999;
+        background: #f5f5f5;
       }
 
-      /* Ensure viewer adapts smoothly */
-      /* viewer fixed to viewport edges (10px each side). top is computed in JS so the viewer sits
-         just below the top UI (.container). */
-      #viewer-container {
+      .tool-btn.active {
+        border-color: #4caf50;
+        background: #e8f5e9;
+        color: #2e7d32;
       }
 
-      .instructions {
-        background-color: #e3f2fd;
-        padding: 15px;
-        border-radius: 4px;
-        margin-bottom: 20px;
-        border-left: 4px solid #2196f3;
+      .tool-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
       }
 
-      .instructions h3 {
-        margin-top: 0;
-        color: #1976d2;
+      /* Component List */
+      #component-list {
+        display: none;
+        margin-top: 8px;
+        padding: 0;
+        list-style: none;
+        border-left: 3px solid #4caf50;
+        background: #fafafa;
       }
 
-      .instructions p {
-        margin: 5px 0;
+      #component-list.visible {
+        display: block;
+      }
+
+      .component-item {
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 12px;
         color: #555;
+        border-bottom: 1px solid #eee;
+        transition: background-color 0.15s;
+      }
+
+      .component-item:hover {
+        background-color: #f0f0f0;
+      }
+
+      .component-item.selected {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+        font-weight: 500;
+      }
+
+      /* Error Display */
+      #error-display {
+        background-color: #ffebee;
+        color: #c62828;
+        padding: 12px;
+        margin: 12px 16px;
+        border-radius: 4px;
+        border-left: 4px solid #c62828;
+        font-size: 12px;
+        display: none;
+      }
+
+      #error-display.visible {
+        display: block;
+      }
+
+      #error-display .close-btn {
+        float: right;
+        background: none;
+        border: none;
+        color: #c62828;
+        cursor: pointer;
+        font-size: 16px;
+        padding: 0;
+        line-height: 1;
+      }
+
+      /* Status Bar */
+      .status-bar {
+        margin-top: auto;
+        padding: 12px 16px;
+        background: #f8f9fa;
+        border-top: 1px solid #ddd;
+        font-size: 11px;
+        color: #666;
+      }
+
+      .status-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 4px;
+      }
+
+      .status-item:last-child {
+        margin-bottom: 0;
+      }
+
+      /* Viewer */
+      .viewer-container {
+        position: relative;
+        background: #1a1a2e;
+        overflow: hidden;
+      }
+
+      #canvas-container {
+        width: 100%;
+        height: 100%;
+      }
+
+      /* Mode indicator overlay */
+      .mode-indicator {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        pointer-events: none;
+      }
+
+      .mode-indicator.edit {
+        background: rgba(76, 175, 80, 0.9);
+        color: white;
+      }
+
+      .mode-indicator.simulation {
+        background: rgba(33, 150, 243, 0.9);
+        color: white;
       }
     </style>
   </head>
   <body>
-    <h1>Circuit Editor</h1>
-
-    <div class="container">
-      <!-- modified input-container to be an accordion -->
-      <div class="input-container" id="input-accordion" aria-live="polite">
-        <div class="input-header" id="input-header">
-          <button
-            class="toggle-btn"
-            id="toggle-input"
-            aria-expanded="true"
-            aria-controls="input-body"
-          >
-            <span id="toggle-label">Circuit Input</span>
-            <span class="chev" aria-hidden="true">▾</span>
-          </button>
-          <div style="color: #666; font-size: 12px; padding-right: 8px">
-            Cliquer pour réduire/ouvrir
-          </div>
+    <div class="app-container">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <h1>CircuitEditor Demo</h1>
+          <p class="subtitle">Editor API</p>
         </div>
 
-        <div class="input-body" id="input-body">
-          <div class="instructions">
-            <h3>How to use:</h3>
-            <p>1. Paste your circuit JSON into the textarea below</p>
-            <p>2. Click "Visualize Circuit" to generate the topology graph</p>
-            <p>3. View the rendered graph showing components, pins, and connections</p>
+        <!-- JSON Section -->
+        <div class="sidebar-section" id="json-section">
+          <div class="section-header">
+            <span class="section-title">Circuit JSON</span>
+            <span class="section-chevron">&#9662;</span>
           </div>
-
-          <textarea
-            id="circuit-input"
-            placeholder='Paste circuit JSON here (e.g., from output/sample-circuits/*.json)&#10;&#10;Example format:&#10;{&#10;  "metadata": { "name": "My Circuit", ... },&#10;  "components": [...],&#10;  "enodes": [...],&#10;  "wires": [...]&#10;}'
-          >
-    {
+          <div class="section-content">
+            <textarea id="circuit-input" placeholder="Paste circuit JSON here...">
+{
   "metadata": {
-    "name": "Switch-Controlled LED Circuit",
-    "size": 20,
-    "divisions": 20,
-    "cameraStartup": {
-      "x": 0,
-      "y": 0,
-      "z": 50
-    }
-  },
-  "components": [
-    {
-      "id": "e16b79a0-c6e2-49d2-8d23-852266cdf3d2",
-      "type": "battery",
+    "name": "New Circuit",
+    "size": 10,
+    "divisions": 10,
+    "cameraOptions": {
       "position": {
         "x": 0,
-        "y": 0
+        "y": 15,
+        "z": 15
       },
-      "rotation": 0,
-      "pins": [
-        "5e87fd9e-d08b-4dae-bf9e-f9fd4f95d569",
-        "75360089-6b35-4c9a-a08e-4257a2d34968"
-      ],
-      "config": {}
-    },
-    {
-      "id": "9cfa2f2d-3660-4f4f-98a5-b719ed7d12e9",
-      "type": "switch",
-      "position": {
-        "x": 5,
-        "y": 1
+      "lookAtPosition": {
+        "x": 0,
+        "y": 0,
+        "z": 0
       },
-      "rotation": 0,
-      "pins": [
-        "97b91b70-caa6-4a91-bfc0-6f290f33661c",
-        "db83437e-efba-419a-8b8e-cdf3b1b25745"
-      ],
-      "config": {
-        "initialState": "open"
-      }
-    },
-    {
-      "id": "0b2e768e-a727-4733-9139-15b594fb4a35",
-      "type": "smallLED",
-      "position": {
-        "x": 5,
-        "y": -4
-      },
-      "rotation": 0,
-      "pins": [
-        "295298ee-5ecc-4474-9acb-9be1feee059f",
-        "ddf99ca2-8426-4a02-8b13-b05560806564"
-      ],
-      "config": {
-        "mode": "symmetric",
-        "activeColor": "red",
-        "idleColor": "black"
-      }
+      "fov": 75,
+      "near": 0.1,
+      "far": 1000
     }
-  ],
-  "enodes": [
-    {
-      "id": "5e87fd9e-d08b-4dae-bf9e-f9fd4f95d569",
-      "type": "Pin",
-      "source": "Voltage",
-      "component": "e16b79a0-c6e2-49d2-8d23-852266cdf3d2",
-      "pinLabel": "cathode"
-    },
-    {
-      "id": "75360089-6b35-4c9a-a08e-4257a2d34968",
-      "type": "Pin",
-      "source": "Current",
-      "component": "e16b79a0-c6e2-49d2-8d23-852266cdf3d2",
-      "pinLabel": "anode"
-    },
-    {
-      "id": "97b91b70-caa6-4a91-bfc0-6f290f33661c",
-      "type": "Pin",
-      "source": null,
-      "component": "9cfa2f2d-3660-4f4f-98a5-b719ed7d12e9",
-      "pinLabel": "input"
-    },
-    {
-      "id": "db83437e-efba-419a-8b8e-cdf3b1b25745",
-      "type": "Pin",
-      "source": null,
-      "component": "9cfa2f2d-3660-4f4f-98a5-b719ed7d12e9",
-      "pinLabel": "output"
-    },
-    {
-      "id": "295298ee-5ecc-4474-9acb-9be1feee059f",
-      "type": "Pin",
-      "source": null,
-      "component": "0b2e768e-a727-4733-9139-15b594fb4a35",
-      "pinLabel": "cathode"
-    },
-    {
-      "id": "ddf99ca2-8426-4a02-8b13-b05560806564",
-      "type": "Pin",
-      "source": null,
-      "component": "0b2e768e-a727-4733-9139-15b594fb4a35",
-      "pinLabel": "anode"
-    }
-  ],
-  "wires": [
-    {
-      "id": "63ac676e-bc4f-4522-a286-a4b46e5fda53",
-      "node1": "5e87fd9e-d08b-4dae-bf9e-f9fd4f95d569",
-      "node2": "97b91b70-caa6-4a91-bfc0-6f290f33661c",
-      "intermediatePositions": []
-    },
-    {
-      "id": "f8d4e220-6376-4002-be89-e8190d19607b",
-      "node1": "db83437e-efba-419a-8b8e-cdf3b1b25745",
-      "node2": "ddf99ca2-8426-4a02-8b13-b05560806564",
-      "intermediatePositions": []
-    },
-    {
-      "id": "e4b1e554-2a6c-4615-a72b-2d4a1a90a3d4",
-      "node1": "295298ee-5ecc-4474-9acb-9be1feee059f",
-      "node2": "75360089-6b35-4c9a-a08e-4257a2d34968",
-      "intermediatePositions": []
-    }
-  ]
-}
-            </textarea
-          >
+  },
+  "components": [],
+  "enodes": [],
+  "wires": []
+}</textarea
+            >
+            <div class="json-buttons">
+              <button id="load-btn">Load</button>
+              <button id="serialize-btn">Export</button>
+              <button id="clear-btn">Clear</button>
+            </div>
+          </div>
+        </div>
 
-          <div class="button-group">
-            <button id="visualize-btn">Render Circuit</button>
-            <button id="serialize-btn">Serialize Circuit</button>
-            <button id="clear-btn">Clear</button>
+        <!-- Edit Tools Section -->
+        <div class="sidebar-section" id="edit-section">
+          <div class="section-header">
+            <span class="section-title">Edit Tools</span>
+            <span class="section-chevron">&#9662;</span>
+          </div>
+          <div class="section-content">
+            <div class="tool-list">
+              <button id="tool-build" class="tool-btn">Build Tool</button>
+              <button id="tool-multi-select" class="tool-btn">Multi-Select Tool</button>
+              <button id="tool-add-component" class="tool-btn">Add Component</button>
+              <ul id="component-list"></ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Error Display -->
+        <div id="error-display">
+          <button class="close-btn" id="close-error">&times;</button>
+          <span id="error-message"></span>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+          <div class="status-item">
+            <span>Mode:</span>
+            <span id="status-mode">Edit</span>
+          </div>
+          <div class="status-item">
+            <span>Circuit:</span>
+            <span id="status-circuit">Not loaded</span>
+          </div>
+          <div class="status-item">
+            <span>Active Tool:</span>
+            <span id="status-tool">None</span>
           </div>
         </div>
       </div>
 
-      <div id="error-display" class="hidden">
-        <span id="error-message"></span>
-        <button id="clear-error-btn" title="Dismiss">&times;</button>
+      <!-- Viewer -->
+      <div class="viewer-container">
+        <div id="canvas-container"></div>
+        <div class="mode-indicator edit" id="mode-indicator">EDIT MODE</div>
       </div>
-    </div>
-
-    <div id="editor-container">
-      <div id="editor-menu">
-        <div id="tool-build" class="tool-button">Build</div>
-        <div id="tool-multi-select" class="tool-button">Multi-Select</div>
-        <div id="tool-add-component" class="tool-button">Add Component</div>
-        <ul id="component-list"></ul>
-      </div>
-      <div id="viewer-container"></div>
     </div>
 
     <script src="circuit-editor.js"></script>
     <script>
-      // Initialize visualizer
-      // Remplace 'container' par 'viewerContainer' pour plus de clarté
-      const viewerContainer = document.getElementById('viewer-container');
+      // Initialize CircuitController
+      const container = document.getElementById('canvas-container');
 
       if (typeof window.CircuitController !== 'function') {
         console.error('CircuitController is not a constructor!');
         alert('ERROR: CircuitController failed to load. Check browser console for details.');
+        throw new Error('CircuitController not available');
       }
 
-      const circuitController = new window.CircuitController(window.componentsFactoryRegistry);
-      circuitController.on('ready', (e) => console.log(e));
-      circuitController.on('error', (e) => console.error(e));
-      circuitController.initialize(viewerContainer);
-      circuitController.getScene().add(window.axesHelper);
-      circuitController.getCamera().layers.enable(1); // enode hover layer
-      circuitController.getCamera().layers.enable(2); // component hover layer
+      // Create controller with registries
+      const controller = new window.CircuitController(window.componentsFactoryRegistry);
 
-      window.renderer.render(circuitController.getScene(), circuitController.getCamera());
-      viewerContainer.appendChild(window.renderer.domElement);
+      // Initialize controller
+      controller.initialize(container, { initialMode: 'edit' });
+      controller.setEditMode(true); // activate edition mode
 
-      // Redimensionner le renderer pour remplir la hauteur disponible jusqu'en bas de la page,
-      // en tenant compte dynamiquement de l'état de l'accordion et de l'affichage d'erreur.
-      function resizeRenderer() {
-        // compute top as the bottom of the page .container (so viewer always starts just under it)
-        const pageContainer = document.querySelector('.container');
-        const containerRect = pageContainer ? pageContainer.getBoundingClientRect() : { bottom: 0 };
-        const top = Math.max(Math.floor(containerRect.bottom) + 8, 0); // 8px gap
-        const marginBottom = 16;
+      // Add axes helper
+      controller.getScene().add(window.axesHelper);
 
-        // ensure horizontal anchoring and vertical placement
-        viewerContainer.style.position = 'fixed';
-        viewerContainer.style.left = '180px';
-        viewerContainer.style.right = '10px';
-        viewerContainer.style.top = top + 'px';
+      // Setup WebGL renderer
+      const renderer = window.renderer;
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
 
-        // height available from top to viewport bottom
-        const availableHeight = Math.max(window.innerHeight - top - marginBottom, 120);
-        viewerContainer.style.height = availableHeight + 'px';
-
-        const rect = viewerContainer.getBoundingClientRect();
-        const w = rect.width; // viewerContainer.clientWidth || window.innerWidth - 20;
-        const h = rect.height;
-        if (typeof window.renderer === 'object' && typeof window.renderer.setSize === 'function') {
-          window.renderer.setSize(w, h);
-          window.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-        }
-        circuitController.onContainerResize();
-      }
-      // initial resize
-      resizeRenderer();
-      window.addEventListener('resize', resizeRenderer);
-
-      circuitController.on('toolActivated', (e) => {
-        console.log('toolActivated', e);
-      });
-      circuitController.on('toolDeactivated', (e) => {
-        console.log('toolDeactivated', e);
-      });
-      circuitController.on('circuitElementAction', (e) => {
-        console.log('circuitElementAction', e);
-      });
-      circuitController.on('circuitMetadataEdition', (e) => {
-        console.log('circuitMetadataEdition', e);
-      });
-      circuitController.on('toolOperationStarted', (e) => {
-        console.log('toolOperationStarted', e);
-      });
-      circuitController.on('toolOperationCancelled', (e) => {
-        console.warn('toolOperationCancelled', e);
-      });
-      circuitController.on('toolOperationCompleted', (e) => {
-        console.log('toolOperationCompleted', e);
-      });
-      circuitController.on('toolValidationError', (e) => {
-        console.error('toolValidationError', e);
-      });
-
-      circuitController.getControls().update();
-      circuitController.setEditMode(true);
-
+      // Animation loop
       function animate() {
         requestAnimationFrame(animate);
-        circuitController.getControls().update();
-        renderer.render(circuitController.getScene(), circuitController.getCamera());
+        controller.getControls().update();
+        renderer.render(controller.getScene(), controller.getCamera());
       }
       animate();
 
-      // Wire up event listeners (visualize / clear / errors) - ensure resizeRenderer is appelé après changements d'UI
-      document.getElementById('visualize-btn').addEventListener('click', async () => {
-        const json = document.getElementById('circuit-input').value;
+      // Handle window resize
+      function handleResize() {
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        renderer.setSize(width, height);
+        controller.onContainerResize(width, height);
+      }
+      window.addEventListener('resize', handleResize);
+
+      // UI Helper functions
+      function showError(message) {
         const errorDisplay = document.getElementById('error-display');
         const errorMessage = document.getElementById('error-message');
+        errorMessage.textContent = message;
+        errorDisplay.classList.add('visible');
+      }
 
+      function hideError() {
+        document.getElementById('error-display').classList.remove('visible');
+      }
+
+      // Event handlers
+
+      // JSON operations
+      document.getElementById('load-btn').addEventListener('click', () => {
+        const json = document.getElementById('circuit-input').value;
         if (!json.trim()) {
-          errorMessage.textContent = 'Please enter circuit JSON';
-          errorDisplay.classList.remove('hidden');
-          resizeRenderer();
+          showError('Please enter circuit JSON');
           return;
         }
 
         try {
           const circuitData = JSON.parse(json);
           const circuit = window.Circuit.fromJSON(circuitData);
-          circuitController.setCircuit(circuit);
-          window.renderer.render(circuitController.getScene(), circuitController.getCamera());
-          errorDisplay.classList.add('hidden');
-          resizeRenderer();
+          controller.setCircuit(circuit);
+          hideError();
+
+          // Update status
+          document.getElementById('status-circuit').textContent =
+            circuitData.metadata?.name || 'Loaded';
         } catch (error) {
-          if (error instanceof window.ValidationError) {
-            errorMessage.textContent = `❌ Validation Error: ${error.message}`;
-          } else if (error instanceof window.IntegrityError) {
-            errorMessage.textContent = `❌ Integrity Error: ${error.message}`;
-          } else if (error instanceof window.RenderError) {
-            errorMessage.textContent = `❌ Render Error: ${error.message}`;
-          } else {
-            errorMessage.textContent = `❌ Error: ${error.message}`;
-          }
-          errorDisplay.classList.remove('hidden');
-          resizeRenderer();
+          showError('Load error: ' + error.message);
         }
       });
 
       document.getElementById('serialize-btn').addEventListener('click', () => {
-        const errorDisplay = document.getElementById('error-display');
-        const errorMessage = document.getElementById('error-message');
-        const circuit = circuitController.getCircuit();
-
+        const circuit = controller.getCircuit();
         if (!circuit) {
-          errorMessage.textContent = 'No circuit loaded. Please render a circuit first.';
-          errorDisplay.classList.remove('hidden');
-          resizeRenderer();
+          showError('No circuit loaded');
           return;
         }
 
         try {
+          controller.beforeExport();
           const circuitJSON = circuit.toJSON();
-          const formattedJSON = JSON.stringify(circuitJSON, null, 2);
-          document.getElementById('circuit-input').value = formattedJSON;
-          errorDisplay.classList.add('hidden');
-          resizeRenderer();
+          const formatted = JSON.stringify(circuitJSON, null, 2);
+          document.getElementById('circuit-input').value = formatted;
+          hideError();
         } catch (error) {
-          errorMessage.textContent = `❌ Serialization Error: ${error.message}`;
-          errorDisplay.classList.remove('hidden');
-          resizeRenderer();
+          showError('Export error: ' + error.message);
         }
       });
 
       document.getElementById('clear-btn').addEventListener('click', () => {
-        circuitController.setCircuit(null);
+        controller.setCircuit(new window.Circuit());
         document.getElementById('circuit-input').value = '';
-        document.getElementById('error-display').classList.add('hidden');
-        resizeRenderer();
+        document.getElementById('status-circuit').textContent = 'Not loaded';
+        hideError();
       });
 
-      document.getElementById('clear-error-btn').addEventListener('click', () => {
-        document.getElementById('error-display').classList.add('hidden');
-        resizeRenderer();
-      });
+      document.getElementById('close-error').addEventListener('click', hideError);
 
-      // Input Accordion toggle logic
-      (function () {
-        const accordion = document.getElementById('input-accordion');
-        const toggleBtn = document.getElementById('toggle-input');
-        const label = document.getElementById('toggle-label');
+      // Edit tools
+      function deactivateAllTools() {
+        document.querySelectorAll('.tool-btn').forEach((btn) => btn.classList.remove('active'));
+        document.getElementById('component-list').classList.remove('visible');
+      }
 
-        function setCollapsed(collapsed) {
-          if (collapsed) {
-            accordion.classList.add('collapsed');
-            toggleBtn.setAttribute('aria-expanded', 'false');
-            label.textContent = "Afficher l'input";
-          } else {
-            accordion.classList.remove('collapsed');
-            toggleBtn.setAttribute('aria-expanded', 'true');
-            label.textContent = 'Circuit Input';
-          }
-          // after transition, force resize to adapt viewer to new layout
-          setTimeout(resizeRenderer, 360);
+      document.getElementById('tool-build').addEventListener('click', () => {
+        const isActive = document.getElementById('tool-build').classList.contains('active');
+        deactivateAllTools();
+
+        if (!isActive) {
+          controller.setActiveTool('build');
+          document.getElementById('tool-build').classList.add('active');
+          document.getElementById('status-tool').textContent = 'Build';
+        } else {
+          document.getElementById('status-tool').textContent = 'None';
         }
-
-        // Initial state: expanded
-        setCollapsed(false);
-
-        toggleBtn.addEventListener('click', () => {
-          const isCollapsed = accordion.classList.contains('collapsed');
-          setCollapsed(!isCollapsed);
-        });
-      })();
-
-      document.getElementById('tool-build').addEventListener('click', (e) => {
-        circuitController.toggleTool('build');
       });
 
-      // Build Tool Logic
+      document.getElementById('tool-multi-select').addEventListener('click', () => {
+        const isActive = document.getElementById('tool-multi-select').classList.contains('active');
+        deactivateAllTools();
+
+        if (!isActive) {
+          controller.setActiveTool('multiSelect');
+          document.getElementById('tool-multi-select').classList.add('active');
+          document.getElementById('status-tool').textContent = 'Multi-Select';
+        } else {
+          document.getElementById('status-tool').textContent = 'None';
+        }
+      });
+
+      // Add Component Tool
       (function () {
-        const toolButton = document.getElementById('tool-build');
-        let isToolActive = false;
-        toolButton.addEventListener('click', (e) => {
-          e.stopPropagation();
-
-          document.querySelectorAll('.tool-button').forEach((el) => el.classList.remove('active'));
-
-          if (isToolActive) {
-            // Deactivate tool
-            circuitController.deactivateTool('build');
-            toolButton.classList.remove('active');
-            isToolActive = false;
-          } else {
-            // Activate tool
-            circuitController.setEditMode(true);
-            circuitController.setActiveTool('build');
-            toolButton.classList.add('active');
-            isToolActive = true;
-          }
-        });
-      })();
-
-      // Multi-Select Tool Logic
-      (function () {
-        const toolButton = document.getElementById('tool-multi-select');
-        let isToolActive = false;
-        toolButton.addEventListener('click', (e) => {
-          e.stopPropagation();
-
-          document.querySelectorAll('.tool-button').forEach((el) => el.classList.remove('active'));
-
-          if (isToolActive) {
-            // Deactivate tool
-            circuitController.deactivateTool('multiSelect');
-            toolButton.classList.remove('active');
-            isToolActive = false;
-          } else {
-            // Activate tool
-            circuitController.setEditMode(true);
-            circuitController.setActiveTool('multiSelect');
-            toolButton.classList.add('active');
-            isToolActive = true;
-          }
-        });
-      })();
-
-      // Add Component Tool Logic
-      (function () {
-        const toolButton = document.getElementById('tool-add-component');
+        const toolBtn = document.getElementById('tool-add-component');
         const componentList = document.getElementById('component-list');
-        let isToolActive = false;
-        let selectedComponentType = null;
+        let selectedType = null;
 
-        // Populate component list from factory registry
         function populateComponentList() {
-          const componentTypes = circuitController.getAvailableComponentTypes();
+          const types = controller.getAvailableComponentTypes();
           componentList.innerHTML = '';
 
-          // nullItem allows deselecting component type
-          const nullItem = document.createElement('li');
-          nullItem.id = 'btn-addComponent-type-none';
-          nullItem.className = 'component-item';
-          nullItem.textContent = 'None';
-          nullItem.addEventListener('click', (e) => {
-            e.stopPropagation();
-            selectComponent(null, nullItem);
-          });
-          componentList.appendChild(nullItem);
+          // None option
+          const noneItem = document.createElement('li');
+          noneItem.className = 'component-item';
+          noneItem.textContent = 'None';
+          noneItem.addEventListener('click', () => selectType(null, noneItem));
+          componentList.appendChild(noneItem);
 
-          componentTypes.forEach((type) => {
+          // Component types
+          types.forEach((type) => {
             const item = document.createElement('li');
-            item.id = `btn-addComponent-type-${type}`;
             item.className = 'component-item';
             item.textContent = type;
-            item.dataset.componentType = type;
-
-            item.addEventListener('click', (e) => {
-              e.stopPropagation();
-              selectComponent(type, item);
-            });
-
+            item.addEventListener('click', () => selectType(type, item));
             componentList.appendChild(item);
           });
         }
 
-        // Select a component type
-        function selectComponent(type, itemElement) {
-          selectedComponentType = type;
+        function selectType(type, element) {
+          selectedType = type;
+          componentList
+            .querySelectorAll('.component-item')
+            .forEach((el) => el.classList.remove('selected'));
+          element.classList.add('selected');
 
-          // Update visual selection
-          const allItems = componentList.querySelectorAll('.component-item');
-          allItems.forEach((item) => item.classList.remove('selected'));
-          itemElement.classList.add('selected');
-
-          // Set component type via scene controllerType
-          const activeTool = circuitController.getActiveTool();
-          if (activeTool === 'addComponent') {
-            try {
-              circuitController.setAddComponentType(type);
-              console.log(`Selected component type: ${type}`);
-            } catch (error) {
-              console.error('Failed to set component type:', error);
-            }
+          try {
+            controller.setAddComponentType(type);
+          } catch (error) {
+            console.error('Failed to set component type:', error);
           }
         }
 
-        // Toggle tool and component list
-        toolButton.addEventListener('click', (e) => {
-          e.stopPropagation();
+        toolBtn.addEventListener('click', () => {
+          const isActive = toolBtn.classList.contains('active');
+          deactivateAllTools();
 
-          document.querySelectorAll('.tool-button').forEach((el) => el.classList.remove('active'));
-
-          if (isToolActive) {
-            // Deactivate tool
-            circuitController.deactivateTool('addComponent');
-            componentList.classList.remove('visible');
-            toolButton.classList.remove('active');
-            isToolActive = false;
-
-            // Clear component type selection
-            selectedComponentType = null;
-            const allItems = componentList.querySelectorAll('.component-item');
-            allItems.forEach((item) => item.classList.remove('selected'));
-          } else {
-            // Activate tool
-            circuitController.setEditMode(true);
-            circuitController.setActiveTool('addComponent');
-
-            // Populate and show component list
+          if (!isActive) {
+            controller.setActiveTool('addComponent');
+            toolBtn.classList.add('active');
             populateComponentList();
             componentList.classList.add('visible');
-            toolButton.classList.add('active');
-            isToolActive = true;
-          }
-        });
-
-        // Listen to tool activation/deactivation events from runnerController
-        circuitController.on('toolActivated', (e) => {
-          if (e.toolType === 'addComponent') {
-            toolButton.classList.add('active');
-            componentList.classList.add('visible');
-            isToolActive = true;
+            document.getElementById('status-tool').textContent = 'Add Component';
           } else {
-            // Another tool was activated, deactivate add component
-            toolButton.classList.remove('active');
-            componentList.classList.remove('visible');
-            isToolActive = false;
-          }
-        });
-
-        circuitController.on('toolDeactivated', (e) => {
-          if (e.toolType === 'addComponent') {
-            toolButton.classList.remove('active');
-            componentList.classList.remove('visible');
-            isToolActive = false;
-            selectedComponentType = null;
-
-            // Clear visual selection
-            const allItems = componentList.querySelectorAll('.component-item');
-            allItems.forEach((item) => item.classList.remove('selected'));
-          }
-        });
-
-        circuitController.on('addComponentTypeChanged', (e) => {
-          const allItems = componentList.querySelectorAll('.component-item');
-          allItems.forEach((item) => item.classList.remove('selected'));
-          const itemElement = document.getElementById(
-            `btn-addComponent-type-${e.componentType || 'none'}`
-          );
-          if (itemElement.classList) {
-            itemElement.classList.add('selected');
+            document.getElementById('status-tool').textContent = 'None';
           }
         });
       })();
+
+      // Section collapse toggles
+      document.querySelectorAll('.section-header').forEach((header) => {
+        header.addEventListener('click', () => {
+          header.parentElement.classList.toggle('collapsed');
+        });
+      });
+
+      // controller event listeners
+      controller.on('ready', () => {
+        console.log('CircuitController ready');
+      });
+
+      controller.on('circuitLoaded', ({ name }) => {
+        console.log('Circuit loaded:', name);
+        document.getElementById('status-circuit').textContent = name || 'Loaded';
+      });
+
+      controller.on('toolActivated', ({ toolType }) => {
+        console.log('Tool activated:', toolType);
+        document.getElementById('status-tool').textContent = toolType || 'None';
+      });
+
+      controller.on('toolValidationError', ({ toolType, errorMessage }) => {
+        console.error('Tool error:', toolType, errorMessage);
+        document.getElementById('status-tool').textContent = toolType || 'None';
+      });
+
+      controller.on('toolDeactivated', ({ toolType }) => {
+        console.log('Tool deactivated:', toolType);
+        deactivateAllTools();
+        document.getElementById('status-tool').textContent = 'None';
+      });
+
+      // load the default circuit
+      document.getElementById('load-btn').click();
     </script>
   </body>
 </html>

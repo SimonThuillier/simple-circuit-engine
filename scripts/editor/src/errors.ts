@@ -1,17 +1,17 @@
 /**
- * Error classes for the circuit topology visualizer
+ * Error classes for the circuit engine demo
  */
 
 /**
- * Base error class for all visualizer errors
+ * Base error class for all engine demo errors
  */
-export class VisualizerError extends Error {
+export class EngineError extends Error {
   readonly type: 'validation' | 'integrity' | 'render';
   readonly details?: unknown;
 
   constructor(type: 'validation' | 'integrity' | 'render', message: string, details?: unknown) {
     super(message);
-    this.name = 'VisualizerError';
+    this.name = 'EngineError';
     this.type = type;
     this.details = details;
   }
@@ -20,7 +20,7 @@ export class VisualizerError extends Error {
 /**
  * Thrown when circuit JSON is malformed or invalid
  */
-export class ValidationError extends VisualizerError {
+export class ValidationError extends EngineError {
   readonly field?: string;
 
   constructor(message: string, field?: string) {
@@ -33,7 +33,7 @@ export class ValidationError extends VisualizerError {
 /**
  * Thrown when circuit data has referential integrity issues
  */
-export class IntegrityError extends VisualizerError {
+export class IntegrityError extends EngineError {
   readonly entityId: string;
   readonly referenceId: string;
 
@@ -46,14 +46,14 @@ export class IntegrityError extends VisualizerError {
 }
 
 /**
- * Thrown when DOT graph generation or rendering fails
+ * Thrown when rendering fails
  */
-export class RenderError extends VisualizerError {
-  readonly dotSnippet?: string;
+export class RenderError extends EngineError {
+  readonly snippet?: string;
 
-  constructor(message: string, dotSnippet?: string) {
+  constructor(message: string, snippet?: string) {
     super('render', message);
     this.name = 'RenderError';
-    this.dotSnippet = dotSnippet;
+    this.snippet = snippet;
   }
 }

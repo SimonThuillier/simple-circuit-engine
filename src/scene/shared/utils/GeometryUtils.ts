@@ -6,7 +6,7 @@
  */
 
 import * as THREE from 'three';
-import { Position } from '../../core/types/Position';
+import { Position } from '@/core/types/Position';
 import { Rotation } from '@/core/types/Rotation';
 import { ExtrudeGeometry } from 'three';
 
@@ -20,16 +20,16 @@ import { ExtrudeGeometry } from 'three';
  * @returns GridHelper object
  */
 export function createGridHelper(
-  size: number = 10,
-  divisions: number = 10,
-  colorCenterLine: number = 0xaaaaaa,
-  colorGrid: number = 0x777777
+  size: number,
+  divisions: number,
+  colorCenterLine: number,
+  colorGrid: number
 ): THREE.GridHelper {
-  const helper = new THREE.GridHelper(size, divisions, colorCenterLine, colorGrid);
-  helper.position.set(0, 0, 0);
+  const grid = new THREE.GridHelper(size, divisions, colorCenterLine, colorGrid);
+  grid.position.set(0, 0, 0);
   // set z-index to be behind other objects
-  helper.renderOrder = -1;
-  return helper;
+  grid.renderOrder = -1;
+  return grid;
 }
 
 /**

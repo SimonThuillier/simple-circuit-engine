@@ -139,66 +139,6 @@ export interface ControllerEventMap {
 export type ControllerCallback<T = any> = (payload: T) => void;
 
 /**
- * Optional configuration for scene controllerType initialization
- */
-export interface ControllerOptions {
-  /** Background color for the scene (default: 0x000000) */
-  backgroundColor?: number;
-  /** Enable anti-aliasing (default: true) */
-  antialias?: boolean;
-  /** Camera field of view in degrees (default: 75) */
-  cameraFov?: number;
-  /** Camera near clipping plane (default: 0.1) */
-  cameraNear?: number;
-  /** Camera far clipping plane (default: 1000) */
-  cameraFar?: number;
-  /** Enable grid helper visualization (default: true) */
-  showGrid?: boolean;
-  /** Enable axes helper visualization (default: false) */
-  showAxes?: boolean;
-  /** MapControls configuration (optional) */
-  mapControls?: MapControlsOptions;
-}
-
-/**
- * Configuration options for MapControls integration
- *
- * All properties are optional with sensible defaults.
- *
- * @example
- * ```typescript
- * controllerType.initialize(container, {
- *   mapControls: {
- *     enableRotate: false,  // Disable rotation for 2D-only view
- *     maxDistance: 50,      // Limit zoom out
- *   }
- * });
- * ```
- */
-export interface MapControlsOptions {
-  /** Enable click-drag panning (default: true) */
-  enablePan?: boolean;
-  /** Enable scroll wheel zooming (default: true) */
-  enableZoom?: boolean;
-  /** Enable right-click rotation (default: true) */
-  enableRotate?: boolean;
-  /** Enable smooth deceleration when releasing controls (default: true) */
-  enableDamping?: boolean;
-  /** Damping strength (0 = instant stop, 1 = very slow stop) (default: 0.05) */
-  dampingFactor?: number;
-  /** Minimum zoom distance from target (default: 1) */
-  minDistance?: number;
-  /** Maximum zoom distance from target (default: 100) */
-  maxDistance?: number;
-  /** Pan speed multiplier (default: 1.0) */
-  panSpeed?: number;
-  /** Zoom speed multiplier (default: 1.0) */
-  zoomSpeed?: number;
-  /** Rotation speed multiplier (default: 1.0) */
-  rotateSpeed?: number;
-}
-
-/**
  * Represents the currently hovered circuit element
  *
  * @example
@@ -363,7 +303,7 @@ export interface IEditingTool {
 }
 
 // ============================================================================
-// CircuitEngine Types (014-circuit-engine)
+// CircuitEngine Types (014-circuit-controller)
 // ============================================================================
 
 /**
@@ -387,8 +327,8 @@ export interface SharedResources {
   /** MapControls for pan/zoom/rotate interaction */
   mapControls: MapControls;
 
-  /** Grid helper (may be null before circuit loaded) */
-  grid: THREE.GridHelper | null;
+  /** Grid helper */
+  grid: THREE.GridHelper;
 
   /** Registry of component visual factories */
   factoryRegistry: IFactoryRegistry;
@@ -413,7 +353,7 @@ export interface SharedResources {
 }
 
 /**
- * Event emitted when engine mode changes
+ * Event emitted when controller mode changes
  */
 export interface ModeChangedEvent {
   /** New active mode */
@@ -424,7 +364,7 @@ export interface ModeChangedEvent {
 
 /**
  * Combined event map for CircuitEngine.
- * Includes all controller events plus engine-specific events.
+ * Includes all controller events plus controller-specific events.
  */
 export interface CircuitEngineEventMap extends ControllerEventMap {
   /** Emitted after mode transition completes */
@@ -432,14 +372,79 @@ export interface CircuitEngineEventMap extends ControllerEventMap {
 }
 
 /**
+ * Configuration options for Controllers and Engine
+ **/
+
+/**
+ * Configuration options for MapControls integration
+ *
+ * All properties are optional with sensible defaults.
+ *
+ * @example
+ * ```typescript
+ * controllerType.initialize(container, {
+ *   mapControls: {
+ *     enableRotate: false,  // Disable rotation for 2D-only view
+ *     maxDistance: 50,      // Limit zoom out
+ *   }
+ * });
+ * ```
+ */
+export interface MapControlsOptions {
+  /** Enable click-drag panning (default: true) */
+  enablePan?: boolean;
+  /** Use screen-space panning (default: true) */
+  screenSpacePanning?: boolean;
+  /** Enable scroll wheel zooming (default: true) */
+  enableZoom?: boolean;
+  /** Enable right-click rotation (default: true) */
+  enableRotate?: boolean;
+  /** Enable smooth deceleration when releasing controls (default: true) */
+  enableDamping?: boolean;
+  /** Damping strength (0 = instant stop, 1 = very slow stop) (default: 0.05) */
+  dampingFactor?: number;
+  /** Minimum zoom distance from target (default: 1) */
+  minDistance?: number;
+  /** Maximum zoom distance from target (default: 100) */
+  maxDistance?: number;
+  /** Pan speed multiplier (default: 1.0) */
+  panSpeed?: number;
+  /** Zoom speed multiplier (default: 1.0) */
+  zoomSpeed?: number;
+  /** Rotation speed multiplier (default: 1.0) */
+  rotateSpeed?: number;
+}
+
+/**
+ * Optional configuration for scene controllerType initialization
+ */
+export interface ControllerOptions {
+  /** Background color for the scene */
+  backgroundColor?: number;
+  /** Grid center line color */
+  colorCenterLine?: number;
+  /** Grid color */
+  colorGrid?: number;
+  /** tool activated by default on initialization */
+  defaultTool?: ToolType | null;
+  /** MapControls configuration options */
+  mapControls?: MapControlsOptions;
+}
+
+/**
  * Configuration options for CircuitEngine initialization
  */
-export interface CircuitEngineOptions extends ControllerOptions {
+export interface EngineOptions {
   /**
    * Initial operating mode
    * @default 'edit'
    */
   initialMode?: EngineMode;
+
+  /**
+   * Controller options
+   */
+  controllerOptions?: ControllerOptions;
 
   /**
    * Options passed to CircuitRunner when created

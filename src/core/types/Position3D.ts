@@ -7,6 +7,12 @@
  * @module core/types/Position3D
  */
 
+export type IPosition3D = {
+  x: number;
+  y: number;
+  z: number;
+};
+
 /**
  * 3D position.
  * Positions are immutable once created.
@@ -66,7 +72,7 @@ export class Position3D {
    * console.log(json); // { x: 10, y: 20, z: 40 }
    * ```
    */
-  toJSON(): { x: number; y: number; z: number } {
+  toJSON(): IPosition3D {
     return { x: this.x, y: this.y, z: this.z };
   }
 
@@ -83,7 +89,7 @@ export class Position3D {
    * console.log(pos.x); // 10
    * ```
    */
-  static fromJSON(json: { x: number; y: number; z: number }): Position3D {
+  static fromJSON(json: IPosition3D): Position3D {
     return new Position3D(json.x, json.y, json.z);
   }
 

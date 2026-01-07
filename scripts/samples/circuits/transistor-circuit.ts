@@ -12,7 +12,7 @@ import { Circuit, CircuitMetadata } from '../../../src/core/Circuit.js';
 import { ComponentType } from '../../../src/core/types/ComponentType.js';
 import { Position } from '../../../src/core/types/Position.js';
 import { Rotation } from '../../../src/core/types/Rotation.js';
-import { Position3D } from '../../../src/core/types/Position3D.js';
+import {CameraOptions} from "../../../src/core/types/CameraOptions";
 
 /**
  * Create a transistor-controlled circuit with hierarchical switching.
@@ -48,12 +48,7 @@ import { Position3D } from '../../../src/core/types/Position3D.js';
 export function createTransistorCircuit(): Circuit {
   // Create circuit with metadata
   const circuit = new Circuit('Transistor Circuit');
-  circuit.metadata = new CircuitMetadata(
-    'Transistor Circuit',
-    30,
-    10,
-    new Position3D(0, 0, 50)
-  );
+  circuit.metadata = new CircuitMetadata('Transistor Circuit', 30, 10, new CameraOptions());
 
   // Base circuit components
   const baseBattery = circuit.addComponent(

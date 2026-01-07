@@ -91,7 +91,7 @@ describe('CircuitWriter', () => {
       const worldPosition = new THREE.Vector3(5, 0, -3);
 
       expect(() => managerNoCircuit.saveAddBranchingPoint(worldPosition)).toThrow(
-        'No circuit available in the scene controllerType.'
+        'No circuit available in the scene controller.'
       );
     });
 
@@ -179,7 +179,7 @@ describe('CircuitWriter', () => {
       const managerNoCircuit = new CircuitWriter(noCircuitManager.controller);
 
       expect(() => managerNoCircuit.saveEditBranchingPoint(branchingPointObject3D, false)).toThrow(
-        'No circuit available in the scene controllerType.'
+        'No circuit available in the scene controller.'
       );
     });
   });
@@ -213,7 +213,7 @@ describe('CircuitWriter', () => {
       const managerNoCircuit = new CircuitWriter(noCircuitManager.controller);
 
       expect(() => managerNoCircuit.saveDeleteBranchingPoint(enodeId)).toThrow(
-        'No circuit available in the scene controllerType.'
+        'No circuit available in the scene controller.'
       );
     });
   });
@@ -252,7 +252,7 @@ describe('CircuitWriter', () => {
       const managerNoCircuit = new CircuitWriter(noCircuitManager.controller);
 
       expect(() => managerNoCircuit.saveAddWire(sourceEnodeId, targetEnodeId)).toThrow(
-        'No circuit available in the scene controllerType.'
+        'No circuit available in the scene controller.'
       );
     });
 
@@ -323,7 +323,7 @@ describe('CircuitWriter', () => {
       const worldPosition = new THREE.Vector3(5, 0, 0);
 
       expect(() => managerNoCircuit.saveSplitWire(wireId, worldPosition)).toThrow(
-        'No circuit available in the scene controllerType.'
+        'No circuit available in the scene controller.'
       );
     });
   });
@@ -516,7 +516,7 @@ describe('CircuitWriter', () => {
       const managerNoCircuit = new CircuitWriter(noCircuitManager.controller);
 
       expect(() => managerNoCircuit.saveEditENodeSourceType(enodeId, 'power')).toThrow(
-        'No circuit available in the scene controllerType.'
+        'No circuit available in the scene controller.'
       );
     });
   });
@@ -562,7 +562,7 @@ describe('CircuitWriter', () => {
 
       expect(() =>
         managerNoCircuit.saveAddComponent(ComponentType.Battery, position, rotation)
-      ).toThrow('No circuit available in the scene controllerType.');
+      ).toThrow('No circuit available in the scene controller.');
     });
 
     it('should emit error event when component creation fails', () => {
@@ -640,7 +640,7 @@ describe('CircuitWriter', () => {
       const managerNoCircuit = new CircuitWriter(noCircuitManager.controller);
 
       expect(() => managerNoCircuit.saveEditComponent(componentId, componentVisual, false)).toThrow(
-        'No circuit available in the scene controllerType.'
+        'No circuit available in the scene controller.'
       );
     });
 
@@ -695,7 +695,7 @@ describe('CircuitWriter', () => {
       const managerNoCircuit = new CircuitWriter(noCircuitManager.controller);
 
       expect(() => managerNoCircuit.saveDeleteComponent(componentId)).toThrow(
-        'No circuit available in the scene controllerType.'
+        'No circuit available in the scene controller.'
       );
     });
 

@@ -16,10 +16,10 @@ import type { UUID } from '../../core/types/Identifier';
 import type { Circuit } from '../../core/Circuit';
 import type { Wire } from '../../core/Wire';
 import { ENodeType } from '../../core/types/ENodeType';
-import { createLine2Material } from './MaterialUtils';
+import { createLine2Material } from './utils/MaterialUtils';
 import type { WireMaterialState } from './types';
-import { HitboxLayers } from './LayerConstants';
-import { gridToWorldPosition } from './GeometryUtils';
+import { HitboxLayers } from './utils/LayerConstants';
+import { gridToWorldPosition } from './utils/GeometryUtils';
 
 /**
  * Wire path representation for rendering

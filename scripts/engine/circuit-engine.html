@@ -431,50 +431,28 @@
             <textarea id="circuit-input" placeholder="Paste circuit JSON here...">
 {
   "metadata": {
-    "name": "Switch-Controlled LED Circuit",
-    "size": 20,
-    "divisions": 20,
-    "cameraStartup": { "x": 0, "y": 0, "z": 50 }
-  },
-  "components": [
-    {
-      "id": "e16b79a0-c6e2-49d2-8d23-852266cdf3d2",
-      "type": "battery",
-      "position": { "x": 0, "y": 0 },
-      "rotation": 0,
-      "pins": ["5e87fd9e-d08b-4dae-bf9e-f9fd4f95d569", "75360089-6b35-4c9a-a08e-4257a2d34968"],
-      "config": {}
-    },
-    {
-      "id": "9cfa2f2d-3660-4f4f-98a5-b719ed7d12e9",
-      "type": "switch",
-      "position": { "x": 5, "y": 1 },
-      "rotation": 0,
-      "pins": ["97b91b70-caa6-4a91-bfc0-6f290f33661c", "db83437e-efba-419a-8b8e-cdf3b1b25745"],
-      "config": { "initialState": "open" }
-    },
-    {
-      "id": "0b2e768e-a727-4733-9139-15b594fb4a35",
-      "type": "smallLED",
-      "position": { "x": 5, "y": -4 },
-      "rotation": 0,
-      "pins": ["295298ee-5ecc-4474-9acb-9be1feee059f", "ddf99ca2-8426-4a02-8b13-b05560806564"],
-      "config": { "mode": "symmetric", "activeColor": "red", "idleColor": "black" }
+    "name": "New Circuit",
+    "size": 10,
+    "divisions": 10,
+    "cameraOptions": {
+      "position": {
+        "x": 0,
+        "y": 15,
+        "z": 15
+      },
+      "lookAtPosition": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "fov": 75,
+      "near": 0.1,
+      "far": 1000
     }
-  ],
-  "enodes": [
-    { "id": "5e87fd9e-d08b-4dae-bf9e-f9fd4f95d569", "type": "Pin", "source": "Voltage", "component": "e16b79a0-c6e2-49d2-8d23-852266cdf3d2", "pinLabel": "cathode" },
-    { "id": "75360089-6b35-4c9a-a08e-4257a2d34968", "type": "Pin", "source": "Current", "component": "e16b79a0-c6e2-49d2-8d23-852266cdf3d2", "pinLabel": "anode" },
-    { "id": "97b91b70-caa6-4a91-bfc0-6f290f33661c", "type": "Pin", "source": null, "component": "9cfa2f2d-3660-4f4f-98a5-b719ed7d12e9", "pinLabel": "input" },
-    { "id": "db83437e-efba-419a-8b8e-cdf3b1b25745", "type": "Pin", "source": null, "component": "9cfa2f2d-3660-4f4f-98a5-b719ed7d12e9", "pinLabel": "output" },
-    { "id": "295298ee-5ecc-4474-9acb-9be1feee059f", "type": "Pin", "source": null, "component": "0b2e768e-a727-4733-9139-15b594fb4a35", "pinLabel": "cathode" },
-    { "id": "ddf99ca2-8426-4a02-8b13-b05560806564", "type": "Pin", "source": null, "component": "0b2e768e-a727-4733-9139-15b594fb4a35", "pinLabel": "anode" }
-  ],
-  "wires": [
-    { "id": "63ac676e-bc4f-4522-a286-a4b46e5fda53", "node1": "5e87fd9e-d08b-4dae-bf9e-f9fd4f95d569", "node2": "97b91b70-caa6-4a91-bfc0-6f290f33661c", "intermediatePositions": [] },
-    { "id": "f8d4e220-6376-4002-be89-e8190d19607b", "node1": "db83437e-efba-419a-8b8e-cdf3b1b25745", "node2": "ddf99ca2-8426-4a02-8b13-b05560806564", "intermediatePositions": [] },
-    { "id": "e4b1e554-2a6c-4615-a72b-2d4a1a90a3d4", "node1": "295298ee-5ecc-4474-9acb-9be1feee059f", "node2": "75360089-6b35-4c9a-a08e-4257a2d34968", "intermediatePositions": [] }
-  ]
+  },
+  "components": [],
+  "enodes": [],
+  "wires": []
 }</textarea
             >
             <div class="json-buttons">
@@ -581,14 +559,13 @@
       );
 
       // Initialize engine
-      engine.initialize(container, { initialMode: 'edit' });
+      engine.initialize(container, {
+        initialMode: 'edit',
+        controllerOptions: { mapControls: { zoomSpeed: 2 } },
+      });
 
       // Add axes helper
       engine.getScene().add(window.axesHelper);
-
-      // Setup camera layers for hover visibility
-      engine.getCamera().layers.enable(1); // enode hover layer
-      engine.getCamera().layers.enable(2); // component hover layer
 
       // Setup WebGL renderer
       const renderer = window.renderer;
@@ -739,6 +716,7 @@
         }
 
         try {
+          engine.beforeExport();
           const circuitJSON = circuit.toJSON();
           const formatted = JSON.stringify(circuitJSON, null, 2);
           document.getElementById('circuit-input').value = formatted;
@@ -907,6 +885,11 @@
         document.getElementById('status-tool').textContent = toolType || 'None';
       });
 
+      engine.on('toolValidationError', ({ toolType, errorMessage }) => {
+        console.error('Tool error:', toolType, errorMessage);
+        document.getElementById('status-tool').textContent = toolType || 'None';
+      });
+
       engine.on('toolDeactivated', ({ toolType }) => {
         console.log('Tool deactivated:', toolType);
         deactivateAllTools();
@@ -959,6 +942,8 @@
 
       // Initial UI state
       updateModeUI('edit');
+      // load the default circuit
+      document.getElementById('load-btn').click();
     </script>
   </body>
 </html>

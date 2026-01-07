@@ -1,14 +1,12 @@
 /**
- * Main entry point for the circuit topology visualizer
- * Exports CircuitVisualizer class to window object
+ * Main entry point for the CircuitEngine demo page
+ * Uses the unified CircuitEngine API for both editing and simulation
  */
-import { IntegrityError, RenderError, ValidationError, VisualizerError } from './errors.js';
-import { Circuit } from '@/core/Circuit.js';
+import { EngineError, IntegrityError, RenderError, ValidationError } from './errors.js';
 import { CircuitRunnerController } from '@/scene/simulation/CircuitRunnerController.js';
+import { Circuit } from '@/core/Circuit.js';
 import { AxesHelper, WebGLRenderer } from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { ComponentType } from '@/core/types/ComponentType.js';
-import { MapControls } from 'three/addons/controls/MapControls.js';
 import {
   BehaviorRegistry,
   BatteryBehavior,
@@ -17,7 +15,7 @@ import {
   SmallLEDBehavior,
   SwitchBehavior,
   TransistorBehavior,
-} from '../../../src/core/simulation/behaviors';
+} from '@/core/simulation/behaviors';
 
 import {
   type IFactoryRegistry,
@@ -30,20 +28,20 @@ import {
   SwitchVisualFactory,
   TransistorVisualFactory,
   LabelVisualFactory,
-} from '../../../src/scene/shared/components';
+} from '@/scene/shared/components';
+import { RectangleLEDVisualFactory } from '../../../src/scene/shared/components/RectangleLEDVisualFactory';
+import { RectangleLEDBehavior } from '../../../src/core/simulation/behaviors/RectangleLEDBehavior';
 
 // Export to window object for use in HTML
 declare global {
   interface Window {
     renderer: WebGLRenderer;
     axesHelper: AxesHelper;
-    Circuit: typeof Circuit;
     CircuitRunnerController: typeof CircuitRunnerController;
+    Circuit: typeof Circuit;
     behaviorRegistry: BehaviorRegistry;
     componentsFactoryRegistry: IFactoryRegistry;
-    OrbitControls: typeof OrbitControls;
-    MapControls: typeof MapControls;
-    VisualizerError: typeof VisualizerError;
+    EngineError: typeof EngineError;
     ValidationError: typeof ValidationError;
     IntegrityError: typeof IntegrityError;
     RenderError: typeof RenderError;
@@ -52,6 +50,7 @@ declare global {
 
 // Immediately assign to window (for IIFE bundles)
 if (typeof window !== 'undefined') {
+  // Create component factory registry with all visual factories
   const componentsFactoryRegistry: IFactoryRegistry = new FactoryRegistry(
     new DefaultVisualFactory()
   );
@@ -60,39 +59,44 @@ if (typeof window !== 'undefined') {
   componentsFactoryRegistry.register(ComponentType.Relay, new RelayVisualFactory());
   componentsFactoryRegistry.register(ComponentType.Switch, new SwitchVisualFactory());
   componentsFactoryRegistry.register(ComponentType.SmallLED, new SmallLEDVisualFactory());
+  componentsFactoryRegistry.register(ComponentType.RectangleLED, new RectangleLEDVisualFactory());
   componentsFactoryRegistry.register(ComponentType.Transistor, new TransistorVisualFactory());
   componentsFactoryRegistry.register(ComponentType.Label, new LabelVisualFactory());
 
+  // Create behavior registry with all component behaviors
   const behaviorRegistry = new BehaviorRegistry();
   behaviorRegistry.register(new BatteryBehavior());
   behaviorRegistry.register(new LightbulbBehavior());
   behaviorRegistry.register(new RelayBehavior());
   behaviorRegistry.register(new SwitchBehavior());
   behaviorRegistry.register(new SmallLEDBehavior());
+  behaviorRegistry.register(new RectangleLEDBehavior());
   behaviorRegistry.register(new TransistorBehavior());
 
-  window.renderer = new WebGLRenderer({ antialias: false, alpha: false });
-  window.renderer.setClearColor(0x222290);
+  // Create WebGL renderer
+  window.renderer = new WebGLRenderer({ antialias: true, alpha: false });
+  window.renderer.setClearColor(0x1a1a2e);
 
-  window.axesHelper = new AxesHelper(10);
+  // Create axes helper for reference
+  window.axesHelper = new AxesHelper(5);
 
-  window.Circuit = Circuit;
+  // Export to window
   window.CircuitRunnerController = CircuitRunnerController;
+  window.Circuit = Circuit;
   window.behaviorRegistry = behaviorRegistry;
   window.componentsFactoryRegistry = componentsFactoryRegistry;
-  window.OrbitControls = OrbitControls;
-  window.MapControls = MapControls;
-
-  window.VisualizerError = VisualizerError;
+  window.EngineError = EngineError;
   window.ValidationError = ValidationError;
   window.IntegrityError = IntegrityError;
   window.RenderError = RenderError;
+
+  console.log('CircuitEngine Demo loaded');
 }
 
 export {
   CircuitRunnerController,
   Circuit,
-  VisualizerError,
+  EngineError,
   ValidationError,
   IntegrityError,
   RenderError,

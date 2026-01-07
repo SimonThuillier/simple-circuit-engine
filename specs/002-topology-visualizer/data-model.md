@@ -25,7 +25,7 @@ interface CircuitMetadata {
   name: string;
   size: number;
   divisions: number;
-  cameraStartup: {
+  cameraOptions: {
     x: number;
     y: number;
     z: number;

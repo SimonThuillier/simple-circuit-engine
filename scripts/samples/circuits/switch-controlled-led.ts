@@ -11,7 +11,7 @@ import { Circuit, CircuitMetadata } from '../../../src/core/Circuit.js';
 import { ComponentType } from '../../../src/core/types/ComponentType.js';
 import { Position } from '../../../src/core/types/Position.js';
 import { Rotation } from '../../../src/core/types/Rotation.js';
-import { Position3D } from '../../../src/core/types/Position3D.js';
+import {CameraOptions} from "../../../src/core/types/CameraOptions";
 
 /**
  * Create a switch-controlled LED circuit.
@@ -45,12 +45,7 @@ import { Position3D } from '../../../src/core/types/Position3D.js';
 export function createSwitchControlledLedCircuit(): Circuit {
   // Create circuit with metadata
   const circuit = new Circuit('Switch-Controlled LED Circuit');
-  circuit.metadata = new CircuitMetadata(
-    'Switch-Controlled LED Circuit',
-    30,
-    10,
-    new Position3D(0, 0, 50)
-  );
+  circuit.metadata = new CircuitMetadata('Switch-Controlled LED Circuit', 30, 10, new CameraOptions());
 
   // Add components
   const battery = circuit.addComponent(

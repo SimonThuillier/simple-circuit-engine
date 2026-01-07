@@ -11,7 +11,7 @@
 import * as THREE from 'three';
 import type { ENode } from '@/core/ENode';
 import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
-import { HitboxLayers } from '../LayerConstants';
+import { HitboxLayers } from '../utils/LayerConstants';
 import { ENodeType } from '@/core/types/ENodeType';
 
 /**

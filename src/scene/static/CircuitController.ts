@@ -12,12 +12,12 @@ import type { ENode } from '../../core/ENode';
 import type { UUID } from '../../core/types/Identifier';
 import { ENodeType } from '../../core/types/ENodeType';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
-import type { ToolType, SelectionData, SharedResources } from '../shared/types';
+import type { ToolType, SelectionData, SharedResources, ControllerOptions } from '../shared/types';
 import {
   createGridHelper,
   gridToWorldPosition,
   gridToWorldRotation,
-} from '../shared/GeometryUtils';
+} from '../shared/utils/GeometryUtils';
 import { BuildTool } from './tools/BuildTool';
 import { AddComponentTool } from './tools/AddComponentTool';
 import { MultiSelectTool } from './tools/MultiSelectTool';
@@ -30,6 +30,7 @@ import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
 import { AbstractCircuitController } from '../shared/AbstractCircuitController';
 import type { Circuit } from '@/core/Circuit';
 import { ConfigPanelManager } from './ConfigPanelManager';
+import { controllerOptions } from '../shared/utils/Options';
 
 /**
  * Static Circuit Controller Implementation
@@ -75,13 +76,20 @@ export class CircuitController extends AbstractCircuitController {
    * Specific Initialization logic, performed after AbstractCircuitController initialization
    * @private
    */
-  protected onInitialize() {
+  protected onInitialize(options?: ControllerOptions) {
+    options = controllerOptions(options);
     // Initialize tools
     this._initializeTools();
     // Initialize Selection Manager
     this._initializeSelectionManager();
     // Initialize Config Panel Manager
     this._initializeConfigPanelManager();
+
+    if (options.defaultTool) {
+      this._initialized = true; // flag must be set before calling setActiveTool
+      this.setEditMode(true);
+      this.setActiveTool(options.defaultTool);
+    }
   }
 
   protected emitReady() {
@@ -142,7 +150,10 @@ export class CircuitController extends AbstractCircuitController {
       this.setEditMode(false);
       this._selectionManager?.deselect();
     } else {
-      // no specific logic on activate
+      if (this._initialized && this._options && this._options.defaultTool) {
+        this.setEditMode(true);
+        this.setActiveTool(this._options.defaultTool);
+      }
     }
   }
 
@@ -472,16 +483,10 @@ export class CircuitController extends AbstractCircuitController {
 
     if (!this._circuit) return;
 
-    // 1. Add circuit sized grid
-    this._grid = createGridHelper(this._circuit.metadata.size, this._circuit.metadata.divisions);
-    this._scene!.add(this._grid);
-
     // Create visuals for all circuit elements
     const components = this._circuit.getAllComponents();
     const wires = this._circuit.getAllWires();
     const enodes = this._circuit.getAllENodes();
-
-    console.log('full update');
 
     for (const component of components) {
       this._createComponentObject3D(component);
@@ -826,12 +831,31 @@ export class CircuitController extends AbstractCircuitController {
       // Update halfSize
       this._gridHalfSize = Math.ceil(this._circuit.metadata.size / 2);
       // Update grid helper
-      if (this._grid) {
-        this._scene!.remove(this._grid);
-        this._grid.geometry.dispose();
+      if (this.grid) {
+        this._scene!.remove(this.grid);
+        this.grid.geometry.dispose();
       }
-      this._grid = createGridHelper(this._circuit.metadata.size, this._circuit.metadata.divisions);
-      this._scene!.add(this._grid);
+      const options = this._options || controllerOptions();
+      this.grid = createGridHelper(
+        this._circuit.metadata.size,
+        this._circuit.metadata.divisions,
+        options.colorCenterLine!,
+        options.colorGrid!
+      );
+      this._scene!.add(this.grid);
+    }
+  }
+
+  /**
+   * Hook called before exporting the circuit visualization.
+   * Saves world informations such as camera position, in the circuit metadata.
+   */
+  public beforeExport(): void {
+    if (!this._circuit || !this._camera || !this._mapControls) return;
+    try {
+      this.circuitWriter.saveCameraOptions();
+    } catch (error) {
+      console.warn(error);
     }
   }
 
@@ -856,9 +880,10 @@ export class CircuitController extends AbstractCircuitController {
       this._removeComponentObject3D(id);
     }
     // remove grid
-    if (this._grid) {
-      this._scene!.remove(this._grid);
-      this._grid.geometry.dispose();
+    if (this.grid) {
+      this._scene!.remove(this.grid);
+      this.grid.dispose();
+      this._grid = null;
     }
   }
 }

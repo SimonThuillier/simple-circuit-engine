@@ -20,8 +20,8 @@
 **Purpose**: Add lil-gui dependency and create type definitions
 
 - [x] T001 Install lil-gui dependency: `npm install lil-gui`
-- [x] T002 [P] Create config form type definitions in src/scene/shared/types/ConfigTypes.ts (ConfigControlType, ConfigFieldDefinition, ConfigFormDefinition)
-- [x] T003 [P] Create color preset utilities in src/scene/shared/utils/ColorPresets.ts (COLOR_PRESETS, isHexColor, hexToPresetOrHex, presetOrHexToHex)
+- [x] T002 [P] Create config form type definitions in src/scene/shared/types/ConfigPanelTypes.ts (ConfigControlType, ConfigFieldDefinition, ConfigFormDefinition)
+- [x] T003 [P] Create color preset utilities in src/scene/shared/utils/ColorUtils.ts (COLOR_PRESETS, isHexColor, hexToPresetOrHex, presetOrHexToHex)
 
 ---
 

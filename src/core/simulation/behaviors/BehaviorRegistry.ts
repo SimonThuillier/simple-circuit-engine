@@ -9,7 +9,7 @@ import type { ComponentBehavior } from './ComponentBehavior.js';
  * Registry for component behavior implementations.
  * Maps component types to their behavior handlers.
  *
- * This allows the simulation engine to be extended with new component types
+ * This allows the simulation controller to be extended with new component types
  * without modifying core simulation logic.
  *
  * @public

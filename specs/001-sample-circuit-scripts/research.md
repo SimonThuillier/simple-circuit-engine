@@ -49,7 +49,7 @@ From `Circuit.ts` and `Circuit.test.ts` analysis:
      name: string,
      size: number,        // grid size (integer)
      divisions: number,   // grid divisions (integer)
-     cameraStartup: Position3D
+     cameraOptions: Position3D
    );
    ```
    - Default: size=30, divisions=10, camera at (0, 0, 50)
