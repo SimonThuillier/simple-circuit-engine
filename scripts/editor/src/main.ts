@@ -1,14 +1,21 @@
 /**
- * Main entry point for the circuit topology visualizer
- * Exports CircuitVisualizer class to window object
+ * Demo editor page
+ * Uses the unified CircuitController API for editing
  */
-import { IntegrityError, RenderError, ValidationError, VisualizerError } from './errors.js';
+import { EngineError, IntegrityError, RenderError, ValidationError } from './errors.js';
 import { CircuitController } from '@/scene/static/CircuitController.js';
 import { Circuit } from '@/core/Circuit.js';
 import { AxesHelper, WebGLRenderer } from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { ComponentType } from '@/core/types/ComponentType.js';
-import { MapControls } from 'three/addons/controls/MapControls.js';
+import {
+  BehaviorRegistry,
+  BatteryBehavior,
+  LightbulbBehavior,
+  RelayBehavior,
+  SmallLEDBehavior,
+  SwitchBehavior,
+  TransistorBehavior,
+} from '@/core/simulation/behaviors';
 
 import {
   type IFactoryRegistry,
@@ -21,7 +28,9 @@ import {
   SwitchVisualFactory,
   TransistorVisualFactory,
   LabelVisualFactory,
-} from '../../../src/scene/shared/components';
+} from '@/scene/shared/components';
+import { RectangleLEDVisualFactory } from '../../../src/scene/shared/components/RectangleLEDVisualFactory';
+import { RectangleLEDBehavior } from '../../../src/core/simulation/behaviors/RectangleLEDBehavior';
 
 // Export to window object for use in HTML
 declare global {
@@ -29,11 +38,10 @@ declare global {
     renderer: WebGLRenderer;
     axesHelper: AxesHelper;
     CircuitController: typeof CircuitController;
-    componentsFactoryRegistry: IFactoryRegistry;
-    OrbitControls: typeof OrbitControls;
-    MapControls: typeof MapControls;
     Circuit: typeof Circuit;
-    VisualizerError: typeof VisualizerError;
+    behaviorRegistry: BehaviorRegistry;
+    componentsFactoryRegistry: IFactoryRegistry;
+    EngineError: typeof EngineError;
     ValidationError: typeof ValidationError;
     IntegrityError: typeof IntegrityError;
     RenderError: typeof RenderError;
@@ -42,38 +50,47 @@ declare global {
 
 // Immediately assign to window (for IIFE bundles)
 if (typeof window !== 'undefined') {
-  const componentsFactoryRegistry = new FactoryRegistry(new DefaultVisualFactory());
+  // Create component factory registry with all visual factories
+  const componentsFactoryRegistry: IFactoryRegistry = new FactoryRegistry(
+    new DefaultVisualFactory()
+  );
   componentsFactoryRegistry.register(ComponentType.Battery, new BatteryVisualFactory());
   componentsFactoryRegistry.register(ComponentType.Lightbulb, new LightbulbVisualFactory());
   componentsFactoryRegistry.register(ComponentType.Relay, new RelayVisualFactory());
   componentsFactoryRegistry.register(ComponentType.Switch, new SwitchVisualFactory());
   componentsFactoryRegistry.register(ComponentType.SmallLED, new SmallLEDVisualFactory());
+  componentsFactoryRegistry.register(ComponentType.RectangleLED, new RectangleLEDVisualFactory());
   componentsFactoryRegistry.register(ComponentType.Transistor, new TransistorVisualFactory());
   componentsFactoryRegistry.register(ComponentType.Label, new LabelVisualFactory());
 
-  window.renderer = new WebGLRenderer({ antialias: false, alpha: false });
-  window.renderer.setClearColor(0x222290);
+  // Create behavior registry with all component behaviors
+  const behaviorRegistry = new BehaviorRegistry();
+  behaviorRegistry.register(new BatteryBehavior());
+  behaviorRegistry.register(new LightbulbBehavior());
+  behaviorRegistry.register(new RelayBehavior());
+  behaviorRegistry.register(new SwitchBehavior());
+  behaviorRegistry.register(new SmallLEDBehavior());
+  behaviorRegistry.register(new RectangleLEDBehavior());
+  behaviorRegistry.register(new TransistorBehavior());
 
-  window.axesHelper = new AxesHelper(10);
+  // Create WebGL renderer
+  window.renderer = new WebGLRenderer({ antialias: true, alpha: false });
+  window.renderer.setClearColor(0x1a1a2e);
 
+  // Create axes helper for reference
+  window.axesHelper = new AxesHelper(5);
+
+  // Export to window
   window.CircuitController = CircuitController;
-  window.componentsFactoryRegistry = componentsFactoryRegistry;
-  window.OrbitControls = OrbitControls;
-  window.MapControls = MapControls;
   window.Circuit = Circuit;
-  window.VisualizerError = VisualizerError;
+  window.behaviorRegistry = behaviorRegistry;
+  window.componentsFactoryRegistry = componentsFactoryRegistry;
+  window.EngineError = EngineError;
   window.ValidationError = ValidationError;
   window.IntegrityError = IntegrityError;
   window.RenderError = RenderError;
 
-  console.log('Circuit Static Viewer loaded');
+  console.log('CircuitController Demo loaded');
 }
 
-export {
-  CircuitController,
-  Circuit,
-  VisualizerError,
-  ValidationError,
-  IntegrityError,
-  RenderError,
-};
+export { CircuitController, Circuit, EngineError, ValidationError, IntegrityError, RenderError };
