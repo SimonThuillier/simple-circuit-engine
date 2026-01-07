@@ -3,7 +3,7 @@
  * Uses the unified CircuitEngine API for both editing and simulation
  */
 import { EngineError, IntegrityError, RenderError, ValidationError } from './errors.js';
-import { CircuitEngine } from '@/scene/CircuitEngine.js';
+import { CircuitRunnerController } from '@/scene/simulation/CircuitRunnerController.js';
 import { Circuit } from '@/core/Circuit.js';
 import { AxesHelper, WebGLRenderer } from 'three';
 import { ComponentType } from '@/core/types/ComponentType.js';
@@ -37,7 +37,7 @@ declare global {
   interface Window {
     renderer: WebGLRenderer;
     axesHelper: AxesHelper;
-    CircuitEngine: typeof CircuitEngine;
+    CircuitRunnerController: typeof CircuitRunnerController;
     Circuit: typeof Circuit;
     behaviorRegistry: BehaviorRegistry;
     componentsFactoryRegistry: IFactoryRegistry;
@@ -78,10 +78,10 @@ if (typeof window !== 'undefined') {
   window.renderer.setClearColor(0x1a1a2e);
 
   // Create axes helper for reference
-  window.axesHelper = new AxesHelper(10);
+  window.axesHelper = new AxesHelper(5);
 
   // Export to window
-  window.CircuitEngine = CircuitEngine;
+  window.CircuitRunnerController = CircuitRunnerController;
   window.Circuit = Circuit;
   window.behaviorRegistry = behaviorRegistry;
   window.componentsFactoryRegistry = componentsFactoryRegistry;
@@ -93,4 +93,4 @@ if (typeof window !== 'undefined') {
   console.log('CircuitEngine Demo loaded');
 }
 
-export { CircuitEngine, Circuit, EngineError, ValidationError, IntegrityError, RenderError };
+export { CircuitRunnerController, Circuit, EngineError, ValidationError, IntegrityError, RenderError };

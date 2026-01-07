@@ -18,7 +18,6 @@ import type { UserCommand } from '../../core/simulation/types/UserCommand';
 import type { SharedResources } from '../shared/types';
 import { AbstractCircuitController } from '../shared/AbstractCircuitController';
 import {
-  createGridHelper,
   gridToWorldPosition,
   gridToWorldRotation,
 } from '../shared/utils/GeometryUtils';
@@ -627,11 +626,7 @@ export class CircuitRunnerController extends AbstractCircuitController {
     // When using shared resources and visuals already exist, skip creation
     // The edit controller has already created all visuals
 
-    if (this._useSharedResources) {
-      // Add circuit sized grid
-      this.grid = createGridHelper(this._circuit.metadata.size, this._circuit.metadata.divisions);
-      this._scene!.add(this.grid);
-
+    if (!this._useSharedResources) {
       // Create visuals for all circuit elements
       const components = this._circuit.getAllComponents();
       const wires = this._circuit.getAllWires();
@@ -827,12 +822,6 @@ export class CircuitRunnerController extends AbstractCircuitController {
     // Remove all component meshes
     for (const id of Array.from(this._componentObject3Ds.keys())) {
       this._removeComponentObject3D(id);
-    }
-    // remove grid
-    if (this.grid) {
-      this._scene!.remove(this.grid);
-      this.grid.dispose();
-      this._grid = null;
     }
   }
 }

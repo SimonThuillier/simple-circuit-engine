@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CircuitEngine Demo - Editor + Simulator</title>
+    <title>Circuit Simulator Demo</title>
     <style>
       * {
         box-sizing: border-box;
@@ -52,42 +52,6 @@
         margin: 4px 0 0;
         font-size: 12px;
         color: #666;
-      }
-
-      /* Mode Toggle */
-      .mode-toggle {
-        display: flex;
-        padding: 12px;
-        gap: 8px;
-        border-bottom: 1px solid #ddd;
-      }
-
-      .mode-btn {
-        flex: 1;
-        padding: 10px 16px;
-        border: 2px solid #ddd;
-        border-radius: 6px;
-        background: white;
-        cursor: pointer;
-        font-size: 13px;
-        font-weight: 500;
-        transition: all 0.2s;
-      }
-
-      .mode-btn:hover {
-        border-color: #999;
-      }
-
-      .mode-btn.active {
-        border-color: #4caf50;
-        background: #e8f5e9;
-        color: #2e7d32;
-      }
-
-      .mode-btn.simulation.active {
-        border-color: #2196f3;
-        background: #e3f2fd;
-        color: #1565c0;
       }
 
       /* Sections */
@@ -173,15 +137,6 @@
         background-color: #45a049;
       }
 
-      #serialize-btn {
-        background-color: #2196f3;
-        color: white;
-      }
-
-      #serialize-btn:hover {
-        background-color: #1976d2;
-      }
-
       #clear-btn {
         background-color: #f44336;
         color: white;
@@ -189,73 +144,6 @@
 
       #clear-btn:hover {
         background-color: #d32f2f;
-      }
-
-      /* Edit Tools */
-      .tool-list {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-
-      .tool-btn {
-        padding: 10px 12px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        background: white;
-        cursor: pointer;
-        font-size: 13px;
-        text-align: left;
-        transition: all 0.15s;
-      }
-
-      .tool-btn:hover {
-        border-color: #999;
-        background: #f5f5f5;
-      }
-
-      .tool-btn.active {
-        border-color: #4caf50;
-        background: #e8f5e9;
-        color: #2e7d32;
-      }
-
-      .tool-btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-
-      /* Component List */
-      #component-list {
-        display: none;
-        margin-top: 8px;
-        padding: 0;
-        list-style: none;
-        border-left: 3px solid #4caf50;
-        background: #fafafa;
-      }
-
-      #component-list.visible {
-        display: block;
-      }
-
-      .component-item {
-        padding: 8px 12px;
-        cursor: pointer;
-        font-size: 12px;
-        color: #555;
-        border-bottom: 1px solid #eee;
-        transition: background-color 0.15s;
-      }
-
-      .component-item:hover {
-        background-color: #f0f0f0;
-      }
-
-      .component-item.selected {
-        background-color: #e8f5e9;
-        color: #2e7d32;
-        font-weight: 500;
       }
 
       /* Simulation Controls */
@@ -411,14 +299,8 @@
       <!-- Sidebar -->
       <div class="sidebar">
         <div class="sidebar-header">
-          <h1>CircuitEngine Demo</h1>
-          <p class="subtitle">Editor + Simulator unified API</p>
-        </div>
-
-        <!-- Mode Toggle -->
-        <div class="mode-toggle">
-          <button id="mode-edit" class="mode-btn active">Edit Mode</button>
-          <button id="mode-simulation" class="mode-btn simulation">Simulation</button>
+          <h1>Circuit Simulator Demo</h1>
+          <p class="subtitle">Simulator API</p>
         </div>
 
         <!-- JSON Section -->
@@ -456,24 +338,7 @@
 }</textarea>
             <div class="json-buttons">
               <button id="load-btn">Load</button>
-              <button id="serialize-btn">Export</button>
               <button id="clear-btn">Clear</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Edit Tools Section -->
-        <div class="sidebar-section" id="edit-section">
-          <div class="section-header">
-            <span class="section-title">Edit Tools</span>
-            <span class="section-chevron">&#9662;</span>
-          </div>
-          <div class="section-content">
-            <div class="tool-list">
-              <button id="tool-build" class="tool-btn">Build Tool</button>
-              <button id="tool-multi-select" class="tool-btn">Multi-Select Tool</button>
-              <button id="tool-add-component" class="tool-btn">Add Component</button>
-              <ul id="component-list"></ul>
             </div>
           </div>
         </div>
@@ -520,7 +385,7 @@
         <div class="status-bar">
           <div class="status-item">
             <span>Mode:</span>
-            <span id="status-mode">Edit</span>
+            <span id="status-mode">Simulation</span>
           </div>
           <div class="status-item">
             <span>Circuit:</span>
@@ -536,32 +401,32 @@
       <!-- Viewer -->
       <div class="viewer-container">
         <div id="canvas-container"></div>
-        <div class="mode-indicator edit" id="mode-indicator">EDIT MODE</div>
+        <div class="mode-indicator edit" id="mode-indicator">SIMULATION MODE</div>
       </div>
     </div>
 
-    <script src="circuit-engine.js"></script>
+    <script src="circuit-simulator.js"></script>
     <script>
-      // Initialize CircuitEngine
+      // Initialize Circuit Runner Controller
       const container = document.getElementById('canvas-container');
 
-      if (typeof window.CircuitEngine !== 'function') {
-        console.error('CircuitEngine is not a constructor!');
-        alert('ERROR: CircuitEngine failed to load. Check browser console for details.');
-        throw new Error('CircuitEngine not available');
+      if (typeof window.CircuitRunnerController !== 'function') {
+        console.error('CircuitController is not a constructor!');
+        alert('ERROR: CircuitController failed to load. Check browser console for details.');
+        throw new Error('CircuitController not available');
       }
 
-      // Create engine with registries
-      const engine = new window.CircuitEngine(
+      // Create controller with registries
+      const controller = new window.CircuitRunnerController(
         window.componentsFactoryRegistry,
         window.behaviorRegistry
       );
 
-      // Initialize engine
-      engine.initialize(container, { initialMode: 'edit' });
+      // Initialize controller
+      controller.initialize(container, {});
 
       // Add axes helper
-      engine.getScene().add(window.axesHelper);
+      controller.getScene().add(window.axesHelper);
 
       // Setup WebGL renderer
       const renderer = window.renderer;
@@ -572,8 +437,8 @@
       // Animation loop
       function animate() {
         requestAnimationFrame(animate);
-        engine.getControls().update();
-        renderer.render(engine.getScene(), engine.getCamera());
+        controller.getControls().update();
+        renderer.render(controller.getScene(), controller.getCamera());
       }
       animate();
 
@@ -582,12 +447,9 @@
         const width = container.clientWidth;
         const height = container.clientHeight;
         renderer.setSize(width, height);
-        engine.onContainerResize(width, height);
+        controller.onContainerResize(width, height);
       }
       window.addEventListener('resize', handleResize);
-
-      // UI State
-      let currentMode = 'edit';
 
       // UI Helper functions
       function showError(message) {
@@ -601,53 +463,9 @@
         document.getElementById('error-display').classList.remove('visible');
       }
 
-      function updateModeUI(mode) {
-        currentMode = mode;
-
-        // Update mode buttons
-        document.getElementById('mode-edit').classList.toggle('active', mode === 'edit');
-        document
-          .getElementById('mode-simulation')
-          .classList.toggle('active', mode === 'simulation');
-
-        // Update mode indicator
-        const indicator = document.getElementById('mode-indicator');
-        indicator.className = 'mode-indicator ' + mode;
-        indicator.textContent = mode === 'edit' ? 'EDIT MODE' : 'SIMULATION MODE';
-
-        // Update status
-        document.getElementById('status-mode').textContent =
-          mode === 'edit' ? 'Edit' : 'Simulation';
-
-        // Enable/disable sections
-        const editSection = document.getElementById('edit-section');
-        const simSection = document.getElementById('sim-section');
-
-        if (mode === 'edit') {
-          editSection.style.opacity = '1';
-          editSection.style.pointerEvents = 'auto';
-          simSection.style.opacity = '0.5';
-
-          // Disable sim buttons
-          document.getElementById('play-pause-btn').disabled = true;
-          document.getElementById('step-btn').disabled = true;
-          document.getElementById('stop-btn').disabled = true;
-        } else {
-          editSection.style.opacity = '0.5';
-          editSection.style.pointerEvents = 'none';
-          simSection.style.opacity = '1';
-
-          // Enable sim buttons if circuit is loaded
-          const hasCircuit = engine.getCircuit() !== null;
-          document.getElementById('play-pause-btn').disabled = !hasCircuit;
-          document.getElementById('step-btn').disabled = !hasCircuit;
-          document.getElementById('stop-btn').disabled = !hasCircuit;
-        }
-      }
-
       function updatePlayPauseButton() {
         const btn = document.getElementById('play-pause-btn');
-        if (engine.isPlaying) {
+        if (controller.isPlaying) {
           btn.textContent = 'Pause';
           btn.classList.add('playing');
         } else {
@@ -657,24 +475,6 @@
       }
 
       // Event handlers
-
-      // Mode toggle
-      document.getElementById('mode-edit').addEventListener('click', () => {
-        if (currentMode !== 'edit') {
-          engine.setMode('edit');
-        }
-      });
-
-      document.getElementById('mode-simulation').addEventListener('click', () => {
-        if (currentMode !== 'simulation') {
-          try {
-            engine.setMode('simulation');
-          } catch (error) {
-            showError('Cannot switch to simulation: ' + error.message);
-          }
-        }
-      });
-
       // JSON operations
       document.getElementById('load-btn').addEventListener('click', () => {
         const json = document.getElementById('circuit-input').value;
@@ -686,44 +486,24 @@
         try {
           const circuitData = JSON.parse(json);
           const circuit = window.Circuit.fromJSON(circuitData);
-          engine.setCircuit(circuit);
+          controller.setCircuit(circuit);
           hideError();
 
           // Update status
           document.getElementById('status-circuit').textContent =
             circuitData.metadata?.name || 'Loaded';
 
-          // Enable sim buttons if in simulation mode
-          if (currentMode === 'simulation') {
-            document.getElementById('play-pause-btn').disabled = false;
-            document.getElementById('step-btn').disabled = false;
-            document.getElementById('stop-btn').disabled = false;
-          }
+          // Enable sim buttons
+          document.getElementById('play-pause-btn').disabled = false;
+          document.getElementById('step-btn').disabled = false;
+          document.getElementById('stop-btn').disabled = false;
         } catch (error) {
           showError('Load error: ' + error.message);
         }
       });
 
-      document.getElementById('serialize-btn').addEventListener('click', () => {
-        const circuit = engine.getCircuit();
-        if (!circuit) {
-          showError('No circuit loaded');
-          return;
-        }
-
-        try {
-          engine.beforeExport();
-          const circuitJSON = circuit.toJSON();
-          const formatted = JSON.stringify(circuitJSON, null, 2);
-          document.getElementById('circuit-input').value = formatted;
-          hideError();
-        } catch (error) {
-          showError('Export error: ' + error.message);
-        }
-      });
-
       document.getElementById('clear-btn').addEventListener('click', () => {
-        engine.setCircuit(new window.Circuit());
+        controller.setCircuit(new window.Circuit());
         document.getElementById('circuit-input').value = '';
         document.getElementById('status-circuit').textContent = 'Not loaded';
         document.getElementById('tick-count').textContent = '0';
@@ -732,124 +512,24 @@
 
       document.getElementById('close-error').addEventListener('click', hideError);
 
-      // Edit tools
-      function deactivateAllTools() {
-        document.querySelectorAll('.tool-btn').forEach((btn) => btn.classList.remove('active'));
-        document.getElementById('component-list').classList.remove('visible');
-      }
 
-      document.getElementById('tool-build').addEventListener('click', () => {
-        if (currentMode !== 'edit') return;
-
-        const isActive = document.getElementById('tool-build').classList.contains('active');
-        deactivateAllTools();
-
-        if (!isActive) {
-          engine.setEditModeEnabled(true);
-          engine.setActiveTool('build');
-          document.getElementById('tool-build').classList.add('active');
-          document.getElementById('status-tool').textContent = 'Build';
-        } else {
-          document.getElementById('status-tool').textContent = 'None';
-        }
-      });
-
-      document.getElementById('tool-multi-select').addEventListener('click', () => {
-        if (currentMode !== 'edit') return;
-
-        const isActive = document.getElementById('tool-multi-select').classList.contains('active');
-        deactivateAllTools();
-
-        if (!isActive) {
-          engine.setEditModeEnabled(true);
-          engine.setActiveTool('multiSelect');
-          document.getElementById('tool-multi-select').classList.add('active');
-          document.getElementById('status-tool').textContent = 'Multi-Select';
-        } else {
-          document.getElementById('status-tool').textContent = 'None';
-        }
-      });
-
-      // Add Component Tool
-      (function () {
-        const toolBtn = document.getElementById('tool-add-component');
-        const componentList = document.getElementById('component-list');
-        let selectedType = null;
-
-        function populateComponentList() {
-          const types = engine.getEditController().getAvailableComponentTypes();
-          componentList.innerHTML = '';
-
-          // None option
-          const noneItem = document.createElement('li');
-          noneItem.className = 'component-item';
-          noneItem.textContent = 'None';
-          noneItem.addEventListener('click', () => selectType(null, noneItem));
-          componentList.appendChild(noneItem);
-
-          // Component types
-          types.forEach((type) => {
-            const item = document.createElement('li');
-            item.className = 'component-item';
-            item.textContent = type;
-            item.addEventListener('click', () => selectType(type, item));
-            componentList.appendChild(item);
-          });
-        }
-
-        function selectType(type, element) {
-          selectedType = type;
-          componentList
-            .querySelectorAll('.component-item')
-            .forEach((el) => el.classList.remove('selected'));
-          element.classList.add('selected');
-
-          try {
-            engine.getEditController().setAddComponentType(type);
-          } catch (error) {
-            console.error('Failed to set component type:', error);
-          }
-        }
-
-        toolBtn.addEventListener('click', () => {
-          if (currentMode !== 'edit') return;
-
-          const isActive = toolBtn.classList.contains('active');
-          deactivateAllTools();
-
-          if (!isActive) {
-            engine.setEditModeEnabled(true);
-            engine.setActiveTool('addComponent');
-            toolBtn.classList.add('active');
-            populateComponentList();
-            componentList.classList.add('visible');
-            document.getElementById('status-tool').textContent = 'Add Component';
-          } else {
-            document.getElementById('status-tool').textContent = 'None';
-          }
-        });
-      })();
 
       // Simulation controls
       document.getElementById('play-pause-btn').addEventListener('click', () => {
-        if (currentMode !== 'simulation') return;
-
-        if (engine.isPlaying) {
-          engine.pause();
+        if (controller.isPlaying) {
+          controller.pause();
         } else {
-          engine.play();
+          controller.play();
         }
         updatePlayPauseButton();
       });
 
       document.getElementById('step-btn').addEventListener('click', () => {
-        if (currentMode !== 'simulation') return;
-        engine.step();
+        controller.step();
       });
 
       document.getElementById('stop-btn').addEventListener('click', () => {
-        if (currentMode !== 'simulation') return;
-        engine.stop();
+        controller.stop();
         document.getElementById('tick-count').textContent = '0';
         updatePlayPauseButton();
       });
@@ -862,55 +542,34 @@
       });
 
       // Engine event listeners
-      engine.on('ready', () => {
-        console.log('CircuitEngine ready');
+      controller.on('ready', () => {
+        console.log('CircuitController ready');
       });
 
-      engine.on('modeChanged', ({ mode, previousMode }) => {
-        console.log(`Mode changed: ${previousMode} -> ${mode}`);
-        updateModeUI(mode);
-      });
-
-      engine.on('circuitLoaded', ({ name }) => {
+      controller.on('circuitLoaded', ({ name }) => {
         console.log('Circuit loaded:', name);
         document.getElementById('status-circuit').textContent = name || 'Loaded';
       });
 
-      engine.on('toolActivated', ({ toolType }) => {
-        console.log('Tool activated:', toolType);
-        document.getElementById('status-tool').textContent = toolType || 'None';
-      });
-
-      engine.on('toolValidationError', ({ toolType, errorMessage }) => {
-        console.error('Tool error:', toolType, errorMessage);
-        document.getElementById('status-tool').textContent = toolType || 'None';
-      });
-
-      engine.on('toolDeactivated', ({ toolType }) => {
-        console.log('Tool deactivated:', toolType);
-        deactivateAllTools();
-        document.getElementById('status-tool').textContent = 'None';
-      });
-
-      engine.on('simulationPlayed', () => {
+      controller.on('simulationPlayed', () => {
         console.log('Simulation played');
         updatePlayPauseButton();
       });
 
-      engine.on('simulationPaused', () => {
+      controller.on('simulationPaused', () => {
         console.log('Simulation paused');
         updatePlayPauseButton();
       });
 
-      engine.on('simulationTick', ({ tick }) => {
+      controller.on('simulationTick', ({ tick }) => {
         document.getElementById('tick-count').textContent = tick;
       });
 
-      engine.on('simulationStepped', ({ tick }) => {
+      controller.on('simulationStepped', ({ tick }) => {
         document.getElementById('tick-count').textContent = tick;
       });
 
-      engine.on('simulationStopped', ({ tick }) => {
+      controller.on('simulationStopped', ({ tick }) => {
         document.getElementById('tick-count').textContent = tick;
         updatePlayPauseButton();
       });
@@ -918,26 +577,24 @@
       const speedSlider = document.getElementById('speed-slider');
       const speedDisplay = document.getElementById('speed-display');
 
-      speedSlider.value = String(engine.simulationSpeed);
-      speedDisplay.textContent = String(engine.simulationSpeed);
+      speedSlider.value = String(controller.simulationSpeed);
+      speedDisplay.textContent = String(controller.simulationSpeed);
 
-      // Update engine speed when slider changes
+      // Update controller speed when slider changes
       speedSlider.addEventListener('input', () => {
         const speed = parseInt(speedSlider.value, 10);
         console.log(speed);
-        engine.simulationSpeed = speed;
+        controller.simulationSpeed = speed;
         speedDisplay.textContent = String(speed);
       });
 
       // Also listen for simulationSpeedChanged events to keep slider in sync
-      engine.on('simulationSpeedChanged', ({ newSpeed }) => {
+      controller.on('simulationSpeedChanged', ({ newSpeed }) => {
         console.log('Simulation speed changed to:', newSpeed);
         speedSlider.value = String(newSpeed);
         speedDisplay.textContent = String(newSpeed);
       });
 
-      // Initial UI state
-      updateModeUI('edit');
       // load the default circuit
       document.getElementById('load-btn').click();
     </script>

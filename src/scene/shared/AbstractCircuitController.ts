@@ -203,8 +203,8 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
         this._scene = new THREE.Scene();
         this._scene.background = new THREE.Color(0x222230);
         // Add default sized grid
-        const grid = createGridHelper(10, 10);
-        this._scene.add(grid);
+        this._grid = createGridHelper(10, 10);
+        this._scene.add(this._grid);
 
         setupSceneLights(this._scene);
 
@@ -321,6 +321,13 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
 
         // Remove all visuals
         this._removeAllVisuals();
+        // clear grid
+        if (this.grid) {
+          this._scene!.remove(this.grid);
+          this.grid.geometry.dispose();
+          this.grid.dispose();
+          this._grid = null;
+        }
 
         // Clear tracking maps
         this._componentObject3Ds.clear();
@@ -456,6 +463,13 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
       this._circuit = null;
       this.wireVisualManager.setCircuit(null);
       this.emit('circuitCleared', { name: oldCircuitName });
+    }
+    // clear grid in standalone mode
+    if (!this._useSharedResources && this._grid) {
+      this._grid.geometry.dispose();
+      this._grid.dispose();
+      this._scene!.remove(this._grid);
+      this._grid = null;
     }
 
     if (circuit !== null) {

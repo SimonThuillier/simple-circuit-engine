@@ -25,6 +25,7 @@ export function createGridHelper(
   colorCenterLine: number = 0xaaaaaa,
   colorGrid: number = 0x777777
 ): THREE.GridHelper {
+  console.log(`Creating grid helper with size=${size}, divisions=${divisions}`);
   const grid = new THREE.GridHelper(size, divisions, colorCenterLine, colorGrid);
   grid.position.set(0, 0, 0);
   // set z-index to be behind other objects

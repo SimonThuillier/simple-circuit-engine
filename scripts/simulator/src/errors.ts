@@ -1,9 +1,9 @@
 /**
- * Error classes for the circuit engine demo
+ * Error classes for the circuit controller demo
  */
 
 /**
- * Base error class for all engine demo errors
+ * Base error class for all controller demo errors
  */
 export class EngineError extends Error {
   readonly type: 'validation' | 'integrity' | 'render';
