@@ -995,7 +995,7 @@ describe('CircuitEngine - Phase 6: User Story 4 (Unified Event System)', () => {
 
     it('should forward toolActivated event from edit controller', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, { controllerOptions: { defaultTool: null } });
 
       const toolActivatedHandler = vi.fn();
       engine.on('toolActivated', toolActivatedHandler);

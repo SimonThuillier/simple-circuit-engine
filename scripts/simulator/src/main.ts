@@ -93,4 +93,11 @@ if (typeof window !== 'undefined') {
   console.log('CircuitEngine Demo loaded');
 }
 
-export { CircuitRunnerController, Circuit, EngineError, ValidationError, IntegrityError, RenderError };
+export {
+  CircuitRunnerController,
+  Circuit,
+  EngineError,
+  ValidationError,
+  IntegrityError,
+  RenderError,
+};

@@ -17,14 +17,14 @@ import { Wire } from './Wire.js';
 import { COMPONENT_TYPE_METADATA, type ComponentType } from './types/ComponentType.js';
 import { getComponentTypeMetadata } from './types/ComponentType.js';
 import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
-import {CameraOptions, type ICameraOptions} from "@/core/types/CameraOptions";
+import { CameraOptions, type ICameraOptions } from '@/core/types/CameraOptions';
 
 export type ICircuitMetadata = {
-    name: string;
-    size: number;
-    divisions: number;
-    cameraOptions: ICameraOptions;
-}
+  name: string;
+  size: number;
+  divisions: number;
+  cameraOptions: ICameraOptions;
+};
 
 /**
  * Circuit metadata placeholder
@@ -40,10 +40,10 @@ export class CircuitMetadata {
    * @throws {TypeError} If size or divisions are not integers
    */
   constructor(
-      public name: string,
-      public size: number,
-      public divisions: number,
-      public cameraOptions: CameraOptions
+    public name: string,
+    public size: number,
+    public divisions: number,
+    public cameraOptions: CameraOptions
   ) {
     if (!Number.isInteger(size) || !Number.isInteger(divisions)) {
       throw new TypeError(
@@ -72,7 +72,12 @@ export class CircuitMetadata {
     divisions: number;
     cameraOptions: ICameraOptions;
   }): CircuitMetadata {
-    return new CircuitMetadata(json.name, json.size, json.divisions, CameraOptions.fromJSON(json.cameraOptions));
+    return new CircuitMetadata(
+      json.name,
+      json.size,
+      json.divisions,
+      CameraOptions.fromJSON(json.cameraOptions)
+    );
   }
 
   toString(): string {

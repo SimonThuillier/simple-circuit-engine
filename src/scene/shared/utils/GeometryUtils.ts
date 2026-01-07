@@ -20,12 +20,11 @@ import { ExtrudeGeometry } from 'three';
  * @returns GridHelper object
  */
 export function createGridHelper(
-  size: number = 10,
-  divisions: number = 10,
-  colorCenterLine: number = 0xaaaaaa,
-  colorGrid: number = 0x777777
+  size: number,
+  divisions: number,
+  colorCenterLine: number,
+  colorGrid: number
 ): THREE.GridHelper {
-  console.log(`Creating grid helper with size=${size}, divisions=${divisions}`);
   const grid = new THREE.GridHelper(size, divisions, colorCenterLine, colorGrid);
   grid.position.set(0, 0, 0);
   // set z-index to be behind other objects

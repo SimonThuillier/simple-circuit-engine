@@ -345,7 +345,8 @@
   "components": [],
   "enodes": [],
   "wires": []
-}</textarea>
+}</textarea
+            >
             <div class="json-buttons">
               <button id="load-btn">Load</button>
               <button id="serialize-btn">Export</button>
@@ -412,9 +413,7 @@
       }
 
       // Create controller with registries
-      const controller = new window.CircuitController(
-        window.componentsFactoryRegistry
-      );
+      const controller = new window.CircuitController(window.componentsFactoryRegistry);
 
       // Initialize controller
       controller.initialize(container, { initialMode: 'edit' });
@@ -529,7 +528,6 @@
       });
 
       document.getElementById('tool-multi-select').addEventListener('click', () => {
-
         const isActive = document.getElementById('tool-multi-select').classList.contains('active');
         deactivateAllTools();
 
@@ -584,7 +582,6 @@
         }
 
         toolBtn.addEventListener('click', () => {
-
           const isActive = toolBtn.classList.contains('active');
           deactivateAllTools();
 
@@ -611,7 +608,6 @@
       controller.on('ready', () => {
         console.log('CircuitController ready');
       });
-
 
       controller.on('circuitLoaded', ({ name }) => {
         console.log('Circuit loaded:', name);

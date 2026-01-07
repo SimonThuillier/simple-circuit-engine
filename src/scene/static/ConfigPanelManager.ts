@@ -8,7 +8,7 @@
 import GUI from 'lil-gui';
 import type { UUID } from '@/core/types/Identifier';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
-import type { ConfigFormDefinition } from '../shared/types/ConfigTypes';
+import type { ConfigFormDefinition } from '../shared/utils/ConfigPanelTypes';
 import type { Component } from '@/core/Component';
 
 /**

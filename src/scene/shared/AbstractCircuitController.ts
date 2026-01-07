@@ -14,7 +14,6 @@ import type { IFactoryRegistry } from './components/ComponentVisualFactory';
 import type {
   ControllerEventMap,
   ControllerOptions,
-  MapControlsOptions,
   HoveredElement,
   HoverableType,
   HitboxUserData,
@@ -23,14 +22,16 @@ import type {
   EnodeHitboxUserData,
   SharedResources,
 } from './types';
-import {createPerspectiveCamera, updateCamera} from './utils/CameraUtils';
+import { createPerspectiveCamera, updateCamera } from './utils/CameraUtils';
 import { setupSceneLights } from './utils/LightingUtils';
 import { HoverManager } from './HoverManager';
 import type { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { BranchingPointVisualFactory } from './components/BranchingPointVisualFactory';
 import type { Circuit } from '@/core/Circuit';
 import { WireVisualManager } from './WireVisualManager';
-import {createGridHelper} from "./utils/GeometryUtils";
+import { createGridHelper } from './utils/GeometryUtils';
+import { controllerOptions } from './utils/Options';
+import { createMapControls } from './utils/ControlsUtils';
 
 /**
  * Abstract base class for circuit controllers.
@@ -54,7 +55,6 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
   protected _grid: THREE.GridHelper | null = null;
   protected _camera: THREE.PerspectiveCamera | null = null;
   protected _mapControls: MapControls | null = null;
-  protected _mapControlsOptions: MapControlsOptions = {};
 
   // circuit being visualized
   protected _circuit: Circuit | null = null;
@@ -64,6 +64,8 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
 
   // State flags
   protected _initialized: boolean = false;
+  protected _options: ControllerOptions | null;
+
   protected _active: boolean = false;
   protected _disposed: boolean = false;
   protected _gridHalfSize: number = 20;
@@ -96,16 +98,15 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
    */
   constructor(factoryRegistry: IFactoryRegistry, sharedResources?: SharedResources) {
     super();
-
     if (!factoryRegistry) {
       throw new TypeError('FactoryRegistry is required');
     }
+    this._options = controllerOptions();
 
     // If shared resources provided, store them for use in initialize()
     if (sharedResources) {
       this._sharedResources = sharedResources;
       this._useSharedResources = true;
-
       this.factoryRegistry = sharedResources.factoryRegistry;
       this.branchingPointVisualFactory = sharedResources.branchingPointVisualFactory;
       this.wireVisualManager = sharedResources.wireVisualManager;
@@ -164,6 +165,9 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
     if (this._initialized) {
       return; // Already initialized
     }
+    options = controllerOptions(options);
+    this._options = options;
+
     if (!container || !(container instanceof HTMLElement)) {
       const error = new TypeError('Container must be a valid HTMLElement');
       this.emitError(error);
@@ -201,9 +205,9 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
         // Create own resources (standalone mode)
         // Create scene
         this._scene = new THREE.Scene();
-        this._scene.background = new THREE.Color(0x222230);
+        this._scene.background = new THREE.Color(options.backgroundColor);
         // Add default sized grid
-        this._grid = createGridHelper(10, 10);
+        this._grid = createGridHelper(10, 10, options.colorCenterLine!, options.colorGrid!);
         this._scene.add(this._grid);
 
         setupSceneLights(this._scene);
@@ -215,7 +219,7 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
         this._camera.layers.enable(1); // enode hover layer
         this._camera.layers.enable(2); // component hover layer
         // Initialize MapControls
-        this._initializeMapControls(options?.mapControls);
+        this._mapControls = createMapControls(this._camera, this._container, options.mapControls!);
 
         // Initialize WireVisualManager
         this.wireVisualManager.setContainer(this._container!);
@@ -380,53 +384,6 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
    */
   protected abstract _removeAllVisuals(): void;
 
-  // ==========================================
-  // MapControls
-  // ==========================================
-
-  /**
-   * Initialize MapControls for camera navigation.
-   */
-  protected _initializeMapControls(options?: MapControlsOptions): void {
-    if (!this._camera || !this._container) {
-      throw new Error('Camera and container must be initialized before MapControls');
-    }
-
-    this._mapControlsOptions = options || {};
-    this._mapControls = new MapControls(this._camera, this._container);
-
-    // Apply default options
-    this._mapControls.enableDamping = this._mapControlsOptions.enableDamping ?? true;
-    this._mapControls.dampingFactor = this._mapControlsOptions.dampingFactor ?? 0.05;
-    this._mapControls.screenSpacePanning = true;
-
-    // Apply user options
-    if (this._mapControlsOptions.enablePan !== undefined) {
-      this._mapControls.enablePan = this._mapControlsOptions.enablePan;
-    }
-    if (this._mapControlsOptions.enableZoom !== undefined) {
-      this._mapControls.enableZoom = this._mapControlsOptions.enableZoom;
-    }
-    if (this._mapControlsOptions.enableRotate !== undefined) {
-      this._mapControls.enableRotate = this._mapControlsOptions.enableRotate;
-    }
-    if (this._mapControlsOptions.minDistance !== undefined) {
-      this._mapControls.minDistance = this._mapControlsOptions.minDistance;
-    }
-    if (this._mapControlsOptions.maxDistance !== undefined) {
-      this._mapControls.maxDistance = this._mapControlsOptions.maxDistance;
-    }
-    if (this._mapControlsOptions.panSpeed !== undefined) {
-      this._mapControls.panSpeed = this._mapControlsOptions.panSpeed;
-    }
-    if (this._mapControlsOptions.zoomSpeed !== undefined) {
-      this._mapControls.zoomSpeed = this._mapControlsOptions.zoomSpeed;
-    }
-    if (this._mapControlsOptions.rotateSpeed !== undefined) {
-      this._mapControls.rotateSpeed = this._mapControlsOptions.rotateSpeed;
-    }
-  }
-
   public setActive(active: boolean): void {
     this._active = active;
     this.onSetActive(active);
@@ -473,24 +430,30 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
     }
 
     if (circuit !== null) {
+      const options = this._options || controllerOptions();
       // Perform full update with new circuit
       this._circuit = circuit;
       this._scene!.name = this._circuit!.metadata.name || 'Circuit Scene';
       this.wireVisualManager.setCircuit(circuit);
       this._gridHalfSize = Math.ceil(circuit.metadata.size / 2);
       // in standalone mode update grid, camera and controls according to circuit metadata
-      if(!this._useSharedResources){
-        this._grid = createGridHelper(circuit.metadata.size, circuit.metadata.divisions);
+      if (!this._useSharedResources) {
+        this._grid = createGridHelper(
+          circuit.metadata.size,
+          circuit.metadata.divisions,
+          options.colorCenterLine!,
+          options.colorGrid!
+        );
         this._scene!.add(this._grid);
 
-        if (this._camera){
+        if (this._camera) {
           updateCamera(this._camera, circuit.metadata.cameraOptions);
         }
 
-        if(this._mapControls){
+        if (this._mapControls) {
           const controls = this._mapControls;
           const target = circuit.metadata.cameraOptions.lookAtPosition;
-          controls.target.set(target.x,target.y,target.z);
+          controls.target.set(target.x, target.y, target.z);
         }
       }
       this.onSetCircuit();
@@ -715,9 +678,6 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
       };
       this._mapControls.addEventListener('change', this._mapControlsChangeHandler);
     }
-
-    console.log('HoverManager initialized');
-
     this._hoverManager.setInitialized(true);
   }
 

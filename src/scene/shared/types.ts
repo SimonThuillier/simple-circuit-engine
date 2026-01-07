@@ -393,6 +393,8 @@ export interface CircuitEngineEventMap extends ControllerEventMap {
 export interface MapControlsOptions {
   /** Enable click-drag panning (default: true) */
   enablePan?: boolean;
+  /** Use screen-space panning (default: true) */
+  screenSpacePanning?: boolean;
   /** Enable scroll wheel zooming (default: true) */
   enableZoom?: boolean;
   /** Enable right-click rotation (default: true) */
@@ -417,29 +419,32 @@ export interface MapControlsOptions {
  * Optional configuration for scene controllerType initialization
  */
 export interface ControllerOptions {
-  /** Background color for the scene (default: 0x000000) */
+  /** Background color for the scene */
   backgroundColor?: number;
-  /** Enable anti-aliasing (default: true) */
-  antialias?: boolean;
-  /** Enable grid helper visualization (default: true) */
-  showGrid?: boolean;
-  /** Enable axes helper visualization (default: false) */
-  showAxes?: boolean;
-  /** MapControls configuration (optional) */
+  /** Grid center line color */
+  colorCenterLine?: number;
+  /** Grid color */
+  colorGrid?: number;
+  /** tool activated by default on initialization */
+  defaultTool?: ToolType | null;
+  /** MapControls configuration options */
   mapControls?: MapControlsOptions;
 }
-
-
 
 /**
  * Configuration options for CircuitEngine initialization
  */
-export interface CircuitEngineOptions extends ControllerOptions {
+export interface EngineOptions {
   /**
    * Initial operating mode
    * @default 'edit'
    */
   initialMode?: EngineMode;
+
+  /**
+   * Controller options
+   */
+  controllerOptions?: ControllerOptions;
 
   /**
    * Options passed to CircuitRunner when created

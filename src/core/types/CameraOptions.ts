@@ -6,7 +6,7 @@
  * @module core/types/CameraOptions
  */
 
-import {type IPosition3D, Position3D} from './Position3D';
+import { type IPosition3D, Position3D } from './Position3D';
 
 export type ICameraOptions = {
   position: IPosition3D;

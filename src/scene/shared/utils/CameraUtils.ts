@@ -6,7 +6,7 @@
  */
 
 import * as THREE from 'three';
-import {CameraOptions} from "@/core/types/CameraOptions";
+import { CameraOptions } from '@/core/types/CameraOptions';
 
 /**
  * Create a perspective camera with default or custom parameters
@@ -17,14 +17,9 @@ import {CameraOptions} from "@/core/types/CameraOptions";
  */
 export function createPerspectiveCamera(
   aspect: number = 1,
-  options: CameraOptions = new CameraOptions(),
+  options: CameraOptions = new CameraOptions()
 ): THREE.PerspectiveCamera {
-
-  const camera = new THREE.PerspectiveCamera(
-      options.fov,
-      aspect,
-      options.near,
-      options.far);
+  const camera = new THREE.PerspectiveCamera(options.fov, aspect, options.near, options.far);
   // Default camera position for circuit viewing
   const camPos = options.position;
   camera.position.set(camPos.x, camPos.y, camPos.z);
@@ -39,10 +34,7 @@ export function createPerspectiveCamera(
  * @param camera - Camera to configure
  * @param options
  */
-export function updateCamera(
-  camera: THREE.PerspectiveCamera,
-  options: CameraOptions
-): void {
+export function updateCamera(camera: THREE.PerspectiveCamera, options: CameraOptions): void {
   camera.fov = options.fov;
   camera.near = options.near;
   camera.far = options.far;

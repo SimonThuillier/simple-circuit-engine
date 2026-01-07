@@ -15,7 +15,7 @@ import { CircuitRunnerController } from './simulation/CircuitRunnerController';
 import { HoverManager } from './shared/HoverManager';
 import { WireVisualManager } from './shared/WireVisualManager';
 import { BranchingPointVisualFactory } from './shared/components/BranchingPointVisualFactory';
-import {createPerspectiveCamera, updateCamera} from './shared/utils/CameraUtils';
+import { createPerspectiveCamera, updateCamera } from './shared/utils/CameraUtils';
 import { setupSceneLights } from './shared/utils/LightingUtils';
 import type { Circuit } from '../core/Circuit';
 import type { UUID } from '../core/types/Identifier';
@@ -25,10 +25,12 @@ import type {
   EngineMode,
   SharedResources,
   CircuitEngineEventMap,
-  CircuitEngineOptions,
+  EngineOptions,
   ToolType,
 } from './shared/types';
-import {createGridHelper} from "./shared/utils/GeometryUtils";
+import { createGridHelper } from './shared/utils/GeometryUtils';
+import { engineOptions } from './shared/utils/Options';
+import { createMapControls } from './shared/utils/ControlsUtils';
 
 /**
  * CircuitEngine - Unified Facade for Circuit Editing and Simulation
@@ -74,6 +76,7 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
   // State
   private _mode: EngineMode = 'edit';
   private _initialized: boolean = false;
+  private _options: EngineOptions | null = null;
   private _disposed: boolean = false;
 
   // Event forwarding cleanup functions
@@ -128,7 +131,7 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
    * @throws {TypeError} If container is not a valid HTMLElement
    * @throws {Error} If already initialized
    */
-  initialize(container: HTMLElement, options?: CircuitEngineOptions): void {
+  initialize(container: HTMLElement, options?: EngineOptions): void {
     if (this._initialized) {
       throw new Error('CircuitEngine is already initialized');
     }
@@ -138,6 +141,9 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
     if (!container || !(container instanceof HTMLElement)) {
       throw new TypeError('Container must be a valid HTMLElement');
     }
+
+    options = engineOptions(options);
+    this._options = options;
 
     this._container = container;
 
@@ -152,8 +158,8 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
       this._sharedResources
     );
     // Initialize both controllers
-    this._editController.initialize(container, options);
-    this._simulationController.initialize(container, options);
+    this._editController.initialize(container, options.controllerOptions);
+    this._simulationController.initialize(container, options.controllerOptions);
 
     // Setup event forwarding from both controllers
     this._setupEventForwarding();
@@ -175,15 +181,18 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
   /**
    * Create shared resources for both controllers.
    */
-  private _createSharedResources(
-    container: HTMLElement,
-    _options?: CircuitEngineOptions
-  ): SharedResources {
+  private _createSharedResources(container: HTMLElement, options: EngineOptions): SharedResources {
+    const controllerOptions = options.controllerOptions!;
     // Create scene
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x222230); // Default dark blue background
+    scene.background = new THREE.Color(controllerOptions.backgroundColor);
     // Add default sized grid
-    const grid = createGridHelper(10, 10);
+    const grid = createGridHelper(
+      10,
+      10,
+      controllerOptions.colorCenterLine!,
+      controllerOptions.colorGrid!
+    );
     scene.add(grid);
     setupSceneLights(scene);
 
@@ -195,10 +204,7 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
     camera.layers.enable(2); // component hover layer
 
     // Create MapControls
-    const mapControls = new MapControls(camera, container);
-    mapControls.enableDamping = true;
-    mapControls.dampingFactor = 0.05;
-    mapControls.screenSpacePanning = true;
+    const mapControls = createMapControls(camera, container, controllerOptions.mapControls!);
 
     // Create managers
     const hoverManager = new HoverManager(scene, camera);
@@ -401,8 +407,9 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
    */
   setCircuit(circuit: Circuit | null): void {
     this._checkInitialized();
+    const options = this._options || engineOptions();
 
-    if(this._sharedResources?.grid) {
+    if (this._sharedResources?.grid) {
       this._sharedResources?.grid?.dispose();
       this._sharedResources?.scene.remove(this._sharedResources?.grid);
     }
@@ -415,16 +422,21 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
 
     const gridSize = circuit ? circuit.metadata.size : 10;
     const gridDivisions = circuit ? circuit.metadata.divisions : 10;
-    this._sharedResources!.grid = createGridHelper(gridSize, gridDivisions);
+    this._sharedResources!.grid = createGridHelper(
+      gridSize,
+      gridDivisions,
+      options.controllerOptions!.colorCenterLine!,
+      options.controllerOptions!.colorGrid!
+    );
     this._sharedResources?.scene.add(this._sharedResources!.grid);
 
-    if(circuit && this._sharedResources?.camera){
+    if (circuit && this._sharedResources?.camera) {
       updateCamera(this._sharedResources?.camera, circuit.metadata.cameraOptions);
     }
-    if(circuit && this._sharedResources?.mapControls){
+    if (circuit && this._sharedResources?.mapControls) {
       const controls = this._sharedResources?.mapControls;
       const target = circuit.metadata.cameraOptions.lookAtPosition;
-      controls.target.set(target.x,target.y,target.z);
+      controls.target.set(target.x, target.y, target.z);
     }
   }
 
@@ -640,7 +652,6 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
    * Saves world informations such as camera position, in the circuit metadata.
    */
   public beforeExport(): void {
-    console.log('CircuitEngine.beforeExport called');
     if (!this._editController) return;
     this._editController.beforeExport();
   }

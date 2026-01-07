@@ -12,7 +12,7 @@ import type { ENode } from '../../core/ENode';
 import type { UUID } from '../../core/types/Identifier';
 import { ENodeType } from '../../core/types/ENodeType';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
-import type { ToolType, SelectionData, SharedResources } from '../shared/types';
+import type { ToolType, SelectionData, SharedResources, ControllerOptions } from '../shared/types';
 import {
   createGridHelper,
   gridToWorldPosition,
@@ -30,6 +30,7 @@ import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
 import { AbstractCircuitController } from '../shared/AbstractCircuitController';
 import type { Circuit } from '@/core/Circuit';
 import { ConfigPanelManager } from './ConfigPanelManager';
+import { controllerOptions } from '../shared/utils/Options';
 
 /**
  * Static Circuit Controller Implementation
@@ -75,13 +76,20 @@ export class CircuitController extends AbstractCircuitController {
    * Specific Initialization logic, performed after AbstractCircuitController initialization
    * @private
    */
-  protected onInitialize() {
+  protected onInitialize(options?: ControllerOptions) {
+    options = controllerOptions(options);
     // Initialize tools
     this._initializeTools();
     // Initialize Selection Manager
     this._initializeSelectionManager();
     // Initialize Config Panel Manager
     this._initializeConfigPanelManager();
+
+    if (options.defaultTool) {
+      this._initialized = true; // flag must be set before calling setActiveTool
+      this.setEditMode(true);
+      this.setActiveTool(options.defaultTool);
+    }
   }
 
   protected emitReady() {
@@ -142,7 +150,10 @@ export class CircuitController extends AbstractCircuitController {
       this.setEditMode(false);
       this._selectionManager?.deselect();
     } else {
-      // no specific logic on activate
+      if (this._initialized && this._options && this._options.defaultTool) {
+        this.setEditMode(true);
+        this.setActiveTool(this._options.defaultTool);
+      }
     }
   }
 
@@ -476,8 +487,6 @@ export class CircuitController extends AbstractCircuitController {
     const components = this._circuit.getAllComponents();
     const wires = this._circuit.getAllWires();
     const enodes = this._circuit.getAllENodes();
-
-    console.log('full update');
 
     for (const component of components) {
       this._createComponentObject3D(component);
@@ -826,7 +835,13 @@ export class CircuitController extends AbstractCircuitController {
         this._scene!.remove(this.grid);
         this.grid.geometry.dispose();
       }
-      this.grid = createGridHelper(this._circuit.metadata.size, this._circuit.metadata.divisions);
+      const options = this._options || controllerOptions();
+      this.grid = createGridHelper(
+        this._circuit.metadata.size,
+        this._circuit.metadata.divisions,
+        options.colorCenterLine!,
+        options.colorGrid!
+      );
       this._scene!.add(this.grid);
     }
   }
@@ -839,8 +854,7 @@ export class CircuitController extends AbstractCircuitController {
     if (!this._circuit || !this._camera || !this._mapControls) return;
     try {
       this.circuitWriter.saveCameraOptions();
-    }
-    catch (error) {
+    } catch (error) {
       console.warn(error);
     }
   }

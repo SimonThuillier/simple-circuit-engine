@@ -453,7 +453,8 @@
   "components": [],
   "enodes": [],
   "wires": []
-}</textarea>
+}</textarea
+            >
             <div class="json-buttons">
               <button id="load-btn">Load</button>
               <button id="serialize-btn">Export</button>
@@ -558,7 +559,10 @@
       );
 
       // Initialize engine
-      engine.initialize(container, { initialMode: 'edit' });
+      engine.initialize(container, {
+        initialMode: 'edit',
+        controllerOptions: { mapControls: { zoomSpeed: 2 } },
+      });
 
       // Add axes helper
       engine.getScene().add(window.axesHelper);

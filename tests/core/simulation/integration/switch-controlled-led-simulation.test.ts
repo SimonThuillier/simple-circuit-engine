@@ -34,7 +34,12 @@ function createBehaviorRegistry(): BehaviorRegistry {
 function createSwitchControlledLedCircuit(): Circuit {
   // Create circuit with metadata
   const circuit = new Circuit('Switch-Controlled LED Circuit');
-  circuit.metadata = new CircuitMetadata('Switch-Controlled LED Circuit', 30, 10, new Position3D(0, 0, 50));
+  circuit.metadata = new CircuitMetadata(
+    'Switch-Controlled LED Circuit',
+    30,
+    10,
+    new Position3D(0, 0, 50)
+  );
 
   // Add components
   const battery = circuit.addComponent(ComponentType.Battery, new Position(0, 0), new Rotation(0));

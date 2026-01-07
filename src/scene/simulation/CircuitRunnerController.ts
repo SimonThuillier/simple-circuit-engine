@@ -17,10 +17,7 @@ import type { IFactoryRegistry } from '../shared/components/ComponentVisualFacto
 import type { UserCommand } from '../../core/simulation/types/UserCommand';
 import type { SharedResources } from '../shared/types';
 import { AbstractCircuitController } from '../shared/AbstractCircuitController';
-import {
-  gridToWorldPosition,
-  gridToWorldRotation,
-} from '../shared/utils/GeometryUtils';
+import { gridToWorldPosition, gridToWorldRotation } from '../shared/utils/GeometryUtils';
 import type { HoveredElement } from '../shared/types';
 import type { Circuit } from '@/core/Circuit';
 import { BehaviorRegistry } from '@/core/simulation/behaviors';

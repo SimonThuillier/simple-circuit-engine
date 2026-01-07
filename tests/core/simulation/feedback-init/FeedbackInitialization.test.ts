@@ -65,7 +65,12 @@ describe('Feedback Loop Initialization', () => {
       it('should initialize RS flip-flop to a valid stable state (not both outputs same)', () => {
         // Create end of a simple RS flip-flop circuit using two NOR gates
         const circuit = new Circuit('RS Flip-Flop');
-        circuit.metadata = new CircuitMetadata('RS Flip-Flop Test', 20, 20, new Position3D(0, 0, 50));
+        circuit.metadata = new CircuitMetadata(
+          'RS Flip-Flop Test',
+          20,
+          20,
+          new Position3D(0, 0, 50)
+        );
 
         // Two NOR gates forming feedback loop
         // NOR1: Controls Q output
@@ -118,7 +123,12 @@ describe('Feedback Loop Initialization', () => {
       });
       it('RS flip-flop has the desired initial state when one of the input is on', () => {
         const circuit = new Circuit('RS Flip-Flop');
-        circuit.metadata = new CircuitMetadata('RS Flip-Flop Test', 20, 20, new Position3D(0, 0, 50));
+        circuit.metadata = new CircuitMetadata(
+          'RS Flip-Flop Test',
+          20,
+          20,
+          new Position3D(0, 0, 50)
+        );
 
         // Two NOR gates forming feedback loop
         // NOR1: Controls Q output
@@ -190,7 +200,12 @@ describe('Feedback Loop Initialization', () => {
     describe('Phase4 - initializationOrder controls RS flip-flop initial state', () => {
       it('changing initializationOrder well inverts default RS initial State', () => {
         const circuit = new Circuit('RS Flip-Flop');
-        circuit.metadata = new CircuitMetadata('RS Flip-Flop Test', 20, 20, new Position3D(0, 0, 50));
+        circuit.metadata = new CircuitMetadata(
+          'RS Flip-Flop Test',
+          20,
+          20,
+          new Position3D(0, 0, 50)
+        );
 
         // Two NOR gates forming feedback loop
         // NOR1: Controls Q output

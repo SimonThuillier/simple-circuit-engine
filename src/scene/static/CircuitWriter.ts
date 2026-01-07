@@ -13,8 +13,8 @@ import {
   worldToGridPosition,
   worldToGridRotation,
 } from '../shared/utils/GeometryUtils';
-import {CameraOptions} from "@/core/types/CameraOptions";
-import {Position3D} from "@/core/types/Position3D";
+import { CameraOptions } from '@/core/types/CameraOptions';
+import { Position3D } from '@/core/types/Position3D';
 
 /**
  * Manages editing operations of 3D models from the circuit scene into the core circuit model.
@@ -644,18 +644,18 @@ export class CircuitWriter {
     }
 
     const options = new CameraOptions(
-        new Position3D(camera.position.x, camera.position.y, camera.position.z),
-        new Position3D(controls.target.x, controls.target.y, controls.target.z),
-        camera.fov,
-        camera.near,
-        camera.far
+      new Position3D(camera.position.x, camera.position.y, camera.position.z),
+      new Position3D(controls.target.x, controls.target.y, controls.target.z),
+      camera.fov,
+      camera.near,
+      camera.far
     );
     circuit.metadata.cameraOptions = options;
 
     this._controller.emit('circuitMetadataEdition', {
       circuitName: circuit.name,
       data: {
-        cameraOptions: options
+        cameraOptions: options,
       },
     });
     return;

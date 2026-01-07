@@ -31,7 +31,7 @@ describe('Tool System Architecture (T060-T063)', () => {
     containerElement.style.height = '600px';
     document.body.appendChild(containerElement);
 
-    controller.initialize(containerElement);
+    controller.initialize(containerElement, { defaultTool: null });
   });
 
   describe('T060: Basic tool system methods', () => {

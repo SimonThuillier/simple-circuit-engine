@@ -297,9 +297,9 @@ export class CircuitRunner {
 
       const behavior = this.behaviorRegistry.get(component.type);
       if (!behavior) {
-        console.warn(
-          `No behavior registered for component type '${component.type}' (${component.id})`
-        );
+        // console.warn(
+        //   `No behavior registered for component type '${component.type}' (${component.id})`
+        // );
         continue;
       }
 
@@ -464,9 +464,9 @@ export class CircuitRunner {
       const component = this.circuit.getComponent(componentId) as Component;
       const behavior = this.behaviorRegistry.get(component.type);
       if (!behavior) {
-        console.warn(
-          `No behavior registered for component type '${component.type}' (${component.id})`
-        );
+        // console.warn(
+        //   `No behavior registered for component type '${component.type}' (${component.id})`
+        // );
         continue;
       }
       const res = behavior.onPinsChange(
@@ -640,9 +640,9 @@ export class CircuitRunner {
         const component = this.circuit.getComponent(node.component!) as Component;
         const behavior = this.behaviorRegistry.get(component.type);
         if (!behavior) {
-          console.warn(
-            `No behavior registered for component type '${component.type}' (${component.id})`
-          );
+          // console.warn(
+          //   `No behavior registered for component type '${component.type}' (${component.id})`
+          // );
           continue;
         }
 
@@ -691,9 +691,9 @@ export class CircuitRunner {
       const component = this.circuit.getComponent(event.targetId) as Component;
       const behavior = this.behaviorRegistry.get(component.type);
       if (!behavior) {
-        console.warn(
-          `No behavior registered for component type '${component.type}' (${component.id})`
-        );
+        // console.warn(
+        //   `No behavior registered for component type '${component.type}' (${component.id})`
+        // );
         continue;
       }
 
