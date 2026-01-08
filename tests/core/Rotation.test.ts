@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { Rotation } from '@/core/types/Rotation';
+import { Rotation } from 'simple-circuit-engine/core';
 
 describe('Rotation', () => {
   describe('constructor', () => {

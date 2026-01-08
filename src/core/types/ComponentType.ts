@@ -7,7 +7,7 @@
  * @module core/types/ComponentType
  */
 
-import { ENodeSourceType } from '@/core/types/ENodeSourceType';
+import { ENodeSourceType } from './ENodeSourceType';
 
 /**
  * Enumeration of available component types.

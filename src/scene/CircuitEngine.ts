@@ -10,16 +10,16 @@ import * as THREE from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import type { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { EventEmitter } from './shared/EventEmitter';
+
+import type { Circuit, BehaviorRegistry, UUID } from 'simple-circuit-engine/core';
+
 import { CircuitController } from './static/CircuitController';
 import { CircuitRunnerController } from './simulation/CircuitRunnerController';
 import { HoverManager } from './shared/HoverManager';
 import { WireVisualManager } from './shared/WireVisualManager';
-import { BranchingPointVisualFactory } from './shared/components/BranchingPointVisualFactory';
+import { BranchingPointVisualFactory } from './shared/BranchingPointVisualFactory';
 import { createPerspectiveCamera, updateCamera } from './shared/utils/CameraUtils';
 import { setupSceneLights } from './shared/utils/LightingUtils';
-import type { Circuit } from '../core/Circuit';
-import type { UUID } from '../core/types/Identifier';
-import type { BehaviorRegistry } from '../core/simulation/behaviors/BehaviorRegistry';
 import type { IFactoryRegistry } from './shared/components/ComponentVisualFactory';
 import type {
   EngineMode,

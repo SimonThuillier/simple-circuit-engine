@@ -6,7 +6,7 @@
  * with fallback support for unknown component types.
  */
 
-import type { ComponentType } from '@/core/types/ComponentType';
+import type { ComponentType } from 'simple-circuit-engine/core';
 import type { IComponentVisualFactory, IFactoryRegistry } from './ComponentVisualFactory';
 
 /**
@@ -51,8 +51,9 @@ export class FactoryRegistry implements IFactoryRegistry {
    * @param type - Component type identifier
    * @param factory - Factory (class instance or function) to create visuals for this type
    * @throws {TypeError} If type is empty/whitespace or factory is null/undefined
+   * @returns This FactoryRegistry instance (for chaining)
    */
-  register(type: ComponentType, factory: IComponentVisualFactory): void {
+  register(type: ComponentType, factory: IComponentVisualFactory): FactoryRegistry {
     if (typeof type !== 'string' || type.trim() === '') {
       throw new TypeError('Component type must be a non-empty string');
     }
@@ -60,15 +61,13 @@ export class FactoryRegistry implements IFactoryRegistry {
       throw new TypeError(`Factory cannot be null or undefined for type: ${type}`);
     }
     // Accept both class instances (object with createVisual method) and functions
-    if (
-      typeof factory !== 'function' &&
-      (typeof factory !== 'object' || typeof (factory as any).createVisual !== 'function')
-    ) {
+    if (typeof factory !== 'object' || typeof (factory as any).createVisual !== 'function') {
       throw new TypeError(
-        `Factory must be a function or an object with createVisual method for type: ${type}`
+        `Factory must be a an object with createVisual method for type: ${type}`
       );
     }
     this.factories.set(type, factory);
+    return this;
   }
 
   /**

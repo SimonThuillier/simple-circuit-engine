@@ -6,10 +6,8 @@
  * Supports dynamic registration and fallback for unknown component types.
  */
 
-import type { Component } from '@/core/Component';
-import type { ComponentType } from '@/core/types/ComponentType';
-import type { ComponentState } from '@/core/simulation/states/ComponentState';
-import { ENodeSourceType } from '@/core/types/ENodeSourceType';
+import type { Component, ComponentType, ComponentState } from 'simple-circuit-engine/core';
+import { ENodeSourceType } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
 import { HitboxLayers } from '../utils/LayerConstants';
 
@@ -675,8 +673,9 @@ export interface IFactoryRegistry {
    * @param type - Component type identifier
    * @param factory - Factory (class instance or function) to create visuals for this type
    * @throws {TypeError} If factory is null or undefined
+   * @returns This IFactoryRegistry instance (for chaining)
    */
-  register(type: ComponentType, factory: IComponentVisualFactory): void;
+  register(type: ComponentType, factory: IComponentVisualFactory): IFactoryRegistry;
 
   /**
    * Retrieve the factory for a component type

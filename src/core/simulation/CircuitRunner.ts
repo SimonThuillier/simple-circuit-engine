@@ -3,7 +3,7 @@
  * @module core/simulation
  */
 
-import type { Circuit } from '@/core/Circuit.js';
+import type { Circuit } from '../Circuit.js';
 import type { RunnerOptions } from './types/RunnerOptions.js';
 import type { UserCommand } from './types/UserCommand.js';
 import type { NodeElectricalState } from './states/NodeElectricalState.js';
@@ -12,15 +12,15 @@ import { SimulationState } from './SimulationState.js';
 import { StateManager } from './StateManager.js';
 import { EventQueue } from './EventQueue.js';
 import { DirtyTracker } from './DirtyTracker.js';
-import { BehaviorRegistry } from './behaviors/BehaviorRegistry.js';
-import type { UUID } from '@/core/types/Identifier.js';
-import { ENodeSourceType } from '@/core/types/ENodeSourceType';
-import type { ReachabilityResult } from '@/core/simulation/types/ReachabilityResult';
-import type { ENode } from '@/core/ENode';
-import { ENodeType } from '@/core/types/ENodeType';
-import type { Component } from '@/core/Component';
-import type { BehaviorResult } from '@/core/simulation/behaviors/ComponentBehavior';
-import type { RunnerResult } from '@/core/simulation/types/RunnerResult';
+import { BehaviorRegistry } from './behaviors';
+import type { UUID } from '../types/Identifier.js';
+import { ENodeSourceType } from '../types/ENodeSourceType';
+import type { ReachabilityResult } from './types/ReachabilityResult';
+import type { ENode } from '../ENode';
+import { ENodeType } from '../types/ENodeType';
+import type { Component } from '../Component';
+import type { BehaviorResult } from './behaviors/ComponentBehavior';
+import type { RunnerResult } from './types/RunnerResult';
 
 /**
  * Main circuit simulation controller.

@@ -8,7 +8,7 @@
 
 import * as THREE from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
-import type { UUID } from '../../core/types/Identifier';
+import type { UUID, Circuit } from 'simple-circuit-engine/core';
 import { EventEmitter } from './EventEmitter';
 import type { IFactoryRegistry } from './components/ComponentVisualFactory';
 import type {
@@ -26,8 +26,7 @@ import { createPerspectiveCamera, updateCamera } from './utils/CameraUtils';
 import { setupSceneLights } from './utils/LightingUtils';
 import { HoverManager } from './HoverManager';
 import type { Line2 } from 'three/examples/jsm/lines/Line2.js';
-import { BranchingPointVisualFactory } from './components/BranchingPointVisualFactory';
-import type { Circuit } from '@/core/Circuit';
+import { BranchingPointVisualFactory } from './BranchingPointVisualFactory';
 import { WireVisualManager } from './WireVisualManager';
 import { createGridHelper } from './utils/GeometryUtils';
 import { controllerOptions } from './utils/Options';

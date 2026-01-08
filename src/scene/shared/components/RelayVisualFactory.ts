@@ -1,7 +1,5 @@
 import { ComponentVisualFactoryBase } from './ComponentVisualFactory';
-import type { Component } from '@/core/Component';
-import type { ComponentState } from '@/core/simulation/states/ComponentState';
-import type { RelayState } from '@/core/simulation/states/RelayState';
+import type { Component, ComponentState, RelayState } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
 import type {ConfigFormDefinition} from "../types";
 

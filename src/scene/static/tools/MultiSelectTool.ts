@@ -3,12 +3,13 @@
  * @module scene/static/tools/MultiSelectTool
  */
 
+import * as THREE from 'three';
+import type { UUID, ComponentType, ENodeSourceType } from 'simple-circuit-engine/core';
+import { Position, Rotation } from 'simple-circuit-engine/core';
+
 import type { IEditingTool, CursorType } from '../../shared/types';
 import type { CircuitController } from '../CircuitController';
-import type { UUID } from '../../../core/types/Identifier';
-import type { ComponentType } from '../../../core/types/ComponentType';
-import * as THREE from 'three';
-import { Position } from '../../../core/types/Position';
+
 import {
   gridToWorldPosition,
   gridToWorldRotation,
@@ -16,8 +17,6 @@ import {
   nearestWorldSnapPosition,
   worldToGridPosition,
 } from '../../shared/utils/GeometryUtils';
-import { Rotation } from '@/core/types/Rotation';
-import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
 
 /**
  * Operating modes for the MultiSelectTool

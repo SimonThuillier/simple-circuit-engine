@@ -11,12 +11,12 @@
 
 import * as THREE from 'three';
 import { Euler } from 'three';
+import type { ComponentType } from 'simple-circuit-engine/core';
+import { Position, Rotation, Component } from 'simple-circuit-engine/core';
+
+
 import type { IEditingTool, ToolType, CursorType } from '../../shared/types';
 import type { CircuitController } from '../CircuitController';
-import type { ComponentType } from '../../../core/types/ComponentType';
-import { Component } from '../../../core/Component';
-import { Position } from '../../../core/types/Position';
-import { Rotation } from '../../../core/types/Rotation';
 
 /**
  * Tool for adding new components to the circuit

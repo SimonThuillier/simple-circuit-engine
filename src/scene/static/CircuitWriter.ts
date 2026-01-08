@@ -2,24 +2,13 @@
  * CircuitWriter that centralizes all write operations on core circuit objects
  * @module scene/static/CircuitWriter
  */
+import { Euler, Object3D, Vector3 } from 'three';
+import type { ENodeSourceType, UUID, ENode, Wire, Component } from 'simple-circuit-engine/core';
+import { Position, ComponentType, CameraOptions, Position3D } from 'simple-circuit-engine/core';
 
 import type { CircuitController } from './CircuitController';
-import { Euler, Object3D, Vector3 } from 'three';
-import { Position } from '@/core/types/Position';
 import type { ControllerEventMap } from '../shared/types';
-import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
-import type { UUID } from '@/core/types/Identifier';
-import type { ENode } from '@/core/ENode';
-import type { Wire } from '@/core/Wire';
-import { ComponentType } from '@/core/types/ComponentType';
-import type { Component } from '@/core/Component';
-import {
-  computeDivisionsForSize,
-  worldToGridPosition,
-  worldToGridRotation,
-} from '../shared/utils/GeometryUtils';
-import { CameraOptions } from '@/core/types/CameraOptions';
-import { Position3D } from '@/core/types/Position3D';
+import { computeDivisionsForSize, worldToGridPosition, worldToGridRotation } from '../shared/utils/GeometryUtils';
 
 /**
  * Manages editing operations of 3D models from the circuit scene into the core circuit model.

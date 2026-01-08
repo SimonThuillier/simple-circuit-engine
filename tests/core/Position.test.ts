@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { Position, findPositionBestIndex, simplifyPositions } from '@/core/types/Position';
+import { Position, findPositionBestIndex, simplifyPositions } from 'simple-circuit-engine/core';
 
 describe('Position', () => {
   describe('constructor', () => {

@@ -5,12 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-
-import { ComponentType } from '@/core/types/ComponentType';
-import { Circuit } from '@/core/Circuit';
-import { Position } from '@/core/types/Position';
-import { Rotation } from '@/core/types/Rotation';
-import { ENodeType } from '@/core/types/ENodeType';
+import { Circuit, ComponentType, Position, Rotation, ENodeType } from 'simple-circuit-engine/core';
 
 describe('Wire', () => {
   let circuit: Circuit;

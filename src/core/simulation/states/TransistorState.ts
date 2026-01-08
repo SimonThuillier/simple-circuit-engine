@@ -3,8 +3,8 @@
  * @module core/simulation/states
  */
 
+import type { UUID } from '../../types/Identifier.js';
 import { ComponentState } from './ComponentState.js';
-import type { UUID } from '@/core/types/Identifier.js';
 
 /**
  * Simulation state for Transistor components (NPN open if no base voltage).

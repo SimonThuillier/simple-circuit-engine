@@ -6,7 +6,7 @@
  */
 
 import * as THREE from 'three';
-import { CameraOptions } from '@/core/types/CameraOptions';
+import { CameraOptions } from 'simple-circuit-engine/core';
 
 /**
  * Create a perspective camera with default or custom parameters

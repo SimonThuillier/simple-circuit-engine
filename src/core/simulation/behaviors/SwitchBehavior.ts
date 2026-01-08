@@ -3,15 +3,15 @@
  * @module core/simulation/behaviors
  */
 
-import type { UUID } from '@/core/types/Identifier.js';
+import type { UUID } from '../../types/Identifier.js';
+import type { Component } from '../../Component.js';
+import type { ENodeSourceType } from '../../types/ENodeSourceType.js';
+import type { NodeElectricalState, ComponentState } from '../states';
+import { SwitchState } from '../states';
+import type { ScheduledEvent, UserCommand } from '../types';
 import type { ComponentBehavior, BehaviorResult } from './ComponentBehavior.js';
-import type { Component } from '@/core/Component.js';
-import type { ComponentState } from '../states/ComponentState.js';
-import { ComponentType } from '@/core/types/ComponentType';
-import { SwitchState } from '@/core/simulation/states/SwitchState';
-import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
-import type { NodeElectricalState, ScheduledEvent, UserCommand } from '@/core/simulation';
-import { TRANSITION_DEFAULTS } from '../types/SimulationConstants';
+import { ComponentType } from '../../types/ComponentType.js';
+import { TRANSITION_DEFAULTS } from '../types';
 
 /**
  * Get the tick count from command parameters.

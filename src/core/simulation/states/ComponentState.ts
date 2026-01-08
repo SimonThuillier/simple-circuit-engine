@@ -3,7 +3,7 @@
  * @module core/simulation/states
  */
 
-import type { UUID } from '@/core/types/Identifier.js';
+import type { UUID } from '../../types/Identifier.js';
 
 /**
  * Base class for component simulation state.

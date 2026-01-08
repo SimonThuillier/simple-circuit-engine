@@ -8,19 +8,17 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { BehaviorRegistry } from '@/core/simulation/behaviors/BehaviorRegistry';
 import type {
   ComponentBehavior,
   BehaviorResult,
-} from '@/core/simulation/behaviors/ComponentBehavior';
-import { ComponentState } from '@/core/simulation/states/ComponentState';
-import type { Component } from '@/core/Component';
-import type { UserCommand } from '@/core/simulation/types/UserCommand';
-import type { ScheduledEvent } from '@/core/simulation/types/ScheduledEvent';
-import type { UUID } from '@/core/types/Identifier';
-import type { NodeElectricalState } from '@/core/simulation/states/NodeElectricalState';
-import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
-import { ComponentType } from '@/core/types/ComponentType';
+  Component,
+  UserCommand,
+  ScheduledEvent,
+  UUID,
+  NodeElectricalState,
+  ENodeSourceType,
+} from 'simple-circuit-engine/core';
+import { BehaviorRegistry, ComponentState, ComponentType } from 'simple-circuit-engine/core';
 
 // Mock behavior for testing
 class MockBehavior implements ComponentBehavior {

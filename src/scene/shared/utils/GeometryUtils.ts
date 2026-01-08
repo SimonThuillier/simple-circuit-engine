@@ -6,8 +6,7 @@
  */
 
 import * as THREE from 'three';
-import { Position } from '@/core/types/Position';
-import { Rotation } from '@/core/types/Rotation';
+import { Position, Rotation } from 'simple-circuit-engine/core';
 import { ExtrudeGeometry } from 'three';
 
 /**

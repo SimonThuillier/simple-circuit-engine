@@ -1,16 +1,18 @@
 /**
- * lightbulbcomponent behavior implementation
+ * lightbulb behavior implementation
  * @module core/simulation/behaviors
  */
 
-import type { UUID } from '@/core/types/Identifier.js';
-import type { ComponentBehavior, BehaviorResult } from './ComponentBehavior.js';
-import type { Component } from '@/core/Component.js';
-import { LightbulbState } from '../states/LightbulbState';
+import type { UUID } from '../../types/Identifier.js';
+import type { Component } from '../../Component.js';
+import type { ENodeSourceType } from '../../types/ENodeSourceType.js';
+import type { NodeElectricalState } from '../states/NodeElectricalState.js';
 import type { ComponentState } from '../states/ComponentState.js';
-import { ComponentType } from '@/core/types/ComponentType';
-import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
-import type { NodeElectricalState, ScheduledEvent, UserCommand } from '@/core/simulation';
+import type { ScheduledEvent, UserCommand } from '../types';
+import type { ComponentBehavior, BehaviorResult } from './ComponentBehavior.js';
+import { ComponentType } from '../../types/ComponentType.js';
+import { LightbulbState } from '../states/LightbulbState';
+
 
 export class LightbulbBehavior implements ComponentBehavior {
   readonly componentType = ComponentType.Lightbulb;

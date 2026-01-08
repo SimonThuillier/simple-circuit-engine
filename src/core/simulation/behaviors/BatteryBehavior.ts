@@ -3,14 +3,15 @@
  * @module core/simulation/behaviors
  */
 
-import type { UUID } from '@/core/types/Identifier.js';
+import type { UUID } from '../../types/Identifier.js';
+import type { NodeElectricalState } from '../states/NodeElectricalState.js';
+import type { ScheduledEvent, UserCommand } from '../types';
+import { Component } from '../../Component.js';
+import { ComponentType } from '../../types/ComponentType.js';
+import { ENodeSourceType } from '../../types/ENodeSourceType.js';
 import type { ComponentBehavior, BehaviorResult } from './ComponentBehavior.js';
-import type { Component } from '@/core/Component.js';
 import { BatteryState } from '../states/BatteryState.js';
 import type { ComponentState } from '../states/ComponentState.js';
-import { ComponentType } from '@/core/types/ComponentType';
-import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
-import type { NodeElectricalState, ScheduledEvent, UserCommand } from '@/core/simulation';
 
 export class BatteryBehavior implements ComponentBehavior {
   readonly componentType = ComponentType.Battery;

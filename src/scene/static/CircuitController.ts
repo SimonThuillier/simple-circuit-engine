@@ -6,29 +6,18 @@
  */
 
 import * as THREE from 'three';
-import type { Component } from '../../core/Component';
-import type { Wire } from '../../core/Wire';
-import type { ENode } from '../../core/ENode';
-import type { UUID } from '../../core/types/Identifier';
-import { ENodeType } from '../../core/types/ENodeType';
+import type { Euler } from 'three';
+import type { Component, Wire, ENode, UUID, ComponentType, ENodeSourceType, Circuit } from 'simple-circuit-engine/core';
+import { ENodeType } from 'simple-circuit-engine/core';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
-import type { ToolType, SelectionData, SharedResources, ControllerOptions } from '../shared/types';
-import {
-  createGridHelper,
-  gridToWorldPosition,
-  gridToWorldRotation,
-} from '../shared/utils/GeometryUtils';
+import type { ToolType, SelectionData, SharedResources, ControllerOptions, IEditingTool } from '../shared/types';
+import { createGridHelper, gridToWorldPosition, gridToWorldRotation } from '../shared/utils/GeometryUtils';
 import { BuildTool } from './tools/BuildTool';
 import { AddComponentTool } from './tools/AddComponentTool';
 import { MultiSelectTool } from './tools/MultiSelectTool';
-import type { IEditingTool } from '../shared/types';
 import { SelectionManager } from '../shared/SelectionManager';
-import type { ComponentType } from '@/core/types/ComponentType';
 import { CircuitWriter } from './CircuitWriter';
-import type { Euler } from 'three';
-import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
 import { AbstractCircuitController } from '../shared/AbstractCircuitController';
-import type { Circuit } from '@/core/Circuit';
 import { ConfigPanelManager } from './ConfigPanelManager';
 import { controllerOptions } from '../shared/utils/Options';
 

@@ -8,8 +8,7 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { StateManager } from '@/core/simulation/StateManager';
-import { SimulationState } from '@/core/simulation/SimulationState';
+import { StateManager, SimulationState } from 'simple-circuit-engine/core';
 
 describe('StateManager', () => {
   describe('constructor', () => {

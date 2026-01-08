@@ -1,7 +1,7 @@
 {
   "name": "simple-circuit-engine",
   "version": "0.1.0",
-  "description": "A standalone, framework-agnostic boolean circuit simulation engine with 3D visualization, designed for educational purposes",
+  "description": "An educational boolean electronic circuit build & simulation engine with THREE.js 3D visualization",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -14,6 +14,10 @@
     "./core": {
       "types": "./dist/core/index.d.ts",
       "import": "./dist/core/index.js"
+    },
+    "./scene": {
+      "types": "./dist/scene/index.d.ts",
+      "import": "./dist/scene/index.js"
     }
   },
   "files": [
@@ -51,7 +55,7 @@
     "digital-electronics",
     "education",
     "3d",
-    "threejs",
+    "three.js",
     "visualization"
   ],
   "author": "",

@@ -8,8 +8,8 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { EventQueue } from '@/core/simulation/EventQueue';
-import type { ScheduledEvent } from '@/core/simulation/types/ScheduledEvent';
+import type { ScheduledEvent } from 'simple-circuit-engine/core';
+import { EventQueue } from 'simple-circuit-engine/core';
 
 describe('EventQueue', () => {
   let queue: EventQueue;

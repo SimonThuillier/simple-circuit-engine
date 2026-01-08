@@ -5,10 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { ComponentType } from '@/core/types/ComponentType';
-import { Component } from '@/core/Component';
-import { Position } from '@/core/types/Position';
-import { Rotation } from '@/core/types/Rotation';
+import { Component, ComponentType, Position, Rotation } from 'simple-circuit-engine/core';
 
 describe('Component', () => {
   describe('constructor', () => {

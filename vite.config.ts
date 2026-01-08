@@ -35,9 +35,8 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@/core': resolve(__dirname, './src/core'),
-      '@/scene': resolve(__dirname, './src/scene'),
-      '@/playback': resolve(__dirname, './src/playback'),
+      'simple-circuit-engine/core': resolve(__dirname, './src/core/index.ts'),
+      'simple-circuit-engine/scene': resolve(__dirname, './src/scene/index.ts')
     },
   },
 });

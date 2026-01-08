@@ -3,7 +3,7 @@
  * @module core/simulation/types
  */
 
-import type { UUID } from '@/core/types/Identifier';
+import type { UUID } from '../../types/Identifier.js';
 
 export type ReachabilityResult = {
   nodes: Set<UUID>;

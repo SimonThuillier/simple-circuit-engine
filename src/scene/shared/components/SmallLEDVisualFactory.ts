@@ -1,7 +1,5 @@
 import { ComponentVisualFactoryBase } from './ComponentVisualFactory';
-import type { Component } from '@/core/Component';
-import type { ComponentState } from '@/core/simulation/states/ComponentState';
-import type { SmallLEDState } from '@/core/simulation/states/SmallLEDState';
+import type { Component, ComponentState, SmallLEDState } from 'simple-circuit-engine/core';
 import { presetOrHexToHex, hexToPresetOrHex } from '../utils/ColorUtils';
 import * as THREE from 'three';
 import type {ConfigFormDefinition} from "../types";

@@ -3,9 +3,8 @@
  * @module core/simulation
  */
 
-import type { UUID } from '@/core/types/Identifier.js';
-import type { NodeElectricalState } from './states/NodeElectricalState.js';
-import type { ComponentState } from './states/ComponentState.js';
+import type { UUID } from '../types/Identifier.js';
+import type { ComponentState, NodeElectricalState } from './states';
 
 /**
  * Represents the complete electrical state of the circuit at a specific time step.

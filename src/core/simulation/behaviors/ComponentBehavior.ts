@@ -3,14 +3,13 @@
  * @module core/simulation/behaviors
  */
 
-import type { UUID } from '@/core/types/Identifier.js';
-import type { Component } from '@/core/Component.js';
+import type { UUID } from '../../types/Identifier.js';
+import type { Component } from '../../Component.js';
+import type { ComponentType } from '../../types/ComponentType.js';
+import type { ENodeSourceType } from '../../types/ENodeSourceType.js';
+import type { NodeElectricalState } from '../states/NodeElectricalState.js';
 import type { ComponentState } from '../states/ComponentState.js';
-import type { ScheduledEvent } from '../types/ScheduledEvent.js';
-import type { ComponentType } from '@/core/types/ComponentType';
-import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
-import type { NodeElectricalState, UserCommand } from '@/core/simulation';
-
+import type { ScheduledEvent, UserCommand } from '../types';
 /**
  * Result returned by component behavior evaluation.
  * Describes state changes and future events to schedule.
