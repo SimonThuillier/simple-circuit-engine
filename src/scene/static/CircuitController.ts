@@ -784,7 +784,6 @@ export class CircuitController extends AbstractCircuitController {
   /**
    * Update an enode based to a new source type.
    * @param enodeId - UUID of the enode
-   * @param enodeType - Type of the enode (BranchingPoint or Pin)
    * @param sourceType - New source type (null for no source)
    */
   updateEnodeSourceType(enodeId: UUID, sourceType: ENodeSourceType | null): void {

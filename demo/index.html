@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CircuitEngine Demo - Editor + Simulator</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
+          sans-serif;
+        margin: 0;
+        padding: 0;
+        background: #f5f5f5;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      .app-container {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        grid-template-rows: 1fr;
+        height: 100vh;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        background: white;
+        border-right: 1px solid #ddd;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .sidebar-header {
+        padding: 16px;
+        border-bottom: 1px solid #ddd;
+        background: #f8f9fa;
+      }
+
+      .sidebar-header h1 {
+        margin: 0;
+        font-size: 18px;
+        color: #333;
+      }
+
+      .sidebar-header .subtitle {
+        margin: 4px 0 0;
+        font-size: 12px;
+        color: #666;
+      }
+
+      /* Mode Toggle */
+      .mode-toggle {
+        display: flex;
+        padding: 12px;
+        gap: 8px;
+        border-bottom: 1px solid #ddd;
+      }
+
+      .mode-btn {
+        flex: 1;
+        padding: 10px 16px;
+        border: 2px solid #ddd;
+        border-radius: 6px;
+        background: white;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.2s;
+      }
+
+      .mode-btn:hover {
+        border-color: #999;
+      }
+
+      .mode-btn.active {
+        border-color: #4caf50;
+        background: #e8f5e9;
+        color: #2e7d32;
+      }
+
+      .mode-btn.simulation.active {
+        border-color: #2196f3;
+        background: #e3f2fd;
+        color: #1565c0;
+      }
+
+      /* Sections */
+      .sidebar-section {
+        border-bottom: 1px solid #ddd;
+      }
+
+      .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        cursor: pointer;
+        background: #f8f9fa;
+        user-select: none;
+      }
+
+      .section-header:hover {
+        background: #f0f0f0;
+      }
+
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .section-chevron {
+        font-size: 12px;
+        transition: transform 0.2s;
+      }
+
+      .sidebar-section.collapsed .section-chevron {
+        transform: rotate(-90deg);
+      }
+
+      .section-content {
+        padding: 12px 16px;
+        display: block;
+      }
+
+      .sidebar-section.collapsed .section-content {
+        display: none;
+      }
+
+      /* JSON Input */
+      #circuit-input {
+        width: 100%;
+        min-height: 120px;
+        max-height: 200px;
+        font-family: 'Courier New', monospace;
+        font-size: 11px;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        resize: vertical;
+        margin-bottom: 8px;
+      }
+
+      .json-buttons {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .json-buttons button {
+        flex: 1;
+        min-width: 70px;
+        padding: 8px 12px;
+        font-size: 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      #load-btn {
+        background-color: #4caf50;
+        color: white;
+      }
+
+      #load-btn:hover {
+        background-color: #45a049;
+      }
+
+      #serialize-btn {
+        background-color: #2196f3;
+        color: white;
+      }
+
+      #serialize-btn:hover {
+        background-color: #1976d2;
+      }
+
+      #clear-btn {
+        background-color: #f44336;
+        color: white;
+      }
+
+      #clear-btn:hover {
+        background-color: #d32f2f;
+      }
+
+      /* Edit Tools */
+      .tool-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .tool-btn {
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: white;
+        cursor: pointer;
+        font-size: 13px;
+        text-align: left;
+        transition: all 0.15s;
+      }
+
+      .tool-btn:hover {
+        border-color: #999;
+        background: #f5f5f5;
+      }
+
+      .tool-btn.active {
+        border-color: #4caf50;
+        background: #e8f5e9;
+        color: #2e7d32;
+      }
+
+      .tool-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* Component List */
+      #component-list {
+        display: none;
+        margin-top: 8px;
+        padding: 0;
+        list-style: none;
+        border-left: 3px solid #4caf50;
+        background: #fafafa;
+      }
+
+      #component-list.visible {
+        display: block;
+      }
+
+      .component-item {
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 12px;
+        color: #555;
+        border-bottom: 1px solid #eee;
+        transition: background-color 0.15s;
+      }
+
+      .component-item:hover {
+        background-color: #f0f0f0;
+      }
+
+      .component-item.selected {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+        font-weight: 500;
+      }
+
+      /* Simulation Controls */
+      .sim-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .sim-btn {
+        padding: 12px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.15s;
+      }
+
+      .sim-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      #play-pause-btn {
+        background: #4caf50;
+        color: white;
+      }
+
+      #play-pause-btn:hover:not(:disabled) {
+        background: #45a049;
+      }
+
+      #play-pause-btn.playing {
+        background: #ff9800;
+      }
+
+      #play-pause-btn.playing:hover:not(:disabled) {
+        background: #f57c00;
+      }
+
+      #step-btn {
+        background: #2196f3;
+        color: white;
+      }
+
+      #step-btn:hover:not(:disabled) {
+        background: #1976d2;
+      }
+
+      #stop-btn {
+        background: #f44336;
+        color: white;
+      }
+
+      #stop-btn:hover:not(:disabled) {
+        background: #d32f2f;
+      }
+
+      .tick-display {
+        padding: 8px 12px;
+        background: #f5f5f5;
+        border-radius: 4px;
+        font-size: 12px;
+        color: #666;
+        text-align: center;
+      }
+
+      /* Error Display */
+      #error-display {
+        background-color: #ffebee;
+        color: #c62828;
+        padding: 12px;
+        margin: 12px 16px;
+        border-radius: 4px;
+        border-left: 4px solid #c62828;
+        font-size: 12px;
+        display: none;
+      }
+
+      #error-display.visible {
+        display: block;
+      }
+
+      #error-display .close-btn {
+        float: right;
+        background: none;
+        border: none;
+        color: #c62828;
+        cursor: pointer;
+        font-size: 16px;
+        padding: 0;
+        line-height: 1;
+      }
+
+      /* Status Bar */
+      .status-bar {
+        margin-top: auto;
+        padding: 12px 16px;
+        background: #f8f9fa;
+        border-top: 1px solid #ddd;
+        font-size: 11px;
+        color: #666;
+      }
+
+      .status-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 4px;
+      }
+
+      .status-item:last-child {
+        margin-bottom: 0;
+      }
+
+      /* Viewer */
+      .viewer-container {
+        position: relative;
+        background: #1a1a2e;
+        overflow: hidden;
+      }
+
+      #canvas-container {
+        width: 100%;
+        height: 100%;
+      }
+
+      /* Mode indicator overlay */
+      .mode-indicator {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        pointer-events: none;
+      }
+
+      .mode-indicator.edit {
+        background: rgba(76, 175, 80, 0.9);
+        color: white;
+      }
+
+      .mode-indicator.simulation {
+        background: rgba(33, 150, 243, 0.9);
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <h1>CircuitEngine Demo</h1>
+          <p class="subtitle">Editor + Simulator (Dev Mode)</p>
+        </div>
+
+        <!-- Mode Toggle -->
+        <div class="mode-toggle">
+          <button id="mode-edit" class="mode-btn active">Edit Mode</button>
+          <button id="mode-simulation" class="mode-btn simulation">Simulation</button>
+        </div>
+
+        <!-- JSON Section -->
+        <div class="sidebar-section" id="json-section">
+          <div class="section-header">
+            <span class="section-title">Circuit JSON</span>
+            <span class="section-chevron">&#9662;</span>
+          </div>
+          <div class="section-content">
+            <textarea id="circuit-input" placeholder="Paste circuit JSON here...">
+{
+  "metadata": {
+    "name": "New Circuit",
+    "size": 10,
+    "divisions": 10,
+    "cameraOptions": {
+      "position": { "x": 0, "y": 15, "z": 15 },
+      "lookAtPosition": { "x": 0, "y": 0, "z": 0 },
+      "fov": 75,
+      "near": 0.1,
+      "far": 1000
+    }
+  },
+  "components": [],
+  "enodes": [],
+  "wires": []
+}</textarea>
+            <div class="json-buttons">
+              <button id="load-btn">Load</button>
+              <button id="serialize-btn">Export</button>
+              <button id="clear-btn">Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit Tools Section -->
+        <div class="sidebar-section" id="edit-section">
+          <div class="section-header">
+            <span class="section-title">Edit Tools</span>
+            <span class="section-chevron">&#9662;</span>
+          </div>
+          <div class="section-content">
+            <div class="tool-list">
+              <button id="tool-build" class="tool-btn">Build Tool</button>
+              <button id="tool-multi-select" class="tool-btn">Multi-Select Tool</button>
+              <button id="tool-add-component" class="tool-btn">Add Component</button>
+              <ul id="component-list"></ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulation Controls Section -->
+        <div class="sidebar-section" id="sim-section">
+          <div class="section-header">
+            <span class="section-title">Simulation Controls</span>
+            <span class="section-chevron">&#9662;</span>
+          </div>
+          <div class="section-content">
+            <div class="sim-controls">
+              <div class="speed-control" style="margin-top: 0.75rem">
+                <label for="speed-slider" style="display: block; margin-bottom: 0.25rem; font-size: 0.75rem; color: #888">
+                  Speed: <span id="speed-display">2</span> TPS
+                </label>
+                <input type="range" id="speed-slider" min="1" max="50" value="2" style="width: 100%" />
+              </div>
+              <button id="play-pause-btn" class="sim-btn" disabled>Play</button>
+              <button id="step-btn" class="sim-btn" disabled>Step</button>
+              <button id="stop-btn" class="sim-btn" disabled>Stop / Reset</button>
+              <div class="tick-display">Tick: <span id="tick-count">0</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Error Display -->
+        <div id="error-display">
+          <button class="close-btn" id="close-error">&times;</button>
+          <span id="error-message"></span>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+          <div class="status-item">
+            <span>Mode:</span>
+            <span id="status-mode">Edit</span>
+          </div>
+          <div class="status-item">
+            <span>Circuit:</span>
+            <span id="status-circuit">Not loaded</span>
+          </div>
+          <div class="status-item">
+            <span>Active Tool:</span>
+            <span id="status-tool">None</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Viewer -->
+      <div class="viewer-container">
+        <div id="canvas-container"></div>
+        <div class="mode-indicator edit" id="mode-indicator">EDIT MODE</div>
+      </div>
+    </div>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

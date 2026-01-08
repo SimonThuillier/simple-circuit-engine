@@ -26,3 +26,4 @@ export { SIMULATION_SPEED, TRANSITION_DEFAULTS } from './types/SimulationConstan
 // Utilities
 export { EventQueue } from './EventQueue.js';
 export { DirtyTracker } from './DirtyTracker.js';
+export type { DirtyElements } from './DirtyTracker.js';

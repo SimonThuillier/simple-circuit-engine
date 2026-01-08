@@ -23,6 +23,7 @@
 
 // Type definitions
 export { CameraOptions } from './types/CameraOptions.js';
+export type { ICameraOptions } from './types/CameraOptions.js';
 export type { ComponentTypeMetadata } from './types/ComponentType.js';
 export {
   ComponentType,
@@ -36,6 +37,7 @@ export type { UUID } from './types/Identifier.js';
 export { generateUUID } from './types/Identifier.js';
 export { Position, findPositionBestIndex, simplifyPositions } from './types/Position.js';
 export { Position3D } from './types/Position3D.js';
+export type { IPosition3D } from './types/Position3D.js';
 export { Rotation } from './types/Rotation.js';
 
 // Core entities

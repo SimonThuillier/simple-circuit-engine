@@ -29,9 +29,22 @@ export type { AbstractCircuitController } from './shared/AbstractCircuitControll
 export { AddComponentTool } from './static/tools/AddComponentTool';
 export { BuildTool } from './static/tools/BuildTool';
 export { MultiSelectTool } from './static/tools/MultiSelectTool';
+export type { MultiSelectToolMode } from './static/tools/MultiSelectTool';
+
+// Circuit Writer
+export { CircuitWriter } from './static/CircuitWriter';
 
 // Components
 export * from './shared/components';
+
+// Shared managers
+export { HoverManager } from './shared/HoverManager';
+export type { HoverCallback } from './shared/HoverManager';
+export { SelectionManager } from './shared/SelectionManager';
+export type { SelectionCallback } from './shared/SelectionManager';
+export { WireVisualManager } from './shared/WireVisualManager';
+export type { WirePath } from './shared/WireVisualManager';
+export { BranchingPointVisualFactory } from './shared/BranchingPointVisualFactory';
 
 // Types
 export type * from './shared/types';

@@ -12,10 +12,9 @@ import * as THREE from 'three';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
-import type { UUID } from '../../core/types/Identifier';
-import type { Circuit } from '../../core/Circuit';
-import type { Wire } from '../../core/Wire';
-import { ENodeType } from '../../core/types/ENodeType';
+import type { UUID, Wire, Circuit } from 'simple-circuit-engine/core';
+import { ENodeType } from 'simple-circuit-engine/core';
+
 import { createLine2Material } from './utils/MaterialUtils';
 import type { WireMaterialState } from './types';
 import { HitboxLayers } from './utils/LayerConstants';
