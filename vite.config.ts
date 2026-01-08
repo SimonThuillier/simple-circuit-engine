@@ -8,13 +8,18 @@ export default defineConfig({
       entry: {
         index: resolve(__dirname, 'src/index.ts'),
         'core/index': resolve(__dirname, 'src/core/index.ts'),
+        'scene/index': resolve(__dirname, 'src/scene/index.ts'),
       },
       formats: ['es'],
       fileName: (_format, entryName) => `${entryName}.js`,
     },
     rollupOptions: {
       // Externalize dependencies that shouldn't be bundled
-      external: ['three'],
+      external: [
+        'three',
+        /^three\/addons\/.*/,
+        /^three\/examples\/.*/,
+      ],
       output: {
         // Provide global variables for externalized deps in UMD build
         globals: {
@@ -25,6 +30,7 @@ export default defineConfig({
     },
     sourcemap: true,
     target: 'es2022',
+    minify: 'esbuild',
   },
   plugins: [
     dts({

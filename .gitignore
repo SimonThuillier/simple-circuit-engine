@@ -43,11 +43,12 @@ TODO.local.md
 .claude/cache/
 .claude/*.token
 
-# legacy : old code for reference TODO remove when not needed anymore
-legacy/
 # draft-circuits
 draft-circuits/
 # scripts output
 output/
 # typedocs generated files
 docs-site/
+
+# demo-ext
+demo-ext/
