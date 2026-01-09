@@ -62,9 +62,7 @@ export class FactoryRegistry implements IFactoryRegistry {
     }
     // Accept both class instances (object with createVisual method) and functions
     if (typeof factory !== 'object' || typeof (factory as any).createVisual !== 'function') {
-      throw new TypeError(
-        `Factory must be a an object with createVisual method for type: ${type}`
-      );
+      throw new TypeError(`Factory must be a an object with createVisual method for type: ${type}`);
     }
     this.factories.set(type, factory);
     return this;

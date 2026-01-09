@@ -3,7 +3,7 @@
 ## Project Identity
 
 **Name**: simple-circuit-engine
-**Purpose**: A standalone, framework-agnostic boolean circuit simulation engine with 3D visualization, designed for educational purposes.
+**Purpose**: A standalone, framework-agnostic educational electronic circuits Build & Simulation engine with THREE.js 3D visualization
 **License**: MIT (open source, usable by everyone)
 
 ### Vision Statement
@@ -80,13 +80,13 @@ If a developer needs to read source code to understand how to use the library, t
 | Module      | May Import  | May NOT Import | DOM Access             |
 |-------------|-------------|----------------| ---------------------- |
 | `core/`     | nothing     | three, scene   | ❌                     |
-| `scene/`    | core, three | playback       | ✅ mainly via Three.js |
+| `scene/`    | core, three | -              | ✅ mainly via Three.js |
 
 ### Public API Shape
 
 - Single `CircuitEngine` facade class as main entry point
 - Event-based communication (no callbacks in method signatures)
-- Chainable methods where it makes sense (`engine.loadCircuit(c).play()`)
+- Chainable methods where it makes sense
 - Public rendering and playback APIs can use Three.js public types (e.g., `THREE.Object3D`). 
 
 ### Resource Management

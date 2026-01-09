@@ -7,11 +7,29 @@
 
 import * as THREE from 'three';
 import type { Euler } from 'three';
-import type { Component, Wire, ENode, UUID, ComponentType, ENodeSourceType, Circuit } from 'simple-circuit-engine/core';
+import type {
+  Component,
+  Wire,
+  ENode,
+  UUID,
+  ComponentType,
+  ENodeSourceType,
+  Circuit,
+} from 'simple-circuit-engine/core';
 import { ENodeType } from 'simple-circuit-engine/core';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
-import type { ToolType, SelectionData, SharedResources, ControllerOptions, IEditingTool } from '../shared/types';
-import { createGridHelper, gridToWorldPosition, gridToWorldRotation } from '../shared/utils/GeometryUtils';
+import type {
+  ToolType,
+  SelectionData,
+  SharedResources,
+  ControllerOptions,
+  IEditingTool,
+} from '../shared/types';
+import {
+  createGridHelper,
+  gridToWorldPosition,
+  gridToWorldRotation,
+} from '../shared/utils/GeometryUtils';
 import { BuildTool } from './tools/BuildTool';
 import { AddComponentTool } from './tools/AddComponentTool';
 import { MultiSelectTool } from './tools/MultiSelectTool';

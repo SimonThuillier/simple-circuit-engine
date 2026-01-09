@@ -14,7 +14,6 @@ import { Euler } from 'three';
 import type { ComponentType } from 'simple-circuit-engine/core';
 import { Position, Rotation, Component } from 'simple-circuit-engine/core';
 
-
 import type { IEditingTool, ToolType, CursorType } from '../../shared/types';
 import type { CircuitController } from '../CircuitController';
 

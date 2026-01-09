@@ -272,7 +272,9 @@ document.getElementById('tool-multi-select')!.addEventListener('click', () => {
   }
 
   function selectType(type: string | null, element: HTMLElement) {
-    componentList.querySelectorAll('.component-item').forEach((el) => el.classList.remove('selected'));
+    componentList
+      .querySelectorAll('.component-item')
+      .forEach((el) => el.classList.remove('selected'));
     element.classList.add('selected');
 
     try {

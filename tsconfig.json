@@ -39,7 +39,7 @@
     "baseUrl": ".",
     "paths": {
       "simple-circuit-engine/core": ["./src/core/index.ts"],
-      "simple-circuit-engine/scene": ["./src/scene/index.ts"],
+      "simple-circuit-engine/scene": ["./src/scene/index.ts"]
     }
   },
   "include": ["src/**/*"],

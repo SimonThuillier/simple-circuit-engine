@@ -8,7 +8,11 @@ import { Position, ComponentType, CameraOptions, Position3D } from 'simple-circu
 
 import type { CircuitController } from './CircuitController';
 import type { ControllerEventMap } from '../shared/types';
-import { computeDivisionsForSize, worldToGridPosition, worldToGridRotation } from '../shared/utils/GeometryUtils';
+import {
+  computeDivisionsForSize,
+  worldToGridPosition,
+  worldToGridRotation,
+} from '../shared/utils/GeometryUtils';
 
 /**
  * Manages editing operations of 3D models from the circuit scene into the core circuit model.

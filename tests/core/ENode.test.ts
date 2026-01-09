@@ -5,7 +5,15 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { Circuit, ENode, ComponentType, COMPONENT_TYPE_METADATA, ENodeType, Position, Rotation } from 'simple-circuit-engine/core';
+import {
+  Circuit,
+  ENode,
+  ComponentType,
+  COMPONENT_TYPE_METADATA,
+  ENodeType,
+  Position,
+  Rotation,
+} from 'simple-circuit-engine/core';
 
 describe('ENode', () => {
   describe('Pin ENode creation', () => {

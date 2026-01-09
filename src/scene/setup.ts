@@ -1,16 +1,15 @@
-import {ComponentType} from "simple-circuit-engine/core";
+import { ComponentType } from 'simple-circuit-engine/core';
 import {
-    type IFactoryRegistry,
-    BatteryVisualFactory,
-    LabelVisualFactory,
-    LightbulbVisualFactory,
-    RectangleLEDVisualFactory,
-    RelayVisualFactory,
-    SmallLEDVisualFactory,
-    SwitchVisualFactory,
-    TransistorVisualFactory
-} from "./shared/components";
-
+  type IFactoryRegistry,
+  BatteryVisualFactory,
+  LabelVisualFactory,
+  LightbulbVisualFactory,
+  RectangleLEDVisualFactory,
+  RelayVisualFactory,
+  SmallLEDVisualFactory,
+  SwitchVisualFactory,
+  TransistorVisualFactory,
+} from './shared/components';
 
 /**
  * Register all basic component visual factories in the given registry
@@ -19,13 +18,13 @@ import {
  * @param registry
  */
 export function registerBasicComponentsFactories(registry: IFactoryRegistry): void {
-    registry
-        .register(ComponentType.Battery, new BatteryVisualFactory())
-        .register(ComponentType.Label, new LabelVisualFactory())
-        .register(ComponentType.Lightbulb, new LightbulbVisualFactory())
-        .register(ComponentType.RectangleLED, new RectangleLEDVisualFactory())
-        .register(ComponentType.Relay, new RelayVisualFactory())
-        .register(ComponentType.SmallLED, new SmallLEDVisualFactory())
-        .register(ComponentType.Switch, new SwitchVisualFactory())
-        .register(ComponentType.Transistor, new TransistorVisualFactory())
+  registry
+    .register(ComponentType.Battery, new BatteryVisualFactory())
+    .register(ComponentType.Label, new LabelVisualFactory())
+    .register(ComponentType.Lightbulb, new LightbulbVisualFactory())
+    .register(ComponentType.RectangleLED, new RectangleLEDVisualFactory())
+    .register(ComponentType.Relay, new RelayVisualFactory())
+    .register(ComponentType.SmallLED, new SmallLEDVisualFactory())
+    .register(ComponentType.Switch, new SwitchVisualFactory())
+    .register(ComponentType.Transistor, new TransistorVisualFactory());
 }

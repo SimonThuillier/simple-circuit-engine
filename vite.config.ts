@@ -15,11 +15,7 @@ export default defineConfig({
     },
     rollupOptions: {
       // Externalize dependencies that shouldn't be bundled
-      external: [
-        'three',
-        /^three\/addons\/.*/,
-        /^three\/examples\/.*/,
-      ],
+      external: ['three', /^three\/addons\/.*/, /^three\/examples\/.*/],
       output: {
         // Provide global variables for externalized deps in UMD build
         globals: {
@@ -42,7 +38,7 @@ export default defineConfig({
   resolve: {
     alias: {
       'simple-circuit-engine/core': resolve(__dirname, './src/core/index.ts'),
-      'simple-circuit-engine/scene': resolve(__dirname, './src/scene/index.ts')
+      'simple-circuit-engine/scene': resolve(__dirname, './src/scene/index.ts'),
     },
   },
 });

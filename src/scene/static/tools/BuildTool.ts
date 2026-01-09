@@ -32,7 +32,6 @@ import {
   worldToGridPosition,
 } from '../../shared/utils/GeometryUtils';
 
-
 /**
  * Build tool operating modes
  *

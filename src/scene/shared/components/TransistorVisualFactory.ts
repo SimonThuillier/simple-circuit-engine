@@ -2,7 +2,7 @@ import { ComponentVisualFactoryBase } from './ComponentVisualFactory';
 import type { Component, ComponentState, TransistorState } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
 import { RingGeometry } from '../utils/GeometryUtils';
-import type {ConfigFormDefinition} from "../types";
+import type { ConfigFormDefinition } from '../types';
 
 /**
  * Visual factory for Transistor components

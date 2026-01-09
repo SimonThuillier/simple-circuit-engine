@@ -17,4 +17,3 @@ export { RelayVisualFactory } from './RelayVisualFactory.js';
 export { SmallLEDVisualFactory } from './SmallLEDVisualFactory.js';
 export { SwitchVisualFactory } from './SwitchVisualFactory.js';
 export { TransistorVisualFactory } from './TransistorVisualFactory.js';
-

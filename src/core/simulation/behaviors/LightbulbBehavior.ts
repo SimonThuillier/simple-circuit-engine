@@ -13,7 +13,6 @@ import type { ComponentBehavior, BehaviorResult } from './ComponentBehavior.js';
 import { ComponentType } from '../../types/ComponentType.js';
 import { LightbulbState } from '../states/LightbulbState';
 
-
 export class LightbulbBehavior implements ComponentBehavior {
   readonly componentType = ComponentType.Lightbulb;
 

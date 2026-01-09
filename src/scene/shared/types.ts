@@ -3,17 +3,17 @@
  * @module scene/shared/types
  */
 import type * as THREE from 'three';
-import type {MapControls} from 'three/addons/controls/MapControls.js';
-import type {Line2} from 'three/examples/jsm/lines/Line2.js';
-import type {LineGeometry} from 'three/examples/jsm/lines/LineGeometry.js';
-import type {LineMaterial} from 'three/examples/jsm/lines/LineMaterial.js';
+import type { MapControls } from 'three/addons/controls/MapControls.js';
+import type { Line2 } from 'three/examples/jsm/lines/Line2.js';
+import type { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
+import type { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 
 import type { UUID, ComponentType, UserCommand, RunnerOptions } from 'simple-circuit-engine/core';
 
-import type {IFactoryRegistry} from './components/ComponentVisualFactory';
-import type {BranchingPointVisualFactory} from './BranchingPointVisualFactory';
-import type {WireVisualManager} from './WireVisualManager';
-import type {HoverManager} from './HoverManager';
+import type { IFactoryRegistry } from './components/ComponentVisualFactory';
+import type { BranchingPointVisualFactory } from './BranchingPointVisualFactory';
+import type { WireVisualManager } from './WireVisualManager';
+import type { HoverManager } from './HoverManager';
 
 // Re-export Line2 types for convenience
 export type { Line2, LineGeometry, LineMaterial };

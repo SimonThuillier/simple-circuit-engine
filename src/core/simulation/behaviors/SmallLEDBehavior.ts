@@ -13,7 +13,6 @@ import { ComponentType } from '../../types/ComponentType.js';
 import { SmallLEDState } from '../states/SmallLEDState';
 import type { ComponentState } from '../states/ComponentState.js';
 
-
 export class SmallLEDBehavior implements ComponentBehavior {
   componentType = ComponentType.SmallLED;
 

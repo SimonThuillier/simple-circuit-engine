@@ -4,14 +4,14 @@
  */
 
 import {
-    BehaviorRegistry,
-    BatteryBehavior,
-    LightbulbBehavior,
-    RectangleLEDBehavior,
-    RelayBehavior,
-    SmallLEDBehavior,
-    SwitchBehavior,
-    TransistorBehavior
+  BehaviorRegistry,
+  BatteryBehavior,
+  LightbulbBehavior,
+  RectangleLEDBehavior,
+  RelayBehavior,
+  SmallLEDBehavior,
+  SwitchBehavior,
+  TransistorBehavior,
 } from './simulation/behaviors';
 
 /**
@@ -20,13 +20,13 @@ import {
  * @public
  * @param registry
  */
-export function registerBasicComponentsBehaviors (registry: BehaviorRegistry): void {
-    registry
-        .register(new BatteryBehavior())
-        .register(new LightbulbBehavior())
-        .register(new RectangleLEDBehavior())
-        .register(new RelayBehavior())
-        .register(new SmallLEDBehavior())
-        .register(new SwitchBehavior())
-        .register(new TransistorBehavior());
+export function registerBasicComponentsBehaviors(registry: BehaviorRegistry): void {
+  registry
+    .register(new BatteryBehavior())
+    .register(new LightbulbBehavior())
+    .register(new RectangleLEDBehavior())
+    .register(new RelayBehavior())
+    .register(new SmallLEDBehavior())
+    .register(new SwitchBehavior())
+    .register(new TransistorBehavior());
 }

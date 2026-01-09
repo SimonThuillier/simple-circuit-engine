@@ -2,7 +2,7 @@ import { ComponentVisualFactoryBase } from './ComponentVisualFactory';
 import type { Component, ComponentState, LightbulbState } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
 
-import type {ConfigFormDefinition} from "../types";
+import type { ConfigFormDefinition } from '../types';
 
 /**
  * Visual factory for Lightbulb components

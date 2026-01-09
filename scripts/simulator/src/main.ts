@@ -2,20 +2,20 @@
  * Main entry point for the CircuitEngine demo page
  * Uses the unified CircuitEngine API for both editing and simulation
  */
-import {AxesHelper, WebGLRenderer} from "three";
+import { AxesHelper, WebGLRenderer } from 'three';
 import { EngineError, IntegrityError, RenderError, ValidationError } from './errors.js';
 import {
   Circuit,
   BehaviorRegistry,
-  registerBasicComponentsBehaviors } from 'simple-circuit-engine/core';
+  registerBasicComponentsBehaviors,
+} from 'simple-circuit-engine/core';
 import {
   CircuitRunnerController,
   type IFactoryRegistry,
   FactoryRegistry,
   DefaultVisualFactory,
-  registerBasicComponentsFactories
-} from "simple-circuit-engine/scene";
-
+  registerBasicComponentsFactories,
+} from 'simple-circuit-engine/scene';
 
 // Export to window object for use in HTML
 declare global {
@@ -37,13 +37,13 @@ declare global {
 if (typeof window !== 'undefined') {
   // Create component factory registry with all visual factories
   const componentsFactoryRegistry: IFactoryRegistry = new FactoryRegistry(
-    new DefaultVisualFactory());
+    new DefaultVisualFactory()
+  );
   registerBasicComponentsFactories(componentsFactoryRegistry);
 
   // Create behavior registry with all component behaviors
   const behaviorRegistry = new BehaviorRegistry();
   registerBasicComponentsBehaviors(behaviorRegistry);
-
 
   // Create WebGL renderer
   window.renderer = new WebGLRenderer({ antialias: true, alpha: false });

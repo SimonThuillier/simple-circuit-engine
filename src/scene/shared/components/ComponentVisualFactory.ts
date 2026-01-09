@@ -11,7 +11,7 @@ import { ENodeSourceType } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
 import { HitboxLayers } from '../utils/LayerConstants';
 
-import type {ConfigFormDefinition} from "../types";
+import type { ConfigFormDefinition } from '../types';
 
 /**
  * Interface for component visual factories

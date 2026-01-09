@@ -8,7 +8,14 @@
 
 import * as THREE from 'three';
 import type { Component, Wire, ENode, UserCommand, Circuit } from 'simple-circuit-engine/core';
-import { ENodeType, ComponentType, CircuitRunner, BehaviorRegistry, SIMULATION_SPEED, TRANSITION_DEFAULTS } from 'simple-circuit-engine/core';
+import {
+  ENodeType,
+  ComponentType,
+  CircuitRunner,
+  BehaviorRegistry,
+  SIMULATION_SPEED,
+  TRANSITION_DEFAULTS,
+} from 'simple-circuit-engine/core';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
 import type { SharedResources, HoveredElement } from '../shared/types';
 import { AbstractCircuitController } from '../shared/AbstractCircuitController';
