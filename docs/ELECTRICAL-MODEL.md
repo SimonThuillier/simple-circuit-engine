@@ -6,15 +6,16 @@ Simple Circuit Engine uses a **simplified boolean model** designed for education
 
 ### This is NOT a SPICE Simulator
 
-SPICE simulators model analog circuits with continuous voltages, currents, impedance, and complex physical phenomena. Simple Circuit Engine intentionally simplifies this to focus on digital logic fundamentals.
+SPICE simulators model analog circuits with continuous voltages, currents, impedance, and complex physical phenomena. 
+Simple Circuit Engine intentionally simplifies this to focus on digital logic fundamentals.
 
 ### Boolean States
 
 All electrical signals are **boolean**:
 - **Voltage**: Either present (HIGH/1) or absent (LOW/0)
 - **Current**: Either flowing or not flowing
-- No analog voltage levels (no 3.3V vs 5V)
-- No current magnitude (no amperes)
+- No analog voltage levels (no volts)
+- No current levels (no amperes)
 
 ### Discrete Time
 
@@ -26,9 +27,11 @@ Time advances in **discrete integer ticks**, not continuous milliseconds:
 ### Ideal Components
 
 All components have idealized behavior:
-- **Wires**: Zero resistance, perfect conductivity, instant propagation
-- **Gates**: Perfect boolean logic, configurable integer delay
 - **Power/Ground**: Infinite current source/sink at constant potential
+- **Wires**: Zero resistance, perfect conductivity, instant propagation
+- **Transistors/Relays**: Perfect boolean logic BUT not immediate : configurable integer delay to change outputs after inputs change
+
+NB: to compute initial simulation states an Initialization order is configurable : this allows ta handle feedback loops in a deterministic way.
 
 ## Electrical Concepts
 
@@ -67,67 +70,7 @@ Tick 2: Output changes to HIGH
 
 ### Basic Components
 
-#### Power Source
-- **Type**: `power`
-- **Pins**: `out`
-- **Behavior**: Always provides HIGH signal
-- **Visual**: Positive terminal symbol
-
-#### Ground
-- **Type**: `ground`
-- **Pins**: `in`
-- **Behavior**: Always accepts current, provides 0V reference
-- **Visual**: Ground symbol
-
-#### Switch
-- **Type**: `switch`
-- **Pins**: `source` (in), `out`
-- **Behavior**:
-  - ON: Connects source to output (current flows if source is HIGH)
-  - OFF: Disconnects source from output (no current)
-- **State**: `on` | `off`
-
-#### LED
-- **Type**: `led`
-- **Pins**: `in`, `out`
-- **Behavior**:
-  - Lights up when current flows through
-  - Acts as pass-through (out = in)
-- **Visual**: Glows when current present
-
-### Logic Gates
-
-All gates have configurable delay (default: 0 ticks).
-
-#### AND Gate
-- **Type**: `and`
-- **Pins**: `in_a`, `in_b`, `out`
-- **Logic**: `out = in_a AND in_b`
-
-#### OR Gate
-- **Type**: `or`
-- **Pins**: `in_a`, `in_b`, `out`
-- **Logic**: `out = in_a OR in_b`
-
-#### NOT Gate
-- **Type**: `not`
-- **Pins**: `in`, `out`
-- **Logic**: `out = NOT in`
-
-#### NAND Gate
-- **Type**: `nand`
-- **Pins**: `in_a`, `in_b`, `out`
-- **Logic**: `out = NOT (in_a AND in_b)`
-
-#### NOR Gate
-- **Type**: `nor`
-- **Pins**: `in_a`, `in_b`, `out`
-- **Logic**: `out = NOT (in_a OR in_b)`
-
-#### XOR Gate
-- **Type**: `xor`
-- **Pins**: `in_a`, `in_b`, `out`
-- **Logic**: `out = in_a XOR in_b`
+TODO: List of basic components with descriptions
 
 ## Signal Propagation
 
@@ -209,6 +152,7 @@ Potential future components (maintaining boolean model):
 - Multiplexers
 - Decoders
 - Counters
+- RAM arrays
 - Registers
 
 All would maintain discrete boolean behavior for educational clarity.

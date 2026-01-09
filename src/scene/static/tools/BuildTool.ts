@@ -13,6 +13,10 @@
  */
 
 import * as THREE from 'three';
+import type { Euler } from 'three';
+import { Line2 } from 'three/examples/jsm/lines/Line2.js';
+import { type UUID, type ComponentType, ENodeSourceType } from 'simple-circuit-engine/core';
+
 import type {
   IEditingTool,
   ToolType,
@@ -22,16 +26,11 @@ import type {
   HoveredElement,
 } from '../../shared/types';
 import type { CircuitController } from '../CircuitController';
-import type { UUID } from '../../../core/types/Identifier';
-import { ENodeSourceType } from '../../../core/types/ENodeSourceType';
-import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import {
   gridToWorldRotation,
   nearestWorldSnapPosition,
   worldToGridPosition,
 } from '../../shared/utils/GeometryUtils';
-import type { ComponentType } from '../../../core/types/ComponentType';
-import type { Euler } from 'three';
 
 /**
  * Build tool operating modes

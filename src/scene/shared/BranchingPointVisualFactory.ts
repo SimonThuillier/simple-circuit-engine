@@ -9,10 +9,8 @@
  */
 
 import * as THREE from 'three';
-import type { ENode } from '@/core/ENode';
-import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
-import { HitboxLayers } from '../utils/LayerConstants';
-import { ENodeType } from '@/core/types/ENodeType';
+import { type ENodeSourceType, type ENode, ENodeType } from 'simple-circuit-engine/core';
+import { HitboxLayers } from './utils/LayerConstants';
 
 /**
  * Factory for creating branching point visuals.

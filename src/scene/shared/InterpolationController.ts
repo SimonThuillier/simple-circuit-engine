@@ -1,6 +1,6 @@
 /**
  * Interpolation Controller
- * @module rendering/shared/InterpolationController
+ * @module scene/shared/InterpolationController
  *
  * Manages smooth animation between discrete simulation states using
  * frame-independent interpolation with easing functions.

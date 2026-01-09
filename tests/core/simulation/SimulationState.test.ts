@@ -8,9 +8,8 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { SimulationState } from '@/core/simulation/SimulationState';
-import type { NodeElectricalState } from '@/core/simulation/states/NodeElectricalState';
-import { ComponentState } from '@/core/simulation/states/ComponentState';
+import type { NodeElectricalState } from 'simple-circuit-engine/core';
+import { SimulationState, ComponentState } from 'simple-circuit-engine/core';
 
 class DummyComponentState extends ComponentState {
   constructor(componentId: string) {

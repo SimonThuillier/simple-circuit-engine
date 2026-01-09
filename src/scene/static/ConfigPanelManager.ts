@@ -1,15 +1,14 @@
 /**
  * Config Panel Manager
- * @module scene/shared/ConfigPanelManager
+ * @module scene/static/ConfigPanelManager
  *
  * Manages the lifecycle of the lil-gui configuration panel for component editing.
  */
 
 import GUI from 'lil-gui';
-import type { UUID } from '@/core/types/Identifier';
+import type { UUID, Component } from 'simple-circuit-engine/core';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
-import type { ConfigFormDefinition } from '../shared/utils/ConfigPanelTypes';
-import type { Component } from '@/core/Component';
+import type { ConfigFormDefinition } from '../shared/types';
 
 /**
  * Manages lil-gui configuration panel for component config editing

@@ -1,8 +1,13 @@
-import { SmallLEDBehavior } from '@/core/simulation/behaviors/SmallLEDBehavior';
-import { ComponentType } from '@/core/types/ComponentType';
-import type { Component } from '@/core/Component';
-import { ComponentState } from '@/core/simulation';
-import { RectangleLEDState } from '@/core/simulation/states/RectangleLEDState';
+/**
+ * RectangleLED component behavior implementation (just an extension of SmallLEDBehavior)
+ * @module core/simulation/behaviors
+ */
+
+import type { Component } from '../../Component.js';
+import type { ComponentState } from '../states/ComponentState.js';
+import { ComponentType } from '../../types/ComponentType.js';
+import { SmallLEDBehavior } from './SmallLEDBehavior.js';
+import { RectangleLEDState } from '../states/RectangleLEDState';
 
 export class RectangleLEDBehavior extends SmallLEDBehavior {
   override readonly componentType = ComponentType.RectangleLED;

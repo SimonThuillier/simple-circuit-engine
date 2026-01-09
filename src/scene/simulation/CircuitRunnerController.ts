@@ -2,29 +2,24 @@
  * Simulation Circuit Controller
  * @module scene/simulation/CircuitRunnercontroller
  *
- * Renders live circuit simulation with real-time state updates and animated current flow.
+ * Controls live circuit simulation with real-time state updates and animated current flow.
  * Provides smooth interpolation between discrete simulation ticks for fluid animation.
  */
 
 import * as THREE from 'three';
-import { CircuitRunner } from '../../core/simulation/CircuitRunner';
-import type { Component } from '../../core/Component';
-import type { Wire } from '../../core/Wire';
-import type { ENode } from '../../core/ENode';
-import { ENodeType } from '../../core/types/ENodeType';
-import { ComponentType } from '../../core/types/ComponentType';
-import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
-import type { UserCommand } from '../../core/simulation/types/UserCommand';
-import type { SharedResources } from '../shared/types';
-import { AbstractCircuitController } from '../shared/AbstractCircuitController';
-import { gridToWorldPosition, gridToWorldRotation } from '../shared/utils/GeometryUtils';
-import type { HoveredElement } from '../shared/types';
-import type { Circuit } from '@/core/Circuit';
-import { BehaviorRegistry } from '@/core/simulation/behaviors';
+import type { Component, Wire, ENode, UserCommand, Circuit } from 'simple-circuit-engine/core';
 import {
+  ENodeType,
+  ComponentType,
+  CircuitRunner,
+  BehaviorRegistry,
   SIMULATION_SPEED,
   TRANSITION_DEFAULTS,
-} from '../../core/simulation/types/SimulationConstants';
+} from 'simple-circuit-engine/core';
+import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
+import type { SharedResources, HoveredElement } from '../shared/types';
+import { AbstractCircuitController } from '../shared/AbstractCircuitController';
+import { gridToWorldPosition, gridToWorldRotation } from '../shared/utils/GeometryUtils';
 
 /**
  * Simulation Circuit Runner Controller Implementation

@@ -30,8 +30,9 @@ export class BehaviorRegistry {
    *
    * @param behavior - The component behavior to register
    * @throws TypeError if behavior is null/undefined or componentType is empty
+   * @returns The registry instance for chaining
    */
-  register(behavior: ComponentBehavior): void {
+  register(behavior: ComponentBehavior): BehaviorRegistry {
     if (!behavior) {
       throw new TypeError('Behavior cannot be null or undefined');
     }
@@ -41,6 +42,7 @@ export class BehaviorRegistry {
     }
 
     this.behaviors.set(behavior.componentType, behavior);
+    return this;
   }
 
   /**

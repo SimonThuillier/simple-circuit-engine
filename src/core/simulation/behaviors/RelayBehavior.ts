@@ -3,14 +3,16 @@
  * @module core/simulation/behaviors
  */
 
-import type { UUID } from '@/core/types/Identifier.js';
-import type { ComponentBehavior, BehaviorResult } from './ComponentBehavior.js';
-import type { Component } from '@/core/Component.js';
+import type { UUID } from '../../types/Identifier.js';
+import type { Component } from '../../Component.js';
+import type { ENodeSourceType } from '../../types/ENodeSourceType.js';
+import type { NodeElectricalState } from '../states/NodeElectricalState.js';
 import type { ComponentState } from '../states/ComponentState.js';
-import { ComponentType } from '@/core/types/ComponentType';
-import { RelayState } from '@/core/simulation/states/RelayState';
-import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
-import type { NodeElectricalState, ScheduledEvent, UserCommand } from '@/core/simulation';
+import type { ScheduledEvent, UserCommand } from '../types';
+import type { ComponentBehavior, BehaviorResult } from './ComponentBehavior.js';
+import { ComponentType } from '../../types/ComponentType.js';
+import { RelayState } from '../states/RelayState';
+
 import { TRANSITION_DEFAULTS } from '../types/SimulationConstants';
 
 /**

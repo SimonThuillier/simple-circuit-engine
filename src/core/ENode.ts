@@ -12,7 +12,7 @@ import { generateUUID } from './types/Identifier.js';
 import { ENodeType } from './types/ENodeType.js';
 import { Position } from './types/Position.js';
 import type { Circuit } from './Circuit.js';
-import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
+import type { ENodeSourceType } from './types/ENodeSourceType';
 
 /**
  * Electrical connection point (component pin or wire branching point).

@@ -10,7 +10,7 @@ Thank you for your interest in contributing! This document provides guidelines a
 
 3. **Set Up Development Environment**:
    ```bash
-   git clone https://github.com/yourusername/simple-circuit-engine.git
+   git clone https://github.com/SimonThuillier/simple-circuit-engine.git
    cd simple-circuit-engine
    npm install
    npm test
@@ -18,9 +18,13 @@ Thank you for your interest in contributing! This document provides guidelines a
 
 ## Development Workflow
 
-### 1. Create a Branch
+### 1. Create a Branch from dev
 
 ```bash
+git fetch origin
+git checkout dev
+git pull
+# then
 git checkout -b feature/your-feature-name
 # or
 git checkout -b fix/your-bug-fix
@@ -31,15 +35,22 @@ git checkout -b fix/your-bug-fix
 Follow these guidelines:
 
 - **Code Style**: TypeScript strict mode, no `any` types
-- **Testing**: Write tests for new functionality (80% coverage for core module)
+- **Testing**: Write tests for new functionality (the goal is 80% coverage for core module, 60% for scene module)
 - **Documentation**: Add JSDoc comments to all public APIs
 - **Commits**: Write clear, descriptive commit messages
 
-### 3. Run Tests
+### 3. Test
+
+During development, you can check changes on the fly with the demo page:
+
+```bash
+# Hot Reload the demo page in your browser while making changes
+npm run dev:demo
+```
 
 ```bash
 # Run all tests
-npm test
+npm run test
 
 # Run tests in watch mode
 npm run test:ui
@@ -62,7 +73,7 @@ Ensure the build succeeds without errors.
 ### 5. Submit Pull Request
 
 - Push your branch to GitHub
-- Open a pull request against `main`
+- Open a pull request against `dev`
 - Describe your changes clearly
 - Reference any related issues
 
@@ -90,102 +101,63 @@ function calculateDelay(component: any) {
 
 Respect the dependency rules defined in the constitution:
 
-| Module       | May Import      | May NOT Import             |
-| ------------ | --------------- | -------------------------- |
-| `core/`      | nothing         | three, rendering, playback |
-| `rendering/` | core, three     | playback                   |
-| `playback/`  | core, rendering | -                          |
+| Module   | May Import           | May NOT Import        |
+| -------- | -------------------- | --------------------- |
+| `core/`  | nothing              | three, scene, lil-gui |
+| `scene/` | core, three, lil-gui | -                     |
 
-**Example violation (BAD):**
+Please do relative file imports within the same module and use core module exports for scene-core cross-module dependencies.
+Example in scene :
 
 ```typescript
-// In src/core/Circuit.ts
-import { SceneManager } from '../rendering/SceneManager.js'; // ❌ WRONG!
+import { Circuit } from 'simple-circuit-engine/core';
 ```
 
 ### Documentation
 
-All public APIs must have JSDoc comments:
+All public APIs must have JSDoc comments, it helps a lot and allow a pretty informative typedoc generation.
+You can generate a local typedoc site with :
 
-````typescript
-/**
- * Loads a circuit definition from JSON data.
- *
- * @param circuitData - Circuit definition object
- * @returns this - For method chaining
- * @throws {Error} If circuit data is invalid
- *
- * @example
- * ```typescript
- * const circuit = await fetch('/circuit.json').then(r => r.json());
- * engine.loadCircuit(circuit);
- * ```
- */
-loadCircuit(circuitData: Circuit): this {
-  // Implementation
-}
-````
+```bash
+npm run docs:generate
+```
 
 ### Testing
 
-- **Unit tests**: Test individual functions and classes
-- **Integration tests**: Test module boundaries
+- **Unit tests**: Test individual functions and classes : the majority of tests
+- **Integration tests**: Test scene-core integration
+- **End-to-end tests**: Test full scenarios via the demo page (not automated yet)
 - **Test coverage**: Core module must maintain 80%+ coverage
 
-```typescript
-import { describe, it, expect } from 'vitest';
+### Linting and Formatting
 
-describe('SimulationEngine', () => {
-  it('should propagate signal through wire', () => {
-    const engine = new SimulationEngine();
-    // Test implementation
-    expect(result).toBe(expected);
-  });
-});
+Use ESLint and Prettier to maintain code quality and consistency.
+
+```bash
+npm run lint
+npm run format
 ```
 
 ### Commit Messages
 
-Write clear, descriptive commit messages:
-
-```
-Good:
-- "Add AND gate component with 2-tick delay"
-- "Fix wire propagation bug in cycle detection"
-- "Update README with React integration example"
-
-Bad:
-- "fix bug"
-- "update"
-- "wip"
-```
+Please write clear, descriptive commit messages.
 
 ## Architecture Constraints
 
-### Hexagonal Architecture
+### Architecture
 
-The project follows hexagonal architecture principles:
+The project has a model-controller architecture:
 
-- **Core** contains pure domain logic
-- **Rendering** and **Playback** are adapters
-- Dependencies point inward
-
-### Immutability
-
-Circuits are immutable after loading:
-
-- Don't modify circuit structure during simulation
-- Create new instances for modifications
-- Use readonly types where appropriate
+- **Core** contains pure domain logic and have no dependencies on **Scene**.
+- **Scene** controls THREE objects and user interactions, relying on **Core** for simulation logic.
 
 ### Resource Management
 
-Always clean up resources:
+Always clean up resources when they're no longer useful to prevent in-browser memory leaks, notably:
 
 - WebGL contexts in `dispose()`
 - Event listeners
 - Animation loops
-- No global state
 
 ## Adding New Features
 
@@ -193,9 +165,8 @@ Always clean up resources:
 
 1. Define type in `src/core/types.ts`
 2. Implement logic in `src/core/components/`
-3. Add renderer in `src/rendering/components/`
-4. Write tests in `tests/core/components/`
-5. Update documentation in `docs/ELECTRICAL-MODEL.md`
+3. Write tests in `tests/core/Components.test.ts`
+4. Add visual factory in `src/scene/shared/components/`
 
 ### New Event
 
@@ -204,11 +175,16 @@ Always clean up resources:
 3. Emit from appropriate location
 4. Add usage example
 
+## Use of AI agents
+
+This is an AI agents friendly project and the speckit toolbox with Claude Code was heavily used to generate initial code specs, drafts, tests, and documentation.
+Still the Author believes the Human touch and intervention is essential to ensure human readability, quality and long-term maintainability.
+
 ## Questions?
 
 - Check existing [documentation](docs/)
 - Review the [constitution](.specify/memory/constitution.md)
-- Open a [GitHub issue](https://github.com/yourusername/simple-circuit-engine/issues)
+- Open a [GitHub issue](https://github.com/SimonThuillier/simple-circuit-engine/issues)
 
 ## Code of Conduct
 

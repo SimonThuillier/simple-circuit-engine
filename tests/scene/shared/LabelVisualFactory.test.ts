@@ -4,12 +4,9 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { LabelVisualFactory } from '@/scene/shared/components/LabelVisualFactory';
-import { Component } from '@/core/Component';
-import { ComponentType } from '@/core/types/ComponentType';
-import { Position } from '@/core/types/Position';
-import { Rotation } from '@/core/types/Rotation';
 import * as THREE from 'three';
+import { Component, ComponentType, Position, Rotation } from 'simple-circuit-engine/core';
+import { LabelVisualFactory } from 'simple-circuit-engine/scene';
 
 // Create factory function for mock canvas to get unique instances
 function createMockCanvas() {

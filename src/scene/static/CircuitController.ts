@@ -1,18 +1,30 @@
 /**
- * Static Circuit Renderer
- * @module rendering/static/StaticCircuitRenderer
+ * Static Circuit Controller for editing circuits
+ * @module scene/static/CircuitController
  *
  * Manages static circuit THREE.js scene with support for editing tools.
  */
 
 import * as THREE from 'three';
-import type { Component } from '../../core/Component';
-import type { Wire } from '../../core/Wire';
-import type { ENode } from '../../core/ENode';
-import type { UUID } from '../../core/types/Identifier';
-import { ENodeType } from '../../core/types/ENodeType';
+import type { Euler } from 'three';
+import type {
+  Component,
+  Wire,
+  ENode,
+  UUID,
+  ComponentType,
+  ENodeSourceType,
+  Circuit,
+} from 'simple-circuit-engine/core';
+import { ENodeType } from 'simple-circuit-engine/core';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
-import type { ToolType, SelectionData, SharedResources, ControllerOptions } from '../shared/types';
+import type {
+  ToolType,
+  SelectionData,
+  SharedResources,
+  ControllerOptions,
+  IEditingTool,
+} from '../shared/types';
 import {
   createGridHelper,
   gridToWorldPosition,
@@ -21,14 +33,9 @@ import {
 import { BuildTool } from './tools/BuildTool';
 import { AddComponentTool } from './tools/AddComponentTool';
 import { MultiSelectTool } from './tools/MultiSelectTool';
-import type { IEditingTool } from '../shared/types';
 import { SelectionManager } from '../shared/SelectionManager';
-import type { ComponentType } from '@/core/types/ComponentType';
 import { CircuitWriter } from './CircuitWriter';
-import type { Euler } from 'three';
-import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
 import { AbstractCircuitController } from '../shared/AbstractCircuitController';
-import type { Circuit } from '@/core/Circuit';
 import { ConfigPanelManager } from './ConfigPanelManager';
 import { controllerOptions } from '../shared/utils/Options';
 
@@ -795,7 +802,6 @@ export class CircuitController extends AbstractCircuitController {
   /**
    * Update an enode based to a new source type.
    * @param enodeId - UUID of the enode
-   * @param enodeType - Type of the enode (BranchingPoint or Pin)
    * @param sourceType - New source type (null for no source)
    */
   updateEnodeSourceType(enodeId: UUID, sourceType: ENodeSourceType | null): void {

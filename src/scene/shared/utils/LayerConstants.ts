@@ -1,6 +1,6 @@
 /**
  * Three.js Layer Constants for Hitbox Organization
- * @module scene/shared/LayerConstants
+ * @module scene/shared/utils/LayerConstants
  *
  * Defines layer assignments for priority-based raycasting and rendering.
  */

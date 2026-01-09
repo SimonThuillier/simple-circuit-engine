@@ -38,9 +38,8 @@
     /* Path Mapping */
     "baseUrl": ".",
     "paths": {
-      "@/core/*": ["./src/core/*"],
-      "@/rendering/*": ["./src/rendering/*"],
-      "@/playback/*": ["./src/playback/*"]
+      "simple-circuit-engine/core": ["./src/core/index.ts"],
+      "simple-circuit-engine/scene": ["./src/scene/index.ts"]
     }
   },
   "include": ["src/**/*"],

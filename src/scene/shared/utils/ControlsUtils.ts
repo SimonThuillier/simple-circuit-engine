@@ -1,3 +1,8 @@
+/**
+ * Controls utilities
+ * @module scene/shared/utils/ControlsUtils
+ */
+
 import * as THREE from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import type { MapControlsOptions } from '../types';

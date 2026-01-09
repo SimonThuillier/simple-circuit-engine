@@ -1,0 +1,16 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["./src/core/index.ts", "./src/scene/index.ts"],
+  "out": "docs-site",
+  "excludeExternals": true,
+  "skipErrorChecking": true,
+  "exclude": ["**/node_modules/**"],
+  "externalSymbolLinkMappings": {
+    "@types/three": {
+      "*": "https://threejs.org/docs/#api/en/{name}"
+    },
+    "three": {
+      "*": "https://threejs.org/docs/#api/en/{name}"
+    }
+  }
+}

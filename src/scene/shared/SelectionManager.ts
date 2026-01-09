@@ -7,9 +7,9 @@
  * Follows a similar pattern as HoverManager for consistency.
  */
 
-import type { UUID } from '../../core/types/Identifier';
+import type { UUID } from 'simple-circuit-engine/core';
+import { ENodeType } from 'simple-circuit-engine/core';
 import type { HoverableType, SelectionData, MultiSelectionData } from './types';
-import { ENodeType } from '@/core/types/ENodeType';
 
 /**
  * Callback invoked when selection changes

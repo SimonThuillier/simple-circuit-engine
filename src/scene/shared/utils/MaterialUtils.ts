@@ -1,6 +1,6 @@
 /**
  * Material Utilities
- * @module rendering/shared/MaterialUtils
+ * @module scene/shared/utils/MaterialUtils
  *
  * Helper functions for creating and managing Three.js materials
  */

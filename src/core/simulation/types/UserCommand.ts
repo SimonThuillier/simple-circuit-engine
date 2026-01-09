@@ -3,7 +3,7 @@
  * @module core/simulation/types
  */
 
-import type { UUID } from '@/core/types/Identifier.js';
+import type { UUID } from '../../types/Identifier.js';
 
 /**
  * User command to be executed during simulation.

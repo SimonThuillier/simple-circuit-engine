@@ -5,20 +5,20 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-
-import { Circuit, CircuitMetadata } from '@/core/Circuit';
-import { ComponentType } from '@/core/types/ComponentType';
-import { Position } from '@/core/types/Position';
-import { Rotation } from '@/core/types/Rotation';
-import { Position3D } from '@/core/types/Position3D';
-import { CircuitRunner } from '@/core/simulation/CircuitRunner';
+import type { Component } from 'simple-circuit-engine/core';
 import {
+  Circuit,
+  CircuitMetadata,
+  ComponentType,
+  Position,
+  Rotation,
+  Position3D,
+  CircuitRunner,
   BehaviorRegistry,
   BatteryBehavior,
   SmallLEDBehavior,
   SwitchBehavior,
-} from '@/core/simulation/behaviors';
-import type { Component } from '@/core/Component';
+} from 'simple-circuit-engine/core';
 
 function createBehaviorRegistry(): BehaviorRegistry {
   const registry = new BehaviorRegistry();

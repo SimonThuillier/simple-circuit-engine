@@ -1,288 +1,86 @@
 # Simple Circuit Engine
 
-A standalone, framework-agnostic boolean circuit simulation engine with 3D visualization, designed for educational purposes.
+[![NPM Package][npm]][npm-url]
 
-## Features
+#### JavaScript Educational Electronic circuit library
 
-- **Framework Agnostic**: Pure TypeScript library that works with any UI framework (React, Vue, Angular, etc.)
-- **3D Visualization**: Beautiful, interactive circuit visualization using Three.js
-- **Educational Focus**: Simplified boolean model for teaching digital electronics fundamentals
-- **Data-Driven**: Circuits and scenarios defined as JSON files
-- **Modular Architecture**: Use just the core simulation engine, or add visualization and playback
-- **Type-Safe**: Written in strict TypeScript with comprehensive type definitions
+The aim of the project is to provide a simple and easy to use electronic circuit simulation engine for educational purposes.
+It allows users to create, edit and simulate electronic circuits in a web environment using [three.js](https://threejs.org/) for 3D rendering.
 
-## Quick Start
+![cover](docs/project-cover.png)
 
-### Installation
-
-```bash
-npm install simple-circuit-engine
-```
-
-### Basic Usage
-
-```typescript
-import { CircuitEngine } from 'simple-circuit-engine';
-
-// Create engine with 3D visualization
-const container = document.getElementById('canvas');
-const engine = new CircuitEngine(container);
-
-// Load a circuit
-const circuit = await fetch('/circuits/and-gate.json').then((r) => r.json());
-engine.loadCircuit(circuit);
-
-// Load and play a scenario
-const scenario = await fetch('/scenarios/truth-table.json').then((r) => r.json());
-engine.loadScenario(scenario).play();
-
-// Listen to events
-engine.on('tick', (state) => {
-  console.log('Simulation step:', state.tick);
-});
-
-// Clean up when done
-engine.dispose();
-```
-
-### Headless Mode (No Visualization)
-
-```typescript
-// Use core module only (Node.js compatible)
-import { CircuitEngine } from 'simple-circuit-engine/core';
-
-const engine = new CircuitEngine(); // No container needed
-```
-
-## Running the Demo
-
-The quickest way to see the engine in action:
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/simple-circuit-engine.git
-cd simple-circuit-engine
-
-# Install dependencies
-npm install
-
-# Run the demo
-npm run dev:demo
-```
-
-The demo will open in your browser at `http://localhost:3000`.
-
-## Circuit Topology Visualizer
-
-A standalone HTML tool for visualizing circuit topology as interactive graphs. Perfect for debugging complex circuits without reading raw JSON.
-
-### Quick Start
-
-```bash
-# Build the visualizer
-npm run build:visualizer
-
-# Open the HTML file
-open output/circuit-topology-visualizer.html
-```
+Visit the [Demo page](https://demo.beyondtheswitch.net/) to see the library in action.
 
 ### Usage
 
-1. Generate sample circuits (if not already done):
+In addition to `simple-circuit-engine` you must import the `three` and `lil-gui` libraries in your project to use Simple Circuit Engine.
+This code set up the main CircuitEngine instance in edit mode on a new Circuit, handles THREE.js objects creation and rendering/animation in the canva-container HTML element.
 
-   ```bash
-   npm run generate:samples
-   ```
+```javascript
+import { WebGLRenderer } from 'three';
 
-2. Copy circuit JSON from `output/sample-circuits/`
+import {
+    Circuit,
+    BehaviorRegistry,
+    registerBasicComponentsBehaviors,
+} from 'simple-circuit-engine/core';
+import {
+    CircuitEngine,
+    FactoryRegistry,
+    DefaultVisualFactory,
+    registerBasicComponentsFactories,
+} from 'simple-circuit-engine/scene';
 
-3. Paste into the visualizer and click "Visualize Circuit"
+// Initialize CircuitEngine
+// It creates THREE.js scene, camera, controls, lights, etc
+// and the interactive controllers (edit and simulation) of simple-circuit-engine
+const width = window.innerWidth, height = window.innerHeight;
 
-4. View the interactive topology graph showing:
-   - Components grouped with their pins
-   - Wire connections with UUIDs
-   - Branching points
-   - All entities labeled with shortened IDs
+// Create component factory registry with all basic visual factories (for scene objects creation - rendering
+const componentsFactoryRegistry = new FactoryRegistry(new DefaultVisualFactory());
+registerBasicComponentsFactories(componentsFactoryRegistry);
+// Create behavior registry with all basic component behaviors (for simulation)
+const behaviorRegistry = new BehaviorRegistry();
+registerBasicComponentsBehaviors(behaviorRegistry);
+// Initialize CircuitEngine
+const container = document.getElementById('canva-container')!;
+const engine = new CircuitEngine(componentsFactoryRegistry, behaviorRegistry);
+engine.initialize(container, {
+    initialMode: 'edit',
+    controllerOptions: {},
+});
+// set engine circuit to a new empty circuit
+engine.setCircuit(new Circuit());
 
-For detailed usage instructions, see [Visualizer Quickstart](specs/002-topology-visualizer/quickstart.md).
-
-## Development
-
-### Prerequisites
-
-- Node.js 18+
-- npm 11.6+
-
-### Setup
-
-```bash
-# Install dependencies
-npm install
-
-# Run tests
-npm test
-
-# Run tests with coverage
-npm run test:coverage
-
-# Run tests in watch mode
-npm run test:ui
-
-# Type checking
-npm run typecheck
-
-# Build the library
-npm run build
-```
-
-### Project Structure
-
-```
-src/
-  core/           # Pure TypeScript simulation engine (zero dependencies)
-  rendering/      # Three.js 3D visualization (depends on core)
-  playback/       # Scenario orchestration (depends on core + rendering)
-  CircuitEngine.ts  # Main facade class
-  index.ts        # Library entry point
-
-demo/             # Standalone demo application
-samples/          # Example circuits and scenarios (JSON)
-tests/            # Test suites
-  core/           # Core module tests
-  rendering/      # Rendering module tests
-  playback/       # Playback module tests
-docs/             # Documentation
-```
-
-## Architecture
-
-The engine follows a **hexagonal architecture** with strict dependency rules:
-
-```
-┌─────────────────────────────────────┐
-│         Your Application            │
-└──────────────┬──────────────────────┘
-               │
-               ▼
-┌──────────────────────────────────────┐
-│       CircuitEngine (Facade)         │
-├──────────────────────────────────────┤
-│  ┌────────────────────────────────┐  │
-│  │   Playback (orchestration)     │  │
-│  └─────────────┬──────────────────┘  │
-│                │                      │
-│  ┌─────────────▼──────────────────┐  │
-│  │  Rendering (Three.js visuals)  │  │
-│  └─────────────┬──────────────────┘  │
-│                │                      │
-│  ┌─────────────▼──────────────────┐  │
-│  │    Core (simulation logic)     │  │
-│  │   Pure TypeScript, no deps     │  │
-│  └────────────────────────────────┘  │
-└──────────────────────────────────────┘
-```
-
-Dependencies point inward. The `core` module is publishable separately for headless use.
-
-## Circuit Model
-
-This is **not** a SPICE simulator. The electrical model is intentionally simplified for educational clarity:
-
-- Boolean states only (no analog voltages/currents)
-- Discrete time steps (tick-based)
-- Zero resistance wires
-- DC only (no capacitance or inductance)
-- Component delays as integer tick counts
-- Deterministic propagation
-
-## API Reference
-
-### CircuitEngine
-
-Main entry point for the library.
-
-#### Constructor
-
-```typescript
-new CircuitEngine(container?: HTMLElement | null)
-```
-
-- `container`: HTMLElement for 3D visualization. Pass `null` for headless mode.
-
-#### Methods
-
-All methods return `this` for chaining (except `dispose()`).
-
-- `loadCircuit(circuitData: object): this` - Load a circuit definition
-- `loadScenario(scenarioData: object): this` - Load a scenario (test sequence)
-- `play(): this` - Start scenario playback
-- `pause(): this` - Pause playback
-- `step(): this` - Execute one simulation tick
-- `reset(): this` - Reset to initial state
-- `on(event: string, handler: Function): this` - Register event listener
-- `off(event: string, handler: Function): this` - Remove event listener
-- `dispose(): void` - Clean up all resources
-
-#### Events
-
-- `tick` - Emitted on each simulation step
-- `play` - Emitted when playback starts
-- `pause` - Emitted when playback pauses
-- `reset` - Emitted when simulation resets
-- `error` - Emitted on errors
-
-## Circuit JSON Format
-
-Circuits are defined as JSON files:
-
-```json
-{
-  "version": "1.0.0",
-  "name": "Simple AND Gate",
-  "components": [
-    {
-      "id": "and1",
-      "type": "and",
-      "position": { "x": 0, "y": 0, "z": 0 },
-      "delay": 2
-    }
-  ],
-  "wires": [
-    {
-      "from": { "component": "input_a", "pin": "out" },
-      "to": { "component": "and1", "pin": "in_a" }
-    }
-  ]
+// THREE.js/WebGL standard rendering setup
+// Create WebGL renderer
+const renderer = new WebGLRenderer({ antialias: true, alpha: false });
+renderer.setClearColor(0x1a1a2e);
+// Setup WebGL renderer
+renderer.setSize(container.clientWidth, container.clientHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+// Append renderer to DOM
+container.appendChild(renderer.domElement);
+// Animation loop
+function animate() {
+    requestAnimationFrame(animate);
+    engine.getControls().update();
+    renderer.render(engine.getScene(), engine.getCamera());
 }
+animate();
 ```
 
-See `samples/` directory for complete examples.
+If this goes well, you should see a 10\*10 3D grid with some lights and camera mapControls in the canvas container.
 
-## License
+### Contributing
 
-MIT - See [LICENSE](LICENSE) for details.
+Feel free to open issues or submit pull requests for bug fixes, improvements, or new features.
+Particularly, since this project is at early stage issues reports and discussions about desired features are very welcome!
+If you're interested in contributing, please read the [CONTRIBUTING](CONTRIBUTING.md) guide for more information.
 
-## Contributing
+### License
 
-Contributions are welcome! Please read the [constitution](.specify/memory/constitution.md) for project principles and architectural constraints.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-## Roadmap
-
-This is an early-stage project. Current status:
-
-- [x] Project scaffolding
-- [ ] Core simulation engine
-- [ ] Component library (AND, OR, NOT, etc.)
-- [ ] Wire propagation logic
-- [ ] Three.js rendering
-- [ ] Camera controls
-- [ ] Playback controller
-- [ ] Circuit validation
-- [ ] Comprehensive test coverage
-- [ ] Documentation
-- [ ] Framework integration examples
-
-## Support
-
-- GitHub Issues: [Report bugs or request features](https://github.com/yourusername/simple-circuit-engine/issues)
-- Documentation: [Full docs](./docs/)
+[npm]: https://img.shields.io/npm/v/simple-circuit-engine
+[npm-url]: https://www.npmjs.com/package/simple-circuit-engine

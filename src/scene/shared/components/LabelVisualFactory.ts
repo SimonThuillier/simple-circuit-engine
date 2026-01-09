@@ -7,10 +7,10 @@
  */
 
 import { ComponentVisualFactoryBase } from './ComponentVisualFactory';
-import type { Component } from '@/core/Component';
-import type { ConfigFormDefinition } from '../utils/ConfigPanelTypes';
+import type { Component } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
 import { BoxGeometry } from 'three';
+import type { ConfigFormDefinition } from '../types';
 
 /**
  * Visual factory for Label components

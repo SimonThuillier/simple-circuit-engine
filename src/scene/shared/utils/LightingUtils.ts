@@ -1,6 +1,6 @@
 /**
  * Lighting Utilities
- * @module rendering/shared/LightingUtils
+ * @module scene/shared/utils/LightingUtils
  *
  * Helper functions for setting up scene lighting
  */

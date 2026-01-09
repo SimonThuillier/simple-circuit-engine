@@ -1,7 +1,7 @@
 import { ComponentVisualFactoryBase } from './ComponentVisualFactory';
-import type { Component } from '@/core/Component';
+import type { Component } from 'simple-circuit-engine/core';
+import { ENodeSourceType } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
-import { ENodeSourceType } from '@/core/types/ENodeSourceType';
 
 /**
  * Visual factory for Battery components

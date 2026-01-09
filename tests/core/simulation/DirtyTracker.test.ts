@@ -8,7 +8,7 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { DirtyTracker } from '@/core/simulation/DirtyTracker';
+import { DirtyTracker } from 'simple-circuit-engine/core';
 
 describe('DirtyTracker', () => {
   let tracker: DirtyTracker;

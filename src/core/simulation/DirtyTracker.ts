@@ -3,7 +3,7 @@
  * @module core/simulation
  */
 
-import type { UUID } from '@/core/types/Identifier.js';
+import type { UUID } from '../types/Identifier.js';
 
 /**
  * Dirty elements collected during a tick, returned by getDirtyElements().

@@ -18,43 +18,40 @@
  * ```
  */
 
+// main engine
+export { CircuitEngine } from './CircuitEngine';
 // Controller classes
 export { CircuitController } from './static/CircuitController';
+export { CircuitRunnerController } from './simulation/CircuitRunnerController';
+export type { AbstractCircuitController } from './shared/AbstractCircuitController';
 
 // Editing Tools
-export { BuildTool } from './static/tools/BuildTool';
 export { AddComponentTool } from './static/tools/AddComponentTool';
+export { BuildTool } from './static/tools/BuildTool';
+export { MultiSelectTool } from './static/tools/MultiSelectTool';
+export type { MultiSelectToolMode } from './static/tools/MultiSelectTool';
 
-// Shared utilities
-export { FactoryRegistry } from './shared/components/FactoryRegistry';
-export { ComponentVisualFactoryBase } from './shared/components/ComponentVisualFactory';
-export { EventEmitter } from './shared/EventEmitter';
-export { InterpolationController } from './shared/InterpolationController';
+// Circuit Writer
+export { CircuitWriter } from './static/CircuitWriter';
+
+// Components
+export * from './shared/components';
+
+// Shared managers
 export { HoverManager } from './shared/HoverManager';
+export type { HoverCallback } from './shared/HoverManager';
+export { SelectionManager } from './shared/SelectionManager';
+export type { SelectionCallback } from './shared/SelectionManager';
+export { WireVisualManager } from './shared/WireVisualManager';
+export type { WirePath } from './shared/WireVisualManager';
+export { BranchingPointVisualFactory } from './shared/BranchingPointVisualFactory';
 
 // Types
-export type {
-  ControllerEvent,
-  ControllerEventMap,
-  ControllerCallback,
-  CircuitSceneObjectType,
-  ControllerOptions,
-  MapControlsOptions,
-  HoverableType,
-  HoveredElement,
-  EnodeHitboxUserData,
-  ComponentHitboxUserData,
-  WireHitboxUserData,
-  HitboxUserData,
-  ToolType,
-  CursorType,
-  IEditingTool,
-} from './shared/types';
-
-export type {
-  IComponentVisualFactory,
-  IFactoryRegistry,
-} from './shared/components/ComponentVisualFactory';
+export type * from './shared/types';
+export * from './shared/types';
 
 export { HitboxLayers } from './shared/utils/LayerConstants';
 export type { HitboxLayerValue } from './shared/utils/LayerConstants';
+
+// setup helpers
+export { registerBasicComponentsFactories } from './setup';

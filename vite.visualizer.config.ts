@@ -23,7 +23,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@visualizer': resolve(__dirname, './scripts/visualizer/src'),
+      'simple-circuit-engine/core': resolve(__dirname, './src/core/index.ts'),
+      'simple-circuit-engine/scene': resolve(__dirname, './src/scene/index.ts'),
     },
   },
 });

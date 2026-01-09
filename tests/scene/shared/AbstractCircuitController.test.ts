@@ -11,7 +11,7 @@ import { CircuitController } from '../../../src/scene/static/CircuitController';
 import { CircuitRunnerController } from '../../../src/scene/simulation/CircuitRunnerController';
 import { FactoryRegistry, DefaultVisualFactory } from '../../../src/scene/shared/components';
 import { HoverManager } from '../../../src/scene/shared/HoverManager';
-import { BranchingPointVisualFactory } from '../../../src/scene/shared/components/BranchingPointVisualFactory';
+import { BranchingPointVisualFactory } from '../../../src/scene/shared/BranchingPointVisualFactory';
 import { WireVisualManager } from '../../../src/scene/shared/WireVisualManager';
 import { BehaviorRegistry } from '../../../src/core/simulation/behaviors/BehaviorRegistry';
 import type { SharedResources } from '../../../src/scene/shared/types';

@@ -2,35 +2,20 @@
  * Main entry point for the CircuitEngine demo page
  * Uses the unified CircuitEngine API for both editing and simulation
  */
-import { EngineError, IntegrityError, RenderError, ValidationError } from './errors.js';
-import { CircuitRunnerController } from '@/scene/simulation/CircuitRunnerController.js';
-import { Circuit } from '@/core/Circuit.js';
 import { AxesHelper, WebGLRenderer } from 'three';
-import { ComponentType } from '@/core/types/ComponentType.js';
+import { EngineError, IntegrityError, RenderError, ValidationError } from './errors.js';
 import {
+  Circuit,
   BehaviorRegistry,
-  BatteryBehavior,
-  LightbulbBehavior,
-  RelayBehavior,
-  SmallLEDBehavior,
-  SwitchBehavior,
-  TransistorBehavior,
-} from '@/core/simulation/behaviors';
-
+  registerBasicComponentsBehaviors,
+} from 'simple-circuit-engine/core';
 import {
+  CircuitRunnerController,
   type IFactoryRegistry,
   FactoryRegistry,
   DefaultVisualFactory,
-  BatteryVisualFactory,
-  LightbulbVisualFactory,
-  RelayVisualFactory,
-  SmallLEDVisualFactory,
-  SwitchVisualFactory,
-  TransistorVisualFactory,
-  LabelVisualFactory,
-} from '@/scene/shared/components';
-import { RectangleLEDVisualFactory } from '../../../src/scene/shared/components/RectangleLEDVisualFactory';
-import { RectangleLEDBehavior } from '../../../src/core/simulation/behaviors/RectangleLEDBehavior';
+  registerBasicComponentsFactories,
+} from 'simple-circuit-engine/scene';
 
 // Export to window object for use in HTML
 declare global {
@@ -54,24 +39,11 @@ if (typeof window !== 'undefined') {
   const componentsFactoryRegistry: IFactoryRegistry = new FactoryRegistry(
     new DefaultVisualFactory()
   );
-  componentsFactoryRegistry.register(ComponentType.Battery, new BatteryVisualFactory());
-  componentsFactoryRegistry.register(ComponentType.Lightbulb, new LightbulbVisualFactory());
-  componentsFactoryRegistry.register(ComponentType.Relay, new RelayVisualFactory());
-  componentsFactoryRegistry.register(ComponentType.Switch, new SwitchVisualFactory());
-  componentsFactoryRegistry.register(ComponentType.SmallLED, new SmallLEDVisualFactory());
-  componentsFactoryRegistry.register(ComponentType.RectangleLED, new RectangleLEDVisualFactory());
-  componentsFactoryRegistry.register(ComponentType.Transistor, new TransistorVisualFactory());
-  componentsFactoryRegistry.register(ComponentType.Label, new LabelVisualFactory());
+  registerBasicComponentsFactories(componentsFactoryRegistry);
 
   // Create behavior registry with all component behaviors
   const behaviorRegistry = new BehaviorRegistry();
-  behaviorRegistry.register(new BatteryBehavior());
-  behaviorRegistry.register(new LightbulbBehavior());
-  behaviorRegistry.register(new RelayBehavior());
-  behaviorRegistry.register(new SwitchBehavior());
-  behaviorRegistry.register(new SmallLEDBehavior());
-  behaviorRegistry.register(new RectangleLEDBehavior());
-  behaviorRegistry.register(new TransistorBehavior());
+  registerBasicComponentsBehaviors(behaviorRegistry);
 
   // Create WebGL renderer
   window.renderer = new WebGLRenderer({ antialias: true, alpha: false });

@@ -17,16 +17,13 @@ export type { RunnerResult } from './types/RunnerResult.js';
 export { SimulationState } from './SimulationState.js';
 export { StateManager } from './StateManager.js';
 
-// State types
-export type { NodeElectricalState } from './states/NodeElectricalState.js';
-export { ComponentState } from './states/ComponentState.js';
-export { BatteryState } from './states/BatteryState.js';
-export { SmallLEDState } from './states/SmallLEDState';
-
 // Event and command types
 export type { ScheduledEvent } from './types/ScheduledEvent.js';
 export type { UserCommand } from './types/UserCommand.js';
 
+// Constants
+export { SIMULATION_SPEED, TRANSITION_DEFAULTS } from './types/SimulationConstants.js';
 // Utilities
 export { EventQueue } from './EventQueue.js';
 export { DirtyTracker } from './DirtyTracker.js';
+export type { DirtyElements } from './DirtyTracker.js';

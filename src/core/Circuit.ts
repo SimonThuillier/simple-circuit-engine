@@ -16,8 +16,8 @@ import { ENodeType } from './types/ENodeType.js';
 import { Wire } from './Wire.js';
 import { COMPONENT_TYPE_METADATA, type ComponentType } from './types/ComponentType.js';
 import { getComponentTypeMetadata } from './types/ComponentType.js';
-import type { ENodeSourceType } from '@/core/types/ENodeSourceType';
-import { CameraOptions, type ICameraOptions } from '@/core/types/CameraOptions';
+import type { ENodeSourceType } from './types/ENodeSourceType';
+import { CameraOptions, type ICameraOptions } from './types/CameraOptions';
 
 export type ICircuitMetadata = {
   name: string;

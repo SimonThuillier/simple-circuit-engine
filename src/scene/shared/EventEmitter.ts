@@ -1,6 +1,6 @@
 /**
  * Type-safe Event Emitter
- * @module rendering/shared/EventEmitter
+ * @module scene/shared/EventEmitter
  *
  * Provides type-safe event handling without external dependencies.
  * Generic EventMap type ensures compile-time type safety for event payloads.
