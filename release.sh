@@ -24,7 +24,8 @@ cleanup() {
     if [ -n "$WORKDIR" ] && [ -d "$WORKDIR" ]; then
         echo -e "${YELLOW}Cleaning up temporary workdir: $WORKDIR${NC}"
         cd /tmp
-        rm -rf "$WORKDIR"
+        # Properly remove worktree registration, fallback to rm if git command fails
+        git worktree remove --force "$WORKDIR" 2>/dev/null || rm -rf "$WORKDIR"
         echo -e "${GREEN}Cleanup complete${NC}"
     fi
 }
@@ -75,6 +76,16 @@ echo "  ✓ Authenticated as $(npm whoami)"
 
 # Step 4: Create temporary workdir with git worktree
 progress 4 "Creating temporary workdir"
+
+# Clean up any stale release worktrees from previous runs
+for stale_dir in /tmp/sce-release-*; do
+    if [ -d "$stale_dir" ]; then
+        echo "  Cleaning up stale worktree: $stale_dir"
+        git worktree remove --force "$stale_dir" 2>/dev/null || rm -rf "$stale_dir"
+    fi
+done
+git worktree prune 2>/dev/null
+
 TIMESTAMP=$(date +%Y%m%d%H%M%S)
 WORKDIR="/tmp/sce-release-$TIMESTAMP"
 
@@ -92,13 +103,14 @@ if git tag | grep -q "^$TARGET_VERSION$"; then
 fi
 echo "  ✓ Version tag '$TARGET_VERSION' is available"
 
-# Step 6: Reset to origin/dev
-progress 6 "Resetting to origin/dev"
+# Step 6: Checkout temporary release branch from origin/dev
+progress 6 "Checking out release branch from origin/dev"
 git fetch origin || error_exit "Failed to fetch from origin"
-if ! git reset --hard origin/dev; then
-    error_exit "Failed to reset to origin/dev.\nCheck if dev branch exists on remote."
+# Use a temporary branch name to avoid conflicts with 'dev' checked out in main worktree
+if ! git checkout -B sce-release origin/dev; then
+    error_exit "Failed to checkout temporary sce-release from origin/dev.\nCheck if dev branch exists on remote."
 fi
-echo "  ✓ Reset to origin/dev"
+echo "  ✓ Checked out temporary sce-release branch from origin/dev"
 
 # Step 7: Verify main is ancestor of dev
 progress 7 "Verifying main is ancestor of dev (no non-linear history)"
@@ -142,7 +154,7 @@ if [ -z "$UNRELEASED_CONTENT" ]; then
 fi
 
 # Check if there's content beyond the header
-if [ $(echo "$UNRELEASED_CONTENT" | wc -l) -le 2 ]; then
+if [ "$(echo "$UNRELEASED_CONTENT" | wc -l)" -le 2 ]; then
     error_exit "CHANGELOG.md [Unreleased] section appears to be empty.\nPlease add your changes before releasing."
 fi
 
@@ -151,20 +163,24 @@ echo "  ✓ Found valid [Unreleased] section"
 # Step 10: Update CHANGELOG.md with version and date
 progress 10 "Updating CHANGELOG.md with version and date"
 RELEASE_DATE=$(date +%Y-%m-%d)
-if ! sed -i "s/^## \[Unreleased\]/## [$TARGET_VERSION] - $RELEASE_DATE/" CHANGELOG.md; then
-    error_exit "Failed to update CHANGELOG.md"
+sed -i "s/^## \[Unreleased\]/## [$TARGET_VERSION] - $RELEASE_DATE/" CHANGELOG.md
+
+# Verify the replacement was made
+if ! grep -q "^## \[$TARGET_VERSION\] - $RELEASE_DATE" CHANGELOG.md; then
+    error_exit "Failed to update CHANGELOG.md: version header not found after sed"
 fi
 echo "  ✓ Updated CHANGELOG.md: ## [$TARGET_VERSION] - $RELEASE_DATE"
 
 # Step 11: Update package.json and package-lock.json version
 progress 11 "Updating package.json and package-lock.json version"
-if ! sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$TARGET_VERSION\"/" package.json; then
-    error_exit "Failed to update package.json version"
+if ! npm version "$TARGET_VERSION" --no-git-tag-version --allow-same-version; then
+    error_exit "Failed to update version to $TARGET_VERSION"
 fi
-if [ -f "package-lock.json" ]; then
-    if ! sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$TARGET_VERSION\"/" package-lock.json; then
-        error_exit "Failed to update package-lock.json version"
-    fi
+
+# Verify version was correctly updated
+ACTUAL_VERSION=$(node -p "require('./package.json').version")
+if [ "$ACTUAL_VERSION" != "$TARGET_VERSION" ]; then
+    error_exit "Version mismatch after npm version: expected $TARGET_VERSION, got $ACTUAL_VERSION"
 fi
 echo "  ✓ Updated version to $TARGET_VERSION"
 
@@ -172,15 +188,15 @@ echo "  ✓ Updated version to $TARGET_VERSION"
 progress 12 "Committing pre-release changes to dev"
 git add CHANGELOG.md package.json package-lock.json
 git commit -m "pre-release $TARGET_VERSION" || error_exit "Failed to commit pre-release changes"
-if ! git push origin dev; then
+if ! git push origin sce-release:dev; then
     error_exit "Failed to push to origin/dev.\nManual cleanup required: check dev branch in workdir $WORKDIR"
 fi
 echo "  ✓ Committed and pushed pre-release changes to dev"
 
 # Step 13: Squash merge dev into main
 progress 13 "Squash merging dev into main"
-git checkout main || error_exit "Failed to checkout main branch"
-git pull origin main || error_exit "Failed to pull main branch"
+git checkout -B main origin/main || error_exit "Failed to checkout main branch"
+git fetch origin dev || error_exit "Failed to fetch origin/dev"
 
 # Extract changelog content for commit message (remove the header line)
 CHANGELOG_CONTENT=$(echo "$UNRELEASED_CONTENT" | tail -n +2)
@@ -188,11 +204,14 @@ COMMIT_MESSAGE="release $TARGET_VERSION
 
 $CHANGELOG_CONTENT"
 
-if ! git merge --squash dev; then
-    error_exit "Failed to squash merge dev into main.\nManual cleanup required: resolve merge conflicts in workdir $WORKDIR"
+# Merge origin/dev (not local dev) to include the pre-release commits pushed in step 12
+if ! git merge --squash origin/dev; then
+    error_exit "Failed to squash merge origin/dev into main.\nManual cleanup required: resolve merge conflicts in workdir $WORKDIR"
 fi
 
-git commit -m "$COMMIT_MESSAGE" || error_exit "Failed to commit release to main"
+git commit -F - <<EOF || error_exit "Failed to commit release to main"
+$COMMIT_MESSAGE
+EOF
 if ! git push origin main; then
     error_exit "Failed to push to origin/main.\nManual cleanup required: check main branch in workdir $WORKDIR"
 fi
@@ -200,7 +219,10 @@ echo "  ✓ Squash merged dev into main and pushed"
 
 # Step 14: Create and push tag
 progress 14 "Creating and pushing version tag"
-if ! git tag -a "$TARGET_VERSION" -m "$COMMIT_MESSAGE"; then
+if ! git tag -a "$TARGET_VERSION" -F - <<EOF
+$COMMIT_MESSAGE
+EOF
+then
     error_exit "Failed to create tag $TARGET_VERSION"
 fi
 if ! git push origin "$TARGET_VERSION"; then
@@ -211,15 +233,26 @@ echo "  ✓ Created and pushed tag $TARGET_VERSION"
 # Step 15: Rebase dev onto main
 progress 15 "Rebasing dev onto main"
 git fetch origin || error_exit "Failed to fetch from origin"
-git checkout dev || error_exit "Failed to checkout dev branch"
+git checkout -B sce-release origin/dev || error_exit "Failed to checkout sce-release from origin/dev"
 if ! git rebase origin/main; then
-    error_exit "Failed to rebase dev onto origin/main.\nManual cleanup required: resolve rebase conflicts in workdir $WORKDIR"
+    error_exit "Failed to rebase sce-release onto origin/main.\nManual cleanup required: resolve rebase conflicts in workdir $WORKDIR"
 fi
 echo "  ✓ Rebased dev onto main"
 
 # Step 16: Add new [Unreleased] section to CHANGELOG.md
 progress 16 "Adding new [Unreleased] section to CHANGELOG.md"
-NEW_UNRELEASED="## [Unreleased]
+
+# Find the line number of the version header
+VERSION_LINE=$(grep -n "^## \[$TARGET_VERSION\]" CHANGELOG.md | cut -d: -f1)
+if [ -z "$VERSION_LINE" ]; then
+    error_exit "Could not find version header ## [$TARGET_VERSION] in CHANGELOG.md"
+fi
+
+# Create new changelog with unreleased section inserted before version line
+{
+    head -n $((VERSION_LINE - 1)) CHANGELOG.md
+    cat << 'EOF'
+## [Unreleased]
 
 ### Added
 
@@ -229,11 +262,13 @@ NEW_UNRELEASED="## [Unreleased]
 
 ### Fixed
 
-"
+EOF
+    tail -n +$VERSION_LINE CHANGELOG.md
+} > CHANGELOG.md.tmp && mv CHANGELOG.md.tmp CHANGELOG.md
 
-# Insert new Unreleased section at the top of the changelog after the header
-if ! sed -i "/^## \[$TARGET_VERSION\]/i\\$NEW_UNRELEASED" CHANGELOG.md; then
-    error_exit "Failed to add new [Unreleased] section to CHANGELOG.md"
+# Verify the new section was added
+if ! grep -q "^## \[Unreleased\]" CHANGELOG.md; then
+    error_exit "Failed to add [Unreleased] section to CHANGELOG.md"
 fi
 echo "  ✓ Added new [Unreleased] section"
 
@@ -241,7 +276,7 @@ echo "  ✓ Added new [Unreleased] section"
 progress 17 "Committing post-release changes to dev"
 git add CHANGELOG.md
 git commit -m "post-release $TARGET_VERSION" || error_exit "Failed to commit post-release changes"
-if ! git push --force-with-lease origin dev; then
+if ! git push --force-with-lease origin sce-release:dev; then
     error_exit "Failed to force-with-lease push to origin/dev.\nManual cleanup required: check dev branch in workdir $WORKDIR"
 fi
 echo "  ✓ Committed and pushed post-release changes to dev"
