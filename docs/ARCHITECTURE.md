@@ -51,12 +51,12 @@ The core module is **dependency-free** and contains all domain logic:
 
 ```
 src/core/
-  +-- Circuit.ts           # Central model: manages components, wires, enodes
+  +-- Circuit.ts           # Central model: manages the three elements of the circuit : components, enodes, and wires
   +-- Component.ts         # Electrical component (battery, switch, LED, etc.)
   +-- ENode.ts             # Electrical node (Pin or BranchingPoint)
   +-- Wire.ts              # Connection between two enodes
   +-- Position.ts          # 2D grid position
-  +-- Rotation.ts          # Discrete rotation (0, 90, 180, 270 degrees)
+  +-- Rotation.ts          # Discrete rotation
   +--  types/
   |     +-- ComponentType.ts      # Component type enum and metadata
   |     +-- ENodeSourceType.ts    # Voltage/Current source types
@@ -64,14 +64,20 @@ src/core/
   |     +-- Identifier.ts         # UUID type alias
   +-- simulation/
   |     +-- CircuitRunner.ts      # Tick-based simulation orchestrator
-  |     +-- ConductivitySolver.ts # Propagates electrical state
+  |     +-- DirtyTracker.ts       # Utility used by CircuitRunner to keep tracks of simulation changed components (optimization)
+  |     +-- EventQueue.ts         # Used by CircuitRunner to queue simulation delayed transitions events
+  |     +-- SimulationState.ts    # Data Class representing the simulation state of entire circuit at a given time
+  |     +-- StateManager.ts       # Utility used by CircuitRunner to manage SimulationState updates   
+  |     +-- states/
+  |           +-- ComponentState.ts  # Abstract class for component state
+  |           +-- ...                # Components states
   |     +-- behaviors/
   |           +-- BehaviorRegistry.ts   # Maps component types to behaviors
   |           +-- ComponentBehavior.ts  # Interface for component logic
   |           +-- SwitchBehavior.ts     # Switch toggle logic
-  |           +-- BatteryBehavior.ts    # Power source behavior
-  |           +-- ...                   # Other behaviors
-  +-- setup.ts             # Helper to register basic behaviors
+  |           +-- ...                   # Other components behaviors
+  |     +-- types/  # Various enums, data classes ...
+  +-- setup.ts             # Helper to register behaviors
   +-- index.ts             # Public API exports
 ```
 
@@ -91,7 +97,7 @@ src/scene/
   |           +-- MultiSelectTool.ts # Rectangle selection + bulk operations
   |           +-- AddComponentTool.ts # Component placement tool
   +-- simulation/
-  |     +-- CircuitRunnerController.ts  # Simulation visualization
+  |     +-- CircuitRunnerController.ts  # Simulation mode controller
   +-- shared/
   |     +-- AbstractCircuitController.ts # Base controller class
   |     +-- EventEmitter.ts              # Type-safe event system
@@ -101,11 +107,10 @@ src/scene/
   |     +-- components/
   |     |     +-- ComponentVisualFactory.ts  # Interface + base class
   |     |     +-- FactoryRegistry.ts         # Maps types to factories
-  |     |     +-- BatteryVisualFactory.ts    # Battery 3D visual
-  |     |     +-- ...                        # Other factories
+  |     |     +-- ...                        # Components factories
   |     +-- types.ts             # Shared type definitions
   |     +-- utils/               # Geometry, camera, lighting utilities
-  +-- setup.ts                   # Helper to register basic factories
+  +-- setup.ts                   # Helper to register factories
   +-- index.ts                   # Public API exports
 ```
 

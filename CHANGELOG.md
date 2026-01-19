@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `release.sh` quality of life automation script for releasing
+
+### Changed
+
+- Updated `README.md` with the **Use Cases** section (clarifications on the project's scope and simulation model capabilities)
+- Cleaned and updated `CLAUDE.md`
+
+### Removed
+
+- Legacy Specs documents 1-15 
+
 ## [0.0.1] - 2026-01-09
 
 ### Added
