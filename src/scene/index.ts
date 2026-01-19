@@ -52,6 +52,7 @@ export * from './shared/types';
 
 export { HitboxLayers } from './shared/utils/LayerConstants';
 export type { HitboxLayerValue } from './shared/utils/LayerConstants';
+export * from './shared/utils/Options';
 
 // setup helpers
 export { registerBasicComponentsFactories } from './setup';

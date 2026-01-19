@@ -2,7 +2,7 @@
 
 [![NPM Package][npm]][npm-url]
 
-#### JavaScript Educational Electronic circuit library
+## TypeScript Educational Electronic circuit library
 
 The aim of the project is to provide a simple and easy to use electronic circuit simulation engine for educational purposes.
 It allows users to create, edit and simulate electronic circuits in a web environment using [three.js](https://threejs.org/) for 3D rendering.
@@ -11,6 +11,24 @@ It allows users to create, edit and simulate electronic circuits in a web enviro
 
 Visit the [Demo page](https://demo.beyondtheswitch.net/) to see the library in action.
 
+### Use Cases
+
+The goal of this project is to vulgarize the bridge between **electronics**, the physical world and **informatic**, the abstract world that runs upon the former.
+The electrical model is deliberately simplified to the bare minimum needed to vulgarize circuits automation:
+
+- Electric states in nodes / wires are just two booleans : if there is tension or not and if there is current or not.
+- Components react to changes of inputs discretely with transitional state lasting N ticks (step) before their outputs change.
+- Changes in components states affect conductivity (let pass or not) between their pins.
+- Changes in electrical states throughout the circuit are then propagated using BFS (Breadth First Search) graph algorithm.
+
+There are some technicalities about initial simulation state computation (to prevent illegal initial states in feedback loop circuits) but that's pretty much all the simulation model does.
+It's not a realistic physical model but a **discrete graph model** and for the current scope of this project that's enough.
+
+However if you're searching for an open-source real electrical simulation model, you might want to check:
+
+- [circuitjs](https://github.com/sharpie7/circuitjs1) for a web implementation
+- The very complete [ngspice](https://ngspice.sourceforge.io/) (desktop) which is [SPICE](https://en.wikipedia.org/wiki/SPICE) compatible.
+
 ### Usage
 
 In addition to `simple-circuit-engine` you must import the `three` and `lil-gui` libraries in your project to use Simple Circuit Engine.
@@ -18,50 +36,33 @@ This code set up the main CircuitEngine instance in edit mode on a new Circuit, 
 
 ```javascript
 import { WebGLRenderer } from 'three';
+import { Circuit, BehaviorRegistry, registerBasicComponentsBehaviors } from 'simple-circuit-engine/core';
+import { CircuitEngine, engineOptions, FactoryRegistry, DefaultVisualFactory, registerBasicComponentsFactories } from 'simple-circuit-engine/scene';
 
-import {
-    Circuit,
-    BehaviorRegistry,
-    registerBasicComponentsBehaviors,
-} from 'simple-circuit-engine/core';
-import {
-    CircuitEngine,
-    FactoryRegistry,
-    DefaultVisualFactory,
-    registerBasicComponentsFactories,
-} from 'simple-circuit-engine/scene';
+// Create component factory registry with all basic visual factories (for scene objects creation - rendering
+const componentsFactoryRegistry = registerBasicComponentsFactories(new FactoryRegistry(new DefaultVisualFactory()));
+// Create behavior registry with all basic component behaviors (for simulation)
+const behaviorRegistry = registerBasicComponentsBehaviors(new BehaviorRegistry());
 
 // Initialize CircuitEngine
 // It creates THREE.js scene, camera, controls, lights, etc
 // and the interactive controllers (edit and simulation) of simple-circuit-engine
-const width = window.innerWidth, height = window.innerHeight;
-
-// Create component factory registry with all basic visual factories (for scene objects creation - rendering
-const componentsFactoryRegistry = new FactoryRegistry(new DefaultVisualFactory());
-registerBasicComponentsFactories(componentsFactoryRegistry);
-// Create behavior registry with all basic component behaviors (for simulation)
-const behaviorRegistry = new BehaviorRegistry();
-registerBasicComponentsBehaviors(behaviorRegistry);
-// Initialize CircuitEngine
 const container = document.getElementById('canva-container')!;
 const engine = new CircuitEngine(componentsFactoryRegistry, behaviorRegistry);
-engine.initialize(container, {
-    initialMode: 'edit',
-    controllerOptions: {},
-});
-// set engine circuit to a new empty circuit
+engine.initialize(container, engineOptions());
+// set engine circuit to a new empty circuit (which it does by default)
 engine.setCircuit(new Circuit());
 
-// THREE.js/WebGL standard rendering setup
-// Create WebGL renderer
+// Create and setup WebGL renderer
 const renderer = new WebGLRenderer({ antialias: true, alpha: false });
 renderer.setClearColor(0x1a1a2e);
-// Setup WebGL renderer
+const width = window.innerWidth, height = window.innerHeight;
 renderer.setSize(container.clientWidth, container.clientHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 // Append renderer to DOM
 container.appendChild(renderer.domElement);
-// Animation loop
+
+// Animation loop to animate the circuit scene in the canvas container
 function animate() {
     requestAnimationFrame(animate);
     engine.getControls().update();

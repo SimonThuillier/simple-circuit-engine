@@ -16,8 +16,9 @@ import {
  * Basic components are : Battery, Lightbulb, RectangleLED, Relay, SmallLED, Switch, Transistor
  * @public
  * @param registry
+ * @return the input factory registry for chaining
  */
-export function registerBasicComponentsFactories(registry: IFactoryRegistry): void {
+export function registerBasicComponentsFactories(registry: IFactoryRegistry): IFactoryRegistry {
   registry
     .register(ComponentType.Battery, new BatteryVisualFactory())
     .register(ComponentType.Label, new LabelVisualFactory())
@@ -27,4 +28,6 @@ export function registerBasicComponentsFactories(registry: IFactoryRegistry): vo
     .register(ComponentType.SmallLED, new SmallLEDVisualFactory())
     .register(ComponentType.Switch, new SwitchVisualFactory())
     .register(ComponentType.Transistor, new TransistorVisualFactory());
+
+  return registry;
 }

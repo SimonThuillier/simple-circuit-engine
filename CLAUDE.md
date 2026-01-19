@@ -1,56 +1,101 @@
 # simple-circuit-engine Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2025-11-28
+Provide a simple and easy-to-use electronic circuit simulation library for educational purposes.
+It allows users to create, edit and simulate electronic circuits in a web environment.
+The library should be easily importable and usable in client applications and follow open-source typeScript libraries good practices.
+
+Last updated: 2026-01-18
 
 ## Active Technologies
 
-- TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (scene, camera, controls, Line2) (014-circuit-engine)
-- N/A (in-memory circuit model, no persistence in this feature) (014-circuit-engine)
-- TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+, lil-gui (new dependency to add) (015-component-config-editor)
-- N/A (in-memory config map on Component instances) (015-component-config-editor)
-- TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (for 3D text rendering via TextGeometry or CanvasTexture) (016-label-component)
-- N/A (in-memory circuit model, persisted via existing JSON serialization) (016-label-component)
-- TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (scene/UI), core simulation is dependency-free (017-simulation-speed)
-- N/A (in-memory ComponentState map within CircuitRunner) (017-simulation-speed)
-
-- TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (for 3D scene interaction and Line2 wire rendering) (013-circuit-runner-controller)
-
-- TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (for 3D scene interaction and selection rectangle rendering) (011-multi-select-tool)
-- N/A (in-memory circuit model, clipboard is session-only) (011-multi-select-tool)
-
-- N/A (in-memory circuit model) (009-add-component-tool)
-- TypeScript (strict mode), targeting ES2022 + Three.js 0.181+ (for 3D scene interaction) (010-build-tool-merge)
-
-- TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (already installed), three/addons/lines/Line2.js, three/addons/lines/LineGeometry.js, three/addons/lines/LineMaterial.js (007-line2-wire-refactor)
-- N/A (in-memory scene state only) (007-line2-wire-refactor)
-- TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (Line2, LineGeometry, LineMaterial from addons) (008-wire-tool-branching)
-- N/A (in-memory circuit model, Wire.intermediatePositions already exists) (008-wire-tool-branching)
-
-- TypeScript (strict mode), targeting ES2022 + Three.js 0.181+ (already installed) (006-position-tool-wires)
-- N/A (in-memory circuit model, no persistence changes) (006-position-tool-wires)
-
-- N/A (visual factories are stateless; state resides in Circuit/CircuitRunner instances) (005-visual-factory-classes)
-
-- TypeScript (strict mode), targeting ES2022 + Three.js 0.181+ (already in project) (003-threejs-rendering)
-- N/A (renderers are stateless; state resides in Circuit/CircuitRunner instances) (003-threejs-rendering)
-- TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (already installed), three/addons/controls/MapControls.js (004-map-controls-hovering)
-- N/A (stateless managers, no persistence) (004-map-controls-hovering)
-
-- TypeScript (strict mode), targeting ES2022 + None for core simulation module (dependency-free per constitution) (001-simulation-engine)
-- N/A (simulation engine is stateless; history stored in-memory when enabled) (001-simulation-engine)
-
-- File system - JSON files written to `output/sample-circuits/` directory (001-sample-circuit-scripts)
-- TypeScript (strict mode), targeting ES2022 + d3-graphviz (Graphviz DOT rendering using D3), d3 (peer dependency) (002-topology-visualizer)
-- N/A (client-side only, no persistence) (002-topology-visualizer)
-
-- TypeScript (strict mode), targeting ES2022 + None (core module is dependency-free per constitution) (001-core-object-model)
+- TypeScript 5.9+ (strict mode), targeting ES2022
+- Three.js 0.181+ (scene, camera, controls, 3D objects, Line2)
+- lil-gui as helper for small interactive modal forms
+- in-memory circuit model, optional loading/saving from/to a JSON file
 
 ## Project Structure
 
-```text
-src/
-tests/
+Simple Circuit Engine follows a **Model-Controller** architecture with clear separation between:
+
+- **Core module** (`src/core/`): Pure TypeScript domain **Model** and simulation engine (no dependencies)
+- **Scene module** (`src/scene/`): Three.js visualization layer with editing **Controllers** and tools
+
+### Core Module (`src/core/`)
+
+The core module is **dependency-free** and contains all domain logic:
+
 ```
+src/core/
+  +-- Circuit.ts           # Central model: manages the three elements of the circuit : components, enodes, and wires
+  +-- Component.ts         # Electrical component (battery, switch, LED, etc.)
+  +-- ENode.ts             # Electrical node (Pin or BranchingPoint)
+  +-- Wire.ts              # Connection between two enodes
+  +-- Position.ts          # 2D grid position
+  +-- Rotation.ts          # Discrete rotation
+  +--  types/
+  |     +-- ComponentType.ts      # Component type enum and metadata
+  |     +-- ENodeSourceType.ts    # Voltage/Current source types
+  |     +-- ENodeType.ts          # Pin vs BranchingPoint
+  |     +-- Identifier.ts         # UUID type alias
+  +-- simulation/
+  |     +-- CircuitRunner.ts      # Tick-based simulation orchestrator
+  |     +-- DirtyTracker.ts       # Utility used by CircuitRunner to keep tracks of simulation changed components (optimization)
+  |     +-- EventQueue.ts         # Used by CircuitRunner to queue simulation delayed transitions events
+  |     +-- SimulationState.ts    # Data Class representing the simulation state of entire circuit at a given time
+  |     +-- StateManager.ts       # Utility used by CircuitRunner to manage SimulationState updates
+  |     +-- states/
+  |           +-- ComponentState.ts  # Abstract class for component state
+  |           +-- ...                # Components states
+  |     +-- behaviors/
+  |           +-- BehaviorRegistry.ts   # Maps component types to behaviors
+  |           +-- ComponentBehavior.ts  # Interface for component logic
+  |           +-- SwitchBehavior.ts     # Switch toggle logic
+  |           +-- ...                   # Other components behaviors
+  |     +-- types/  # Various enums, data classes ...
+  +-- setup.ts             # Helper to register behaviors
+  +-- index.ts             # Public API exports
+```
+
+### Scene Module (`src/scene/`)
+
+The scene module handles Three.js visualization and user interaction:
+
+```
+src/scene/
+  +-- CircuitEngine.ts           # Unified facade with mode switching
+  +-- static/
+  |     +-- CircuitController.ts # Edit mode controller
+  |     +-- CircuitWriter.ts     # Writes scene changes to core model
+  |     +-- SelectionManager.ts  # Tracks selected elements
+  |     +-- tools/
+  |           +-- BuildTool.ts       # Unified edit tool (state machine)
+  |           +-- MultiSelectTool.ts # Rectangle selection + bulk operations
+  |           +-- AddComponentTool.ts # Component placement tool
+  +-- simulation/
+  |     +-- CircuitRunnerController.ts  # Simulation mode controller
+  +-- shared/
+  |     +-- AbstractCircuitController.ts # Base controller class
+  |     +-- EventEmitter.ts              # Type-safe event system
+  |     +-- HoverManager.ts              # Raycasting hover detection
+  |     +-- WireVisualManager.ts         # Wire Line2 visuals
+  |     +-- BranchingPointVisualFactory.ts # BP visuals
+  |     +-- components/
+  |     |     +-- ComponentVisualFactory.ts  # Interface + base class
+  |     |     +-- FactoryRegistry.ts         # Maps types to factories
+  |     |     +-- ...                        # Components factories
+  |     +-- types.ts             # Shared type definitions
+  |     +-- utils/               # Geometry, camera, lighting utilities
+  +-- setup.ts                   # Helper to register factories
+  +-- index.ts                   # Public API exports
+```
+
+## Testing strategy
+
+Unit tests are divided between core `tests/core` and scene `tests/scene`.
+Coverage goals are :
+
+- 80% on `core`: this module is the foundation of the model and simulation logic, hence it must be thoroughly tested
+- 60% on `scene`: coverage goal deliberately less strict to allow for more visualization tinkering
 
 ## Commands
 
@@ -59,141 +104,37 @@ npm test && npm run lint
 ## Code Style
 
 TypeScript (strict mode), targeting ES2022: Follow standard conventions
-When possible level of nested conditional structures should be minimized by using guard clauses and early returns. Example below:
+When possible level of nested conditional structures should be minimized by using guard clauses and early returns. Examples below:
 
 ```typescript
 /**
- * Example of GOOD practice for minimizing nested conditionals
- * DO that
+ * GOOD practice for minimizing nested conditionals
+ * DO that because clearer, reduced learning/debugging overhead
  * @param input
  */
 function goodExample(input: number | null): string {
   if (input === null) {
+    // early return in this case
     return 'No input provided';
   }
   // process securized input
-  // Main logic (possibily big) continues here without additional nesting : more readable, clearer
+  // Main logic (possibly big) continues here without additional nesting
   let output = input * 2;
 
   return `Output is ${output}`;
 }
 /**
- * Example of BAD practice that increases nested conditionals
- * DONT DO that !
+ * BAD practice that increases nested conditionals
+ * DON'T do that because less clear, increased learning/debugging overhead
  * @param input
  */
 function badExample(input: number | null): string {
   if (input !== null) {
-    // Main logic (possibily big) embedded under an if : less readable, less clear
+    // Main logic (possibly big) embedded under an if :
     let output = input * 2;
     return `Output is ${output}`;
+  } else {
+    return 'No input provided';
   }
-  return 'No input provided';
 }
 ```
-
-## Recent Changes
-
-- 018-feedback-init: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (scene/UI), core simulation is dependency-free
-- 017-simulation-speed: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (scene/UI), core simulation is dependency-free
-- 016-label-component: Added TypeScript 5.9+ (strict mode), targeting ES2022 + Three.js 0.181+ (for 3D text rendering via TextGeometry or CanvasTexture)
-
-<!-- MANUAL ADDITIONS START -->
-
-## BuildTool Architecture (010-build-tool-merge)
-
-### Overview
-
-BuildTool is a unified editing tool that consolidates functionality from four previous tools:
-
-- PositionTool (component/element positioning and rotation)
-- WireTool (wire creation and manipulation)
-- DeleteTool (element deletion)
-- BranchingPointTool (branching point creation)
-
-### State Machine
-
-BuildTool operates in multiple modes with clear state transitions:
-
-**Modes:**
-
-- `idle`: No active operation
-- `wire_creation`: Creating wire from source to target
-- `component_drag`: Dragging component or branching point
-- `wire_drag`: Dragging wire intermediate point
-- `bp_drag`: Dragging standalone branching point
-
-**Key Transitions:**
-
-- `idle → wire_creation`: Click on enode (pin/branching point)
-- `idle → component_drag`: Pointerdown on selected element
-- `idle → wire_drag`: Click on wire or intermediate point
-- `idle → bp_drag`: Click on branching point
-- `{any active mode} → idle`: Pointerup, Escape, or operation complete
-
-### State Interfaces
-
-**WireCreationState**: Tracks wire creation operation
-
-- `sourceEnodeId`: UUID of source endpoint
-- `sourcePosition`: World position of source
-- `previewWire`: Line2 preview object
-- `ts`: Operation timestamp
-
-**ComponentDragState**: Tracks component drag
-
-- `componentId`: UUID of component being dragged
-- `initialPosition`: Starting position (for cancel)
-
-**WireDragState**: Tracks wire point drag
-
-- `wireId`: UUID of wire being modified
-- `pointIndex`: Index in intermediatePositions array
-- `initialPosition`: Starting position
-- `originalPositions`: Snapshot for cancellation
-- `targetType`: 'intermediate' | 'new_intermediate'
-
-**BPDragState**: Tracks branching point drag
-
-- `enodeId`: UUID of branching point
-- `initialPosition`: Starting position (for cancel)
-
-### Event Handlers
-
-- `handlePointerDown()`: Initiates operations based on hovered element
-- `handlePointerUp()`: Commits operations based on current mode
-- `handleGridPositionMove()`: Updates preview/positions during drag
-- `handleKeyDown()`: Handles Escape (cancel), Delete/Backspace (delete), R (rotate)
-- `handleDblClick()`: Handles rotation and BP creation
-
-### Target Priority (disambiguate clicks)
-
-1. Enode (pin/branching point) - highest priority for wire creation
-2. Selected element - for drag operations
-3. Wire - for intermediate point manipulation
-4. Empty space - for standalone BP creation (double-click)
-
-### Best Practices
-
-- Always check `event.button === 0` (left click only)
-- Lock camera controls during active operations
-- Dispose preview objects on mode transitions
-- Use guard clauses to minimize nesting
-- All state interfaces must be strongly typed (no `any`)
-- Emit events for all operations (started, completed, cancelled, validation errors)
-
-### Integration Points
-
-- **CircuitController**: Tool registration and scene access
-- **SelectionManager**: Element selection state
-- **WireVisualManager**: Wire geometry updates
-- **CircuitWriter**: Model persistence
-- **HoverManager**: Element hover detection
-
-### Testing
-
-- All test specifications migrated to BuildTool.test.ts
-- 98 passing tests covering all user stories
-- Tests organized by user story (US1-US5)
-
-<!-- MANUAL ADDITIONS END -->

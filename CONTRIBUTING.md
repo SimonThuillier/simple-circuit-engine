@@ -2,6 +2,10 @@
 
 Thank you for your interest in contributing! This document provides guidelines and information for contributors.
 
+## requesting changes
+
+If you have any requests for features, fixes or quality of life enhancements you may push a PR with your new requests in `BACKLOG.md`.
+
 ## Getting Started
 
 1. **Read the Constitution**: Familiarize yourself with the [project constitution](.specify/memory/constitution.md) which defines core principles and architectural constraints.

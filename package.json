@@ -10,17 +10,19 @@
   "files": [
     "dist",
     "README.md",
+    "AGENTS.md",
+    "CLAUDE.md",
     "LICENSE"
   ],
+  "documentation": "./README.md",
+  "agentDocs": "./AGENTS.md",
   "keywords": [
     "circuit",
     "digital",
     "electronics",
     "education",
     "three.js",
-    "3d",
     "visualization",
-    "builder",
     "simulation"
   ],
   "author": "Simon Thuillier",
