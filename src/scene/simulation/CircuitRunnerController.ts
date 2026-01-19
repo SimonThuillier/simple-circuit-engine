@@ -227,8 +227,8 @@ export class CircuitRunnerController extends AbstractCircuitController {
       if (!this._circuit) return;
       // recreate runner for the current circuit (which can have been modified in edit mode while this controller was inactive)
       this._runner = new CircuitRunner(this._circuit, this._behaviorRegistry);
+      // update graphics
       this._fullUpdate();
-      // no specific logic on activate
     }
   }
 
@@ -250,6 +250,8 @@ export class CircuitRunnerController extends AbstractCircuitController {
       if (circuit) {
         this._gridHalfSize = Math.ceil(circuit.metadata.size / 2);
         this._runner = new CircuitRunner(circuit, this._behaviorRegistry);
+        // update graphics
+        this._fullUpdate();
       }
       return;
     }

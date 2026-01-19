@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Legacy Specs documents 1-15 
 
+### Fixed
+
+- When CircuitEngine in Simulation state switches circuit Initial electrical state graphics of the new circuit is now well displayed 
+
 ## [0.0.1] - 2026-01-09
 
 ### Added
