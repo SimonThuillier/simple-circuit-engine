@@ -16,9 +16,9 @@ Last updated: 2026-01-18
 ## Project Structure
 
 Simple Circuit Engine follows a **Model-Controller** architecture with clear separation between:
+
 - **Core module** (`src/core/`): Pure TypeScript domain **Model** and simulation engine (no dependencies)
 - **Scene module** (`src/scene/`): Three.js visualization layer with editing **Controllers** and tools
-
 
 ### Core Module (`src/core/`)
 
@@ -42,7 +42,7 @@ src/core/
   |     +-- DirtyTracker.ts       # Utility used by CircuitRunner to keep tracks of simulation changed components (optimization)
   |     +-- EventQueue.ts         # Used by CircuitRunner to queue simulation delayed transitions events
   |     +-- SimulationState.ts    # Data Class representing the simulation state of entire circuit at a given time
-  |     +-- StateManager.ts       # Utility used by CircuitRunner to manage SimulationState updates   
+  |     +-- StateManager.ts       # Utility used by CircuitRunner to manage SimulationState updates
   |     +-- states/
   |           +-- ComponentState.ts  # Abstract class for component state
   |           +-- ...                # Components states
@@ -92,7 +92,8 @@ src/scene/
 ## Testing strategy
 
 Unit tests are divided between core `tests/core` and scene `tests/scene`.
-Coverage goals are : 
+Coverage goals are :
+
 - 80% on `core`: this module is the foundation of the model and simulation logic, hence it must be thoroughly tested
 - 60% on `scene`: coverage goal deliberately less strict to allow for more visualization tinkering
 
@@ -104,6 +105,7 @@ npm test && npm run lint
 
 TypeScript (strict mode), targeting ES2022: Follow standard conventions
 When possible level of nested conditional structures should be minimized by using guard clauses and early returns. Examples below:
+
 ```typescript
 /**
  * GOOD practice for minimizing nested conditionals
@@ -112,7 +114,7 @@ When possible level of nested conditional structures should be minimized by usin
  */
 function goodExample(input: number | null): string {
   if (input === null) {
-    // early return in this case  
+    // early return in this case
     return 'No input provided';
   }
   // process securized input
@@ -128,12 +130,11 @@ function goodExample(input: number | null): string {
  */
 function badExample(input: number | null): string {
   if (input !== null) {
-    // Main logic (possibly big) embedded under an if : 
+    // Main logic (possibly big) embedded under an if :
     let output = input * 2;
     return `Output is ${output}`;
-  }
-  else {
-    return 'No input provided';  
+  } else {
+    return 'No input provided';
   }
 }
 ```

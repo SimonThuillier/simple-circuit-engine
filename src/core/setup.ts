@@ -19,8 +19,9 @@ import {
  * Basic components are : Battery, Lightbulb, RectangleLED, Relay, SmallLED, Switch, Transistor
  * @public
  * @param registry
+ * @return the input behavior registry for chaining
  */
-export function registerBasicComponentsBehaviors(registry: BehaviorRegistry): void {
+export function registerBasicComponentsBehaviors(registry: BehaviorRegistry): BehaviorRegistry {
   registry
     .register(new BatteryBehavior())
     .register(new LightbulbBehavior())
@@ -29,4 +30,6 @@ export function registerBasicComponentsBehaviors(registry: BehaviorRegistry): vo
     .register(new SmallLEDBehavior())
     .register(new SwitchBehavior())
     .register(new TransistorBehavior());
+
+  return registry;
 }

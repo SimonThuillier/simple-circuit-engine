@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - param `simulationSpeed` (default 3) in `controllerOptions`: sets the initial simulation speed when simulation mode is entered
 - param `simulationAutoPlay` (default false) in `controllerOptions` allows to trigger default play as soon as simulation mode is entered
 - `BACKLOG.md` to group future evolutions demands
+- `AGENTS.md` added and referenced into `package.json` for use by agents in client projects
 
 ### Changed
 
@@ -20,14 +21,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cleaned and updated `CLAUDE.md`
 - Set camera default max distance from 100 to 200
 - Upon initialization Engine emits a first `modeChanged` event. Therefore `previousMode` is now optional in that event.
+- setup methods `registerBasicComponentsFactories` and `registerBasicComponentsBehaviors` are now chainable (Quality of life)
+- Classes of `scene/shared/utils/Options` are publicly exported
+- Default `simulationSpeed` set to 3 ticks per second
 
 ### Removed
 
-- Legacy Specs documents 1-15 
+- Legacy Specs documents 1-15
 
 ### Fixed
 
-- When CircuitEngine in Simulation state switches circuit Initial electrical state graphics of the new circuit is now well displayed 
+- When CircuitEngine in Simulation state switches circuit Initial electrical state graphics of the new circuit is now well displayed
 
 ## [0.0.1] - 2026-01-09
 

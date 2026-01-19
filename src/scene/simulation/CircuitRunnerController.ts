@@ -17,7 +17,7 @@ import {
   TRANSITION_DEFAULTS,
 } from 'simple-circuit-engine/core';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
-import type {SharedResources, HoveredElement, ControllerOptions} from '../shared/types';
+import type { SharedResources, HoveredElement, ControllerOptions } from '../shared/types';
 import { AbstractCircuitController } from '../shared/AbstractCircuitController';
 import { gridToWorldPosition, gridToWorldRotation } from '../shared/utils/GeometryUtils';
 
@@ -190,9 +190,10 @@ export class CircuitRunnerController extends AbstractCircuitController {
    * @param options - Controller options passed to initialize()
    */
   protected onInitialize(options?: ControllerOptions) {
-    if(options){
-      if(options.simulationSpeed) this.simulationSpeed = options.simulationSpeed;
-      if(typeof options.simulationAutoPlay == "boolean") this._autoPlay = options.simulationAutoPlay;
+    if (options) {
+      if (options.simulationSpeed) this.simulationSpeed = options.simulationSpeed;
+      if (typeof options.simulationAutoPlay == 'boolean')
+        this._autoPlay = options.simulationAutoPlay;
     }
     // Register click handler for component (switches) interaction
     this._clickHandler = this._handleClick.bind(this);
@@ -234,7 +235,7 @@ export class CircuitRunnerController extends AbstractCircuitController {
       // update graphics
       this._fullUpdate();
       // if autoplay launch !
-      if(this._autoPlay) this.play();
+      if (this._autoPlay) this.play();
     }
   }
 
@@ -255,13 +256,13 @@ export class CircuitRunnerController extends AbstractCircuitController {
       this.wireVisualManager.setCircuit(circuit);
       if (circuit) {
         this._gridHalfSize = Math.ceil(circuit.metadata.size / 2);
-        if(!this._active) return; // nothing more to do if not active
+        if (!this._active) return; // nothing more to do if not active
         // if active launch the thing
         this._runner = new CircuitRunner(circuit, this._behaviorRegistry);
         // update graphics
         this._fullUpdate();
         // if autoplay launch !
-        if(this._autoPlay) this.play();
+        if (this._autoPlay) this.play();
       }
       return;
     }

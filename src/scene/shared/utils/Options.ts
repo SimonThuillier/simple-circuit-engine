@@ -5,6 +5,10 @@
 
 import type { ControllerOptions, EngineOptions, MapControlsOptions } from '../types';
 
+/**
+ * returns default complete mapControlsOptions or an autocompleted partial mapControlOptions
+ * @param options
+ */
 export function mapControlsOptions(
   options: MapControlsOptions | undefined = undefined
 ): MapControlsOptions {
@@ -26,6 +30,10 @@ export function mapControlsOptions(
   return { ...defaultOptions, ...options };
 }
 
+/**
+ * returns default complete controllerOptions or an autocompleted partial controllerOptions
+ * @param options
+ */
 export function controllerOptions(
   options: ControllerOptions | undefined = undefined
 ): ControllerOptions {
@@ -36,7 +44,7 @@ export function controllerOptions(
     defaultTool: 'build',
     mapControls: mapControlsOptions(),
     simulationSpeed: 3,
-    simulationAutoPlay: false
+    simulationAutoPlay: false,
   };
 
   if (!options) return defaultOptions;
@@ -44,6 +52,10 @@ export function controllerOptions(
   return { ...defaultOptions, ...options };
 }
 
+/**
+ * returns default complete engineOptions or and autoCompleted partial engineOptions
+ * @param options
+ */
 export function engineOptions(options: EngineOptions | undefined = undefined): EngineOptions {
   const defaultOptions: EngineOptions = {
     initialMode: 'edit',

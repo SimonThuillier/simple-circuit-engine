@@ -14,6 +14,7 @@ import { Circuit } from '../../src/core/Circuit';
 import { ComponentType } from '../../src/core/types/ComponentType';
 import type { IFactoryRegistry } from '../../src/scene/shared/components/ComponentVisualFactory';
 import { createMockCircuit } from './helpers';
+import {SIMULATION_SPEED} from "../../src";
 
 /**
  * Create a simple test circuit with two batteries wired together
@@ -290,8 +291,8 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
       engine.initialize(container);
 
-      // Default should be 2q TPS (from SIMULATION_SPEED.DEFAULT_TPS)
-      expect(engine.simulationSpeed).toBe(2);
+      // Default should be 3q TPS (from SIMULATION_SPEED.DEFAULT_TPS)
+      expect(engine.simulationSpeed).toBe(SIMULATION_SPEED.DEFAULT_TPS);
     });
 
     it('should delegate simulationSpeed setter to controller', () => {
