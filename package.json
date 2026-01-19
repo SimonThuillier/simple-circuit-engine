@@ -1,6 +1,6 @@
 {
   "name": "simple-circuit-engine",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Educational electronic circuits Build & Simulation engine with THREE.js 3D visualization",
   "type": "module",
   "main": "./dist/index.js",

@@ -230,14 +230,13 @@ if ! git push origin "$TARGET_VERSION"; then
 fi
 echo "  ✓ Created and pushed tag $TARGET_VERSION"
 
-# Step 15: Rebase dev onto main
-progress 15 "Rebasing dev onto main"
+# Step 15: Reset dev to main (after squash merge, dev starts fresh from main)
+progress 15 "Resetting dev to main"
 git fetch origin || error_exit "Failed to fetch from origin"
-git checkout -B sce-release origin/dev || error_exit "Failed to checkout sce-release from origin/dev"
-if ! git rebase origin/main; then
-    error_exit "Failed to rebase sce-release onto origin/main.\nManual cleanup required: resolve rebase conflicts in workdir $WORKDIR"
-fi
-echo "  ✓ Rebased dev onto main"
+# No rebase needed - squash merge already incorporated all dev changes into main
+# Just reset sce-release to origin/main as the new base for dev
+git checkout -B sce-release origin/main || error_exit "Failed to checkout sce-release from origin/main"
+echo "  ✓ Reset dev to main"
 
 # Step 16: Add new [Unreleased] section to CHANGELOG.md
 progress 16 "Adding new [Unreleased] section to CHANGELOG.md"
