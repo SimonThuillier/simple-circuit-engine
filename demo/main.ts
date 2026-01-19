@@ -35,9 +35,14 @@ const axesHelper = new AxesHelper(5);
 const container = document.getElementById('canvas-container')!;
 const engine = new CircuitEngine(componentsFactoryRegistry, behaviorRegistry);
 
+const initialMode = 'simulation';
 engine.initialize(container, {
-  initialMode: 'edit',
-  controllerOptions: { mapControls: { zoomSpeed: 2 } },
+  initialMode: initialMode,
+  controllerOptions: {
+    mapControls: { zoomSpeed: 2 },
+    simulationAutoPlay: true,
+    simulationSpeed: 3
+  },
 });
 
 // Add axes helper
@@ -409,7 +414,7 @@ engine.on('simulationSpeedChanged', ({ newSpeed }) => {
 });
 
 // Initial UI state
-updateModeUI('edit');
+updateModeUI(initialMode);
 
 // Load the default circuit
 document.getElementById('load-btn')!.click();

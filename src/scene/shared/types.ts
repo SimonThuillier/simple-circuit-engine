@@ -357,7 +357,7 @@ export interface ModeChangedEvent {
   /** New active mode */
   mode: EngineMode;
   /** Previous mode before transition */
-  previousMode: EngineMode;
+  previousMode?: EngineMode;
 }
 
 /**
@@ -427,6 +427,10 @@ export interface ControllerOptions {
   defaultTool?: ToolType | null;
   /** MapControls configuration options */
   mapControls?: MapControlsOptions;
+  /** Startup CircuitRunnerController simulation speed */
+  simulationSpeed?: number;
+  /** If CircuitRunnerController plays automatically at activation */
+  simulationAutoPlay?: boolean;
 }
 
 /**

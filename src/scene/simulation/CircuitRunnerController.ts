@@ -17,7 +17,7 @@ import {
   TRANSITION_DEFAULTS,
 } from 'simple-circuit-engine/core';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
-import type { SharedResources, HoveredElement } from '../shared/types';
+import type {SharedResources, HoveredElement, ControllerOptions} from '../shared/types';
 import { AbstractCircuitController } from '../shared/AbstractCircuitController';
 import { gridToWorldPosition, gridToWorldRotation } from '../shared/utils/GeometryUtils';
 
@@ -33,6 +33,7 @@ export class CircuitRunnerController extends AbstractCircuitController {
   private _behaviorRegistry: BehaviorRegistry;
 
   // Playback control state
+  private _autoPlay = false;
   private _isPlaying: boolean = false;
   private _tickIntervalMs: number = SIMULATION_SPEED.DEFAULT_INTERVAL_MS;
   private _simulationLoopId: number | null = null;
@@ -185,12 +186,15 @@ export class CircuitRunnerController extends AbstractCircuitController {
   /**
    * Specific Initialization logic, performed after AbstractCircuitController initialization
    * @private
+   *
+   * @param options - Controller options passed to initialize()
    */
-  protected onInitialize() {
-    // Register click handler for component interaction
-    //this._pointerDownHandler = this._handlePointerDown.bind(this);
-    //this._container!.addEventListener('pointerdown', this._pointerDownHandler);
-
+  protected onInitialize(options?: ControllerOptions) {
+    if(options){
+      if(options.simulationSpeed) this.simulationSpeed = options.simulationSpeed;
+      if(typeof options.simulationAutoPlay == "boolean") this._autoPlay = options.simulationAutoPlay;
+    }
+    // Register click handler for component (switches) interaction
     this._clickHandler = this._handleClick.bind(this);
     this._container!.addEventListener('click', this._clickHandler);
   }
@@ -229,6 +233,8 @@ export class CircuitRunnerController extends AbstractCircuitController {
       this._runner = new CircuitRunner(this._circuit, this._behaviorRegistry);
       // update graphics
       this._fullUpdate();
+      // if autoplay launch !
+      if(this._autoPlay) this.play();
     }
   }
 
@@ -249,9 +255,13 @@ export class CircuitRunnerController extends AbstractCircuitController {
       this.wireVisualManager.setCircuit(circuit);
       if (circuit) {
         this._gridHalfSize = Math.ceil(circuit.metadata.size / 2);
+        if(!this._active) return; // nothing more to do if not active
+        // if active launch the thing
         this._runner = new CircuitRunner(circuit, this._behaviorRegistry);
         // update graphics
         this._fullUpdate();
+        // if autoplay launch !
+        if(this._autoPlay) this.play();
       }
       return;
     }

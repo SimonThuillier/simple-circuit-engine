@@ -176,6 +176,8 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
 
     // Emit ready event
     this.emit('ready', { controllerType: 'engine' });
+    const startupMode = this._mode as EngineMode;
+    this.emit('modeChanged', { mode: startupMode });
   }
 
   /**

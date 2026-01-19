@@ -16,7 +16,7 @@ export function mapControlsOptions(
     enableDamping: true,
     dampingFactor: 0.5,
     minDistance: 1,
-    maxDistance: 100,
+    maxDistance: 200,
     panSpeed: 1.0,
     zoomSpeed: 2.0,
     rotateSpeed: 1.0,
@@ -35,6 +35,8 @@ export function controllerOptions(
     colorGrid: 0x777777,
     defaultTool: 'build',
     mapControls: mapControlsOptions(),
+    simulationSpeed: 3,
+    simulationAutoPlay: false
   };
 
   if (!options) return defaultOptions;
