@@ -198,6 +198,11 @@ export class CircuitRunnerController extends AbstractCircuitController {
     // Register click handler for component (switches) interaction
     this._clickHandler = this._handleClick.bind(this);
     this._container!.addEventListener('click', this._clickHandler);
+
+    // standalone mode -> Controller active
+    if(!this._sharedResources){
+      this.setActive(true);
+    }
   }
 
   protected emitReady() {

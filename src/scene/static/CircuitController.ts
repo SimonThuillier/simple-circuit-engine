@@ -83,8 +83,7 @@ export class CircuitController extends AbstractCircuitController {
    * Specific Initialization logic, performed after AbstractCircuitController initialization
    * @private
    */
-  protected onInitialize(options?: ControllerOptions) {
-    options = controllerOptions(options);
+  protected onInitialize(_options?: ControllerOptions) {
     // Initialize tools
     this._initializeTools();
     // Initialize Selection Manager
@@ -92,10 +91,10 @@ export class CircuitController extends AbstractCircuitController {
     // Initialize Config Panel Manager
     this._initializeConfigPanelManager();
 
-    if (options.defaultTool) {
-      this._initialized = true; // flag must be set before calling setActiveTool
-      this.setEditMode(true);
-      this.setActiveTool(options.defaultTool);
+    this._initialized = true; // flag must be set before calling setActiveTool
+    // standalone mode -> Controller active
+    if(!this._sharedResources){
+      this.setActive(true);
     }
   }
 
