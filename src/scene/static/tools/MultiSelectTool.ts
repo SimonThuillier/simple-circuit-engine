@@ -864,7 +864,7 @@ export class MultiSelectTool implements IEditingTool {
       this.bulkDragState;
 
     // we retrieve unbound world position to avoid snapping during drag since Multi Select tool allows to expand grid
-    worldPosition = this.controller.cursorGroundPlanePosition(false);
+    worldPosition = this.controller.cursorGroundPlanePosition();
 
     // Calculate delta
     const delta = new THREE.Vector3().subVectors(worldPosition, dragStartWorld);
@@ -924,7 +924,7 @@ export class MultiSelectTool implements IEditingTool {
     if (!circuit) return;
 
     const { dragStartWorld, initialPositions } = this.bulkDragState;
-    const currentPosition = this.controller.cursorGroundPlanePosition(false);
+    const currentPosition = this.controller.cursorGroundPlanePosition();
 
     // Calculate final delta
     const delta = new THREE.Vector3().subVectors(currentPosition, dragStartWorld);
@@ -1206,7 +1206,7 @@ export class MultiSelectTool implements IEditingTool {
     const circuit = this.controller.getCircuit();
     if (!circuit) return false;
 
-    const cursorPosition = this.controller.cursorGroundPlanePosition(false);
+    const cursorPosition = this.controller.cursorGroundPlanePosition();
     const gridCursor = worldToGridPosition(cursorPosition);
 
     // Map from original IDs to newly created element IDs for wire remapping (T047)

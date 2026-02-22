@@ -37,11 +37,11 @@ This code set up the main CircuitEngine instance in edit mode on a new Circuit, 
 ```javascript
 import { WebGLRenderer } from 'three';
 import { Circuit, BehaviorRegistry, registerBasicComponentsBehaviors } from 'simple-circuit-engine/core';
-import { CircuitEngine, engineOptions, FactoryRegistry, DefaultVisualFactory, registerBasicComponentsFactories } from 'simple-circuit-engine/scene';
+import { CircuitEngine, engineOptions, GroupedFactoryRegistry, DefaultVisualFactory, oldRegisterBasicComponentsFactories } from 'simple-circuit-engine/scene';
 
-// Create component factory registry with all basic visual factories (for scene objects creation - rendering
-const componentsFactoryRegistry = registerBasicComponentsFactories(new FactoryRegistry(new DefaultVisualFactory()));
-// Create behavior registry with all basic component behaviors (for simulation)
+// Create component factory registry with basic components visual factories (for scene objects creation - rendering)
+const componentsFactoryRegistry = registerBasicComponentsFactories(new GroupedFactoryRegistry(new DefaultVisualFactory()));
+// Create behavior registry with basic components behaviors (for simulation)
 const behaviorRegistry = registerBasicComponentsBehaviors(new BehaviorRegistry());
 
 // Initialize CircuitEngine

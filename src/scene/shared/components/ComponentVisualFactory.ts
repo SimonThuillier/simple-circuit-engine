@@ -37,6 +37,11 @@ import type { ConfigFormDefinition } from '../types';
  */
 export interface IComponentVisualFactory {
   /**
+   * @returns nominal rotation along the Y axis when component added (angle in radian)
+   */
+  defaultRotation(): number;
+
+  /**
    * Create the Three.js visual representation for a component
    *
    * @param component - The circuit component to visualize
@@ -224,6 +229,10 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
   /** Default selection emissive intensity (higher than hover) */
   protected static readonly DEFAULT_SELECTION_INTENSITY = 0.8;
 
+  defaultRotation() {
+    return 0;
+  }
+
   /**
    * Create the Three.js visual representation for a component
    * Must be implemented by subclasses
@@ -364,13 +373,15 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
    * @param pinId - UUID of this pin/enode
    * @param label - Human-readable label (e.g., 'input', 'output', 'cathode')
    * @param sourceType - Optional source type (voltage/current) : if provided this pin will be locked to that type
+   * @param visualRotation - if set rotate the visual of the pin to adjust display without affecting hitbox
    * @returns THREE.Group configured as pin group
    */
   protected createPinGroup(
     componentId: string,
     pinId: string,
     label: string,
-    sourceType: ENodeSourceType | null = null
+    sourceType: ENodeSourceType | null = null,
+    visualRotation: THREE.Euler | null = null
   ): THREE.Group {
     const pinGroup = new THREE.Group();
     pinGroup.userData = {
@@ -418,6 +429,9 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
       lockedSourceType: sourceType,
     };
     pinGroup.add(visual);
+    if (!!visualRotation) {
+      visual.setRotationFromEuler(visualRotation);
+    }
 
     return pinGroup;
   }
@@ -439,6 +453,27 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
       }
     });
     return pinGroup;
+  }
+
+  /**
+   * Find pin group visual by label within a component Object3D
+   * @param object3D
+   * @param label
+   */
+  findPinVisual(object3D: THREE.Object3D, label: string): THREE.Mesh | null {
+    let pinGroup: THREE.Group | null = this.findPinGroup(object3D, label);
+    if (!pinGroup) {
+      return null;
+    }
+
+    let pinVisual: THREE.Mesh | null;
+    pinGroup.traverse((child) => {
+      if (child.userData.type === 'enode' && child instanceof THREE.Mesh) {
+        pinVisual = child;
+      }
+    });
+    // @ts-ignore
+    return pinVisual;
   }
 
   /**
@@ -464,7 +499,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     const material = new THREE.MeshBasicMaterial({
       color: 0xffff00,
       transparent: true,
-      opacity: 0,
+      opacity: 0.3,
       visible: false,
     });
     const hitbox = new THREE.Mesh(geometry, material);

@@ -5,12 +5,12 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { SwitchBehavior } from '../../../../src/core/simulation/behaviors/SwitchBehavior';
+import { SwitchBehavior } from '../../../../src/core/simulation/behaviors/basic/SwitchBehavior';
 import { Component } from '../../../../src/core/Component';
 import { ComponentType } from '../../../../src/core/types/ComponentType';
 import { Position } from '../../../../src/core/types/Position';
 import { Rotation } from '../../../../src/core/types/Rotation';
-import { SwitchState } from '../../../../src/core/simulation/states/SwitchState';
+import { SwitchState } from '../../../../src/core/simulation/states/basic/SwitchState';
 import type { UserCommand } from '../../../../src/core/simulation';
 
 /**

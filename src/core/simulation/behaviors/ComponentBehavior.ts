@@ -7,7 +7,7 @@ import type { UUID } from '../../types/Identifier.js';
 import type { Component } from '../../Component.js';
 import type { ComponentType } from '../../types/ComponentType.js';
 import type { ENodeSourceType } from '../../types/ENodeSourceType.js';
-import type { NodeElectricalState } from '../states/NodeElectricalState.js';
+import type { NodeElectricalState } from '../states/basic/NodeElectricalState';
 import type { ComponentState } from '../states/ComponentState.js';
 import type { ScheduledEvent, UserCommand } from '../types';
 /**

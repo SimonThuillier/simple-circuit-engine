@@ -5,12 +5,12 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { TransistorBehavior } from '../../../../src/core/simulation/behaviors/TransistorBehavior';
+import { TransistorBehavior } from '../../../../src/core/simulation/behaviors/basic/TransistorBehavior';
 import { Component } from '../../../../src/core/Component';
 import { ComponentType } from '../../../../src/core/types/ComponentType';
 import { Position } from '../../../../src/core/types/Position';
 import { Rotation } from '../../../../src/core/types/Rotation';
-import { TransistorState } from '../../../../src/core/simulation/states/TransistorState';
+import { TransistorState } from '../../../../src/core/simulation/states/basic/TransistorState';
 import type { NodeElectricalState } from '../../../../src/core/simulation';
 import type { UUID } from '../../../../src/core/types/Identifier';
 

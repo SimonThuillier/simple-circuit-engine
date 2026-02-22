@@ -5,12 +5,12 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { RelayBehavior } from '../../../../src/core/simulation/behaviors/RelayBehavior';
+import { RelayBehavior } from '../../../../src/core/simulation/behaviors/basic/RelayBehavior';
 import { Component } from '../../../../src/core/Component';
 import { ComponentType } from '../../../../src/core/types/ComponentType';
 import { Position } from '../../../../src/core/types/Position';
 import { Rotation } from '../../../../src/core/types/Rotation';
-import { RelayState } from '../../../../src/core/simulation/states/RelayState';
+import { RelayState } from '../../../../src/core/simulation/states/basic/RelayState';
 import type { NodeElectricalState } from '../../../../src/core/simulation';
 import type { UUID } from '../../../../src/core/types/Identifier';
 

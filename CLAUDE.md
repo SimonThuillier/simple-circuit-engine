@@ -68,9 +68,10 @@ src/scene/
   |     +-- CircuitWriter.ts     # Writes scene changes to core model
   |     +-- SelectionManager.ts  # Tracks selected elements
   |     +-- tools/
-  |           +-- BuildTool.ts       # Unified edit tool (state machine)
+  |           +-- BuildTool.ts       # Unified build tool (state machine)
+  |           +-- ComponentPickerWidget.ts # Widget for selecting component to add in BuildTool
+  |           +-- ConfigPanelWidget.ts # Widget for changing components configuration
   |           +-- MultiSelectTool.ts # Rectangle selection + bulk operations
-  |           +-- AddComponentTool.ts # Component placement tool
   +-- simulation/
   |     +-- CircuitRunnerController.ts  # Simulation mode controller
   +-- shared/
@@ -81,7 +82,7 @@ src/scene/
   |     +-- BranchingPointVisualFactory.ts # BP visuals
   |     +-- components/
   |     |     +-- ComponentVisualFactory.ts  # Interface + base class
-  |     |     +-- FactoryRegistry.ts         # Maps types to factories
+  |     |     +-- GroupedFactoryRegistry.ts  # Register groups of components referencing types and their visual factories
   |     |     +-- ...                        # Components factories
   |     +-- types.ts             # Shared type definitions
   |     +-- utils/               # Geometry, camera, lighting utilities

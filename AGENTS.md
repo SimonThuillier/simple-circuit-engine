@@ -14,20 +14,25 @@ import {
   Circuit,
   BehaviorRegistry,
   registerBasicComponentsBehaviors,
+  registerGatesComponentsBehaviors,
 } from 'simple-circuit-engine/core';
 import {
   CircuitEngine,
   engineOptions,
-  FactoryRegistry,
+  GroupedFactoryRegistry,
   DefaultVisualFactory,
   registerBasicComponentsFactories,
+  registerGatesComponentsFactories,
 } from 'simple-circuit-engine/scene';
 
 // Create component factory registry and behavior registry with basic components
 const componentsFactoryRegistry = registerBasicComponentsFactories(
-  new FactoryRegistry(new DefaultVisualFactory())
+  new GroupedFactoryRegistry(new DefaultVisualFactory())
 );
+registerGatesComponentsFactories(componentsFactoryRegistry); //... other groups of components if needed
+
 const behaviorRegistry = registerBasicComponentsBehaviors(new BehaviorRegistry());
+registerGatesComponentsBehaviors(behaviorRegistry); //... other groupsof components  if needed
 
 // Instanciate and Initialize CircuitEngine (it creates and uses a new Circuit by default)
 const engine = new CircuitEngine(componentsFactoryRegistry, behaviorRegistry);
@@ -67,7 +72,7 @@ animate();
 - `CircuitRunner` - Tick-based simulation orchestrator
 - `SimulationState` - Circuit state at a given tick
 - `BehaviorRegistry` - Maps ComponentType → behavior logic
-- `registerBasicComponentsBehaviors()` - Registers built-in behaviors
+- `registerBasicComponentsBehaviors()` - Registers basic components built-in behaviors
 
 ### Types
 
@@ -84,15 +89,19 @@ animate();
 
 ### Visual Factories
 
-- `FactoryRegistry` - Maps ComponentType → visual factory
+- `GroupedFactoryRegistry` - Register groups of components referencing types and their visual factories
 - `DefaultVisualFactory` - Fallback factory for unknown types
-- `registerBasicComponentsFactories()` - Registers built-in factories
+- `registerBasicComponentsFactories()` - Registers basic components built-in factories
 
 ### Tools (Edit Mode)
 
-- `BuildTool` - Primary editing tool
-- `AddComponentTool` - Component placement
-- `MultiSelectTool` - Rectangle selection + bulk ops
+- `BuildTool` - Primary unified editing tool (add/drag/move/rotate/remove/wire/copy-cut/paste one element)
+- `MultiSelectTool` - Rectangle selection + bulk ops (drag, copy-cut/paste, remove multiple elements)
+
+### Widgets
+
+- `ComponentPicketWidget` - Widget for selecting component to add in BuildTool (edit mode)
+- `ConfigPanelWidget.ts` - Widget for editing components configuration (edit mode)
 
 ### Managers
 
@@ -130,10 +139,9 @@ engine.on('simulationTick', (state) => { ... });
 ### Non-Goals
 
 - **NOT realistic physics**: This is a discrete graph model, not SPICE
-- **NOT for production circuits**: Educational purposes only
+- **No analog simulation**: No voltage drops, current limiting, etc.
 - **Circuit states are boolean**: Tension/current are on/off, not continuous values
-- **No analog simulation**: No voltage drops, current limiting, etc.  
-
+- **NOT for production circuits**: Educational purposes only
 
 ### Do NOT
 

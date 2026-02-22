@@ -200,7 +200,7 @@ export class CircuitRunnerController extends AbstractCircuitController {
     this._container!.addEventListener('click', this._clickHandler);
 
     // standalone mode -> Controller active
-    if(!this._sharedResources){
+    if (!this._sharedResources) {
       this.setActive(true);
     }
   }

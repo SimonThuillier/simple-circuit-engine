@@ -6,7 +6,7 @@
 import type { Circuit } from '../Circuit.js';
 import type { RunnerOptions } from './types/RunnerOptions.js';
 import type { UserCommand } from './types/UserCommand.js';
-import type { NodeElectricalState } from './states/NodeElectricalState.js';
+import type { NodeElectricalState } from './states/basic/NodeElectricalState';
 import type { ComponentState } from './states/ComponentState.js';
 import { SimulationState } from './SimulationState.js';
 import { StateManager } from './StateManager.js';

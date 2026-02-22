@@ -965,6 +965,7 @@ export class Circuit {
    * iterate through all components, enodes and wires positions to get the size that allows to enclose all elements.
    * @param margin - optional margin to add to the size
    * @returns size that allows to enclose all elements plus margin
+   * @todo if calls to this method at each build operation ends causes slowness see to optimize by restricting checked elements
    */
   getEnclosingSize(margin: number = 0): number {
     let maxPos = 0;

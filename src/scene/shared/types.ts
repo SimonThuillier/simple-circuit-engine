@@ -56,7 +56,6 @@ export type ControllerEvent =
   | 'toolOperationCompleted'
   | 'toolOperationCancelled'
   | 'toolValidationError'
-  | 'addComponentTypeChanged'
   | 'cursorChangeRequested'
   | 'circuitElementAction'
   | 'circuitMetadataEdition'
@@ -107,7 +106,6 @@ export interface ControllerEventMap {
   };
   toolOperationCancelled: { toolType: ToolType; mode: unknown };
   toolValidationError: { toolType: ToolType; mode: unknown; errorMessage: string };
-  addComponentTypeChanged: { componentType: ComponentType | null };
   cursorChangeRequested: { cursorType: CursorType };
   // Model circuit events (add, edit, delete elements, metadataEdit)
   circuitElementAction: {
@@ -222,7 +220,7 @@ export type SelectionData = MonoSelectionData | MultiSelectionData;
  *
  * Note: 'build' replaces the previous tools: 'position', 'wire', 'delete', 'branchingPoint'
  */
-export type ToolType = 'build' | 'addComponent' | 'multiSelect';
+export type ToolType = 'build' | 'multiSelect';
 
 /**
  * Cursor types for tool operations
