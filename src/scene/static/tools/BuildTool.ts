@@ -8,14 +8,24 @@
  * - Component rotation
  * - Element deletion
  * - Branching point creation
+ * - Component placement & addition (add_component mode with picker widget)
  *
- * Replaces: PositionTool, WireTool, DeleteTool, BranchingPointTool
+ * Replaces old: PositionTool, WireTool, DeleteTool, BranchingPointTool, AddComponentTool
  */
 
 import * as THREE from 'three';
-import type { Euler } from 'three';
+import { Euler } from 'three';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
-import { type UUID, type ComponentType, ENodeSourceType } from 'simple-circuit-engine/core';
+import {
+  type UUID,
+  type ComponentType,
+  ENodeSourceType,
+  ENodeType,
+  ENode,
+  Position,
+  Rotation,
+  Component,
+} from 'simple-circuit-engine/core';
 
 import type {
   IEditingTool,
@@ -25,12 +35,18 @@ import type {
   MonoSelectionData,
   HoveredElement,
 } from '../../shared/types';
+import type { IGroupedFactoryRegistry } from '../../shared/components/GroupedFactoryRegistry';
 import type { CircuitController } from '../CircuitController';
 import {
   gridToWorldRotation,
   nearestWorldSnapPosition,
   worldToGridPosition,
 } from '../../shared/utils/GeometryUtils';
+import {
+  ComponentPickerWidget,
+  BRANCHING_POINT_SENTINEL,
+  type PickerSelection,
+} from './ComponentPickerWidget';
 
 /**
  * Build tool operating modes
@@ -40,9 +56,17 @@ import {
  *   idle → component_drag (pointerdown on selected element)
  *   idle → wire_drag (click wire or intermediate point)
  *   idle → bp_drag (double-click+hold branching point)
+ *   idle → add_component (double-click empty space)
+ *   add_component → idle (Escape, close widget)
  *   {any active mode} → idle (pointerup, Escape, or operation complete)
  */
-type BuildToolMode = 'idle' | 'wire_creation' | 'wire_drag' | 'component_drag' | 'bp_drag';
+type BuildToolMode =
+  | 'idle'
+  | 'wire_creation'
+  | 'wire_drag'
+  | 'component_drag'
+  | 'bp_drag'
+  | 'add_component';
 
 /**
  * State during wire creation operation
@@ -186,6 +210,7 @@ export class BuildTool implements IEditingTool {
   // Tool state
   private mode: BuildToolMode = 'idle';
   private lastCancelledOp: LastCancelledOp | null = null;
+  private lastOperationCompletedTs: number = 0;
 
   // Mode-specific state
   private wireCreationState: WireCreationState | null = null;
@@ -196,12 +221,32 @@ export class BuildTool implements IEditingTool {
   // Clipboard for copy-paste operations
   private clipboard: ClipboardData | null = null;
 
+  // Component picker widget (add_component mode)
+  private pickerWidget: ComponentPickerWidget | null = null;
+
+  // Ghost preview for add_component mode
+  private ghostPreview: THREE.Group | null = null;
+  private hasOverlap: boolean = false;
+
+  // Currently selected item in the picker (persists across mode entries)
+  private pickerSelection: PickerSelection | null = null;
+
   /**
    * Construct a new BuildTool instance
    * @param controller - The circuit scene controllerType instance
    */
   constructor(controller: CircuitController) {
     this._controller = controller;
+
+    // Initialize component picker widget if registry supports groups
+    const registry = controller.factoryRegistry;
+    if ('getGroups' in registry && typeof (registry as any).getGroups === 'function') {
+      this.pickerWidget = new ComponentPickerWidget(
+        registry as unknown as IGroupedFactoryRegistry,
+        (selection) => this.onPickerSelectionChange(selection),
+        () => this.exitAddComponentMode()
+      );
+    }
 
     // Bind event handlers for stable references
     this.handlePointerDown = this.handlePointerDown.bind(this);
@@ -241,6 +286,10 @@ export class BuildTool implements IEditingTool {
     // Security : Cancel any active operations
     this.cancelOperation();
 
+    // Clean up add_component mode resources
+    this.disposeGhostPreview();
+    this.pickerWidget?.close();
+
     const container = this._controller.getContainer();
     // Remove event listeners
     this._controller.off('gridPositionMove', this.handleGridPositionMove);
@@ -256,6 +305,7 @@ export class BuildTool implements IEditingTool {
     this.componentDragState = null;
     this.bpDragState = null;
     this.lastCancelledOp = null;
+    this.hasOverlap = false;
 
     // Safety: re-enable camera controls
     const controls = this._controller.getControls();
@@ -276,6 +326,8 @@ export class BuildTool implements IEditingTool {
       this.cancelBPDrag();
     } else if (this.mode === 'component_drag') {
       this.cancelComponentDrag();
+    } else if (this.mode === 'add_component') {
+      this.exitAddComponentMode();
     }
   }
 
@@ -285,6 +337,13 @@ export class BuildTool implements IEditingTool {
    */
   getCursorType(): CursorType {
     const hoveredElement = this._controller.getHoveredElement();
+
+    // During add_component mode
+    if (this.mode === 'add_component') {
+      if (hoveredElement && hoveredElement.type === 'component') return 'pointer';
+      if (this.hasOverlap) return 'not-allowed';
+      return this.pickerSelection ? 'crosshair' : 'default';
+    }
 
     // During wire creation
     if (this.mode === 'wire_creation') {
@@ -331,6 +390,11 @@ export class BuildTool implements IEditingTool {
     // Wire creation preview
     if (this.mode === 'wire_creation' && this.wireCreationState?.previewWire) {
       previews.push(this.wireCreationState.previewWire);
+    }
+
+    // Add component ghost preview
+    if (this.mode === 'add_component' && this.ghostPreview) {
+      previews.push(this.ghostPreview);
     }
 
     return previews;
@@ -435,6 +499,20 @@ export class BuildTool implements IEditingTool {
         this.cancelWireCreation();
         return;
       }
+    } else if (this.mode === 'add_component') {
+      // In add_component mode, clicking on empty space places the selected item
+      if (!hoveredElement && this.pickerSelection) {
+        if (this.hasOverlap) {
+          this._controller.emit('toolValidationError', {
+            toolType: this.type,
+            mode: 'add_component',
+            errorMessage: 'Cannot place component: position occupied',
+          });
+          return;
+        }
+        this.placeSelectedItem();
+      }
+      return;
     }
   }
 
@@ -448,6 +526,9 @@ export class BuildTool implements IEditingTool {
    */
   private handlePointerUp(event: MouseEvent): void {
     if (event.button !== 0) return; // Only handle left click
+
+    // add_component mode manages its own gridPositionMove listener lifecycle
+    if (this.mode === 'add_component') return;
 
     const circuit = this._controller.getCircuit();
     if (!circuit) return;
@@ -499,6 +580,9 @@ export class BuildTool implements IEditingTool {
       case 'bp_drag':
         this.updateBPDrag(position);
         break;
+      case 'add_component':
+        this.updateAddComponentPreview(position);
+        break;
       default:
         break;
     }
@@ -511,7 +595,9 @@ export class BuildTool implements IEditingTool {
   private handleKeyDown(event: KeyboardEvent): void {
     // cancel ongoing action on Escape
     if (event.key === 'Escape') {
-      if (this.mode === 'wire_creation') {
+      if (this.mode === 'add_component') {
+        this.exitAddComponentMode();
+      } else if (this.mode === 'wire_creation') {
         this.cancelWireCreation();
       } else if (this.mode === 'wire_drag') {
         this.cancelWireDrag();
@@ -574,6 +660,7 @@ export class BuildTool implements IEditingTool {
    */
   private handleDblClick(event: MouseEvent): void {
     if (event.button !== 0) return; // Only handle left click
+    if (event.ctrlKey || event.metaKey) return; // prevent rotating while ctrl hold
 
     const hoveredElement = this._controller.getHoveredElement();
 
@@ -591,11 +678,18 @@ export class BuildTool implements IEditingTool {
       const componentId = hoveredElement.id;
       this.rotateComponent(componentId);
     } else if (!hoveredElement) {
-      // Priority 3 - Double-click on empty space - create standalone branching point
-      const gridPosition = this._controller.cursorGroundPlanePosition();
-      const enodeId = this.createStandaloneBranchingPoint(gridPosition);
-      if (enodeId) {
-        this._controller.getSelectionManager().selectOne('enode', enodeId, { componentId: null });
+      // Priority 3 - Double-click on empty space - open component picker widget
+      // Suppress if a drag/wire operation just completed (avoids false dblclick after quick drag-release)
+      if (Date.now() - this.lastOperationCompletedTs < 400) return;
+      if (this.pickerWidget && this.mode === 'idle') {
+        this.enterAddComponentMode(event);
+      } else if (!this.pickerWidget) {
+        // Fallback: create standalone branching point if no grouped registry
+        const gridPosition = this._controller.cursorGroundPlanePosition();
+        const enodeId = this.createStandaloneBranchingPoint(gridPosition);
+        if (enodeId) {
+          this._controller.getSelectionManager().selectOne('enode', enodeId, { componentId: null });
+        }
       }
     }
   }
@@ -725,6 +819,7 @@ export class BuildTool implements IEditingTool {
       if (!hasSelected) {
         this._controller.getSelectionManager().selectOne('wire', wire.id);
       }
+      this._controller.autoAdjustCircuitGridSize();
       // Emit success event
       this._controller.emit('toolOperationCompleted', {
         toolType: this.type,
@@ -733,6 +828,7 @@ export class BuildTool implements IEditingTool {
         changedData: { addedWires: [wire.id] },
       });
       // Reset state (end preview)
+      this.lastOperationCompletedTs = Date.now();
       this.cancelWireCreation();
       return wire.id;
     } catch (error) {
@@ -856,6 +952,7 @@ export class BuildTool implements IEditingTool {
     // Reset state
     this.mode = 'idle';
     this.wireDragState = null;
+    this.lastOperationCompletedTs = Date.now();
 
     const circuit = this._controller.getCircuit();
     if (!circuit) return;
@@ -929,6 +1026,7 @@ export class BuildTool implements IEditingTool {
 
       // Default case : Update visual
       this._controller.wireVisualManager.updateWireById(wireDragState.wireId);
+      this._controller.autoAdjustCircuitGridSize();
       this._controller.emit('toolOperationCompleted', {
         toolType: this.type,
         mode: this.mode,
@@ -1044,6 +1142,7 @@ export class BuildTool implements IEditingTool {
         this._controller.circuitWriter.saveSimplifyWirePositions(connectedWire.id);
         this._controller.wireVisualManager.updateWireById(connectedWire.id);
       }
+      this._controller.autoAdjustCircuitGridSize();
       this._controller.emit('toolOperationCompleted', {
         toolType: this.type,
         mode: 'component_drag',
@@ -1065,6 +1164,7 @@ export class BuildTool implements IEditingTool {
     // Reset state
     this.mode = 'idle';
     this.componentDragState = null;
+    this.lastOperationCompletedTs = Date.now();
   }
 
   /**
@@ -1167,6 +1267,7 @@ export class BuildTool implements IEditingTool {
         this._controller.circuitWriter.saveSimplifyWirePositions(connectedWireId);
         this._controller.wireVisualManager.updateWireById(connectedWireId);
       }
+      this._controller.autoAdjustCircuitGridSize();
       this._controller.emit('toolOperationCompleted', {
         toolType: this.type,
         mode: 'bp_drag',
@@ -1188,6 +1289,7 @@ export class BuildTool implements IEditingTool {
     // Reset state
     this.mode = 'idle';
     this.bpDragState = null;
+    this.lastOperationCompletedTs = Date.now();
   }
 
   /**
@@ -1434,6 +1536,8 @@ export class BuildTool implements IEditingTool {
       this.clipboard.config,
       this.clipboard.pinSources
     );
+
+    this._controller.autoAdjustCircuitGridSize();
   }
 
   /**
@@ -1459,5 +1563,299 @@ export class BuildTool implements IEditingTool {
   private openConfigPanel(componentId: UUID, event: MouseEvent): void {
     const screenPosition = { x: event.clientX, y: event.clientY };
     this._controller.openConfigPanel(componentId, screenPosition);
+  }
+
+  // ========================================================================
+  // Add Component Mode
+  // ========================================================================
+
+  /**
+   * Enter add_component mode: open the picker widget and listen for cursor movement
+   * @param event - Mouse event (used for widget positioning)
+   */
+  private enterAddComponentMode(event: MouseEvent): void {
+    if (!this.pickerWidget) return;
+
+    this.mode = 'add_component';
+    const screenPos = { x: event.clientX, y: event.clientY };
+    this.pickerWidget.open(screenPos);
+
+    // Listen for cursor movement for ghost preview
+    this._controller.on('gridPositionMove', this.handleGridPositionMove);
+
+    // If there was a previous selection, recreate the ghost
+    if (this.pickerWidget.currentSelection) {
+      this.pickerSelection = this.pickerWidget.currentSelection;
+      this.createGhostPreview(this.pickerSelection);
+    }
+
+    this._controller.emit('toolOperationStarted', {
+      toolType: this.type,
+      mode: 'add_component',
+      operationData: {},
+    });
+  }
+
+  /**
+   * Exit add_component mode: close widget, dispose ghost, return to idle
+   */
+  private exitAddComponentMode(): void {
+    if (this.mode !== 'add_component') return;
+
+    this.disposeGhostPreview();
+    this.pickerWidget?.close();
+    this._controller.off('gridPositionMove', this.handleGridPositionMove);
+    this.hasOverlap = false;
+
+    this._controller.emit('toolOperationCancelled', {
+      toolType: this.type,
+      mode: 'add_component',
+    });
+
+    this.mode = 'idle';
+  }
+
+  /**
+   * Called when user selects or deselects an item in the picker widget
+   */
+  private onPickerSelectionChange(selection: PickerSelection | null): void {
+    this.pickerSelection = selection;
+    this.disposeGhostPreview();
+    if (selection) {
+      this.createGhostPreview(selection);
+    }
+  }
+
+  /**
+   * Place the currently selected item (component or branching point) at cursor position
+   */
+  private placeSelectedItem(): void {
+    if (!this.pickerSelection) return;
+
+    const worldPosition = this._controller.cursorGroundPlanePosition();
+
+    if (this.pickerSelection === BRANCHING_POINT_SENTINEL) {
+      const enodeId = this.createStandaloneBranchingPoint(worldPosition);
+      if (enodeId) {
+        this._controller.getSelectionManager().selectOne('enode', enodeId, { componentId: null });
+      }
+      // Recreate ghost for next placement
+      this.disposeGhostPreview();
+      this.createGhostPreview(this.pickerSelection);
+      return;
+    }
+
+    try {
+      const component = this._controller.addComponent(this.pickerSelection, worldPosition, null);
+      this._controller.autoAdjustCircuitGridSize();
+      this._controller.emit('toolOperationCompleted', {
+        toolType: this.type,
+        mode: 'add_component',
+        operationData: {
+          componentId: component.id,
+          componentType: this.pickerSelection,
+          position: worldPosition.clone(),
+        },
+        changedData: { addedComponents: [component.id] },
+      });
+      // Recreate ghost for next placement
+      this.disposeGhostPreview();
+      this.createGhostPreview(this.pickerSelection);
+    } catch (error) {
+      this._controller.emit('toolValidationError', {
+        toolType: this.type,
+        mode: 'add_component',
+        errorMessage: `Failed to place component: ${(error as Error).message}`,
+      });
+    }
+  }
+
+  /**
+   * Update ghost preview position and overlap check during add_component mode
+   */
+  private updateAddComponentPreview(worldPosition: THREE.Vector3): void {
+    if (!this.ghostPreview) return;
+
+    const snappedPosition = new THREE.Vector3(
+      Math.round(worldPosition.x),
+      0,
+      Math.round(worldPosition.z)
+    );
+    this.ghostPreview.position.copy(snappedPosition);
+
+    // Check for overlap
+    const previousOverlap = this.hasOverlap;
+    this.hasOverlap = this.checkGhostOverlap();
+
+    if (this.hasOverlap && !previousOverlap) {
+      this.applyInvalidEffect(this.ghostPreview);
+    } else if (!this.hasOverlap && previousOverlap) {
+      this.removeInvalidEffect(this.ghostPreview);
+    }
+  }
+
+  // ========================================================================
+  // Ghost Preview
+  // ========================================================================
+
+  /**
+   * Create ghost preview for the selected item
+   * @param selection - Component type or branching point sentinel
+   */
+  private createGhostPreview(selection: PickerSelection): void {
+    this.disposeGhostPreview();
+
+    try {
+      let visual: THREE.Object3D;
+
+      if (selection === BRANCHING_POINT_SENTINEL) {
+        // Create a branching point preview using the factory
+        const tempEnode = new ENode(
+          ENodeType.BranchingPoint,
+          undefined,
+          undefined,
+          new Position(0, 0)
+        );
+        visual = this._controller.branchingPointVisualFactory.createVisual(tempEnode);
+      } else {
+        const factory = this._controller.factoryRegistry.get(selection);
+        const tempComponent = new Component(
+          selection,
+          new Position(0, 0),
+          new Rotation(0),
+          [] // Empty pins array for preview
+        );
+        visual = factory.createVisual(tempComponent);
+        visual.rotation.set(0, factory.defaultRotation(), 0);
+      }
+
+      if (!(visual instanceof THREE.Group)) {
+        console.warn(`Factory returned non-Group object for ${selection}`);
+        return;
+      }
+
+      // Mark as preview
+      visual.userData.preview = true;
+      visual.traverse((child) => {
+        child.userData.preview = true;
+      });
+
+      this.ghostPreview = visual;
+      this.applyGhostEffect(this.ghostPreview);
+
+      // Position at current cursor
+      const cursorPos = this._controller.cursorGroundPlanePosition();
+      this.ghostPreview.position.set(Math.round(cursorPos.x), 0, Math.round(cursorPos.z));
+
+      this._controller.getScene().add(this.ghostPreview);
+    } catch (error) {
+      console.warn(`Failed to create ghost preview for ${selection}:`, error);
+      this.ghostPreview = null;
+    }
+  }
+
+  /**
+   * Dispose ghost preview and cleanup resources
+   */
+  private disposeGhostPreview(): void {
+    if (!this.ghostPreview) return;
+
+    this._controller.getScene().remove(this.ghostPreview);
+    this.ghostPreview.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        if (child.geometry) child.geometry.dispose();
+        if (Array.isArray(child.material)) {
+          child.material.forEach((mat) => mat.dispose());
+        } else if (child.material) {
+          child.material.dispose();
+        }
+      }
+    });
+    this.ghostPreview = null;
+    this.hasOverlap = false;
+  }
+
+  /**
+   * Apply semi-transparent ghost effect to preview object
+   */
+  private applyGhostEffect(object: THREE.Object3D): void {
+    object.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        if (Array.isArray(child.material)) {
+          child.material = child.material.map((mat: THREE.Material) => mat.clone());
+          child.material.forEach((mat: THREE.Material) => {
+            mat.transparent = true;
+            mat.opacity = 0.5;
+          });
+        } else {
+          child.material = child.material.clone();
+          child.material.transparent = true;
+          child.material.opacity = 0.5;
+        }
+      }
+    });
+  }
+
+  /**
+   * Check if ghost preview overlaps with existing components
+   */
+  private checkGhostOverlap(): boolean {
+    if (!this.ghostPreview) return false;
+
+    // Branching points don't need overlap detection
+    if (this.pickerSelection === BRANCHING_POINT_SENTINEL) return false;
+
+    const previewBox = new THREE.Box3().setFromObject(this.ghostPreview);
+    const componentObjects = this._controller.componentObject3Ds;
+
+    for (const [_id, componentGroup] of componentObjects) {
+      const componentBox = new THREE.Box3().setFromObject(componentGroup);
+      if (previewBox.intersectsBox(componentBox)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Apply red emissive to indicate invalid placement
+   */
+  private applyInvalidEffect(object: THREE.Object3D): void {
+    object.traverse((child) => {
+      if (child instanceof THREE.Mesh && child.material) {
+        if (Array.isArray(child.material)) {
+          child.material.forEach((mat: THREE.Material) => {
+            if (mat instanceof THREE.MeshStandardMaterial) {
+              mat.emissive.setHex(0xff0000);
+              mat.emissiveIntensity = 0.5;
+            }
+          });
+        } else if (child.material instanceof THREE.MeshStandardMaterial) {
+          child.material.emissive.setHex(0xff0000);
+          child.material.emissiveIntensity = 0.5;
+        }
+      }
+    });
+  }
+
+  /**
+   * Remove red emissive invalid placement effect
+   */
+  private removeInvalidEffect(object: THREE.Object3D): void {
+    object.traverse((child) => {
+      if (child instanceof THREE.Mesh && child.material) {
+        if (Array.isArray(child.material)) {
+          child.material.forEach((mat: THREE.Material) => {
+            if (mat instanceof THREE.MeshStandardMaterial) {
+              mat.emissive.setHex(0x000000);
+              mat.emissiveIntensity = 0;
+            }
+          });
+        } else if (child.material instanceof THREE.MeshStandardMaterial) {
+          child.material.emissive.setHex(0x000000);
+          child.material.emissiveIntensity = 0;
+        }
+      }
+    });
   }
 }

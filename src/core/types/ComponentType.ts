@@ -24,15 +24,28 @@ import { ENodeSourceType } from './ENodeSourceType';
  * ```
  */
 export enum ComponentType {
+  // special helper components
+  Cube = 'cube', // no pins component for testing purposes mainly
+  Label = 'label', // decorative text label with no pins
+  // basic components
   Battery = 'battery',
   Switch = 'switch',
   Lightbulb = 'lightbulb',
   Relay = 'relay',
   Transistor = 'transistor',
+  Buffer = 'buffer',
   SmallLED = 'smallLED',
   RectangleLED = 'rectangleLED',
-  Cube = 'cube', // no pins component for testing purposes mainly
-  Label = 'label', // decorative text label with no pins
+  // Gates
+  AndGate = 'andGate',
+  And4Gate = 'and4Gate',
+  And8Gate = 'and8Gate',
+  // And16Gate = 'and16Gate',
+  OrGate = 'orGate',
+  Or4Gate = 'or4Gate',
+  Or8Gate = 'or8Gate',
+  // Or16Gate = 'or16Gate',
+  XorGate = 'xorGate',
 }
 
 /**
@@ -129,6 +142,19 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTy
       ['initializationOrder', ''],
     ]),
   },
+  [ComponentType.Buffer]: {
+    id: ComponentType.Buffer,
+    name: 'Buffer',
+    pins: new Map([
+      ['vcc', undefined],
+      ['input', undefined],
+      ['output', undefined],
+    ]),
+    config: new Map([
+      ['activationLogic', 'positive'],
+      ['initializationOrder', ''],
+    ]),
+  },
   [ComponentType.SmallLED]: {
     id: ComponentType.SmallLED,
     name: 'SmallLED',
@@ -173,6 +199,121 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTy
     config: new Map([
       ['text', 'Label'],
       ['size', '1'],
+    ]),
+  },
+  [ComponentType.AndGate]: {
+    id: ComponentType.AndGate,
+    name: 'AND Gate',
+    pins: new Map([
+      ['vcc', undefined],
+      ['input1', undefined],
+      ['input2', undefined],
+      ['output', undefined],
+    ]),
+    config: new Map([
+      ['activationLogic', 'positive'],
+      ['initializationOrder', ''],
+    ]),
+  },
+  [ComponentType.And4Gate]: {
+    id: ComponentType.And4Gate,
+    name: 'AND4 Gate',
+    pins: new Map([
+      ['vcc', undefined],
+      ['input1', undefined],
+      ['input2', undefined],
+      ['input3', undefined],
+      ['input4', undefined],
+      ['output', undefined],
+    ]),
+    config: new Map([
+      ['activationLogic', 'positive'],
+      ['initializationOrder', ''],
+    ]),
+  },
+  [ComponentType.And8Gate]: {
+    id: ComponentType.And8Gate,
+    name: 'AND8 Gate',
+    pins: new Map([
+      ['vcc', undefined],
+      ['input1', undefined],
+      ['input2', undefined],
+      ['input3', undefined],
+      ['input4', undefined],
+      ['input5', undefined],
+      ['input6', undefined],
+      ['input7', undefined],
+      ['input8', undefined],
+      ['output', undefined],
+    ]),
+    config: new Map([
+      ['activationLogic', 'positive'],
+      ['initializationOrder', ''],
+    ]),
+  },
+  [ComponentType.OrGate]: {
+    id: ComponentType.OrGate,
+    name: 'OR Gate',
+    pins: new Map([
+      ['vcc', undefined],
+      ['input1', undefined],
+      ['input2', undefined],
+      ['output', undefined],
+    ]),
+    config: new Map([
+      ['activationLogic', 'positive'],
+      ['initializationOrder', ''],
+    ]),
+  },
+  [ComponentType.Or4Gate]: {
+    id: ComponentType.Or4Gate,
+    name: 'OR4 Gate',
+    pins: new Map([
+      ['vcc', undefined],
+      ['input1', undefined],
+      ['input2', undefined],
+      ['input3', undefined],
+      ['input4', undefined],
+      ['output', undefined],
+    ]),
+    config: new Map([
+      ['activationLogic', 'positive'],
+      ['initializationOrder', ''],
+    ]),
+  },
+  [ComponentType.Or8Gate]: {
+    id: ComponentType.Or8Gate,
+    name: 'OR8 Gate',
+    pins: new Map([
+      ['vcc', undefined],
+      ['input1', undefined],
+      ['input2', undefined],
+      ['input3', undefined],
+      ['input4', undefined],
+      ['input5', undefined],
+      ['input6', undefined],
+      ['input7', undefined],
+      ['input8', undefined],
+      ['output', undefined],
+    ]),
+    config: new Map([
+      ['activationLogic', 'positive'],
+      ['initializationOrder', ''],
+    ]),
+  },
+  [ComponentType.XorGate]: {
+    id: ComponentType.XorGate,
+    name: 'XOR Gate',
+    pins: new Map([
+      ['vcc', undefined],
+      ['input1', undefined],
+      ['input2', undefined],
+      ['output', undefined],
+    ]),
+    config: new Map([
+      ['activationLogic', 'positive'],
+      ['transitionSpan', '2'], // default transition span is twice the default transition span (1) of the 3 underlying gates (2 layers in serie)
+      ['initializationOrder', ''],
     ]),
   },
 };

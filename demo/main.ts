@@ -8,21 +8,25 @@ import {
   Circuit,
   BehaviorRegistry,
   registerBasicComponentsBehaviors,
+  registerGatesComponentsBehaviors
 } from 'simple-circuit-engine/core';
 import {
   CircuitEngine,
-  FactoryRegistry,
+  GroupedFactoryRegistry,
   DefaultVisualFactory,
   registerBasicComponentsFactories,
+  registerGatesComponentsFactories,
 } from 'simple-circuit-engine/scene';
 
 // Create component factory registry with all visual factories
-const componentsFactoryRegistry = new FactoryRegistry(new DefaultVisualFactory());
+const componentsFactoryRegistry = new GroupedFactoryRegistry(new DefaultVisualFactory());
 registerBasicComponentsFactories(componentsFactoryRegistry);
+registerGatesComponentsFactories(componentsFactoryRegistry);
 
 // Create behavior registry with all basic component behaviors
 const behaviorRegistry = new BehaviorRegistry();
 registerBasicComponentsBehaviors(behaviorRegistry);
+registerGatesComponentsBehaviors(behaviorRegistry);
 
 // Create WebGL renderer
 const renderer = new WebGLRenderer({ antialias: true, alpha: false });
@@ -35,7 +39,7 @@ const axesHelper = new AxesHelper(5);
 const container = document.getElementById('canvas-container')!;
 const engine = new CircuitEngine(componentsFactoryRegistry, behaviorRegistry);
 
-const initialMode = 'simulation';
+const initialMode = 'edit';
 engine.initialize(container, {
   initialMode: initialMode,
   controllerOptions: {
@@ -215,7 +219,6 @@ document.getElementById('close-error')!.addEventListener('click', hideError);
 // Edit tools
 function deactivateAllTools() {
   document.querySelectorAll('.tool-btn').forEach((btn) => btn.classList.remove('active'));
-  document.getElementById('component-list')!.classList.remove('visible');
 }
 
 document.getElementById('tool-build')!.addEventListener('click', () => {
@@ -250,63 +253,7 @@ document.getElementById('tool-multi-select')!.addEventListener('click', () => {
   }
 });
 
-// Add Component Tool
-(function () {
-  const toolBtn = document.getElementById('tool-add-component')!;
-  const componentList = document.getElementById('component-list')!;
-
-  function populateComponentList() {
-    const types = engine.getEditController().getAvailableComponentTypes();
-    componentList.innerHTML = '';
-
-    // None option
-    const noneItem = document.createElement('li');
-    noneItem.className = 'component-item';
-    noneItem.textContent = 'None';
-    noneItem.addEventListener('click', () => selectType(null, noneItem));
-    componentList.appendChild(noneItem);
-
-    // Component types
-    types.forEach((type) => {
-      const item = document.createElement('li');
-      item.className = 'component-item';
-      item.textContent = type;
-      item.addEventListener('click', () => selectType(type, item));
-      componentList.appendChild(item);
-    });
-  }
-
-  function selectType(type: string | null, element: HTMLElement) {
-    componentList
-      .querySelectorAll('.component-item')
-      .forEach((el) => el.classList.remove('selected'));
-    element.classList.add('selected');
-
-    try {
-      engine.getEditController().setAddComponentType(type);
-    } catch (error) {
-      console.error('Failed to set component type:', error);
-    }
-  }
-
-  toolBtn.addEventListener('click', () => {
-    if (currentMode !== 'edit') return;
-
-    const isActive = toolBtn.classList.contains('active');
-    deactivateAllTools();
-
-    if (!isActive) {
-      engine.setEditModeEnabled(true);
-      engine.setActiveTool('addComponent');
-      toolBtn.classList.add('active');
-      populateComponentList();
-      componentList.classList.add('visible');
-      document.getElementById('status-tool')!.textContent = 'Add Component';
-    } else {
-      document.getElementById('status-tool')!.textContent = 'None';
-    }
-  });
-})();
+// Add Component Tool is now integrated into BuildTool via double-click on empty space
 
 // Simulation controls
 document.getElementById('play-pause-btn')!.addEventListener('click', () => {

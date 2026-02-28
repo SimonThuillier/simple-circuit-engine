@@ -11,13 +11,13 @@ import {
   type IComponentVisualFactory,
 } from '../../../src/scene/shared/components/ComponentVisualFactory';
 import { DefaultVisualFactory } from '../../../src/scene/shared/components/DefaultVisualFactory';
-import { SmallLEDVisualFactory } from '../../../src/scene/shared/components/SmallLEDVisualFactory';
-import { SwitchVisualFactory } from '../../../src/scene/shared/components/SwitchVisualFactory';
+import { SmallLEDVisualFactory } from '../../../src/scene/shared/components/basic/SmallLEDVisualFactory';
+import { SwitchVisualFactory } from '../../../src/scene/shared/components/basic/SwitchVisualFactory';
 import type { Component } from '../../../src/core/Component';
 import { ComponentType } from '../../../src/core/types/ComponentType';
 import { createMockCircuit } from '../helpers';
-import type { SmallLEDState } from '../../../src/core/simulation/states/SmallLEDState';
-import type { SwitchState } from '../../../src/core/simulation/states/SwitchState';
+import type { SmallLEDState } from '../../../src/core/simulation/states/basic/SmallLEDState';
+import type { SwitchState } from '../../../src/core/simulation/states/basic/SwitchState';
 
 /**
  * Test factory that extends ComponentVisualFactoryBase

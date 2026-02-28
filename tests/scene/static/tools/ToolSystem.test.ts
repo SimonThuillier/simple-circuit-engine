@@ -50,14 +50,14 @@ describe('Tool System Architecture (T060-T063)', () => {
     it('should enable edit mode when setEditMode(true) is called', () => {
       controller.setEditMode(true);
       // Edit mode is enabled, should be able to set a tool
-      expect(() => controller.setActiveTool('position')).not.toThrow();
+      expect(() => controller.setActiveTool('build')).not.toThrow();
     });
 
     it('should disable edit mode when setEditMode(false) is called', () => {
       controller.setEditMode(true);
       controller.setEditMode(false);
       // Edit mode disabled, setting tool should throw
-      expect(() => controller.setActiveTool('position')).toThrow('Edit mode must be enabled');
+      expect(() => controller.setActiveTool('build')).toThrow('Edit mode must be enabled');
     });
   });
 
@@ -68,33 +68,33 @@ describe('Tool System Architecture (T060-T063)', () => {
 
     it('should allow activating a tool when no tool is active', () => {
       expect(controller.getActiveTool()).toBeNull();
-      controller.setActiveTool('position');
-      expect(controller.getActiveTool()).toBe('position');
+      controller.setActiveTool('build');
+      expect(controller.getActiveTool()).toBe('build');
     });
 
     it('should only have one tool active at a time', () => {
-      controller.setActiveTool('position');
-      expect(controller.getActiveTool()).toBe('position');
+      controller.setActiveTool('build');
+      expect(controller.getActiveTool()).toBe('build');
 
-      controller.setActiveTool('addComponent');
-      expect(controller.getActiveTool()).toBe('addComponent');
-      expect(controller.getActiveTool()).not.toBe('position');
+      controller.setActiveTool('multiSelect');
+      expect(controller.getActiveTool()).toBe('multiSelect');
+      expect(controller.getActiveTool()).not.toBe('build');
     });
 
     it('should deactivate previous tool when switching to a new tool', () => {
       const toolDeactivatedSpy = vi.fn();
       controller.on('toolDeactivated', toolDeactivatedSpy);
 
-      controller.setActiveTool('position');
-      controller.setActiveTool('wire');
+      controller.setActiveTool('build');
+      controller.setActiveTool('multiSelect');
 
       expect(toolDeactivatedSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ toolType: 'position' })
+        expect.objectContaining({ toolType: 'build' })
       );
     });
 
-    it('should support all five tool types', () => {
-      const tools: ToolType[] = ['position', 'addComponent', 'wire', 'branchingPoint', 'delete'];
+    it('should support all registered tool types', () => {
+      const tools: ToolType[] = ['build', 'multiSelect'];
 
       tools.forEach((toolType) => {
         controller.setActiveTool(toolType);
@@ -106,8 +106,8 @@ describe('Tool System Architecture (T060-T063)', () => {
   describe('T062: Tool state management', () => {
     it('should reset tool state when edit mode is disabled', () => {
       controller.setEditMode(true);
-      controller.setActiveTool('position');
-      expect(controller.getActiveTool()).toBe('position');
+      controller.setActiveTool('build');
+      expect(controller.getActiveTool()).toBe('build');
 
       controller.setEditMode(false);
       expect(controller.getActiveTool()).toBeNull();
@@ -118,11 +118,11 @@ describe('Tool System Architecture (T060-T063)', () => {
       controller.on('toolDeactivated', toolDeactivatedSpy);
 
       controller.setEditMode(true);
-      controller.setActiveTool('wire');
+      controller.setActiveTool('build');
       controller.setEditMode(false);
 
       expect(toolDeactivatedSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ toolType: 'wire' })
+        expect.objectContaining({ toolType: 'build' })
       );
     });
 
@@ -130,13 +130,13 @@ describe('Tool System Architecture (T060-T063)', () => {
       controller.setEditMode(true);
 
       // Activate first tool
-      controller.setActiveTool('addComponent');
+      controller.setActiveTool('build');
 
       // Switch to second tool - should clear first tool's state
-      controller.setActiveTool('delete');
+      controller.setActiveTool('multiSelect');
 
       // Tool state should be reset (tested implicitly by successful switch)
-      expect(controller.getActiveTool()).toBe('delete');
+      expect(controller.getActiveTool()).toBe('multiSelect');
     });
   });
 
@@ -161,7 +161,7 @@ describe('Tool System Architecture (T060-T063)', () => {
       controller.on('toolDeactivated', toolDeactivatedSpy);
 
       controller.setActiveTool('build');
-      controller.setActiveTool('addComponent');
+      controller.setActiveTool('multiSelect');
 
       expect(toolDeactivatedSpy).toHaveBeenCalledWith({
         toolType: 'build',
@@ -186,7 +186,7 @@ describe('Tool System Architecture (T060-T063)', () => {
       controller.setActiveTool('build');
       events.length = 0; // Clear initial activation
 
-      controller.setActiveTool('addComponent');
+      controller.setActiveTool('multiSelect');
 
       expect(events).toEqual(['deactivated', 'activated']);
     });
@@ -207,7 +207,7 @@ describe('Tool System Architecture (T060-T063)', () => {
 
   describe('Error handling', () => {
     it('should throw error when trying to activate tool without edit mode', () => {
-      expect(() => controller.setActiveTool('position')).toThrow('Edit mode must be enabled');
+      expect(() => controller.setActiveTool('build')).toThrow('Edit mode must be enabled');
     });
 
     it('should throw error when trying to use tool methods before initialization', () => {

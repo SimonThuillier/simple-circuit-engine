@@ -26,9 +26,13 @@ export { CircuitRunnerController } from './simulation/CircuitRunnerController';
 export type { AbstractCircuitController } from './shared/AbstractCircuitController';
 
 // Editing Tools
-export { AddComponentTool } from './static/tools/AddComponentTool';
 export { BuildTool } from './static/tools/BuildTool';
 export { MultiSelectTool } from './static/tools/MultiSelectTool';
+export {
+  ComponentPickerWidget,
+  BRANCHING_POINT_SENTINEL,
+} from './static/tools/ComponentPickerWidget';
+export type { PickerSelection, ComponentPickerState } from './static/tools/ComponentPickerWidget';
 export type { MultiSelectToolMode } from './static/tools/MultiSelectTool';
 
 // Circuit Writer
@@ -55,4 +59,7 @@ export type { HitboxLayerValue } from './shared/utils/LayerConstants';
 export * from './shared/utils/Options';
 
 // setup helpers
-export { registerBasicComponentsFactories } from './setup';
+export {
+  registerBasicComponentsFactories,
+  registerGatesComponentsFactories,
+} from './setup';

@@ -527,22 +527,16 @@ export class CircuitWriter {
         config.set('initialState', config.get('initialState') === 'open' ? 'closed' : 'open');
         this.saveEditComponentConfig(component.id, config);
         return { hasChanged: true, component: component };
-      case ComponentType.Relay:
-        config.set(
-          'activationLogic',
-          config.get('activationLogic') === 'positive' ? 'negative' : 'positive'
-        );
-        this.saveEditComponentConfig(component.id, config);
-        return { hasChanged: true, component: component };
-      case ComponentType.Transistor:
-        config.set(
-          'activationLogic',
-          config.get('activationLogic') === 'positive' ? 'negative' : 'positive'
-        );
-        this.saveEditComponentConfig(component.id, config);
-        return { hasChanged: true, component: component };
       default:
-        return { hasChanged: false, component: component };
+        if (!config.has('activationLogic')) {
+          return { hasChanged: false, component: component };
+        }
+        config.set(
+          'activationLogic',
+          config.get('activationLogic') === 'positive' ? 'negative' : 'positive'
+        );
+        this.saveEditComponentConfig(component.id, config);
+        return { hasChanged: true, component: component };
     }
   }
 

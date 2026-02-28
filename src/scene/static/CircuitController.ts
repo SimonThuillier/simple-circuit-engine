@@ -31,12 +31,11 @@ import {
   gridToWorldRotation,
 } from '../shared/utils/GeometryUtils';
 import { BuildTool } from './tools/BuildTool';
-import { AddComponentTool } from './tools/AddComponentTool';
 import { MultiSelectTool } from './tools/MultiSelectTool';
 import { SelectionManager } from '../shared/SelectionManager';
 import { CircuitWriter } from './CircuitWriter';
 import { AbstractCircuitController } from '../shared/AbstractCircuitController';
-import { ConfigPanelManager } from './ConfigPanelManager';
+import { ConfigPanelWidget } from './tools/ConfigPanelWidget';
 import { controllerOptions } from '../shared/utils/Options';
 
 /**
@@ -54,7 +53,7 @@ export class CircuitController extends AbstractCircuitController {
   // Selection manager
   private _selectionManager: SelectionManager | null = null;
   // Config panel manager
-  private _configPanelManager: ConfigPanelManager | null = null;
+  private _configPanelManager: ConfigPanelWidget | null = null;
   // Circuit RepositoryTool system
   private _tools: Map<ToolType, IEditingTool> = new Map();
   private _activeTool: ToolType | null = null;
@@ -93,7 +92,7 @@ export class CircuitController extends AbstractCircuitController {
 
     this._initialized = true; // flag must be set before calling setActiveTool
     // standalone mode -> Controller active
-    if(!this._sharedResources){
+    if (!this._sharedResources) {
       this.setActive(true);
     }
   }
@@ -326,7 +325,7 @@ export class CircuitController extends AbstractCircuitController {
     }
 
     // Create ConfigPanelManager instance
-    this._configPanelManager = new ConfigPanelManager(
+    this._configPanelManager = new ConfigPanelWidget(
       this.factoryRegistry,
       this.editComponentConfig.bind(this),
       this._camera,
@@ -398,30 +397,6 @@ export class CircuitController extends AbstractCircuitController {
   }
 
   /**
-   * Get the list of available component types for the AddComponent tool
-   */
-  getAvailableComponentTypes(): ComponentType[] {
-    return this.factoryRegistry.getRegisteredTypes();
-  }
-
-  /**
-   * Set the component type for the AddComponent tool
-   * @param componentType
-   */
-  setAddComponentType(componentType: ComponentType | null): void {
-    if (!this._editMode || this._activeTool !== 'addComponent') {
-      throw new Error(
-        'Edit mode must be enabled and AddComponent tool must be active to set component type'
-      );
-    }
-    const tool = this._tools.get('addComponent') as AddComponentTool;
-    if (!tool) {
-      throw new Error('AddComponent tool not found');
-    }
-    tool.setComponentType(componentType);
-  }
-
-  /**
    * Get the currently active tool (FR-028)
    *
    * @returns Current tool type or null if no tool is active
@@ -475,7 +450,6 @@ export class CircuitController extends AbstractCircuitController {
   private _initializeTools(): void {
     // Create tool instances
     this._tools.set('build', new BuildTool(this));
-    this._tools.set('addComponent', new AddComponentTool(this));
     this._tools.set('multiSelect', new MultiSelectTool(this));
   }
 
@@ -674,6 +648,7 @@ export class CircuitController extends AbstractCircuitController {
       for (const wireId of result.deletedWires) {
         this._removeWireObject3D(wireId);
       }
+      this.autoAdjustCircuitGridSize();
     }
     if (result.mergedWires) {
       for (const wireId of result.mergedWires) {
@@ -682,6 +657,7 @@ export class CircuitController extends AbstractCircuitController {
     }
     if (result.newWire) {
       this._createWireObject3D(result.newWire);
+      this.autoAdjustCircuitGridSize();
     }
   }
 
@@ -715,7 +691,7 @@ export class CircuitController extends AbstractCircuitController {
    *
    * @param type - Component type to add
    * @param worldPosition - Position in 3D world coordinates (x, z)
-   * @param rotation - 3D world rotation
+   * @param rotation - 3D world rotation, if left null the default componentType rotation is applied
    * @param config - Optional configuration map for the component
    * @param pinSources - Optional array of source types for the component pins
    * @returns The created Component
@@ -723,10 +699,16 @@ export class CircuitController extends AbstractCircuitController {
   addComponent(
     type: ComponentType,
     worldPosition: THREE.Vector3,
-    rotation: Euler,
+    rotation: Euler | null,
     config?: Map<string, string> | undefined,
     pinSources?: Array<ENodeSourceType | undefined | null> | undefined
   ): Component {
+    if (!rotation) {
+      const factory = this.factoryRegistry.get(type);
+      const defaultRotation = factory ? factory.defaultRotation() : 0;
+      rotation = new THREE.Euler(0, defaultRotation, 0);
+    }
+
     // Create component in circuit model
     const component = this.circuitWriter.saveAddComponent(
       type,
@@ -796,6 +778,7 @@ export class CircuitController extends AbstractCircuitController {
     }
     // Remove component visual
     this._removeComponentObject3D(componentId);
+    this.autoAdjustCircuitGridSize();
   }
 
   /**
@@ -824,6 +807,7 @@ export class CircuitController extends AbstractCircuitController {
   removeWire(wireId: UUID) {
     this.circuitWriter.saveDeleteWire(wireId);
     this._removeWireObject3D(wireId);
+    this.autoAdjustCircuitGridSize();
   }
 
   /**
