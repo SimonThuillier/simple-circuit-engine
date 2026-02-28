@@ -703,16 +703,6 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
  */
 export interface IFactoryRegistry {
   /**
-   * Register a visual factory for a specific component type
-   *
-   * @param type - Component type identifier
-   * @param factory - Factory (class instance or function) to create visuals for this type
-   * @throws {TypeError} If factory is null or undefined
-   * @returns This IFactoryRegistry instance (for chaining)
-   */
-  register(type: ComponentType, factory: IComponentVisualFactory): IFactoryRegistry;
-
-  /**
    * Retrieve the factory for a component type
    *
    * @param type - Component type identifier

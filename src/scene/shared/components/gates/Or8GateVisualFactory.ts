@@ -19,7 +19,7 @@ export class Or8GateVisualFactory extends OrGateVisualFactory {
   /** Shared open envelope geometry */
   protected override readonly lowGeometry = OrGateGeometry(2.6, 7.5, 0.16, 0.4, 16);
   /** Shared transient envelope geometry */
-  protected override readonly transientGeometry = OrGateGeometry(2.6, 7.5, 0.76, 0.4, 16);
+  protected override readonly transientGeometry = OrGateGeometry(2.6, 7.5, 0.35, 0.4, 16);
   /** Shared transient envelope geometry */
   protected override readonly highGeometry = OrGateGeometry(2.6, 7.5, 1.3, 0.4, 16);
   /** Shared geometry for negative marker **/

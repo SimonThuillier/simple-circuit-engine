@@ -312,6 +312,7 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, ComponentTy
     ]),
     config: new Map([
       ['activationLogic', 'positive'],
+      ['transitionSpan', '2'], // default transition span is twice the default transition span (1) of the 3 underlying gates (2 layers in serie)
       ['initializationOrder', ''],
     ]),
   },
