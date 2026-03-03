@@ -23,7 +23,7 @@ export interface CircuitMetadata {
 
 export interface ComponentJSON {
   id: string; // UUID
-  type: string; // "battery", "switch", "smallLED", "relay", "transistor", etc.
+  type: string; // "battery", "switch", "smallLED", "relay", "inverter", etc.
   position: {
     x: number;
     y: number;

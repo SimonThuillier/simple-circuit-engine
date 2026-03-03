@@ -2,7 +2,7 @@ import { ComponentVisualFactoryBase } from '../ComponentVisualFactory';
 import type { Component, ComponentState, SmallLEDState } from 'simple-circuit-engine/core';
 import { presetOrHexToHex, hexToPresetOrHex } from '../../utils/ColorUtils';
 import * as THREE from 'three';
-import type { ConfigFormDefinition } from '../../types';
+import type { ConfigFormDefinition, VisualContext } from '../../types';
 
 /**
  * Visual factory for SmallLED components
@@ -23,7 +23,7 @@ export class RectangleLEDVisualFactory extends ComponentVisualFactoryBase {
   /** LED lit emissive intensity */
   private static readonly LED_LIT_INTENSITY = 1.0;
 
-  createVisual(component: Component): THREE.Object3D {
+  createVisual(component: Component, context: VisualContext): THREE.Object3D {
     // Root group (not rendered, just organizational)
     const group = new THREE.Group();
     group.userData = {
@@ -50,22 +50,29 @@ export class RectangleLEDVisualFactory extends ComponentVisualFactoryBase {
     led.position.set(0, 0.25, 0);
     group.add(led);
 
-    // Input pin group
-    const inputPinGroup = this.createPinGroup(component.id, component.pins[0]!, 'input');
-    inputPinGroup.position.set(-0.5, 0, 0);
-    inputPinGroup.rotateZ(Math.PI / 2);
-    inputPinGroup.rotateY(Math.PI);
-    group.add(inputPinGroup);
-
-    // Output pin group
-    const outputPinGroup = this.createPinGroup(component.id, component.pins[1]!, 'output');
-    outputPinGroup.position.set(0.5, 0, 0);
-    outputPinGroup.rotateZ(-Math.PI / 2);
-    outputPinGroup.rotateY(Math.PI);
-    group.add(outputPinGroup);
+    // pins (not called if preview - no pins)
+    if (component.pins.length > 0) {
+      this.createPinsVisual(component, context, group);
+    }
 
     this.updateFromConfiguration(group, component.config);
     return group;
+  }
+
+  private createPinsVisual(component: Component, context: VisualContext, group: THREE.Group) {
+    const inputNode = context.getENode(component.pins[0]!);
+    if (inputNode) {
+      const pin1Group = this.createPinGroup(inputNode,'left');
+      pin1Group.position.set(-0.5, 0, 0);
+      group.add(pin1Group);
+    }
+
+    const outputNode = context.getENode(component.pins[1]!);
+    if (outputNode) {
+      const outputPinGroup = this.createPinGroup(outputNode,'right');
+      outputPinGroup.position.set(0.5, 0, 0);
+      group.add(outputPinGroup);
+    }
   }
 
   /**
@@ -146,10 +153,11 @@ export class RectangleLEDVisualFactory extends ComponentVisualFactoryBase {
    */
   override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>): void {
     const ledMesh = this.findLedMesh(object3D);
-    const inputPin = this.findPinGroup(object3D, 'input');
-    const outputPin = this.findPinGroup(object3D, 'output');
+    const pin1 = this.findPinGroup(object3D, 'pin1');
+    const outputPin = this.findPinGroup(object3D, 'pin2');
     const hitbox = this.findHitbox(object3D);
-    if (!ledMesh || !inputPin || !outputPin || !hitbox) return;
+
+    if (!ledMesh || !pin1 || !outputPin || !hitbox) return;
 
     // changing colors
     const idleColor = config.get('idleColor');
@@ -177,7 +185,7 @@ export class RectangleLEDVisualFactory extends ComponentVisualFactoryBase {
     hitbox.geometry = new THREE.BoxGeometry(1, 1.5 * ywRatio, hwRatio);
     // scaling the pins (1 if hwRatio>=0.5, else scaled down to fit better)
     const pinScale = hwRatio >= 0.5 ? 1 : hwRatio * 2;
-    inputPin.scale.set(pinScale, pinScale, pinScale);
+    pin1.scale.set(pinScale, pinScale, pinScale);
     outputPin.scale.set(pinScale, pinScale, pinScale);
 
     // scaling

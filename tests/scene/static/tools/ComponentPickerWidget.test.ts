@@ -9,8 +9,8 @@ import {
   BRANCHING_POINT_SENTINEL,
 } from '../../../../src/scene/static/tools/ComponentPickerWidget';
 import type { IGroupedFactoryRegistry } from '../../../../src/scene/shared/components/GroupedFactoryRegistry';
-import type { ComponentType } from '../../../../src/core/types/ComponentType';
 import type { IComponentVisualFactory } from '../../../../src/scene/shared/components/ComponentVisualFactory';
+import {ComponentType} from "../../../../src/core/topology/types";
 
 // Mock COMPONENT_TYPE_METADATA
 vi.mock('simple-circuit-engine/core', () => ({

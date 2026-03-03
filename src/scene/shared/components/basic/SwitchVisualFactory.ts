@@ -1,7 +1,7 @@
 import { ComponentVisualFactoryBase } from '../ComponentVisualFactory';
 import type { Component, ComponentState, SwitchState } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
-import type { ConfigFormDefinition } from '../../types';
+import type { ConfigFormDefinition, VisualContext } from '../../types';
 
 /**
  * Visual factory for Switch components
@@ -19,13 +19,13 @@ import type { ConfigFormDefinition } from '../../types';
  */
 export class SwitchVisualFactory extends ComponentVisualFactoryBase {
   /** Rotation for closed switch (contactor aligned) */
-  private static readonly CLOSED_ROTATION = new THREE.Euler(0, 0, 0);
+  private readonly CLOSED_ROTATION = new THREE.Euler(0, 0, 0);
   /** Rotation for opening/closing switch */
-  private static readonly INTERMEDIATE_ROTATION = new THREE.Euler(0.25, 0.65, 0.25);
+  private readonly INTERMEDIATE_ROTATION = new THREE.Euler(0, 0.3, 0);
   /** Rotation for open switch (contactor misaligned) */
-  private static readonly OPEN_ROTATION = new THREE.Euler(0.5, 1.3, 0.5);
+  private readonly OPEN_ROTATION = new THREE.Euler(0, 0.6, 0);
 
-  createVisual(component: Component): THREE.Object3D {
+  createVisual(component: Component, context: VisualContext): THREE.Object3D {
     // Root group (not rendered, just organizational)
     const group = new THREE.Group();
     group.userData = {
@@ -35,90 +35,68 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
     };
 
     // Component hitbox (invisible, raycastable)
-    const hitbox = this.createComponentHitbox(component.id, group.id, 2, 1, 1);
+    const hitbox = this.createComponentHitbox(component.id, group.id, 1.6, 3, 1);
     group.add(hitbox);
+    hitbox.position.set(-0.2,0,0.3);
 
-    // Visual: poles
-    const inputPoleGeometry = new THREE.SphereGeometry(
-      0.3,
-      16,
-      8,
-      Math.PI / 2,
-      Math.PI,
-      0,
-      Math.PI
-    );
-    const poleMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
-
-    const inputPole = new THREE.Mesh(inputPoleGeometry, poleMaterial);
-    inputPole.userData = {
-      type: 'component',
-      componentId: component.id,
-    };
-    inputPole.position.set(-1, 0, 0);
-    group.add(inputPole);
-
-    const outputPoleGeometry = new THREE.BoxGeometry(0.2, 0.3, 1);
-    const outputPole = new THREE.Mesh(outputPoleGeometry, poleMaterial);
-    outputPole.userData = {
-      type: 'component',
-      componentId: component.id,
-    };
-    outputPole.position.set(0.5, 0, 0);
-    group.add(outputPole);
-
+    const material = new THREE.MeshStandardMaterial({ color: 0xffffff });
     // Contactor
-    const contactorGroup = new THREE.Mesh(
-      new THREE.BoxGeometry(2, 1, 1),
-      new THREE.MeshBasicMaterial({
-        transparent: false,
-        visible: false,
-      })
-    );
+    const contactorGroup = new THREE.Group();
     contactorGroup.userData = {
       type: 'component',
       componentId: component.id,
       part: 'contactor',
       initialState: 'open',
     };
+    contactorGroup.position.set(0.6, 0, 0);
+    contactorGroup.rotation.copy(this.OPEN_ROTATION);
+    group.add(contactorGroup);
 
-    const contactorMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
-    const contactorGeometry = new THREE.CylinderGeometry(
-      0.2,
-      0.12,
-      1.5,
-      8,
-      4,
-      false,
-      0,
-      Math.PI * 2
-    );
-    const contactor = new THREE.Mesh(contactorGeometry, contactorMaterial);
+    const contactorGeometry = new THREE.BoxGeometry(1.4, 0.6, 0.1);
+    const contactor = new THREE.Mesh(contactorGeometry, material);
+    contactor.position.set(-0.7, 0, 0);
 
-    contactor.rotateZ(Math.PI / 2);
-    contactor.position.set(0.65, 0, 0);
     contactorGroup.add(contactor);
 
-    group.add(contactorGroup);
-    contactorGroup.position.set(-1, 0, 0);
-    contactorGroup.rotation.copy(SwitchVisualFactory.OPEN_ROTATION);
-
-    // Input pin group
-    const inputPinGroup = this.createPinGroup(component.id, component.pins[0]!, 'input');
-    inputPinGroup.position.set(-1, 0, 0);
-    inputPinGroup.rotateZ(Math.PI / 2);
-    inputPinGroup.rotateY(Math.PI);
-    group.add(inputPinGroup);
-
-    // Output pin group
-    const outputPinGroup = this.createPinGroup(component.id, component.pins[1]!, 'output');
-    outputPinGroup.position.set(0.6, 0, 0);
-    outputPinGroup.rotateZ(-Math.PI / 2);
-    outputPinGroup.rotateY(Math.PI);
-    group.add(outputPinGroup);
+    // pins (not called if preview - no pins)
+    if (component.pins.length > 0) {
+      this.createPinsVisual(component, context, group, material);
+    }
 
     this.updateFromConfiguration(group, component.config);
     return group;
+  }
+
+  private createPinsVisual(
+      component: Component,
+      context: VisualContext,
+      group: THREE.Group,
+      material: THREE.MeshStandardMaterial) {
+    const inputNode = context.getENode(component.pins[0]!);
+    if (inputNode) {
+      const inputPinGroup = this.createPinGroup(inputNode,'left');
+      inputPinGroup.position.set(-1, 0, 0);
+      group.add(inputPinGroup);
+
+      const inputPinCounterpart =
+          this.createPinCounterpart(inputPinGroup, material);
+      if(!!inputPinCounterpart){
+        group.add(inputPinCounterpart);
+      }
+    }
+
+    const outputNode = context.getENode(component.pins[1]!);
+    if (outputNode) {
+      const outputPinGroup = this.createPinGroup(outputNode, 'right');
+      outputPinGroup.position.set(0.6, 0, 0);
+      group.add(outputPinGroup);
+
+      const outputPinCounterpart =
+          this.createPinCounterpart(outputPinGroup, material);
+      if(!!outputPinCounterpart){
+        group.add(outputPinCounterpart);
+      }
+    }
   }
 
   /**
@@ -205,22 +183,22 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
     if (!contactorGroup) return;
     if (!state) {
       if (contactorGroup.userData.initialState === 'closed') {
-        contactorGroup.rotation.copy(SwitchVisualFactory.CLOSED_ROTATION);
+        contactorGroup.rotation.copy(this.CLOSED_ROTATION);
       } else {
-        contactorGroup.rotation.copy(SwitchVisualFactory.OPEN_ROTATION);
+        contactorGroup.rotation.copy(this.OPEN_ROTATION);
       }
       return;
     }
 
     const switchState = state as SwitchState;
     if (switchState.isInTransition) {
-      contactorGroup.rotation.copy(SwitchVisualFactory.INTERMEDIATE_ROTATION);
+      contactorGroup.rotation.copy(this.INTERMEDIATE_ROTATION);
     } else if (switchState.isClosed) {
       // Closed position - contactor aligned
-      contactorGroup.rotation.copy(SwitchVisualFactory.CLOSED_ROTATION);
+      contactorGroup.rotation.copy(this.CLOSED_ROTATION);
     } else {
       // Open position - contactor misaligned
-      contactorGroup.rotation.copy(SwitchVisualFactory.OPEN_ROTATION);
+      contactorGroup.rotation.copy(this.OPEN_ROTATION);
     }
   }
 
@@ -237,7 +215,7 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
     let contactorGroup: THREE.Object3D | null = null;
 
     object3D.traverse((child) => {
-      if (child instanceof THREE.Mesh && child.userData.part === 'contactor') {
+      if (child instanceof THREE.Group && child.userData.part === 'contactor') {
         contactorGroup = child;
       }
     });

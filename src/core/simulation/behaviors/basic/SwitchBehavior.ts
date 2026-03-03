@@ -3,39 +3,25 @@
  * @module core/simulation/behaviors
  */
 
-import type { UUID } from '../../../types/Identifier';
-import type { Component } from '../../../Component';
-import type { ENodeSourceType } from '../../../types/ENodeSourceType';
-import type { NodeElectricalState, ComponentState } from '../../states';
-import { SwitchState } from '../../states';
-import type { ScheduledEvent, UserCommand } from '../../types';
-import type { ComponentBehavior, BehaviorResult } from '../ComponentBehavior';
-import { ComponentType } from '../../../types/ComponentType';
-import { TRANSITION_DEFAULTS } from '../../types';
-
-/**
- * Get the tick count from command parameters.
- * @param parameters - Command parameters map
- * @returns Number of ticks for transition (minimum 1)
- */
-function getTickCount(parameters: Map<string, string> | null | undefined): number {
-  if (!parameters) {
-    return TRANSITION_DEFAULTS.TRANSITION_SPAN_TICKS;
-  }
-  const value = parseInt(parameters.get('tickCount') || '', 10);
-  if (isNaN(value) || value < 1) {
-    return TRANSITION_DEFAULTS.TRANSITION_SPAN_TICKS;
-  }
-  return value;
-}
+import type {Component} from '../../../topology/Component';
+import type {ComponentState} from '../../states';
+import {SwitchState} from '../../states';
+import type {IScheduledEvent, IUserCommand} from '../../types';
+import {ComponentBehaviorMixin} from '../ComponentBehavior';
+import {getTickCount} from "./index";
+import type {IBehaviorResult, IComponentBehavior} from "../types";
+import {ComponentType, ENodeSourceType} from "../../../topology/types";
 
 /**
  * Behavior implementation for switches components.
  *
  * @public
  */
-export class SwitchBehavior implements ComponentBehavior {
-  readonly componentType = ComponentType.Switch;
+export class SwitchBehavior extends ComponentBehaviorMixin implements IComponentBehavior {
+
+  constructor() {
+    super(ComponentType.Switch);
+  }
 
   /**
    * Create initial state for a switch.
@@ -44,14 +30,14 @@ export class SwitchBehavior implements ComponentBehavior {
    * @returns Switch Initial state (open by default)
    */
   createInitialState(component: Component): ComponentState {
-    if (component.type !== ComponentType.Switch) {
+    if (component.type !== this._componentType) {
       throw new Error(`Invalid component type for SwitchBehavior: ${component.type}`);
     }
     const state = component.config.get('initialState') || 'open';
     return new SwitchState(component.id, state);
   }
 
-  allowConductivity(
+  override allowConductivity(
     _component: Component,
     _state: ComponentState,
     _conductivityType: ENodeSourceType,
@@ -61,29 +47,9 @@ export class SwitchBehavior implements ComponentBehavior {
     return _state.state === 'closed' || _state.state === 'opening';
   }
 
-  /**
-   * Switches states depend on user interaction, not their pins so this is more of a decorative function
-   * @param _component
-   * @param componentState
-   * @param _nodeStates
-   * @param _targetTick
-   */
-  onPinsChange(
-    _component: Component,
-    componentState: ComponentState,
-    _nodeStates: ReadonlyMap<UUID, NodeElectricalState>,
-    _targetTick: number
-  ): BehaviorResult {
-    return {
-      componentState: componentState,
-      hasChanged: false,
-      scheduledEvents: [],
-    };
-  }
-
-  onUserCommand(component: Component, state: ComponentState, command: UserCommand): BehaviorResult {
+  override onUserCommand(component: Component, state: ComponentState, command: IUserCommand): IBehaviorResult {
     let hasChanged = false;
-    const scheduledEvents: ScheduledEvent[] = [];
+    const scheduledEvents: IScheduledEvent[] = [];
 
     if (command.type === 'toggle_switch' && ['open', 'closed'].includes(state.state)) {
       state.state = state.state === 'open' ? 'closing' : 'opening';
@@ -103,15 +69,16 @@ export class SwitchBehavior implements ComponentBehavior {
     return {
       componentState: state,
       hasChanged: hasChanged,
+      shouldCancelPending: false,
       scheduledEvents: scheduledEvents,
     };
   }
 
-  onEventFiring(
+  override onEventFiring(
     _component: Component,
     state: ComponentState,
-    event: ScheduledEvent
-  ): BehaviorResult {
+    event: IScheduledEvent
+  ): IBehaviorResult {
     let hasChanged = false;
 
     if (event.type === 'ClosingEnd') {
@@ -131,6 +98,7 @@ export class SwitchBehavior implements ComponentBehavior {
     return {
       componentState: state,
       hasChanged: hasChanged,
+      shouldCancelPending: false,
       scheduledEvents: [],
     };
   }

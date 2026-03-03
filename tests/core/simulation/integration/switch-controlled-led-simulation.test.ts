@@ -8,7 +8,6 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import type { Component } from 'simple-circuit-engine/core';
 import {
   Circuit,
-  CircuitMetadata,
   ComponentType,
   Position,
   Rotation,
@@ -19,6 +18,9 @@ import {
   SmallLEDBehavior,
   SwitchBehavior,
 } from 'simple-circuit-engine/core';
+import { CircuitOptions } from '../../../../src/core/topology/CircuitOptions.js';
+import { CameraOptions } from '../../../../src/core/utils/CameraOptions.js';
+import {CIRCUIT_FILE_VERSION, CircuitMetadata} from "../../../../src";
 
 function createBehaviorRegistry(): BehaviorRegistry {
   const registry = new BehaviorRegistry();
@@ -33,12 +35,13 @@ function createBehaviorRegistry(): BehaviorRegistry {
 
 function createSwitchControlledLedCircuit(): Circuit {
   // Create circuit with metadata
-  const circuit = new Circuit('Switch-Controlled LED Circuit');
+  const circuit = new Circuit(new CircuitOptions('Switch-Controlled LED Circuit'));
   circuit.metadata = new CircuitMetadata(
-    'Switch-Controlled LED Circuit',
+    CIRCUIT_FILE_VERSION,
+    new CircuitOptions('Switch-Controlled LED Circuit'),
     30,
     10,
-    new Position3D(0, 0, 50)
+    new CameraOptions(new Position3D(0, 0, 50))
   );
 
   // Add components

@@ -398,247 +398,31 @@
             <textarea id="circuit-input" placeholder="Paste circuit JSON here...">
 {
   "metadata": {
-    "name": "Untitled Circuit",
-    "size": 11,
+    "options": {
+      "name": "Untitled Circuit",
+      "defaultLogicFamily": "CMOS1"
+    },
+    "size": 10,
     "divisions": 10,
     "cameraOptions": {
       "position": {
-        "x": -0.5731191746810158,
-        "y": 15.65691617320746,
-        "z": 5.373355540663711
+        "x": -0.29722328635837764,
+        "y": 9.834227768419042,
+        "z": -0.29199063610203657
       },
       "lookAtPosition": {
-        "x": -0.300472999453467,
-        "y": -0.4216922448466708,
-        "z": 1.3211028177863142
+        "x": -0.28079390502490414,
+        "y": 1.1208717626392892,
+        "z": -2.3846028376414794
       },
       "fov": 75,
       "near": 0.1,
       "far": 1000
     }
   },
-  "components": [
-    {
-      "id": "567388c5-131a-4376-b77c-df1109ce76ca",
-      "type": "buffer",
-      "position": {
-        "x": 2,
-        "y": -2
-      },
-      "rotation": 0,
-      "pins": [
-        "20847ad3-6818-40fe-bbae-130e0371b19b",
-        "8d8ac88a-7b76-4924-a15b-31ffae5e86a7",
-        "05a27528-3738-4663-a678-749a1a772ceb"
-      ],
-      "config": {
-        "activationLogic": "negative",
-        "initializationOrder": ""
-      }
-    },
-    {
-      "id": "50cfcdb5-b040-4f78-b2ea-79672c739a6d",
-      "type": "buffer",
-      "position": {
-        "x": 2,
-        "y": 2
-      },
-      "rotation": 0,
-      "pins": [
-        "0194c2c2-3286-4b95-9982-b84ca2dce677",
-        "3df481a7-84ae-40d1-89d7-69f6a4928741",
-        "b691d529-5453-46df-8bc0-4a7da36f2d0a"
-      ],
-      "config": {
-        "activationLogic": "positive",
-        "initializationOrder": ""
-      }
-    },
-    {
-      "id": "c94946a4-37e3-4701-9c8d-aee145663f7d",
-      "type": "switch",
-      "position": {
-        "x": -2,
-        "y": 0
-      },
-      "rotation": 0,
-      "pins": [
-        "eb85e5e2-cd48-4d9b-bd69-23d0c61e436a",
-        "68ae8cd8-b3d2-435e-b722-8c315c6edce1"
-      ],
-      "config": {
-        "initialState": "open",
-        "size": "1"
-      }
-    },
-    {
-      "id": "986d6863-c71b-4e49-83b9-dc00aca85aba",
-      "type": "smallLED",
-      "position": {
-        "x": 5,
-        "y": -2
-      },
-      "rotation": 0,
-      "pins": [
-        "b80f6a81-9b9e-4a60-9c6f-e2eac1bc3c90",
-        "21fa27f6-b833-47b6-8e86-382089f3fd91"
-      ],
-      "config": {
-        "mode": "symmetric",
-        "idleColor": "white",
-        "activeColor": "#ffff00",
-        "size": "1",
-        "ywRatio": "1"
-      }
-    },
-    {
-      "id": "aaca0886-c67b-4364-9176-7759f06495c8",
-      "type": "smallLED",
-      "position": {
-        "x": 5,
-        "y": 2
-      },
-      "rotation": 0,
-      "pins": [
-        "ee3791a8-a182-4ed0-86e4-a5aae1b7c2ff",
-        "e5800375-a719-4668-8852-c22ea63a312a"
-      ],
-      "config": {
-        "mode": "symmetric",
-        "idleColor": "white",
-        "activeColor": "#ffff00",
-        "size": "1",
-        "ywRatio": "1"
-      }
-    }
-  ],
-  "enodes": [
-    {
-      "id": "20847ad3-6818-40fe-bbae-130e0371b19b",
-      "type": "Pin",
-      "source": "Voltage",
-      "component": "567388c5-131a-4376-b77c-df1109ce76ca",
-      "pinLabel": "vcc"
-    },
-    {
-      "id": "8d8ac88a-7b76-4924-a15b-31ffae5e86a7",
-      "type": "Pin",
-      "source": null,
-      "component": "567388c5-131a-4376-b77c-df1109ce76ca",
-      "pinLabel": "input"
-    },
-    {
-      "id": "05a27528-3738-4663-a678-749a1a772ceb",
-      "type": "Pin",
-      "source": null,
-      "component": "567388c5-131a-4376-b77c-df1109ce76ca",
-      "pinLabel": "output"
-    },
-    {
-      "id": "0194c2c2-3286-4b95-9982-b84ca2dce677",
-      "type": "Pin",
-      "source": "Voltage",
-      "component": "50cfcdb5-b040-4f78-b2ea-79672c739a6d",
-      "pinLabel": "vcc"
-    },
-    {
-      "id": "3df481a7-84ae-40d1-89d7-69f6a4928741",
-      "type": "Pin",
-      "source": null,
-      "component": "50cfcdb5-b040-4f78-b2ea-79672c739a6d",
-      "pinLabel": "input"
-    },
-    {
-      "id": "b691d529-5453-46df-8bc0-4a7da36f2d0a",
-      "type": "Pin",
-      "source": null,
-      "component": "50cfcdb5-b040-4f78-b2ea-79672c739a6d",
-      "pinLabel": "output"
-    },
-    {
-      "id": "eb85e5e2-cd48-4d9b-bd69-23d0c61e436a",
-      "type": "Pin",
-      "source": "Voltage",
-      "component": "c94946a4-37e3-4701-9c8d-aee145663f7d",
-      "pinLabel": "input"
-    },
-    {
-      "id": "68ae8cd8-b3d2-435e-b722-8c315c6edce1",
-      "type": "Pin",
-      "source": null,
-      "component": "c94946a4-37e3-4701-9c8d-aee145663f7d",
-      "pinLabel": "output"
-    },
-    {
-      "id": "91a445fb-6722-4f17-ad79-896094c7a0fb",
-      "type": "BranchingPoint",
-      "source": null,
-      "position": {
-        "x": 0,
-        "y": 0
-      }
-    },
-    {
-      "id": "b80f6a81-9b9e-4a60-9c6f-e2eac1bc3c90",
-      "type": "Pin",
-      "source": null,
-      "component": "986d6863-c71b-4e49-83b9-dc00aca85aba",
-      "pinLabel": "cathode"
-    },
-    {
-      "id": "21fa27f6-b833-47b6-8e86-382089f3fd91",
-      "type": "Pin",
-      "source": "Current",
-      "component": "986d6863-c71b-4e49-83b9-dc00aca85aba",
-      "pinLabel": "anode"
-    },
-    {
-      "id": "ee3791a8-a182-4ed0-86e4-a5aae1b7c2ff",
-      "type": "Pin",
-      "source": null,
-      "component": "aaca0886-c67b-4364-9176-7759f06495c8",
-      "pinLabel": "cathode"
-    },
-    {
-      "id": "e5800375-a719-4668-8852-c22ea63a312a",
-      "type": "Pin",
-      "source": "Current",
-      "component": "aaca0886-c67b-4364-9176-7759f06495c8",
-      "pinLabel": "anode"
-    }
-  ],
-  "wires": [
-    {
-      "id": "4978f9bc-ce8b-4e8f-b90c-b9bfb53b1e48",
-      "node1": "3df481a7-84ae-40d1-89d7-69f6a4928741",
-      "node2": "91a445fb-6722-4f17-ad79-896094c7a0fb",
-      "intermediatePositions": []
-    },
-    {
-      "id": "074632a9-62eb-4167-820a-726b1059bff6",
-      "node1": "8d8ac88a-7b76-4924-a15b-31ffae5e86a7",
-      "node2": "91a445fb-6722-4f17-ad79-896094c7a0fb",
-      "intermediatePositions": []
-    },
-    {
-      "id": "e1bb50f2-e56b-42ba-b158-e80bf9c581b3",
-      "node1": "91a445fb-6722-4f17-ad79-896094c7a0fb",
-      "node2": "68ae8cd8-b3d2-435e-b722-8c315c6edce1",
-      "intermediatePositions": []
-    },
-    {
-      "id": "099eb8e4-6cb0-4ef8-8200-5630b82a891b",
-      "node1": "05a27528-3738-4663-a678-749a1a772ceb",
-      "node2": "b80f6a81-9b9e-4a60-9c6f-e2eac1bc3c90",
-      "intermediatePositions": []
-    },
-    {
-      "id": "99cab2e7-412c-417f-adba-f06f0b2aaa47",
-      "node1": "b691d529-5453-46df-8bc0-4a7da36f2d0a",
-      "node2": "ee3791a8-a182-4ed0-86e4-a5aae1b7c2ff",
-      "intermediatePositions": []
-    }
-  ]
+  "components": [],
+  "enodes": [],
+  "wires": []
 }</textarea
             >
             <div class="json-buttons">

@@ -8,22 +8,26 @@
  * @public
  */
 
-// Core orchestrator
-export { CircuitRunner } from './CircuitRunner.js';
+export {TRANSITION_DEFAULTS, SIMULATION_SPEED} from "./types.js";
+export type {
+    IUserCommand,
+    IRunnerOptions,
+    IScheduledEvent,
+    IDirtyElements
+} from "./types.js";
 
-// Configuration and state
-export type { RunnerOptions } from './types/RunnerOptions.js';
-export type { RunnerResult } from './types/RunnerResult.js';
-export { SimulationState } from './SimulationState.js';
-export { StateManager } from './StateManager.js';
 
-// Event and command types
-export type { ScheduledEvent } from './types/ScheduledEvent.js';
-export type { UserCommand } from './types/UserCommand.js';
+// states and behaviors
+export * from './states';
+export * from './behaviors';
 
-// Constants
-export { SIMULATION_SPEED, TRANSITION_DEFAULTS } from './types/SimulationConstants.js';
+
 // Utilities
 export { EventQueue } from './EventQueue.js';
 export { DirtyTracker } from './DirtyTracker.js';
-export type { DirtyElements } from './DirtyTracker.js';
+// State management
+export { StateManager } from './StateManager.js';
+// Core orchestrator
+export { CircuitRunner } from './CircuitRunner.js';
+
+

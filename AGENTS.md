@@ -12,6 +12,7 @@ Educational electronic / computer circuit Build & Simulation engine with THREE.j
 import { WebGLRenderer } from 'three';
 import {
   Circuit,
+  CircuitOptions,
   BehaviorRegistry,
   registerBasicComponentsBehaviors,
   registerGatesComponentsBehaviors,
@@ -38,6 +39,8 @@ registerGatesComponentsBehaviors(behaviorRegistry); //... other groupsof compone
 const engine = new CircuitEngine(componentsFactoryRegistry, behaviorRegistry);
 const container = document.getElementById('canvas-container')!;
 engine.initialize(container, engineOptions());
+// set engine circuit to a new empty circuit
+engine.setCircuit(new Circuit(new CircuitOptions()));
 
 // Rendering
 const renderer = new WebGLRenderer();

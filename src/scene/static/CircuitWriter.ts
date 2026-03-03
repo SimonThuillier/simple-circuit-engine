@@ -223,7 +223,6 @@ export class CircuitWriter {
     // Convert world position to grid position
     const gridPosition = worldToGridPosition(worldPosition);
     const result = circuit.splitWire(wireId, gridPosition, targetEnodeId);
-    console.log(result);
 
     this._controller.emit('circuitElementAction', {
       type: 'wire',
@@ -491,6 +490,7 @@ export class CircuitWriter {
     }
 
     component.config = new Map([...component.config, ...parameters]);
+    circuit.resolveTransitionSpan(component);
     this._controller.emit('circuitElementAction', {
       type: 'component',
       action: 'edit',
@@ -527,6 +527,10 @@ export class CircuitWriter {
         config.set('initialState', config.get('initialState') === 'open' ? 'closed' : 'open');
         this.saveEditComponentConfig(component.id, config);
         return { hasChanged: true, component: component };
+      case ComponentType.DoubleThrowSwitch:
+        config.set('initialState', config.get('initialState') === 'input1' ? 'input2' : 'input1');
+        this.saveEditComponentConfig(component.id, config);
+        return { hasChanged: true, component: component };
       default:
         if (!config.has('activationLogic')) {
           return { hasChanged: false, component: component };
@@ -535,6 +539,7 @@ export class CircuitWriter {
           'activationLogic',
           config.get('activationLogic') === 'positive' ? 'negative' : 'positive'
         );
+        circuit.resolveTransitionSpan(component);
         this.saveEditComponentConfig(component.id, config);
         return { hasChanged: true, component: component };
     }

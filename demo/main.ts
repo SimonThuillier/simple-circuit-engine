@@ -8,7 +8,7 @@ import {
   Circuit,
   BehaviorRegistry,
   registerBasicComponentsBehaviors,
-  registerGatesComponentsBehaviors
+  registerGatesComponentsBehaviors,
 } from 'simple-circuit-engine/core';
 import {
   CircuitEngine,
@@ -17,6 +17,7 @@ import {
   registerBasicComponentsFactories,
   registerGatesComponentsFactories,
 } from 'simple-circuit-engine/scene';
+import {CircuitOptions} from "../src";
 
 // Create component factory registry with all visual factories
 const componentsFactoryRegistry = new GroupedFactoryRegistry(new DefaultVisualFactory());
@@ -207,7 +208,7 @@ document.getElementById('serialize-btn')!.addEventListener('click', () => {
 });
 
 document.getElementById('clear-btn')!.addEventListener('click', () => {
-  engine.setCircuit(new Circuit());
+  engine.setCircuit(new Circuit(new CircuitOptions()));
   (document.getElementById('circuit-input') as HTMLTextAreaElement).value = '';
   document.getElementById('status-circuit')!.textContent = 'Not loaded';
   document.getElementById('tick-count')!.textContent = '0';

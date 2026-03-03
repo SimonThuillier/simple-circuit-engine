@@ -9,9 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `LogicFamily` are added to specify how upper-level components are built and define propagation delays.
+- logic families `CMOS1` (built upon inverter activating in one tick), `TTL1` (NAND2 activating in one tick) and `Sandbox` (letting user freely choose activation delay).
+- `CircuitOptions` encapsulate name and circuit's default logic family.
+- Added **logicFamily** config parameter to logic gates: Newly added logic components inherit the circuit's default logic family.
+- Added `DoubleThrowSwitch` (DTSP) basic component.
+- Added `XOR4` and `XOR8` logic gates.
+
 ### Changed
 
+- `Buffer/Inverter` is now included in logic gates instead of basic components.
+- Logic gates `Buffer`, `AND` and `OR` have negative `activationLogic` by default and renamed to `Inverter`, `NAND` and `NOR` : it is more realistic with main logic families.
+- When logic gates and upper level components have a non sandbox `logicFamily` their activation delay is read-only and updated automatically.
+- Logic **HIGH** is now modeled as an input with voltage and without access to ground (appearing red) .
+- Logic **LOW** is now modeled as an input without voltage and with access to ground (appearing blue).
+- Logic gates now all have a special small `vcc` (voltage) and `gnd` (current) pin that reminds they must always be connected to those two to work.
+- inputs with both access to voltage and ground or none are considered **indeterminate** inputs for logic gates: receiving it on any input deactivate them (they output nothing).
+- A logic gate inactive but not indeterminate outputs at ground (blue) instead of nothing as before. 
+- various graphic improvements on components and scene rendering. 
+- Refactorization of `core` module.
+
 ### Removed
+
+- removed `Transistor` component: after research it's not realistic to use it with this engine: basic logic gates built upon it will be preferred.
 
 ### Fixed
 
@@ -20,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - added `GroupedFactoryRegistry` : components are now registered into the engine within groups (basic, gates ...) for better organization.
-- added basic component `Buffer` (configurable to inverter with `activationLogic`).
+- added basic component `Inverter` (configurable to inverter with `activationLogic`).
 - added logic gates components : `AND`, `AND4`, `AND8`, `OR`, `OR4`, `OR8`, `XOR`.
 
 ### Changed

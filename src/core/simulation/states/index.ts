@@ -3,11 +3,13 @@
  * @module core/simulation/states
  */
 
-export type { NodeElectricalState } from './basic/NodeElectricalState';
+export type {INodeElectricalState} from "./types";
+
+// Global circuit simulation state
+export { SimulationState } from "./SimulationState.js";
+
+// Component states
 export { ComponentState } from './ComponentState.js';
-
-// Components
-
 // basic
 export { BatteryState } from './basic/BatteryState';
 export { LightbulbState } from './basic/LightbulbState';
@@ -15,14 +17,16 @@ export { RectangleLEDState } from './basic/RectangleLEDState';
 export { RelayState } from './basic/RelayState';
 export { SmallLEDState } from './basic/SmallLEDState';
 export { SwitchState } from './basic/SwitchState';
-export { TransistorState } from './basic/TransistorState';
-export { BufferState } from './basic/BufferState';
+export { DoubleThrowSwitchState } from './basic/DoubleThrowSwitchState';
 
 // gates
-export { AndGateState } from './gates/AndGateState';
-export { And4GateState } from './gates/And4GateState';
-export { And8GateState } from './gates/And8GateState';
-export { OrGateState } from './gates/OrGateState';
-export { Or4GateState } from './gates/Or4GateState';
-export { Or8GateState } from './gates/Or8GateState';
+export { InverterState } from './gates/InverterState';
+export { NandGateState } from './gates/NandGateState';
+export { Nand4GateState } from './gates/Nand4GateState';
+export { Nand8GateState } from './gates/Nand8GateState';
+export { NorGateState } from './gates/NorGateState';
+export { Nor4GateState } from './gates/Nor4GateState';
+export { Nor8GateState } from './gates/Nor8GateState';
 export { XorGateState } from './gates/XorGateState';
+export { Xor4GateState } from './gates/Xor4GateState';
+export { Xor8GateState } from './gates/Xor8GateState';

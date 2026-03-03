@@ -9,11 +9,11 @@ import * as THREE from 'three';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { WireVisualManager } from '../../../src/scene/shared/WireVisualManager';
-import { Circuit } from '../../../src/core/Circuit';
-import { ComponentType } from '../../../src/core/types/ComponentType';
-import { Position } from '../../../src/core/types/Position';
-import type { UUID } from '../../../src/core/types/Identifier';
+import { Circuit } from '../../../src/core/topology/Circuit';
+import { CircuitOptions } from '../../../src/core/topology/CircuitOptions';
+import { Position } from '../../../src/core/utils/Position';
 import { disposeScene } from '../helpers';
+import {ComponentType, UUID} from "../../../src";
 
 /**
  * Create a mock component group with pin visuals
@@ -63,7 +63,7 @@ describe('WireVisualManager', () => {
   beforeEach(() => {
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera();
-    circuit = new Circuit('Test Circuit');
+    circuit = new Circuit(new CircuitOptions('Test Circuit'));
     componentGroups = new Map();
     wireLines = new Map();
     wireManager = new WireVisualManager(componentGroups, wireLines);

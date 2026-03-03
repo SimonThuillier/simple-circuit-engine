@@ -8,7 +8,7 @@
 
 import { mkdir, writeFile } from 'fs/promises';
 import { dirname } from 'path';
-import type { Circuit } from '../../../src/core/Circuit.js';
+import type { Circuit } from '../../../src/core/topology/Circuit.js';
 
 /**
  * Create a directory recursively if it doesn't exist.

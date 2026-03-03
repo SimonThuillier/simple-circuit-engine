@@ -483,7 +483,7 @@ export class CircuitController extends AbstractCircuitController {
     try {
       const factory = this.factoryRegistry.get(component.type);
       // Support both function-based (legacy) and class-based (new) factories
-      const mesh = factory.createVisual(component);
+      const mesh = factory.createVisual(component, this.visualContext);
 
       // Position mesh at component location (2D circuit -> 3D world)
       mesh.position.copy(gridToWorldPosition(component.position));

@@ -8,11 +8,13 @@
  * @module scripts/samples/circuits/relay-circuit
  */
 
-import { Circuit, CircuitMetadata } from '../../../src/core/Circuit.js';
-import { ComponentType } from '../../../src/core/types/ComponentType.js';
-import { Position } from '../../../src/core/types/Position.js';
-import { Rotation } from '../../../src/core/types/Rotation.js';
-import {CameraOptions} from "../../../src/core/types/CameraOptions";
+import { Circuit } from '../../../src/core/topology/Circuit.js';
+import { Position } from '../../../src/core/utils/Position.js';
+import { Rotation } from '../../../src/core/utils/Rotation.js';
+import { CameraOptions } from '../../../src/core/utils/CameraOptions.js';
+import { CircuitOptions } from '../../../src/core/topology/CircuitOptions.js';
+import {CIRCUIT_FILE_VERSION, CircuitMetadata} from "../../../src";
+import {ComponentType} from "../../../src/core/topology/types";
 
 /**
  * Create a relay-controlled circuit with isolated control and power domains.
@@ -46,8 +48,8 @@ import {CameraOptions} from "../../../src/core/types/CameraOptions";
  */
 export function createRelayCircuit(): Circuit {
   // Create circuit with metadata
-  const circuit = new Circuit('Relay Circuit');
-  circuit.metadata = new CircuitMetadata('Relay Circuit', 30, 10, new CameraOptions());
+  const circuit = new Circuit(new CircuitOptions('Relay Circuit'));
+  circuit.metadata = new CircuitMetadata(CIRCUIT_FILE_VERSION, new CircuitOptions('Relay Circuit'), 30, 10, new CameraOptions());
 
   // Control circuit components
   const controlBattery = circuit.addComponent(

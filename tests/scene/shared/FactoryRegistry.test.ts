@@ -5,13 +5,13 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as THREE from 'three';
-import { ComponentType } from '../../../src/core/types/ComponentType';
 import { createMockCircuit } from '../helpers';
 import {
   type IComponentVisualFactory,
   FactoryRegistry,
   DefaultVisualFactory,
 } from '../../../src/scene/shared/components';
+import {ComponentType} from "../../../src";
 
 describe('FactoryRegistry', () => {
   let registry: FactoryRegistry;

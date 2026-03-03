@@ -8,20 +8,22 @@ import {
   RelayVisualFactory,
   SmallLEDVisualFactory,
   SwitchVisualFactory,
-  TransistorVisualFactory,
-  BufferVisualFactory,
-  AndGateVisualFactory,
-  And4GateVisualFactory,
-  And8GateVisualFactory,
-  OrGateVisualFactory,
-  Or4GateVisualFactory,
-  Or8GateVisualFactory,
+  DoubleThrowSwitchVisualFactory,
+  InverterVisualFactory,
+  NandGateVisualFactory,
+  Nand4GateVisualFactory,
+  Nand8GateVisualFactory,
+  NorGateVisualFactory,
+  Nor4GateVisualFactory,
+  Nor8GateVisualFactory,
   XorGateVisualFactory,
+  Xor4GateVisualFactory,
+  Xor8GateVisualFactory
 } from './shared/components';
 
 /**
  * Register all basic components visual factories in the basic group
- * Basic components are : Battery, Label, Switch, Lightbulb, RectangleLED, Relay, SmallLED, Transistor
+ * Basic components are : Battery, Label, Switches, Lightbulb, RectangleLED, Relay, SmallLED
  * @public
  * @param registry - A grouped factory registry to populate
  * @returns The input registry for chaining
@@ -34,19 +36,18 @@ export function registerBasicComponentsFactories(
       .add(ComponentType.Battery, new BatteryVisualFactory())
       .add(ComponentType.Label, new LabelVisualFactory())
       .add(ComponentType.Switch, new SwitchVisualFactory())
+      .add(ComponentType.DoubleThrowSwitch, new DoubleThrowSwitchVisualFactory())
       .add(ComponentType.Lightbulb, new LightbulbVisualFactory())
       .add(ComponentType.RectangleLED, new RectangleLEDVisualFactory())
       .add(ComponentType.Relay, new RelayVisualFactory())
       .add(ComponentType.SmallLED, new SmallLEDVisualFactory())
-      .add(ComponentType.Transistor, new TransistorVisualFactory())
-      .add(ComponentType.Buffer, new BufferVisualFactory())
   );
 }
 
 /**
  * Register all logic gates components visual factories in the gates group
- * gates are : AND (2,4,8,16 inputs), OR (2,4,8,16 inputs) and XOR
- * NAND and NOR are gotten by changing the activationLogic of AND and OR
+ * gates are : Inverter, NAND (2,4,8 inputs), NOR (2,4,8 inputs) and XOR (2,4,8 inputs)
+ * AND/OR are gotten by changing the activationLogic of NAND/NOR
  * @public
  * @param registry - A grouped factory registry to populate
  * @returns The input registry for chaining
@@ -56,12 +57,15 @@ export function registerGatesComponentsFactories(
 ): IGroupedFactoryRegistry {
   return registry.addGroup('gates', 'Logic Gates', (group) =>
     group
-      .add(ComponentType.AndGate, new AndGateVisualFactory())
-      .add(ComponentType.And4Gate, new And4GateVisualFactory())
-      .add(ComponentType.And8Gate, new And8GateVisualFactory())
-      .add(ComponentType.OrGate, new OrGateVisualFactory())
-      .add(ComponentType.Or4Gate, new Or4GateVisualFactory())
-      .add(ComponentType.Or8Gate, new Or8GateVisualFactory())
+      .add(ComponentType.Inverter, new InverterVisualFactory())
+      .add(ComponentType.NandGate, new NandGateVisualFactory())
+      .add(ComponentType.Nand4Gate, new Nand4GateVisualFactory())
+      .add(ComponentType.Nand8Gate, new Nand8GateVisualFactory())
+      .add(ComponentType.NorGate, new NorGateVisualFactory())
+      .add(ComponentType.Nor4Gate, new Nor4GateVisualFactory())
+      .add(ComponentType.Nor8Gate, new Nor8GateVisualFactory())
       .add(ComponentType.XorGate, new XorGateVisualFactory())
+      .add(ComponentType.Xor4Gate, new Xor4GateVisualFactory())
+      .add(ComponentType.Xor8Gate, new Xor8GateVisualFactory())
   );
 }

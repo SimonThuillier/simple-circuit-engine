@@ -6,12 +6,13 @@
  * Supports dynamic registration and fallback for unknown component types.
  */
 
-import type { Component, ComponentType, ComponentState } from 'simple-circuit-engine/core';
+import {type Component, type ComponentType, type ComponentState, ENode} from 'simple-circuit-engine/core';
 import { ENodeSourceType } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
 import { HitboxLayers } from '../utils/LayerConstants';
 
-import type { ConfigFormDefinition } from '../types';
+import type { ConfigFormDefinition, VisualContext } from '../types';
+import type {Direction2D} from "../utils/GeometryUtils";
 
 /**
  * Interface for component visual factories
@@ -25,7 +26,7 @@ import type { ConfigFormDefinition } from '../types';
  * @example
  * ```typescript
  * class MyComponentFactory extends ComponentVisualFactoryBase {
- *   createVisual(component: Component): THREE.Object3D {
+ *   createVisual(component: Component, context?: VisualContext): THREE.Object3D {
  *     const group = new THREE.Group();
  *     // ... create visual elements
  *     group.userData.componentId = component.id;
@@ -45,6 +46,7 @@ export interface IComponentVisualFactory {
    * Create the Three.js visual representation for a component
    *
    * @param component - The circuit component to visualize
+   * @param context - Optional visual context providing access to ENode data
    * @returns THREE.Object3D (typically a Group) containing the visual
    *
    * @remarks
@@ -55,7 +57,7 @@ export interface IComponentVisualFactory {
    * - Create pin groups with enodes on HitboxLayers.ENODE layer
    * - Return objects positioned at origin (scene controllerType handles placement)
    */
-  createVisual(component: Component): THREE.Object3D;
+  createVisual(component: Component, context: VisualContext): THREE.Object3D;
 
   /**
    * Update visual based on component configuration
@@ -153,13 +155,16 @@ export interface IComponentVisualFactory {
   /**
    * Get the config form definition for this component type
    *
+   * @param config - Optional current component config to compute field states (e.g., disabled)
    * @returns Form definition with field specifications, or null if no config
    *
    * @remarks
    * Defines the UI controls for editing component configuration.
    * Return null for components with no configurable options.
+   * When config is provided, implementations may use it to set field.disabled
+   * based on interdependencies (e.g., transitionSpan disabled when defaultLogicFamily != Sandbox).
    */
-  getConfigFormDefinition(): ConfigFormDefinition | null;
+  getConfigFormDefinition(config?: Map<string, string>): ConfigFormDefinition | null;
 
   /**
    * Map core component config (string values) to form data (typed values)
@@ -207,7 +212,7 @@ export interface IComponentVisualFactory {
  * @example
  * ```typescript
  * export class BatteryVisualFactory extends ComponentVisualFactoryBase {
- *   createVisual(component: Component): THREE.Object3D {
+ *   createVisual(component: Component, context?: VisualContext): THREE.Object3D {
  *     const group = new THREE.Group();
  *     // ... create battery-specific visual
  *     return group;
@@ -237,7 +242,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
    * Create the Three.js visual representation for a component
    * Must be implemented by subclasses
    */
-  abstract createVisual(component: Component): THREE.Object3D;
+  abstract createVisual(component: Component, context: VisualContext): THREE.Object3D;
 
   /**
    * By default no visual configuration-based updates is needed
@@ -362,6 +367,28 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
   }
 
   /**
+   * @private
+   */
+  private pointPinGroupToward(group: THREE.Group, direction: Direction2D){
+    switch(direction) {
+      case 'right':
+        group.rotateZ(-Math.PI / 2);
+        group.rotateY(Math.PI);
+        break;
+      case 'bottom':
+        group.rotateX(Math.PI / 2);
+        break;
+      case 'left':
+        group.rotateZ(Math.PI / 2);
+        group.rotateY(Math.PI);
+        break;
+      case 'top':
+        group.rotateX(-Math.PI / 2);
+        break;
+    }
+  }
+
+  /**
    * Create a pin group with hitbox and visual sphere
    *
    * Creates a THREE.Group containing:
@@ -369,31 +396,46 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
    * - Hemisphere visual (blue sphere)
    * - Hover callback in userData
    *
-   * @param componentId - UUID of the parent component
-   * @param pinId - UUID of this pin/enode
-   * @param label - Human-readable label (e.g., 'input', 'output', 'cathode')
-   * @param sourceType - Optional source type (voltage/current) : if provided this pin will be locked to that type
+   * @param node - ENode to create as visual pin
+   * @param pointsTo - rotate pin to make it point the wanted direction
    * @param visualRotation - if set rotate the visual of the pin to adjust display without affecting hitbox
    * @returns THREE.Group configured as pin group
    */
   protected createPinGroup(
-    componentId: string,
-    pinId: string,
-    label: string,
-    sourceType: ENodeSourceType | null = null,
-    visualRotation: THREE.Euler | null = null
-  ): THREE.Group {
-    const pinGroup = new THREE.Group();
-    pinGroup.userData = {
-      type: 'enodeGroup',
-      componentId: componentId,
-      enodeId: pinId,
-      label: label,
-      lockedSourceType: sourceType,
+      node: ENode,
+      pointsTo: Direction2D = 'right',
+      visualRotation: THREE.Euler | null = null
+      ): THREE.Group {
+    if (!node.component){
+      throw new Error('This method only manage components eNodes (pins)');
+    }
+
+    // pins with this subtype will be considered locked (not possible to change their source type)
+    const lockedSubtypes = ['mainVcc', 'vcc', 'mainGnd', 'gnd', 'logicOutput'];
+    // pins with this subtype will be represented smaller (not intended to be wired on anything so they're just a reminder for the user)
+    const smallSubtypes = ['vcc', 'gnd'];
+
+    const userInfos = {
+      componentId: node.component,
+      enodeId: node.id,
+      label: node.pinLabel,
+      subtype: node.subtype,
+      lockedSourceType: lockedSubtypes.includes(node.subtype)
     };
 
+    const pinGroup = new THREE.Group();
+    pinGroup.userData = {...userInfos, type: 'enodeGroup', sourceType: node.source || null};
+    // default radius
+    let hitboxRadius = 0.9;
+    let visualRadius = 0.3;
+    // since those pins won't be used for wiring they can be smaller
+    if(smallSubtypes.includes(node.subtype)){
+      hitboxRadius = 0.25;
+      visualRadius = 0.2;
+    }
+
     // Hitbox (hemisphere, raycastable)
-    const hitboxGeom = new THREE.SphereGeometry(0.9, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+    const hitboxGeom = new THREE.SphereGeometry(hitboxRadius, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
     const hitbox = new THREE.Mesh(
       hitboxGeom,
       new THREE.MeshStandardMaterial({
@@ -402,38 +444,74 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
         opacity: 0,
       })
     );
-    hitbox.userData = {
-      type: 'enodeHitbox',
-      componentId: componentId,
-      enodeId: pinId,
-      label: label,
-      lockedSourceType: sourceType,
-    };
+    hitbox.userData = {...userInfos, type: 'enodeHitbox'};
     hitbox.layers.set(HitboxLayers.ENODE);
     pinGroup.add(hitbox);
 
     // Visual sphere
     const visual = new THREE.Mesh(
-      new THREE.SphereGeometry(0.3, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+      new THREE.SphereGeometry(visualRadius, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
       new THREE.MeshStandardMaterial({
-        color: this.pinColorForSourceType(sourceType),
-        emissive: this.pinColorForSourceType(sourceType),
+        color: this.pinColorForSourceType(node.source || null),
+        emissive: this.pinColorForSourceType(node.source || null),
         emissiveIntensity: 0,
       })
     );
     visual.userData = {
+      ...userInfos,
       type: 'enode',
-      componentId: componentId,
-      enodeId: pinId,
-      label: label,
-      lockedSourceType: sourceType,
+      sourceType: node.source || null,
+      radius: visualRadius
     };
     pinGroup.add(visual);
     if (!!visualRotation) {
       visual.setRotationFromEuler(visualRotation);
     }
 
+    this.pointPinGroupToward(pinGroup, pointsTo);
     return pinGroup;
+  }
+
+  /**
+   * Utility to create semi spheres visually closing pins
+   * @param pinGroup
+   * @param material
+   * @protected
+   */
+  protected createPinCounterpart(
+      pinGroup: THREE.Group,
+      material: THREE.MeshStandardMaterial
+      ): THREE.Mesh | null {
+
+    const pinVisual = this.findPinVisualFromGroup(pinGroup);
+    if(!pinVisual){
+      return null;
+    }
+
+    const visual = new THREE.Mesh(
+        new THREE.SphereGeometry(pinVisual.userData.radius, 16, 8,
+            0, Math.PI * 2, 0, Math.PI / 2),
+        material
+    );
+    visual.userData = {
+      type: 'component',
+      componentId: pinVisual.userData.componentId,
+      part: 'pinCounterpart'
+    }
+    visual.position.copy(pinGroup.position);
+
+    const pinVisualRotation = pinVisual.rotation.clone();
+
+    visual.rotation.copy(new THREE.Euler(
+        -pinGroup.rotation.x,
+        -pinGroup.rotation.y,
+        -pinGroup.rotation.z,
+        pinGroup.rotation.order));
+    visual.rotateX(-pinVisualRotation.x);
+    visual.rotateY(-pinVisualRotation.y);
+    visual.rotateZ(pinVisualRotation.z);
+
+    return visual;
   }
 
   /**
@@ -456,16 +534,10 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
   }
 
   /**
-   * Find pin group visual by label within a component Object3D
-   * @param object3D
-   * @param label
+   * fin pin inner visual from within its pin group
+   * @param pinGroup
    */
-  findPinVisual(object3D: THREE.Object3D, label: string): THREE.Mesh | null {
-    let pinGroup: THREE.Group | null = this.findPinGroup(object3D, label);
-    if (!pinGroup) {
-      return null;
-    }
-
+  findPinVisualFromGroup(pinGroup: THREE.Group): THREE.Mesh | null {
     let pinVisual: THREE.Mesh | null;
     pinGroup.traverse((child) => {
       if (child.userData.type === 'enode' && child instanceof THREE.Mesh) {
@@ -475,6 +547,21 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     // @ts-ignore
     return pinVisual;
   }
+
+  /**
+   * Find pin group visual by label within a component Object3D
+   * @param object3D
+   * @param label
+   */
+  findPinVisual(object3D: THREE.Object3D, label: string): THREE.Mesh | null {
+    let pinGroup: THREE.Group | null = this.findPinGroup(object3D, label);
+    if (!pinGroup) {
+      return null;
+    }
+    return this.findPinVisualFromGroup(pinGroup);
+  }
+
+
 
   /**
    * Create component hitbox mesh
@@ -499,7 +586,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     const material = new THREE.MeshBasicMaterial({
       color: 0xffff00,
       transparent: true,
-      opacity: 0.3,
+      opacity: 0.2,
       visible: false,
     });
     const hitbox = new THREE.Mesh(geometry, material);
@@ -524,14 +611,14 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
 
   protected pinColorForSourceType(sourceType: ENodeSourceType | null): number {
     if (!sourceType) {
-      return 0xb87333; // Bronze for no source
+      return 0xD4894C; // Copper for no source
     }
     if (sourceType === ENodeSourceType.Voltage) {
       return 0xff0000; // Red for voltage
     } else if (sourceType === ENodeSourceType.Current) {
       return 0x0000ff; // Blue for current
     }
-    return 0xb87333; // Bronze by default
+    return 0xD4894C; // Copper by default
   }
 
   protected pinColorForElectricalState(state: 'current' | 'voltage' | 'vc' | 'idle'): number {
@@ -549,24 +636,24 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
   }
 
   /**
-   * Updates the visual color of a component pin based on its source type.
+   * Updates the visual color of a component pin based on its sourceType type.
    *
-   * This method changes the pin's material color to reflect the source type:
-   * - null/undefined: bronze (default pin color)
+   * This method changes the pin's material color to reflect the sourceType type:
+   * - null/undefined: copper (default pin color)
    * - Voltage: red
    * - Current: blue
    *
    * @param pinGroup - The THREE.Group containing the pin visual (created by createPinGroup)
-   * @param sourceType - The new source type (null for no source)
+   * @param sourceType - The new sourceType (null for no sourceType)
    *
    * @remarks
    * - Searches for the child mesh with userData.type === 'enode'
    * - Updates both color and emissive properties for visual consistency
-   * - If sourceType is null/undefined, restores default bronze pin color
+   * - If sourceType is null/undefined, restores default copper pin color
    * - Color scheme matches BranchingPointVisualFactory for consistency
    */
   updatePinSourceType(pinGroup: THREE.Object3D, sourceType: ENodeSourceType | null): void {
-    if (!!pinGroup.userData.lockedSourceType) return; // Pin is locked to a source type, do not change color
+    if (!!pinGroup.userData.lockedSourceType) return; // Pin is locked to a sourceType type, do not change color
     pinGroup.userData.sourceType = sourceType;
 
     const visual = pinGroup.children.find((child) => child.userData.type === 'enode') as
@@ -576,6 +663,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     if (!visual || !(visual.material instanceof THREE.MeshStandardMaterial)) {
       return;
     }
+    visual.userData.sourceType = sourceType;
     const color = this.pinColorForSourceType(sourceType);
     visual.material.color.setHex(color);
     visual.material.emissive.setHex(color);
@@ -596,7 +684,8 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
 
         if (child.userData.type === 'enodeHitbox') {
           material.opacity = 0.3;
-        } else if (child.userData.type === 'enode') {
+        }
+        else if (child.userData.type === 'enode') {
           material.color.setHex(0x00ff00);
           // Apply hover effect
           material.emissiveIntensity = 0.9;
@@ -614,8 +703,8 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     }
     pinGroup.userData.isHovered = false;
 
-    const sourceType: ENodeSourceType | null =
-      pinGroup.userData.lockedSourceType || pinGroup.userData.sourceType || null;
+    const source: ENodeSourceType | null =
+      pinGroup.userData.sourceType || null;
 
     pinGroup.traverse((child) => {
       if (child instanceof THREE.Mesh) {
@@ -624,9 +713,9 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
         if (child.userData.type === 'enodeHitbox') {
           material.opacity = 0;
         } else if (child.userData.type === 'enode') {
-          material.color.setHex(this.pinColorForSourceType(sourceType));
-          material.emissiveIntensity = sourceType ? 1 : 0;
-          if (!sourceType && pinGroup.userData.electricalState) {
+          material.color.setHex(this.pinColorForSourceType(source));
+          material.emissiveIntensity = source ? 1 : 0;
+          if (!source && pinGroup.userData.electricalState) {
             const emissiveColor = this.pinColorForElectricalState(
               pinGroup.userData.electricalState
             );
@@ -654,7 +743,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
    *
    * Override in subclasses that have configurable options.
    */
-  getConfigFormDefinition(): ConfigFormDefinition | null {
+  getConfigFormDefinition(_config?: Map<string, string>): ConfigFormDefinition | null {
     return null;
   }
 

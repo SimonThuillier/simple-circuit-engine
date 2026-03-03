@@ -3,7 +3,8 @@
  * @module core/simulation
  */
 
-import type { ScheduledEvent } from './types/ScheduledEvent.js';
+
+import type {IScheduledEvent} from "./types";
 
 /**
  * Min-heap priority queue for scheduling future component transitions.
@@ -13,7 +14,7 @@ import type { ScheduledEvent } from './types/ScheduledEvent.js';
  * @public
  */
 export class EventQueue {
-  private heap: ScheduledEvent[];
+  private heap: IScheduledEvent[];
 
   /**
    * Create a new empty event queue.
@@ -28,7 +29,7 @@ export class EventQueue {
    *
    * @param event - Event to schedule
    */
-  schedule(event: ScheduledEvent): void {
+  schedule(event: IScheduledEvent): void {
     if (event.readyAtTick < event.scheduledAtTick) {
       throw new RangeError(
         `readyAtTick (${event.readyAtTick}) cannot be before scheduledAtTick (${event.scheduledAtTick})`
@@ -47,8 +48,8 @@ export class EventQueue {
    * @param currentTick - Current simulation tick
    * @returns Array of ready events (removed from queue)
    */
-  getReadyEvents(currentTick: number): ScheduledEvent[] {
-    const ready: ScheduledEvent[] = [];
+  getReadyEvents(currentTick: number): IScheduledEvent[] {
+    const ready: IScheduledEvent[] = [];
 
     while (this.heap.length > 0 && this.heap[0]!.readyAtTick <= currentTick) {
       const event = this.extractMin();
@@ -85,12 +86,36 @@ export class EventQueue {
   }
 
   /**
+   * Remove all pending events targeting a specific component.
+   * Used when a behavior signals shouldCancelPending (e.g., Vcc loss, input change during transition).
+   *
+   * @param targetId - UUID of the component whose events should be removed
+   * @returns Number of events removed
+   */
+  removeEventsForTarget(targetId: string): number {
+    const initialLength = this.heap.length;
+    this.heap = this.heap.filter((event) => event.targetId !== targetId);
+
+    // Rebuild heap if events were removed
+    if (this.heap.length !== initialLength) {
+      this.rebuildHeap();
+    }
+    return initialLength - this.heap.length;
+  }
+
+  /**
    * Get number of pending events.
    *
    * @returns Event count
    */
   size(): number {
     return this.heap.length;
+  }
+
+  private rebuildHeap(): void {
+    for (let i = Math.floor(this.heap.length / 2) - 1; i >= 0; i--) {
+      this.bubbleDown(i);
+    }
   }
 
   private bubbleUp(index: number): void {
@@ -136,7 +161,7 @@ export class EventQueue {
     }
   }
 
-  private extractMin(): ScheduledEvent | undefined {
+  private extractMin(): IScheduledEvent | undefined {
     if (this.heap.length === 0) {
       return undefined;
     }

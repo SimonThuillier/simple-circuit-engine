@@ -7,17 +7,18 @@
  * @module scripts/samples/circuits/two-batteries-circuit
  */
 
-import { Circuit, CircuitMetadata } from '../../../src/core/Circuit.js';
-import { ComponentType } from '../../../src/core/types/ComponentType.js';
-import { Position } from '../../../src/core/types/Position.js';
-import { Rotation } from '../../../src/core/types/Rotation.js';
-import {CameraOptions} from "../../../src/core/types/CameraOptions";
+import { Circuit } from '../../../src/core/topology/Circuit.js';
+import { Position } from '../../../src/core/utils/Position.js';
+import { Rotation } from '../../../src/core/utils/Rotation.js';
+import { CameraOptions } from '../../../src/core/utils/CameraOptions.js';
+import { CircuitOptions } from '../../../src/core/topology/CircuitOptions.js';
+import {CIRCUIT_FILE_VERSION, CircuitMetadata, ComponentType} from "../../../src";
 
 
 export function createTwoBatteriesCircuit(): Circuit {
     // Create circuit with metadata
-    const circuit = new Circuit('Two batteries Circuit');
-    circuit.metadata = new CircuitMetadata('Two batteries Circuit', 30, 10, new CameraOptions());
+    const circuit = new Circuit(new CircuitOptions('Two batteries Circuit'));
+    circuit.metadata = new CircuitMetadata(CIRCUIT_FILE_VERSION, new CircuitOptions('Two batteries Circuit'), 30, 10, new CameraOptions());
 
     // Add components
     const battery1 = circuit.addComponent(

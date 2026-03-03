@@ -3,7 +3,7 @@
  * @module core/simulation
  */
 
-import { SimulationState } from './SimulationState.js';
+import { SimulationState } from './states/SimulationState';
 
 /**
  * Manages current simulation state and historical state storage.

@@ -6,7 +6,8 @@
  * frame-independent interpolation with easing functions.
  */
 
-import type { UUID } from '../../core/types/Identifier';
+
+import type {UUID} from "simple-circuit-engine/core";
 
 /**
  * Easing function: Cubic ease-in-out

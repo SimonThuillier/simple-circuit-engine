@@ -1,7 +1,7 @@
 import { ComponentVisualFactoryBase } from '../ComponentVisualFactory';
 import type { Component } from 'simple-circuit-engine/core';
-import { ENodeSourceType } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
+import type {VisualContext} from "../../types";
 
 /**
  * Visual factory for Battery components
@@ -13,7 +13,8 @@ import * as THREE from 'three';
  * - Component hitbox for raycasting
  */
 export class BatteryVisualFactory extends ComponentVisualFactoryBase {
-  createVisual(component: Component): THREE.Object3D {
+
+  createVisual(component: Component, context: VisualContext): THREE.Object3D {
     // Root group (not rendered, just organizational)
     const group = new THREE.Group();
     group.userData = {
@@ -37,29 +38,29 @@ export class BatteryVisualFactory extends ComponentVisualFactoryBase {
     cylinder.rotateX(Math.PI / 2);
     group.add(cylinder);
 
-    // Cathode (positive pin) group
-    const cathodeGroup = this.createPinGroup(
-      component.id,
-      component.pins[0]!,
-      'cathode',
-      ENodeSourceType.Voltage
-    );
-    cathodeGroup.position.set(0, 0, -1);
-    cathodeGroup.rotateX(-Math.PI / 2);
-    group.add(cathodeGroup);
-
-    // Anode (negative pin) group
-    const anodeGroup = this.createPinGroup(
-      component.id,
-      component.pins[1]!,
-      'anode',
-      ENodeSourceType.Current
-    );
-    anodeGroup.position.set(0, 0, 1);
-    anodeGroup.rotateX(Math.PI / 2);
-    group.add(anodeGroup);
+    // pins (not called if preview - no pins)
+    if (component.pins.length > 0){
+      this.createPinsVisual(component, context, group);
+    }
 
     return group;
+  }
+
+  private createPinsVisual(component: Component, context: VisualContext, group: THREE.Group){
+
+    const cathodeNode = context.getENode(component.pins[0]!);
+    if(cathodeNode){
+      const cathodeGroup = this.createPinGroup(cathodeNode, 'top');
+      cathodeGroup.position.set(0, 0, -1);
+      group.add(cathodeGroup);
+    }
+
+    const anodeNode = context.getENode(component.pins[1]!);
+    if(anodeNode){
+      const anodeGroup = this.createPinGroup(anodeNode, 'bottom');
+      anodeGroup.position.set(0, 0, 1);
+      group.add(anodeGroup);
+    }
   }
 
   // Uses default hover implementation

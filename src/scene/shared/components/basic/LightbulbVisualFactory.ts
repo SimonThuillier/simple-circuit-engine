@@ -2,7 +2,7 @@ import { ComponentVisualFactoryBase } from '../ComponentVisualFactory';
 import type { Component, ComponentState, LightbulbState } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
 
-import type { ConfigFormDefinition } from '../../types';
+import type { ConfigFormDefinition, VisualContext } from '../../types';
 
 /**
  * Visual factory for Lightbulb components
@@ -23,7 +23,7 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
   /** Lightbulb lit emissive intensity */
   private static readonly BULB_LIT_INTENSITY = 1.0;
 
-  createVisual(component: Component): THREE.Object3D {
+  createVisual(component: Component, context: VisualContext): THREE.Object3D {
     // Root group (not rendered, just organizational)
     const group = new THREE.Group();
     group.userData = {
@@ -60,22 +60,45 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
     bulb.position.set(0, 0.8, 0);
     group.add(bulb);
 
-    // pin1 group
-    const pin1Group = this.createPinGroup(component.id, component.pins[0]!, 'pin1');
-    pin1Group.position.set(-0.25, 0, 0);
-    pin1Group.rotateZ(Math.PI / 2);
-    pin1Group.rotateY(Math.PI);
-    group.add(pin1Group);
-
-    // Output pin group
-    const pin2Group = this.createPinGroup(component.id, component.pins[1]!, 'pin2');
-    pin2Group.position.set(0.25, 0, 0);
-    pin2Group.rotateZ(-Math.PI / 2);
-    pin2Group.rotateY(Math.PI);
-    group.add(pin2Group);
+    // pins (not called if preview - no pins)
+    if (component.pins.length > 0) {
+      this.createPinsVisual(component, context, group, baseMaterial);
+    }
 
     this.updateFromConfiguration(group, component.config);
     return group;
+  }
+
+  private createPinsVisual(
+      component: Component,
+      context: VisualContext,
+      group: THREE.Group,
+      material: THREE.MeshStandardMaterial) {
+    const pin1Node = context.getENode(component.pins[0]!);
+    if (pin1Node) {
+      const pin1Group = this.createPinGroup(pin1Node, 'left');
+      pin1Group.position.set(-0.25, 0, 0);
+      group.add(pin1Group);
+
+      const pin1Counterpart =
+          this.createPinCounterpart(pin1Group, material);
+      if(!!pin1Counterpart){
+        group.add(pin1Counterpart);
+      }
+    }
+
+    const pin2Node = context.getENode(component.pins[1]!);
+    if (pin2Node) {
+      const pin2Group = this.createPinGroup(pin2Node,'right');
+      pin2Group.position.set(0.25, 0, 0);
+      group.add(pin2Group);
+
+      const pin2Counterpart =
+          this.createPinCounterpart(pin2Group, material);
+      if(!!pin2Counterpart){
+        group.add(pin2Counterpart);
+      }
+    }
   }
 
   /**

@@ -82,7 +82,7 @@ export class ConfigPanelWidget {
     }
 
     const factory = this.factoryRegistry.get(component.type);
-    const formDef = factory.getConfigFormDefinition();
+    const formDef = factory.getConfigFormDefinition(component.config);
 
     if (!formDef || formDef.fields.length === 0) {
       return false; // No configurable options
@@ -202,60 +202,70 @@ export class ConfigPanelWidget {
       this.formDataObject[key] = value;
     }
 
-    // Build controls for each field (T015: wire onChange handlers)
+    // Build controls for each field
     for (const field of formDef.fields) {
+      let controller: ReturnType<GUI['add']> | null = null;
+
       switch (field.type) {
         case 'boolean':
-          this.gui
+          controller = this.gui
             .add(this.formDataObject, field.key)
             .name(field.label)
-            .onChange(() => this.onValueChange(component, factory));
+            .onChange((value: any) => this.onValueChange(field.key, value, component, factory));
           break;
 
         case 'dropdown':
           if (field.options) {
-            this.gui
+            controller = this.gui
               .add(this.formDataObject, field.key, field.options)
               .name(field.label)
-              .onChange(() => this.onValueChange(component, factory));
+              .onChange((value: any) => this.onValueChange(field.key, value, component, factory));
           }
           break;
 
         case 'number':
-          const controller = this.gui
+          controller = this.gui
             .add(this.formDataObject, field.key)
             .name(field.label)
-            .onChange(() => this.onValueChange(component, factory));
+            .onChange((value: any) => this.onValueChange(field.key, value, component, factory));
           if (field.min !== undefined) controller.min(field.min);
           if (field.max !== undefined) controller.max(field.max);
           if (field.step !== undefined) controller.step(field.step);
           break;
 
         case 'text':
-          this.gui
+          controller = this.gui
             .add(this.formDataObject, field.key)
             .name(field.label)
-            .onChange(() => this.onValueChange(component, factory));
+            .onChange((value: any) => this.onValueChange(field.key, value, component, factory));
           break;
 
         case 'color':
-          this.gui
+          controller = this.gui
             .addColor(this.formDataObject, field.key)
             .name(field.label)
-            .onChange(() => this.onValueChange(component, factory));
+            .onChange((value: any) => this.onValueChange(field.key, value, component, factory));
           break;
+      }
+
+      if (controller && field.disabled) {
+        controller.disable(true);
       }
     }
   }
 
   /**
-   * Handle value change in the config form (T016, T020, T021)
-   * Maps form data back to core config and updates the component
+   * Handle value change in the config form
+   * Maps form data back to core config and updates the component.
+   * When defaultLogicFamily or activationLogic changes, rebuilds the GUI to reflect
+   * updated disabled states and computed transitionSpan values.
    *
-   * @param _component - Component being edited
+   * @param changedKey - The key of the field that changed
+   * @param _value - The new value
+   * @param component - Component being edited
    * @param factory - Visual factory for the component
    */
-  private onValueChange(_component: any, factory: any): void {
+  private onValueChange(changedKey: string, _value: any, component: any, factory: any): void {
     // Convert formDataObject back to Map for mapping
     const formDataMap = new Map<string, any>();
     for (const [key, value] of Object.entries(this.formDataObject)) {
@@ -267,6 +277,29 @@ export class ConfigPanelWidget {
     if (this._currentComponentId) {
       this.editComponentConfig(this._currentComponentId, coreConfig);
     }
+
+    // Rebuild GUI when defaultLogicFamily or activationLogic changes to update disabled states
+    if (changedKey === 'defaultLogicFamily' || changedKey === 'activationLogic') {
+      this.rebuildGui(component, factory);
+    }
+  }
+
+  /**
+   * Rebuild the GUI in place, re-reading the updated component config.
+   * Used after interdependent field changes (defaultLogicFamily, activationLogic).
+   */
+  private rebuildGui(component: any, factory: any): void {
+    if (!this.gui || !this.container) return;
+
+    // Destroy existing GUI
+    this.gui.destroy();
+    this.gui = null;
+
+    // Re-read updated config from the component (already updated by editComponentConfig)
+    const formDef = factory.getConfigFormDefinition(component.config);
+    if (!formDef) return;
+
+    this.buildGui(formDef, component, factory);
   }
 
   /**

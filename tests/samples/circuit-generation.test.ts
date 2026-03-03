@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { existsSync, rmSync, mkdirSync } from 'fs';
+import { existsSync, rmSync } from 'fs';
 import { generateSampleCircuits } from '../../scripts/samples/generate-sample-circuits.js';
 
 const TEST_OUTPUT_DIR = 'output/test-circuits';
@@ -26,13 +26,14 @@ describe('Sample Circuit Generation', () => {
     }
   });
 
-  it('should generate 4 circuit JSON files', async () => {
+  it('should generate 5 circuit JSON files', async () => {
     await generateSampleCircuits(TEST_OUTPUT_DIR);
 
     expect(existsSync(`${TEST_OUTPUT_DIR}/simple-led-circuit.json`)).toBe(true);
     expect(existsSync(`${TEST_OUTPUT_DIR}/switch-controlled-led.json`)).toBe(true);
     expect(existsSync(`${TEST_OUTPUT_DIR}/relay-circuit.json`)).toBe(true);
-    expect(existsSync(`${TEST_OUTPUT_DIR}/transistor-circuit.json`)).toBe(true);
+    expect(existsSync(`${TEST_OUTPUT_DIR}/inverter-circuit.json`)).toBe(true);
+    expect(existsSync(`${TEST_OUTPUT_DIR}/two-batteries-circuit.json`)).toBe(true);
   });
 
   it('should create output directory if missing', async () => {
@@ -74,7 +75,8 @@ describe('Sample Circuit Generation', () => {
     expect(existsSync(`${testDir}/simple-led-circuit.json`)).toBe(true);
     expect(existsSync(`${testDir}/switch-controlled-led.json`)).toBe(true);
     expect(existsSync(`${testDir}/relay-circuit.json`)).toBe(true);
-    expect(existsSync(`${testDir}/transistor-circuit.json`)).toBe(true);
+    expect(existsSync(`${testDir}/inverter-circuit.json`)).toBe(true);
+    expect(existsSync(`${testDir}/two-batteries-circuit.json`)).toBe(true);
 
     // Cleanup
     rmSync(testDir, { recursive: true });

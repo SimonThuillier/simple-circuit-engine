@@ -3,24 +3,19 @@
  * @module core/simulation
  */
 
-import type { Circuit } from '../Circuit.js';
-import type { RunnerOptions } from './types/RunnerOptions.js';
-import type { UserCommand } from './types/UserCommand.js';
-import type { NodeElectricalState } from './states/basic/NodeElectricalState';
+import type { Circuit } from '../topology/Circuit';
 import type { ComponentState } from './states/ComponentState.js';
-import { SimulationState } from './SimulationState.js';
+import { SimulationState } from './states/SimulationState';
 import { StateManager } from './StateManager.js';
 import { EventQueue } from './EventQueue.js';
 import { DirtyTracker } from './DirtyTracker.js';
-import { BehaviorRegistry } from './behaviors';
-import type { UUID } from '../types/Identifier.js';
-import { ENodeSourceType } from '../types/ENodeSourceType';
-import type { ReachabilityResult } from './types/ReachabilityResult';
-import type { ENode } from '../ENode';
-import { ENodeType } from '../types/ENodeType';
-import type { Component } from '../Component';
-import type { BehaviorResult } from './behaviors/ComponentBehavior';
-import type { RunnerResult } from './types/RunnerResult';
+import {BehaviorRegistry, type IBehaviorResult} from './behaviors';
+import type { ENode } from '../topology/ENode';
+import type { Component } from '../topology/Component';
+import type {INodeElectricalState} from "./states";
+import type {IUserCommand, IReachabilityResult, IRunnerOptions, IRunnerResult} from "./types";
+import type {UUID} from "../utils/types";
+import {ENodeSourceType, ENodeType} from "../topology/types";
 
 /**
  * Main circuit simulation controller.
@@ -39,7 +34,7 @@ export class CircuitRunner {
   public readonly circuit: Circuit;
   public readonly stateManager: StateManager;
   public readonly eventQueue: EventQueue;
-  public readonly commands: Map<UUID, UserCommand>;
+  public readonly commands: Map<UUID, IUserCommand>;
   public readonly dirtyTracker: DirtyTracker;
   public readonly behaviorRegistry: BehaviorRegistry;
 
@@ -50,7 +45,7 @@ export class CircuitRunner {
    * @param behaviorRegistry - Registry of component behaviors
    * @param options - Simulation options (history settings)
    */
-  constructor(circuit: Circuit, behaviorRegistry: BehaviorRegistry, options: RunnerOptions = {}) {
+  constructor(circuit: Circuit, behaviorRegistry: BehaviorRegistry, options: IRunnerOptions = {}) {
     this.circuit = circuit;
     this.behaviorRegistry = behaviorRegistry;
 
@@ -59,7 +54,7 @@ export class CircuitRunner {
 
     this.stateManager = new StateManager(enableHistory, historyLimit);
     this.eventQueue = new EventQueue();
-    this.commands = new Map<UUID, UserCommand>();
+    this.commands = new Map<UUID, IUserCommand>();
     this.dirtyTracker = new DirtyTracker();
 
     // Initialize simulation state
@@ -77,7 +72,7 @@ export class CircuitRunner {
    *
    * @returns the result of the tick execution
    */
-  tick(): RunnerResult {
+  tick(): IRunnerResult {
     const eventQueueStartSize = this.eventQueue.size();
     const currentTick = this.stateManager.getCurrentTick();
 
@@ -113,9 +108,9 @@ export class CircuitRunner {
    * Execute multiple simulation ticks.
    *
    * @param count - Number of ticks to execute
-   * @returns an array of RunnerResult for each tick executed
+   * @returns an array of IRunnerResult for each tick executed
    */
-  tickN(count: number): RunnerResult[] {
+  tickN(count: number): IRunnerResult[] {
     if (count < 1) {
       throw new RangeError(`Tick count must be at least 1 (got ${count})`);
     }
@@ -163,7 +158,7 @@ export class CircuitRunner {
    * @param enodeId - UUID of the ENode
    * @returns Electrical state, or undefined if not found
    */
-  getEnodeState(enodeId: UUID): NodeElectricalState | undefined {
+  getEnodeState(enodeId: UUID): INodeElectricalState | undefined {
     return this.stateManager.getCurrentState().nodeStates.get(enodeId);
   }
 
@@ -173,7 +168,7 @@ export class CircuitRunner {
    * @param wireId - UUID of the Wire
    * @returns Electrical state, or undefined if not found
    */
-  getWireState(wireId: UUID): NodeElectricalState | undefined {
+  getWireState(wireId: UUID): INodeElectricalState | undefined {
     return this.stateManager.getCurrentState().wireStates.get(wireId);
   }
 
@@ -215,7 +210,7 @@ export class CircuitRunner {
    *
    * @param command - User command to submit
    */
-  submitCommand(command: UserCommand): boolean {
+  submitCommand(command: IUserCommand): boolean {
     if (!this.circuit.hasComponent(command.targetId)) {
       throw Error(`Cannot submit command for unknown component ID '${command.targetId}'`);
     }
@@ -232,12 +227,12 @@ export class CircuitRunner {
    * Mark changed components as Dirty and enqueue consequent scheduled events
    * Finally clears command queue after processing.
    *
-   * @returns Array of BehaviorResult for each processed command
+   * @returns Array of IBehaviorResult for each processed command
    */
-  private processCommands(): BehaviorResult[] {
+  private processCommands(): IBehaviorResult[] {
     const currentState = this.stateManager.getCurrentState();
 
-    const results: BehaviorResult[] = [];
+    const results: IBehaviorResult[] = [];
 
     for (const command of this.commands.values()) {
       const component = this.circuit.getComponent(command.targetId) as Component;
@@ -248,6 +243,9 @@ export class CircuitRunner {
         currentState.componentStates.get(component.id)!,
         command
       );
+      if (result.shouldCancelPending) {
+        this.eventQueue.removeEventsForTarget(component.id);
+      }
       for (const event of result.scheduledEvents) {
         this.eventQueue.schedule(event);
       }
@@ -288,7 +286,7 @@ export class CircuitRunner {
    * components react to the initial symmetric state and open, while later
    * components see the updated (asymmetric) state and stay closed.
    */
-  private initializeState(): RunnerResult {
+  private initializeState(): IRunnerResult {
     const currentState = this.stateManager.getCurrentState();
 
     // Initialize component states using behaviors
@@ -312,7 +310,7 @@ export class CircuitRunner {
 
     // Initialize all ENode initial states based on their topology source type
     for (const enode of this.circuit.getAllENodes()) {
-      (currentState.nodeStates as Map<UUID, NodeElectricalState>).set(enode.id, {
+      (currentState.nodeStates as Map<UUID, INodeElectricalState>).set(enode.id, {
         hasVoltage: enode.source === ENodeSourceType.Voltage,
         hasCurrent: enode.source === ENodeSourceType.Current,
         locked: !!enode.source,
@@ -320,7 +318,7 @@ export class CircuitRunner {
     }
     // Initialize all Wire states unlocked without voltage/current
     for (const wire of this.circuit.getAllWires()) {
-      (currentState.wireStates as Map<UUID, NodeElectricalState>).set(wire.id, {
+      (currentState.wireStates as Map<UUID, INodeElectricalState>).set(wire.id, {
         hasVoltage: false,
         hasCurrent: false,
         locked: false,
@@ -431,12 +429,12 @@ export class CircuitRunner {
    * enqueue resulting events and update dirty tracker accordingly
    * @param targetTick - Tick at which to perform the update
    */
-  private updateState(targetTick: number): RunnerResult {
+  private updateState(targetTick: number): IRunnerResult {
     const currentState = this.stateManager.getCurrentState();
 
     const { updatedNodes, updatedWires } = this.propagateConductivity();
     const componentsToAssess = this.circuit.getComponentsOfPins(updatedNodes);
-    const results: BehaviorResult[] = [];
+    const results: IBehaviorResult[] = [];
 
     const updatedComponents = new Set<UUID>();
     let eventCount = 0;
@@ -475,6 +473,9 @@ export class CircuitRunner {
         currentState.nodeStates,
         targetTick
       );
+      if (res.shouldCancelPending) {
+        this.eventQueue.removeEventsForTarget(componentId);
+      }
       if (res.hasChanged) {
         updatedComponents.add(componentId);
         results.push(res);
@@ -607,7 +608,7 @@ export class CircuitRunner {
     conductivityType: ENodeSourceType,
     seeds: UUID[],
     componentStates: ReadonlyMap<UUID, ComponentState>
-  ): ReachabilityResult {
+  ): IReachabilityResult {
     const reachableNodes = new Set<UUID>();
     const reachableWires = new Set<UUID>();
     const frontier: UUID[] = [];
@@ -681,11 +682,11 @@ export class CircuitRunner {
    * @param state - Current simulation state
    * @param targetTick - Target tick for event processing
    */
-  private applyReadyEvents(targetTick: number): BehaviorResult[] {
+  private applyReadyEvents(targetTick: number): IBehaviorResult[] {
     const currentState = this.stateManager.getCurrentState();
     const readyEvents = this.eventQueue.getReadyEvents(targetTick);
 
-    const results: BehaviorResult[] = [];
+    const results: IBehaviorResult[] = [];
 
     for (const event of readyEvents) {
       const component = this.circuit.getComponent(event.targetId) as Component;
@@ -699,6 +700,9 @@ export class CircuitRunner {
 
       const componentState = currentState.componentStates.get(component.id)!;
       const result = behavior.onEventFiring(component, componentState, event);
+      if (result.shouldCancelPending) {
+        this.eventQueue.removeEventsForTarget(component.id);
+      }
       for (const event of result.scheduledEvents) {
         this.eventQueue.schedule(event);
       }

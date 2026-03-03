@@ -21,39 +21,14 @@
  * @packageDocumentation
  */
 
-// Type definitions
-export { CameraOptions } from './types/CameraOptions.js';
-export type { ICameraOptions } from './types/CameraOptions.js';
-export type { ComponentTypeMetadata } from './types/ComponentType.js';
-export {
-  ComponentType,
-  COMPONENT_TYPE_METADATA,
-  getAllComponentTypes,
-  getComponentTypeMetadata,
-} from './types/ComponentType.js';
-export { ENodeSourceType } from './types/ENodeSourceType.js';
-export { ENodeType } from './types/ENodeType.js';
-export type { UUID } from './types/Identifier.js';
-export { generateUUID } from './types/Identifier.js';
-export { Position, findPositionBestIndex, simplifyPositions } from './types/Position.js';
-export { Position3D } from './types/Position3D.js';
-export type { IPosition3D } from './types/Position3D.js';
-export { Rotation } from './types/Rotation.js';
+// Utilities
+export * from './utils/index.js';
 
-// Core entities
-export { Circuit, CircuitMetadata } from './Circuit.js';
-export type { ICircuitMetadata } from './Circuit.js';
-export { Component } from './Component.js';
-export { ENode } from './ENode.js';
-export { Wire } from './Wire.js';
+// Topology
+export * from './topology/index.js';
 
 // Simulation
-export type * from './simulation/index.js';
 export * from './simulation/index.js';
-export type * from './simulation/states/index.js';
-export * from './simulation/states/index.js';
-export type * from './simulation/behaviors/index.js';
-export * from './simulation/behaviors/index.js';
 
 // setup helpers
 export * from './setup.js';

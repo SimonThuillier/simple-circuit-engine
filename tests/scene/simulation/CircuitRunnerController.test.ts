@@ -8,16 +8,17 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { CircuitRunnerController } from '../../../src/scene/simulation/CircuitRunnerController';
 import { FactoryRegistry, DefaultVisualFactory } from '../../../src/scene/shared/components';
 import { BehaviorRegistry } from '../../../src/core/simulation/behaviors/BehaviorRegistry';
-import { Circuit } from '../../../src/core/Circuit';
-import { ComponentType } from '../../../src/core/types/ComponentType';
+import { Circuit } from '../../../src/core/topology/Circuit';
+import { CircuitOptions } from '../../../src/core/topology/CircuitOptions';
 import type { IFactoryRegistry } from '../../../src/scene/shared/components/ComponentVisualFactory';
-import { SIMULATION_SPEED } from '../../../src/core/simulation/types/SimulationConstants';
+
+import {ComponentType, SIMULATION_SPEED} from "../../../src";
 
 /**
  * Create a simple test circuit with a battery and switch
  */
 function createTestCircuit(): Circuit {
-  const circuit = new Circuit('Test Circuit');
+  const circuit = new Circuit(new CircuitOptions('Test Circuit'));
   const battery = circuit.addComponent(ComponentType.Battery, { x: 0, y: 0 }, 0);
   const switchComp = circuit.addComponent(ComponentType.Switch, { x: 2, y: 0 }, 0);
 

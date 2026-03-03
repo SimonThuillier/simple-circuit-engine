@@ -7,11 +7,11 @@
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 import * as THREE from 'three';
 import { CircuitWriter } from '../../../src/scene/static/CircuitWriter';
-import { Circuit } from '../../../src/core/Circuit';
-import { ComponentType } from '../../../src/core/types/ComponentType';
-import { ENodeType } from '../../../src/core/types/ENodeType';
-import { Position } from '../../../src/core/types/Position';
+import { Circuit } from '../../../src/core/topology/Circuit';
+import { CircuitOptions } from '../../../src/core/topology/CircuitOptions';
+import { Position } from '../../../src/core/utils/Position';
 import type { CircuitController } from '../../../src/scene/static/CircuitController';
+import {ComponentType, ENodeType} from "../../../src";
 
 /**
  * Create a mock CircuitController with spied emit method
@@ -32,7 +32,7 @@ function createMockController(circuit: Circuit | null = null): {
  * Create a test circuit with components and wires for testing
  */
 function createTestCircuit(name: string = 'Test Circuit'): Circuit {
-  const circuit = new Circuit(name);
+  const circuit = new Circuit(new CircuitOptions(name));
   return circuit;
 }
 

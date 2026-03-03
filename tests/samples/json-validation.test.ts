@@ -9,7 +9,7 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync, existsSync } from 'fs';
-import { Circuit } from '../../src/core/Circuit.js';
+import { Circuit } from '../../src/core/topology/Circuit.js';
 import { generateSampleCircuits } from '../../scripts/samples/generate-sample-circuits.js';
 
 const OUTPUT_DIR = 'output/sample-circuits';
@@ -54,12 +54,12 @@ describe('JSON Validation Tests', () => {
     expect(circuit.getAllComponents().length).toBeLessThanOrEqual(7);
   });
 
-  it('should load transistor-circuit.json via Circuit.fromJSON()', () => {
-    const json = JSON.parse(readFileSync(`${OUTPUT_DIR}/transistor-circuit.json`, 'utf-8'));
+  it('should load inverter-circuit.json via Circuit.fromJSON()', () => {
+    const json = JSON.parse(readFileSync(`${OUTPUT_DIR}/inverter-circuit.json`, 'utf-8'));
     const circuit = Circuit.fromJSON(json);
 
     expect(circuit).toBeDefined();
-    expect(circuit.name).toBe('Transistor Circuit');
+    expect(circuit.name).toBe('Inverter Circuit');
     expect(circuit.getAllComponents().length).toBeGreaterThanOrEqual(6);
     expect(circuit.getAllComponents().length).toBeLessThanOrEqual(10);
   });
@@ -69,7 +69,7 @@ describe('JSON Validation Tests', () => {
       'simple-led-circuit.json',
       'switch-controlled-led.json',
       'relay-circuit.json',
-      'transistor-circuit.json',
+      'inverter-circuit.json',
     ];
 
     const componentCounts: number[] = [];
@@ -96,7 +96,7 @@ describe('JSON Validation Tests', () => {
       'simple-led-circuit.json',
       'switch-controlled-led.json',
       'relay-circuit.json',
-      'transistor-circuit.json',
+      'inverter-circuit.json',
     ];
 
     for (const filename of circuits) {

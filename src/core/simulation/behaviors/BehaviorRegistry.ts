@@ -3,7 +3,8 @@
  * @module core/simulation/behaviors
  */
 
-import type { ComponentBehavior } from './ComponentBehavior.js';
+
+import type {IComponentBehavior} from "./types";
 
 /**
  * Registry for component behavior implementations.
@@ -15,7 +16,7 @@ import type { ComponentBehavior } from './ComponentBehavior.js';
  * @public
  */
 export class BehaviorRegistry {
-  private behaviors: Map<string, ComponentBehavior>;
+  private behaviors: Map<string, IComponentBehavior>;
 
   /**
    * Create a new empty behavior registry.
@@ -32,7 +33,7 @@ export class BehaviorRegistry {
    * @throws TypeError if behavior is null/undefined or componentType is empty
    * @returns The registry instance for chaining
    */
-  register(behavior: ComponentBehavior): BehaviorRegistry {
+  register(behavior: IComponentBehavior): BehaviorRegistry {
     if (!behavior) {
       throw new TypeError('Behavior cannot be null or undefined');
     }
@@ -51,7 +52,7 @@ export class BehaviorRegistry {
    *
    * @param behaviors - Array of behaviors to register
    */
-  registerAll(behaviors: ComponentBehavior[]): void {
+  registerAll(behaviors: IComponentBehavior[]): void {
     behaviors.forEach((behavior) => this.register(behavior));
   }
 
@@ -61,7 +62,7 @@ export class BehaviorRegistry {
    * @param componentType - Type identifier (e.g., "battery", "led")
    * @returns The registered behavior, or undefined if not found
    */
-  get(componentType: string): ComponentBehavior | undefined {
+  get(componentType: string): IComponentBehavior | undefined {
     return this.behaviors.get(componentType);
   }
 

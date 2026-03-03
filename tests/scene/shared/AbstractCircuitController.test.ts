@@ -16,9 +16,9 @@ import { WireVisualManager } from '../../../src/scene/shared/WireVisualManager';
 import { BehaviorRegistry } from '../../../src/core/simulation/behaviors/BehaviorRegistry';
 import type { SharedResources } from '../../../src/scene/shared/types';
 import type { IFactoryRegistry } from '../../../src/scene/shared/components/ComponentVisualFactory';
-import type { UUID } from '../../../src/core/types/Identifier';
 import type { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { disposeScene } from '../helpers';
+import {UUID} from "../../../src";
 
 /**
  * Create mock shared resources for testing
