@@ -33,8 +33,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - removed `Transistor` component: after research it's not realistic to use it with this engine: basic logic gates built upon it will be preferred.
 
-### Fixed
-
 ## [0.0.10] - 2026-02-28
 
 ### Added
