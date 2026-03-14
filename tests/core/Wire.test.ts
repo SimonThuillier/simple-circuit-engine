@@ -6,12 +6,13 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Circuit, ComponentType, Position, Rotation, ENodeType } from 'simple-circuit-engine/core';
+import { CircuitOptions } from '../../src/core/topology/CircuitOptions.js';
 
 describe('Wire', () => {
   let circuit: Circuit;
 
   beforeEach(() => {
-    circuit = new Circuit();
+    circuit = new Circuit(new CircuitOptions());
   });
 
   describe('wire creation', () => {

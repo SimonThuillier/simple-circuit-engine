@@ -7,17 +7,18 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { Circuit, ComponentType, Position, Rotation, ENodeType } from 'simple-circuit-engine/core';
+import { CircuitOptions } from '../../src/core/topology/CircuitOptions.js';
 
 describe('Circuit', () => {
   let circuit: Circuit;
 
   beforeEach(() => {
-    circuit = new Circuit();
+    circuit = new Circuit(new CircuitOptions());
   });
 
   describe('constructor', () => {
     it('should create an empty circuit', () => {
-      const circuit = new Circuit();
+      const circuit = new Circuit(new CircuitOptions());
       expect(circuit).toBeDefined();
       expect(circuit.getAllComponents()).toEqual([]);
     });
@@ -267,7 +268,7 @@ describe('Circuit', () => {
     });
 
     it('should deserialize circuit from JSON', () => {
-      const original = new Circuit('Test Circuit');
+      const original = new Circuit(new CircuitOptions('Test Circuit'));
       original.addComponent(ComponentType.Battery, new Position(10, 20), new Rotation(90));
 
       const json = original.toJSON();

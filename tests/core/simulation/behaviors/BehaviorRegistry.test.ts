@@ -9,11 +9,11 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import type {
-  ComponentBehavior,
-  BehaviorResult,
+  IComponentBehavior,
+  IBehaviorResult,
   Component,
-  UserCommand,
-  ScheduledEvent,
+  IUserCommand,
+  IScheduledEvent,
   UUID,
   NodeElectricalState,
   ENodeSourceType,
@@ -21,7 +21,7 @@ import type {
 import { BehaviorRegistry, ComponentState, ComponentType } from 'simple-circuit-engine/core';
 
 // Mock behavior for testing
-class MockBehavior implements ComponentBehavior {
+class MockBehavior implements IComponentBehavior {
   readonly componentType: ComponentType;
 
   constructor(componentType: ComponentType) {
@@ -47,7 +47,7 @@ class MockBehavior implements ComponentBehavior {
     state: ComponentState,
     nodeStates: ReadonlyMap<UUID, NodeElectricalState>,
     targetTick: number
-  ): BehaviorResult {
+  ): IBehaviorResult {
     return {
       componentState: state,
       hasChanged: false,
@@ -55,7 +55,7 @@ class MockBehavior implements ComponentBehavior {
     };
   }
 
-  onUserCommand(component: Component, state: ComponentState, command: UserCommand): BehaviorResult {
+  onUserCommand(component: Component, state: ComponentState, command: IUserCommand): IBehaviorResult {
     return {
       componentState: state,
       hasChanged: false,
@@ -66,8 +66,8 @@ class MockBehavior implements ComponentBehavior {
   onEventFiring(
     component: Component,
     state: ComponentState,
-    event: ScheduledEvent
-  ): BehaviorResult {
+    event: IScheduledEvent
+  ): IBehaviorResult {
     return {
       componentState: state,
       hasChanged: false,
@@ -130,14 +130,14 @@ describe('BehaviorRegistry', () => {
     });
 
     it('should throw when behavior is null', () => {
-      expect(() => registry.register(null as unknown as ComponentBehavior)).toThrow(TypeError);
-      expect(() => registry.register(null as unknown as ComponentBehavior)).toThrow(
+      expect(() => registry.register(null as unknown as IComponentBehavior)).toThrow(TypeError);
+      expect(() => registry.register(null as unknown as IComponentBehavior)).toThrow(
         /cannot be null or undefined/
       );
     });
 
     it('should throw when behavior is undefined', () => {
-      expect(() => registry.register(undefined as unknown as ComponentBehavior)).toThrow(TypeError);
+      expect(() => registry.register(undefined as unknown as IComponentBehavior)).toThrow(TypeError);
     });
 
     it('should throw when componentType is empty string', () => {

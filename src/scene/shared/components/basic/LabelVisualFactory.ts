@@ -10,7 +10,7 @@ import { ComponentVisualFactoryBase } from '../ComponentVisualFactory';
 import type { Component } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
 import { BoxGeometry } from 'three';
-import type { ConfigFormDefinition } from '../../types';
+import type { ConfigFormDefinition, VisualContext } from '../../types';
 
 /**
  * Visual factory for Label components
@@ -57,13 +57,8 @@ export class LabelVisualFactory extends ComponentVisualFactoryBase {
   /** Padding around text in pixels */
   private static readonly PADDING = 8;
 
-  /**
-   * Create the Three.js visual representation for a Label component
-   *
-   * @param component - The Label component to visualize
-   * @returns THREE.Group containing hitbox and text mesh
-   */
-  createVisual(component: Component): THREE.Object3D {
+
+  createVisual(component: Component, _context: VisualContext): THREE.Object3D {
     const group = new THREE.Group();
     group.userData = {
       type: 'componentGroup',

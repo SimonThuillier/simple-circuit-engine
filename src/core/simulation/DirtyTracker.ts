@@ -3,29 +3,8 @@
  * @module core/simulation
  */
 
-import type { UUID } from '../types/Identifier.js';
-
-/**
- * Dirty elements collected during a tick, returned by getDirtyElements().
- *
- * @public
- */
-export interface DirtyElements {
-  /**
-   * Components that changed state.
-   */
-  readonly components: ReadonlySet<UUID>;
-
-  /**
-   * Wires that changed electrical state.
-   */
-  readonly wires: ReadonlySet<UUID>;
-
-  /**
-   * ENodes that changed electrical state.
-   */
-  readonly enodes: ReadonlySet<UUID>;
-}
+import type {IDirtyElements} from "./types";
+import type {UUID} from "../utils/types";
 
 /**
  * Tracks per-element changes for optimized state propagation.
@@ -106,8 +85,8 @@ export class DirtyTracker {
    *
    * @returns Object containing sets of dirty component/wire/enode UUIDs
    */
-  getDirtyElements(): DirtyElements {
-    const result: DirtyElements = {
+  getDirtyElements(): IDirtyElements {
+    const result: IDirtyElements = {
       components: new Set(this.dirtyComponents),
       wires: new Set(this.dirtyWires),
       enodes: new Set(this.dirtyEnodes),

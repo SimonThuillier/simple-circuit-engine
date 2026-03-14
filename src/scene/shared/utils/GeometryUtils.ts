@@ -10,6 +10,11 @@ import { Position, Rotation } from 'simple-circuit-engine/core';
 import { ExtrudeGeometry } from 'three';
 
 /**
+ * convenience to control standard rotations of meshes on X-Z plan
+ */
+export type Direction2D = 'right' | 'bottom' | 'left' | 'top';
+
+/**
  * Create a grid helper for the scene
  *
  * @param size - Size of the grid
@@ -676,20 +681,137 @@ export function XorGateTailGeometry(
 }
 
 /**
- * Create an ExtrudeGeometry for a cyclic trapezoid (all vertices on a circle).
- * Left side has height tailHeight, right side has height headHeight.
- * When headHeight = 0 the shape degenerates to a triangle (inverter symbol).
+ * Create an ExtrudeGeometry shaped like an L (or mirrored L) with a configurable
+ * angle between the two arms.
  *
- * The inner hole is computed with true perpendicular insets from each edge,
- * so wall thickness is uniform along the slanted sides.
+ * Default orientation (`invert = false`) produces a `|_`-like shape:
+ *   base arm extends to the right, stem arm extends upward at the given angle.
+ * When `invert = true` the shape is mirrored horizontally (`_|`-like):
+ *   base arm extends to the left, stem arm mirrors accordingly.
  *
- * @param width      - Total horizontal extent
- * @param tailHeight - Height of the left (input) side
- * @param headHeight - Height of the right (output) side; 0 for a pointed tip
- * @param thickness  - Wall thickness of the shell
- * @param depth      - Extrusion depth
- * @param steps      - Number of extrusion steps
+ * The `angle` parameter (in degrees) controls the inner angle between the two arms:
+ *   - 90°  → standard right-angle L
+ *   - 120° → obtuse junction (`\_`-like)
+ *   - 60°  → acute junction
+ *
+ * Both the inner (concave) and outer (convex) junction corners are rounded
+ * equally with `junctionRadius` (similar to CSS border-radius).
+ * When 0 both corners are sharp. The arc sweep adapts to the angle: (180° − angle).
+ *
+ * The geometry is centered on its bounding box.
+ *
+ * At 90°, `width` and `height` correspond exactly to the bounding box dimensions.
+ * At other angles the bounding box changes but the arm lengths remain consistent:
+ * base inner arm = width − thickness, stem inner arm = height − thickness.
+ *
+ * @param width           - Base arm length (bounding-box width at 90°)
+ * @param height          - Stem arm length (bounding-box height at 90°)
+ * @param thickness       - Arm thickness of the L
+ * @param angle           - Inner angle between the two arms, in degrees (typically 30–150)
+ * @param invert          - If true, mirror horizontally
+ * @param junctionRadius  - Radius of the rounded junction corners, inner and outer (0 = sharp)
+ * @param depth           - Extrusion depth
+ * @param steps           - Number of extrusion steps
  */
+export function LGeometry(
+  width: number,
+  height: number,
+  thickness: number,
+  angle: number,
+  invert: boolean,
+  junctionRadius: number,
+  depth: number,
+  steps: number = 1
+): ExtrudeGeometry {
+  const t = thickness;
+  const alpha = THREE.MathUtils.degToRad(angle);
+  const halfAlpha = alpha / 2;
+  const cosA = Math.cos(alpha);
+  const sinA = Math.sin(alpha);
+  const cotHalf = Math.cos(halfAlpha) / Math.sin(halfAlpha);
+
+  // Inner arm lengths from junction inner corner to arm tips
+  const W = width - t;
+  const H = height - t;
+
+  // Clamp junction radius: tangent points must stay within both arms
+  // Tangent distance from inner corner along each arm = r · cot(α/2)
+  const maxR = cotHalf > 0 ? Math.min(W, H) / cotHalf : Infinity;
+  const r = Math.min(Math.max(0, junctionRadius), maxR);
+
+  // Inner arc center offset from inner corner along each arm = r · cot(α/2)
+  const arcCX = r * cotHalf;
+
+  // Outer arc center: at distance r inside the polygon from both outer edges
+  // Center = ((r − t) · cotHalf, r − t) for non-inverted
+  const outerCX = (r - t) * cotHalf;
+  const outerCY = r - t;
+
+  const shape = new THREE.Shape();
+
+  if (!invert) {
+    // Base arm extends RIGHT, stem arm at angle α from base
+    // All coordinates relative to the inner junction corner at origin, CCW winding
+
+    if (r > 0) {
+      // Start at outer base tangent (on base outer edge, near junction)
+      shape.moveTo(outerCX, -t);
+      shape.lineTo(W, -t); // base outer edge →
+      shape.lineTo(W, 0); // base tip cap ↑
+      shape.lineTo(arcCX, 0); // base inner edge ← to inner arc tangent
+      shape.absarc(arcCX, r, r, -Math.PI / 2, alpha + Math.PI / 2, true); // CW inner arc
+      shape.lineTo(H * cosA, H * sinA); // stem tip inner
+      shape.lineTo(H * cosA - t * sinA, H * sinA + t * cosA); // stem tip outer
+      // Stem outer edge ↙ to outer arc tangent
+      shape.lineTo(outerCX - r * sinA, outerCY + r * cosA);
+      // CCW outer arc (convex corner rounding)
+      shape.absarc(outerCX, outerCY, r, alpha + Math.PI / 2, -Math.PI / 2, false);
+      // auto-close back to outer base tangent
+    } else {
+      shape.moveTo(-t * cotHalf, -t); // outer junction corner
+      shape.lineTo(W, -t); // base outer edge →
+      shape.lineTo(W, 0); // base tip cap ↑
+      shape.lineTo(0, 0); // sharp inner corner
+      shape.lineTo(H * cosA, H * sinA); // stem tip inner
+      shape.lineTo(H * cosA - t * sinA, H * sinA + t * cosA); // stem tip outer
+      // auto-close: stem outer edge back to outer junction corner
+    }
+  } else {
+    // Mirrored: base arm extends LEFT, stem arm mirrored
+    // Stem direction becomes (-cosA, sinA), outward perpendicular (sinA, cosA)
+
+    if (r > 0) {
+      // Start at outer stem tangent (on stem outer edge, near junction)
+      shape.moveTo(-outerCX + r * sinA, outerCY + r * cosA);
+      shape.lineTo(-H * cosA + t * sinA, H * sinA + t * cosA); // stem outer edge
+      shape.lineTo(-H * cosA, H * sinA); // stem tip inner (cap)
+      shape.lineTo(-arcCX * cosA, arcCX * sinA); // stem inner edge to inner arc tangent
+      shape.absarc(-arcCX, r, r, Math.PI / 2 - alpha, -Math.PI / 2, true); // CW inner arc
+      shape.lineTo(-W, 0); // base tip inner
+      shape.lineTo(-W, -t); // base tip outer (cap)
+      // Base outer edge → to outer arc tangent
+      shape.lineTo(-outerCX, -t);
+      // CCW outer arc (convex corner rounding)
+      shape.absarc(-outerCX, outerCY, r, -Math.PI / 2, Math.PI / 2 - alpha, false);
+      // auto-close back to outer stem tangent
+    } else {
+      shape.moveTo(t * cotHalf, -t); // outer junction corner
+      shape.lineTo(-H * cosA + t * sinA, H * sinA + t * cosA); // stem tip outer
+      shape.lineTo(-H * cosA, H * sinA); // stem tip inner (cap)
+      shape.lineTo(0, 0); // sharp inner corner
+      shape.lineTo(-W, 0); // base tip inner
+      shape.lineTo(-W, -t); // base tip outer (cap)
+      // auto-close: base outer edge → back to outer junction corner
+    }
+  }
+
+  const geometry = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, steps });
+  /*geometry.rotateX(-0.23);
+  geometry.rotateY(0.95);
+  geometry.rotateZ(-0.22);*/
+  return geometry;
+}
+
 export function CyclicTrapezoidGeometry(
   width: number,
   tailHeight: number,

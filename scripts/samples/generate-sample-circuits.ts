@@ -7,11 +7,11 @@
  * @module scripts/samples/generate-sample-circuits
  */
 
-import type { Circuit } from '../../src/core/Circuit.js';
+import type { Circuit } from '../../src/core/topology/Circuit.js';
 import { createSimpleLedCircuit } from './circuits/simple-led-circuit.js';
 import { createSwitchControlledLedCircuit } from './circuits/switch-controlled-led.js';
 import { createRelayCircuit } from './circuits/relay-circuit.js';
-import { createTransistorCircuit } from './circuits/transistor-circuit.js';
+import { createInverterCircuit } from './circuits/inverter-circuit.js';
 import { writeCircuitToFile } from './utils/file-writer.js';
 import {createTwoBatteriesCircuit} from "./circuits/two-batteries-circuit";
 
@@ -84,8 +84,8 @@ export async function generateSampleCircuits(
       filename: 'relay-circuit.json',
     },
     {
-      factory: createTransistorCircuit,
-      filename: 'transistor-circuit.json',
+      factory: createInverterCircuit,
+      filename: 'inverter-circuit.json',
     },
       {
           factory: createTwoBatteriesCircuit,

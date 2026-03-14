@@ -1,15 +1,15 @@
 import { ComponentVisualFactoryBase } from '../ComponentVisualFactory';
-import type { Component, ComponentState, XorGateState } from 'simple-circuit-engine/core';
+import {type Component, type ComponentState, type XorGateState} from 'simple-circuit-engine/core';
 import * as THREE from 'three';
 import { OrGateGeometry, XorGateTailGeometry } from '../../utils/GeometryUtils';
-import type { ConfigFormDefinition } from '../../types';
+import type { ConfigFormDefinition, VisualContext } from '../../types';
 
 /**
  * Visual factory for XOR gates components
  *
  * Creates:
  * - Gate mesh
- * - vcc, inputs and output pin groups
+ * - vcc, gnd, inputs and output pin groups
  * - Component hitbox for raycasting
  *
  * Animation:
@@ -21,7 +21,7 @@ export class XorGateVisualFactory extends ComponentVisualFactoryBase {
   /** Gate high emissive intensity */
   protected static readonly HIGH_INTENSITY = 0.3;
   /** XOR tail geometry */
-  protected static readonly tailGeometry = XorGateTailGeometry(1.5, 1.6, 0.8, 0.1, 0.8, 0.4, 16);
+  protected readonly tailGeometry = XorGateTailGeometry(1.5, 1.6, 0.8, 0.1, 0.8, 0.4, 16);
   /** Shared open envelope geometry */
   protected readonly lowGeometry = OrGateGeometry(1.5, 1.6, 0.1, 0.4, 16);
   /** Shared transient envelope geometry */
@@ -29,11 +29,11 @@ export class XorGateVisualFactory extends ComponentVisualFactoryBase {
   /** Shared transient envelope geometry */
   protected readonly highGeometry = OrGateGeometry(1.5, 1.6, 0.799, 0.4, 16);
   /** Shared material for negative marker **/
-  protected static readonly negativeMarkerMaterial = new THREE.MeshStandardMaterial({
+  protected readonly negativeMarkerMaterial = new THREE.MeshStandardMaterial({
     color: 0xfafafa,
   });
   /** Shared geometry for negative marker **/
-  protected static readonly negativeMarkerGeometry = new THREE.CylinderGeometry(
+  protected readonly negativeMarkerGeometry = new THREE.CylinderGeometry(
     0.2,
     0.2,
     0.4,
@@ -48,7 +48,7 @@ export class XorGateVisualFactory extends ComponentVisualFactoryBase {
     return Math.PI;
   }
 
-  createVisual(component: Component): THREE.Object3D {
+  createVisual(component: Component, context: VisualContext): THREE.Object3D {
     // Root group (not rendered, just organizational)
     const group = new THREE.Group();
     group.userData = {
@@ -58,9 +58,8 @@ export class XorGateVisualFactory extends ComponentVisualFactoryBase {
     };
 
     // Component hitbox (invisible, raycastable)
-    const hitbox = this.createComponentHitbox(component.id, group.id, 2.4, 2, 1.9);
+    const hitbox = this.createComponentHitbox(component.id, group.id, 2.4, 2, 1.8);
     group.add(hitbox);
-    hitbox.translateX(0.2);
 
     // Visual Gate
     const envelopeMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
@@ -75,13 +74,13 @@ export class XorGateVisualFactory extends ComponentVisualFactoryBase {
     };
     envelope.rotateX(-Math.PI / 2);
     envelope.rotateY(Math.PI);
-    envelope.position.set(0, 0.35, -0.1);
+    envelope.position.set(0, 0.35, 0);
     group.add(envelope);
 
     //const tailMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
     //tailMaterial.emissive.setHex(XorGateVisualFactory.HIGH_COLOR);
     //tailMaterial.emissiveIntensity = 0;
-    const tail = new THREE.Mesh(XorGateVisualFactory.tailGeometry, envelopeMaterial);
+    const tail = new THREE.Mesh(this.tailGeometry, envelopeMaterial);
     tail.userData = {
       type: 'component',
       componentId: component.id,
@@ -89,58 +88,71 @@ export class XorGateVisualFactory extends ComponentVisualFactoryBase {
     };
     tail.rotateX(-Math.PI / 2);
     tail.rotateY(Math.PI);
-    tail.position.set(-0.25, 0.35, -0.1);
+    tail.position.set(-0.25, 0.35, 0);
     group.add(tail);
 
-    // VCC pin group
-    const vccGroup = this.createPinGroup(component.id, component.pins[0]!, 'vcc');
-    vccGroup.position.set(0.15, 0, 0.69);
-    vccGroup.rotateX(Math.PI / 2);
-    group.add(vccGroup);
-
-    // inputs group
-    const input1Group = this.createPinGroup(
-      component.id,
-      component.pins[1]!,
-      'input1',
-      null,
-      new THREE.Euler(0.5, 0, 0)
-    );
-    input1Group.position.set(1.1, 0, 0.43);
-    input1Group.rotateZ(Math.PI / 2);
-    input1Group.rotateX(Math.PI);
-    group.add(input1Group);
-
-    const input2Group = this.createPinGroup(
-      component.id,
-      component.pins[2]!,
-      'input2',
-      null,
-      new THREE.Euler(-0.5, 0, 0)
-    );
-    input2Group.position.set(1.1, 0, -0.63);
-    input2Group.rotateZ(Math.PI / 2);
-    input2Group.rotateX(Math.PI);
-    group.add(input2Group);
-
-    // Emitter pin group
-    const outputGroup = this.createPinGroup(component.id, component.pins[3]!, 'output');
-    outputGroup.position.set(-0.7, 0, -0.05);
-    outputGroup.rotateZ(Math.PI / 2);
-    group.add(outputGroup);
+    // pins (not called if preview - no pins)
+    if (component.pins.length > 0) {
+      this.createPinsVisual(component, context, group);
+    }
 
     this.updateFromConfiguration(group, component.config);
     return group;
   }
 
+  protected createPinsVisual(component: Component, context: VisualContext, group: THREE.Group) {
+    const vccNode = context.getENode(component.pins[0]!);
+    if (vccNode) {
+      const vccGroup = this.createPinGroup(vccNode, 'bottom');
+      vccGroup.position.set(0.15, 0, 0.79);
+      group.add(vccGroup);
+    }
+
+    const gndNode = context.getENode(component.pins[4]!);
+    if (gndNode) {
+      const gndGroup = this.createPinGroup(gndNode, 'top');
+      gndGroup.position.set(0.15, 0, -0.79);
+      group.add(gndGroup);
+    }
+
+    const input1Node = context.getENode(component.pins[1]!);
+    if (input1Node) {
+      const input1Group = this.createPinGroup(input1Node, 'right', new THREE.Euler(0.45, 0, 0));
+      input1Group.position.set(1.1, 0, 0.5);
+      group.add(input1Group);
+    }
+
+    const input2Node = context.getENode(component.pins[2]!);
+    if (input2Node) {
+      const input2Group = this.createPinGroup(input2Node, 'right', new THREE.Euler(-0.45, 0, 0));
+      input2Group.position.set(1.1, 0, -0.5);
+      group.add(input2Group);
+    }
+
+    const outputNode = context.getENode(component.pins[3]!);
+    if (outputNode) {
+      const outputGroup = this.createPinGroup(outputNode, 'left');
+      outputGroup.position.set(-0.7, 0, -0.05);
+      group.add(outputGroup);
+    }
+  }
+
   /**
-   * Get config form definition for OR Gate
+   * Get config form definition for XOR/XNOR Gate
    *
-   * @returns Form definition with activationLogic boolean field
+   * @param config - Optional current config to determine disabled state of transitionSpan
+   * @returns Form definition with defaultLogicFamily dropdown, activationLogic boolean, and transitionSpan number
    */
-  override getConfigFormDefinition(): ConfigFormDefinition | null {
+  override getConfigFormDefinition(config?: Map<string, string>): ConfigFormDefinition | null {
+    const logicFamily = config?.get('defaultLogicFamily') ?? 'CMOS1';
     return {
       fields: [
+        {
+          key: 'defaultLogicFamily',
+          label: 'Logic Family',
+          type: 'dropdown',
+          options: { CMOS: 'CMOS1', TTL: 'TTL1', Sandbox: 'Sandbox' },
+        },
         {
           key: 'activationLogic',
           label: 'Activation Logic',
@@ -148,8 +160,10 @@ export class XorGateVisualFactory extends ComponentVisualFactoryBase {
         },
         {
           key: 'transitionSpan',
-          label: 'Transition Span (ticks)',
+          label: 'Propagation delay (ticks)',
           type: 'number',
+          min: 1,
+          disabled: logicFamily !== 'Sandbox',
         },
         {
           key: 'initializationOrder',
@@ -169,6 +183,7 @@ export class XorGateVisualFactory extends ComponentVisualFactoryBase {
    */
   override mapCoreConfigToForm(config: Map<string, string>): Map<string, any> {
     const formData = new Map<string, any>();
+    formData.set('defaultLogicFamily', config.get('defaultLogicFamily') ?? 'CMOS1');
     const activationLogic = config.get('activationLogic');
     formData.set('activationLogic', activationLogic === 'positive');
     formData.set('transitionSpan', parseFloat(config.get('transitionSpan') || '1'));
@@ -185,6 +200,7 @@ export class XorGateVisualFactory extends ComponentVisualFactoryBase {
    */
   override mapFormToCoreConfig(formData: Map<string, any>): Map<string, string> {
     const config = new Map<string, string>();
+    config.set('defaultLogicFamily', formData.get('defaultLogicFamily') ?? 'CMOS1');
     const activationLogic = formData.get('activationLogic');
     config.set('activationLogic', activationLogic ? 'positive' : 'negative');
     config.set('transitionSpan', formData.get('transitionSpan').toString());
@@ -202,8 +218,8 @@ export class XorGateVisualFactory extends ComponentVisualFactoryBase {
       envelopeMesh.userData.initialState = 'high';
       if (!negativeMarkerMesh) {
         negativeMarkerMesh = new THREE.Mesh(
-          XorGateVisualFactory.negativeMarkerGeometry,
-          XorGateVisualFactory.negativeMarkerMaterial
+          this.negativeMarkerGeometry,
+          this.negativeMarkerMaterial
         );
         negativeMarkerMesh.userData = {
           type: 'component',
@@ -211,7 +227,7 @@ export class XorGateVisualFactory extends ComponentVisualFactoryBase {
           part: 'negativeMarker',
         };
 
-        negativeMarkerMesh.position.set(-0.7, 0.15, -0.7);
+        negativeMarkerMesh.position.set(-0.7, 0.15, -0.6);
         object3D.add(negativeMarkerMesh);
       }
     } else {

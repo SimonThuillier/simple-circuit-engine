@@ -6,12 +6,12 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { SwitchBehavior } from '../../../../src/core/simulation/behaviors/basic/SwitchBehavior';
-import { Component } from '../../../../src/core/Component';
-import { ComponentType } from '../../../../src/core/types/ComponentType';
-import { Position } from '../../../../src/core/types/Position';
-import { Rotation } from '../../../../src/core/types/Rotation';
+import { Component } from '../../../../src/core/topology/Component';
+import { Position } from '../../../../src/core/utils/Position';
+import { Rotation } from '../../../../src/core/utils/Rotation';
 import { SwitchState } from '../../../../src/core/simulation/states/basic/SwitchState';
-import type { UserCommand } from '../../../../src/core/simulation';
+import {ComponentType} from "../../../../src";
+import type {IUserCommand} from "../../../../src";
 
 /**
  * Create a mock switch component with config
@@ -29,7 +29,7 @@ function createToggleCommand(
   targetId: string,
   scheduledAtTick: number,
   tickCount?: number
-): UserCommand {
+): IUserCommand {
   const parameters =
     tickCount !== undefined ? new Map<string, string>([['tickCount', String(tickCount)]]) : null;
 
@@ -132,7 +132,7 @@ describe('SwitchBehavior - tickCount (017-simulation-speed)', () => {
 
       // Create command with invalid tickCount
       const parameters = new Map<string, string>([['tickCount', 'invalid']]);
-      const command: UserCommand = {
+      const command: IUserCommand = {
         type: 'toggle_switch',
         targetId: switchComp.id as any,
         scheduledAtTick: 10,

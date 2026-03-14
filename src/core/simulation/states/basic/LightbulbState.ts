@@ -4,7 +4,8 @@
  */
 
 import { ComponentState } from '../ComponentState';
-import type { UUID } from '../../../types/Identifier';
+
+import type {UUID} from "../../../utils/types";
 
 /**
  * Simulation state for Lightbulb components.

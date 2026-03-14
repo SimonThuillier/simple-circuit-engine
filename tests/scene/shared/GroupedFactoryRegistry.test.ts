@@ -4,7 +4,6 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { ComponentType } from '../../../src/core/types/ComponentType';
 import {
   GroupedFactoryRegistry,
   DefaultVisualFactory,
@@ -14,10 +13,10 @@ import {
   SmallLEDVisualFactory,
   RectangleLEDVisualFactory,
   RelayVisualFactory,
-  TransistorVisualFactory,
   LabelVisualFactory,
 } from '../../../src/scene/shared/components';
 import { registerBasicComponentsFactories } from '../../../src/scene/setup';
+import {ComponentType} from "../../../src";
 
 describe('GroupedFactoryRegistry', () => {
   let registry: GroupedFactoryRegistry;
@@ -464,7 +463,7 @@ describe('GroupedFactoryRegistry', () => {
       expect(groups.find((g) => g.id === 'basic')?.label).toBe('Basic Components');
     });
 
-    it('should put Battery, Switch, Lightbulb, SmallLED, RectangleLED, Relay, Transistor in basic group', () => {
+    it('should put Battery, Switch, Lightbulb, SmallLED, RectangleLED, Relay in basic group', () => {
       const groupedRegistry = new GroupedFactoryRegistry(new DefaultVisualFactory());
       registerBasicComponentsFactories(groupedRegistry);
 
@@ -475,7 +474,6 @@ describe('GroupedFactoryRegistry', () => {
       expect(basicTypes).toContain(ComponentType.SmallLED);
       expect(basicTypes).toContain(ComponentType.RectangleLED);
       expect(basicTypes).toContain(ComponentType.Relay);
-      expect(basicTypes).toContain(ComponentType.Transistor);
     });
   });
 });

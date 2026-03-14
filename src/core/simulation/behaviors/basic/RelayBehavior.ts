@@ -3,17 +3,16 @@
  * @module core/simulation/behaviors
  */
 
-import type { UUID } from '../../../types/Identifier';
-import type { Component } from '../../../Component';
-import type { ENodeSourceType } from '../../../types/ENodeSourceType';
-import type { NodeElectricalState } from '../../states/basic/NodeElectricalState';
+import type { Component } from '../../../topology/Component';
 import type { ComponentState } from '../../states/ComponentState';
-import type { ScheduledEvent, UserCommand } from '../../types';
-import type { ComponentBehavior, BehaviorResult } from '../ComponentBehavior';
-import { ComponentType } from '../../../types/ComponentType';
+import {type IScheduledEvent, TRANSITION_DEFAULTS} from '../../types';
+import {ComponentBehaviorMixin} from '../ComponentBehavior';
 import { RelayState } from '../../states/basic/RelayState';
 
-import { TRANSITION_DEFAULTS } from '../../types/SimulationConstants';
+import type {IBehaviorResult, IComponentBehavior} from "../types";
+import type {INodeElectricalState} from "../../states";
+import type {UUID} from "../../../utils/types";
+import {ComponentType, ENodeSourceType} from "../../../topology/types";
 
 /**
  * Get the transition span from component config.
@@ -33,8 +32,11 @@ function getTransitionSpan(config: Map<string, string>): number {
  *
  * @public
  */
-export class RelayBehavior implements ComponentBehavior {
-  readonly componentType = ComponentType.Relay;
+export class RelayBehavior extends ComponentBehaviorMixin implements IComponentBehavior {
+
+  constructor() {
+    super(ComponentType.Relay);
+  }
 
   /**
    * Create initial state for a relay.
@@ -43,14 +45,14 @@ export class RelayBehavior implements ComponentBehavior {
    * @returns Relay Initial state (open by default)
    */
   createInitialState(component: Component): ComponentState {
-    if (component.type !== ComponentType.Relay) {
+    if (component.type !== this._componentType) {
       throw new Error(`Invalid component type for RelayBehavior: ${component.type}`);
     }
     const state = component.config.get('activationLogic') === 'negative' ? 'closed' : 'open';
     return new RelayState(component.id, state);
   }
 
-  allowConductivity(
+  override allowConductivity(
     component: Component,
     state: ComponentState,
     _conductivityType: ENodeSourceType,
@@ -79,17 +81,13 @@ export class RelayBehavior implements ComponentBehavior {
    * @param nodeStates
    * @param targetTick
    */
-  onPinsChange(
+  override onPinsChange(
     component: Component,
     state: ComponentState,
-    nodeStates: ReadonlyMap<UUID, NodeElectricalState>,
+    nodeStates: ReadonlyMap<UUID, INodeElectricalState>,
     targetTick: number
-  ): BehaviorResult {
-    const pinStates: Map<string, NodeElectricalState> = new Map();
-
-    for (const pinId of component.pins) {
-      pinStates.set(component.getPinLabel(pinId)!, nodeStates.get(pinId as UUID)!);
-    }
+  ): IBehaviorResult {
+    const pinStates = this.getPinStates(component, nodeStates);
 
     const isCommanded =
       (pinStates.get('cmd_in')!.hasVoltage && pinStates.get('cmd_in')!.hasCurrent) ||
@@ -101,7 +99,7 @@ export class RelayBehavior implements ComponentBehavior {
       component.config.get('activationLogic') === 'negative' ? !isCommanded : isCommanded;
 
     let hasChanged = false;
-    const scheduledEvents: ScheduledEvent[] = [];
+    const scheduledEvents: IScheduledEvent[] = [];
     const transitionSpan = getTransitionSpan(component.config);
 
     if (shouldBeClosed) {
@@ -135,27 +133,16 @@ export class RelayBehavior implements ComponentBehavior {
     return {
       componentState: state,
       hasChanged: hasChanged,
+      shouldCancelPending: false,
       scheduledEvents: scheduledEvents,
     };
   }
 
-  onUserCommand(
+  override onEventFiring(
     _component: Component,
     state: ComponentState,
-    _command: UserCommand
-  ): BehaviorResult {
-    return {
-      componentState: state,
-      hasChanged: false,
-      scheduledEvents: [],
-    };
-  }
-
-  onEventFiring(
-    _component: Component,
-    state: ComponentState,
-    event: ScheduledEvent
-  ): BehaviorResult {
+    event: IScheduledEvent
+  ): IBehaviorResult {
     let hasChanged = false;
 
     if (event.type === 'ClosingEnd') {
@@ -175,6 +162,7 @@ export class RelayBehavior implements ComponentBehavior {
     return {
       componentState: state,
       hasChanged: hasChanged,
+      shouldCancelPending: false,
       scheduledEvents: [],
     };
   }

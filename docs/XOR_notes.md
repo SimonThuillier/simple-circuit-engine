@@ -19,3 +19,70 @@ For your educational library, odd parity is what people would expect from a comp
 ● Yes, exactly. A ⊕ B ⊕ C ⊕ D ⊕ E ⊕ F ⊕ G ⊕ H — output high when an odd number of the 8 inputs are high. It scales to any number of inputs by cascading.
 
 In practice an 8-input XOR is a parity generator — it outputs the parity bit of the 8-input word, which is directly useful for error detection.
+
+
+## CMOS design 
+
+CMOS 2-tick XOR — Transmission Gate Design
+
+The native CMOS XOR uses a complementary transmission gate multiplexer, not gate-level decomposition. Here's the 8-transistor, 2-stage design:
+
+Schematic
+
+          Vdd         Vdd
+           │           │
+          M1(P)       M3(P)
+    A ──┤gate    B ──┤gate
+           │           │
+           ├── A̅       ├── B̅
+           │           │
+          M2(N)       M4(N)
+    A ──┤gate    B ──┤gate
+           │           │
+          GND         GND
+
+
+    ── STAGE 1 (tick 1): two parallel inverters ──────────
+
+
+          TG1: passes B when A=0          TG2: passes B̅ when A=1
+         ┌─────────────────┐             ┌─────────────────┐
+         │  M5(P)          │             │  M7(P)          │
+    B ───┤src         drain├──┐    B̅ ───┤src         drain├──┐
+         │  gate=A         │  │         │  gate=A̅         │  │
+         │                 │  │         │                  │  │
+         │  M6(N)          │  ├── OUT   │  M8(N)          │  ├── OUT
+    B ───┤src         drain├──┘    B̅ ───┤src         drain├──┘
+         │  gate=A̅        │             │  gate=A         │
+         └─────────────────┘             └─────────────────┘
+
+
+    ── STAGE 2 (tick 2): transmission gate mux ───────────
+
+How it works
+
+Stage 1 (tick 1) — Two inverters run in parallel, producing A̅ and B̅.
+
+Stage 2 (tick 2) — Two transmission gates act as a 2:1 multiplexer:
+- TG1 (M5 PMOS gate=A, M6 NMOS gate=A̅): conducts when A=0, passes B to output
+- TG2 (M7 PMOS gate=A̅, M8 NMOS gate=A): conducts when A=1, passes B̅ to output
+
+Verification
+
+┌─────┬─────┬───────────┬────────┬──────┐
+│  A  │  B  │ Active TG │ Output │ XOR? │
+├─────┼─────┼───────────┼────────┼──────┤
+│ 0   │ 0   │ TG1       │ B = 0  │ 0    │
+├─────┼─────┼───────────┼────────┼──────┤
+│ 0   │ 1   │ TG1       │ B = 1  │ 1    │
+├─────┼─────┼───────────┼────────┼──────┤
+│ 1   │ 0   │ TG2       │ B̅ = 1  │ 1    │
+├─────┼─────┼───────────┼────────┼──────┤
+│ 1   │ 1   │ TG2       │ B̅ = 0  │ 0    │
+└─────┴─────┴───────────┴────────┴──────┘
+
+Why 2 ticks maps to log2(n) * 2
+
+Each tick = 1 inverter-equivalent stage. The XOR needs:
+1. Complement generation — 1 inverter delay (the inverters on A and B run in parallel, so it's still 1 tick)
+2. Transmission gate selection — 1 inverter-equivalent delay (the TG switching speed is comparable to an inverter)

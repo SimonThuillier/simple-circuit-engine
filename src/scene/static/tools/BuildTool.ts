@@ -1725,7 +1725,7 @@ export class BuildTool implements IEditingTool {
           new Rotation(0),
           [] // Empty pins array for preview
         );
-        visual = factory.createVisual(tempComponent);
+        visual = factory.createVisual(tempComponent, this._controller.visualContext);
         visual.rotation.set(0, factory.defaultRotation(), 0);
       }
 
@@ -1808,9 +1808,9 @@ export class BuildTool implements IEditingTool {
     const previewBox = new THREE.Box3().setFromObject(this.ghostPreview);
     const componentObjects = this._controller.componentObject3Ds;
 
-    for (const [_id, componentGroup] of componentObjects) {
-      const componentBox = new THREE.Box3().setFromObject(componentGroup);
-      if (previewBox.intersectsBox(componentBox)) {
+    for (const [_id, otherGroup] of componentObjects) {
+      // to make this rule not too strict we signal overlap only if ghost box contains the center of other component box
+      if(previewBox.containsPoint(otherGroup.position)){
         return true;
       }
     }

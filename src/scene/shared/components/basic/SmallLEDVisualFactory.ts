@@ -2,7 +2,7 @@ import { ComponentVisualFactoryBase } from '../ComponentVisualFactory';
 import type { Component, ComponentState, SmallLEDState } from 'simple-circuit-engine/core';
 import { presetOrHexToHex, hexToPresetOrHex } from '../../utils/ColorUtils';
 import * as THREE from 'three';
-import type { ConfigFormDefinition } from '../../types';
+import type { ConfigFormDefinition, VisualContext } from '../../types';
 
 /**
  * Visual factory for SmallLED components
@@ -19,11 +19,10 @@ import type { ConfigFormDefinition } from '../../types';
 export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
   /** LED lit color (yellow glow) */
   private static readonly LED_LIT_COLOR = 0xffff00;
-
   /** LED lit emissive intensity */
   private static readonly LED_LIT_INTENSITY = 1.0;
 
-  createVisual(component: Component): THREE.Object3D {
+  createVisual(component: Component, context: VisualContext): THREE.Object3D {
     // Root group (not rendered, just organizational)
     const group = new THREE.Group();
     group.userData = {
@@ -37,9 +36,9 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
     group.add(hitbox);
 
     // Visual LED
-    const ledMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    const material = new THREE.MeshStandardMaterial({ color: 0xffffff });
     const ledGeometry = new THREE.CylinderGeometry(0.25, 0.25, 1, 16, 4, false, 0, Math.PI * 2);
-    const led = new THREE.Mesh(ledGeometry, ledMaterial);
+    const led = new THREE.Mesh(ledGeometry, material);
     led.userData = {
       type: 'component',
       componentId: component.id,
@@ -50,22 +49,45 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
     led.position.set(0, 0.25, 0);
     group.add(led);
 
-    // Input pin group
-    const inputPinGroup = this.createPinGroup(component.id, component.pins[0]!, 'input');
-    inputPinGroup.position.set(-0.25, 0, 0);
-    inputPinGroup.rotateZ(Math.PI / 2);
-    inputPinGroup.rotateY(Math.PI);
-    group.add(inputPinGroup);
-
-    // Output pin group
-    const outputPinGroup = this.createPinGroup(component.id, component.pins[1]!, 'output');
-    outputPinGroup.position.set(0.25, 0, 0);
-    outputPinGroup.rotateZ(-Math.PI / 2);
-    outputPinGroup.rotateY(Math.PI);
-    group.add(outputPinGroup);
+    // pins (not called if preview - no pins)
+    if (component.pins.length > 0) {
+      this.createPinsVisual(component, context, group, material);
+    }
 
     this.updateFromConfiguration(group, component.config);
     return group;
+  }
+
+  private createPinsVisual(
+      component: Component,
+      context: VisualContext,
+      group: THREE.Group,
+      material: THREE.MeshStandardMaterial) {
+    const inputNode = context.getENode(component.pins[0]!);
+    if (inputNode) {
+      const pin1Group = this.createPinGroup(inputNode,'left');
+      pin1Group.position.set(-0.25, 0, 0);
+      group.add(pin1Group);
+
+      const pin1Counterpart =
+          this.createPinCounterpart(pin1Group, material);
+      if(!!pin1Counterpart){
+        group.add(pin1Counterpart);
+      }
+    }
+
+    const outputNode = context.getENode(component.pins[1]!);
+    if (outputNode) {
+      const pin2Group = this.createPinGroup(outputNode,'right');
+      pin2Group.position.set(0.25, 0, 0);
+      group.add(pin2Group);
+
+      const pin2Counterpart =
+          this.createPinCounterpart(pin2Group, material);
+      if(!!pin2Counterpart){
+        group.add(pin2Counterpart);
+      }
+    }
   }
 
   /**

@@ -7,14 +7,19 @@
  */
 
 import * as THREE from 'three';
-import type { Component, Wire, ENode, UserCommand, Circuit } from 'simple-circuit-engine/core';
+import {
+    type Component,
+    type Wire,
+    type ENode,
+    type Circuit,
+    type IUserCommand,
+    TRANSITION_DEFAULTS, SIMULATION_SPEED
+} from 'simple-circuit-engine/core';
 import {
   ENodeType,
   ComponentType,
   CircuitRunner,
   BehaviorRegistry,
-  SIMULATION_SPEED,
-  TRANSITION_DEFAULTS,
 } from 'simple-circuit-engine/core';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
 import type { SharedResources, HoveredElement, ControllerOptions } from '../shared/types';
@@ -590,6 +595,7 @@ export class CircuitRunnerController extends AbstractCircuitController {
     const componentType = componentGroup.userData.componentType;
     const componentId = componentGroup.userData.componentId;
     switch (componentType) {
+      case ComponentType.DoubleThrowSwitch:
       case ComponentType.Switch: {
         // Get component to read its config
         const component = this._circuit?.getComponent(componentId);
@@ -599,7 +605,7 @@ export class CircuitRunnerController extends AbstractCircuitController {
         const transitionUserSpan = this._getTransitionUserSpan(component.config);
         const tickCount = this.computeTickCount(transitionUserSpan);
 
-        const command: UserCommand = {
+        const command: IUserCommand = {
           type: 'toggle_switch',
           targetId: componentId,
           scheduledAtTick: this._runner.getCurrentTick(),
@@ -677,7 +683,7 @@ export class CircuitRunnerController extends AbstractCircuitController {
     try {
       const factory = this.factoryRegistry.get(component.type);
       // Support both function-based (legacy) and class-based (new) factories
-      const mesh = factory.createVisual(component);
+      const mesh = factory.createVisual(component, this.visualContext);
 
       // Position mesh at component location (2D circuit -> 3D world)
       mesh.position.copy(gridToWorldPosition(component.position));

@@ -3,113 +3,120 @@
  * @module core/simulation/behaviors
  */
 
-import type { UUID } from '../../types/Identifier.js';
-import type { Component } from '../../Component.js';
-import type { ComponentType } from '../../types/ComponentType.js';
-import type { ENodeSourceType } from '../../types/ENodeSourceType.js';
-import type { NodeElectricalState } from '../states/basic/NodeElectricalState';
-import type { ComponentState } from '../states/ComponentState.js';
-import type { ScheduledEvent, UserCommand } from '../types';
-/**
- * Result returned by component behavior evaluation.
- * Describes state changes and future events to schedule.
- *
- * @public
- */
-export interface BehaviorResult {
-  /**
-   * Updated component state
-   */
-  readonly componentState: ComponentState;
-
-  /**
-   * boolean indicating
-   * if the component state has changed (or events scheduled ?)
-   */
-  hasChanged: boolean;
-
-  /**
-   * Events to schedule for future ticks (e.g., delayed transitions).
-   */
-  readonly scheduledEvents: ReadonlyArray<ScheduledEvent>;
-}
+import type {Component} from '../../topology/Component';
+import {ComponentState} from '../states/ComponentState.js';
+import type {IScheduledEvent, IUserCommand} from '../types';
+import type {IBehaviorResult} from "./types";
+import type {INodeElectricalState} from "../states/types";
+import type {UUID} from "../../utils/types";
+import {
+  ComponentType,
+  type IComponentTypeMetadata,
+  ENodeSourceType,
+  COMPONENT_TYPE_METADATA
+} from "../../topology/types";
 
 /**
- * Component behavior interface for registry-based extensibility.
- * Each component type (Battery, LED, Switch, etc.) implements this interface.
- *
- * Behaviors are stateless - all state is stored in ComponentState and SimulationState.
- * The behavior's job is to compute new states based on current inputs and component state.
- *
- * @public
+ * to factorize default implementations in component behaviors
  */
-export interface ComponentBehavior {
+export abstract class ComponentBehaviorMixin {
   /**
    * Component type this behavior handles (e.g., "battery", "led", "switch").
    * Used as the key in BehaviorRegistry.
    */
-  readonly componentType: ComponentType;
+  protected readonly _componentType: ComponentType;
+
+  constructor(componentType: ComponentType) {
+    this._componentType = componentType;
+  }
+
+  get componentType(): ComponentType {
+    return this._componentType;
+  }
+
+  protected get typeMetadata(): IComponentTypeMetadata {
+    const metadata = COMPONENT_TYPE_METADATA[this._componentType];
+    if (!metadata) {
+      throw new Error(`Unknown metadata for Component type ${this._componentType}`);
+    }
+    return metadata;
+  }
+
+  protected getPinStates(
+      component: Component,
+      nodeStates: ReadonlyMap<UUID, INodeElectricalState>
+  ): Map<string, INodeElectricalState> {
+    const pinStates: Map<string, INodeElectricalState> = new Map();
+    for (const pinId of component.pins) {
+      pinStates.set(component.getPinLabel(pinId)!, nodeStates.get(pinId as UUID)!);
+    }
+    return pinStates;
+  }
 
   /**
-   * Create initial state for a component instance.
-   * Called when simulation is initialized.
-   * Initial state may use component satic configuration (e.g., initial switch position).
-   *
-   * @param component - The component to initialize
-   * @returns Initial ComponentState for this component
-   */
-  createInitialState(component: Component): ComponentState;
-
-  /**
-   * Determine if conductivity is allowed between two pins of the component.
-   * Called during simulation when evaluating electrical connectivity.
-   * @param component
-   * @param state current component state
-   * @param conductivityType
-   * @param pinId
-   * @param otherPinId
-   */
-  allowConductivity(
-    component: Component,
-    state: ComponentState,
-    conductivityType: ENodeSourceType,
-    pinId: string,
-    otherPinId: string
-  ): boolean;
-
-  /**
-   * Define component state change in response to its pins state change (after propagateConductivity)
-   *
-   * @param component - The component being evaluated
-   * @param state - component state prior to this evaluation
-   * @param nodeStates - Current electrical states of all ENodes in the simulation
-   * @param targetTick - target tick
-   * @returns Result containing updated state and scheduled events
+   * Default: nothing happens
+   * @param _component
+   * @param componentState
+   * @param _nodeStates
+   * @param _targetTick
    */
   onPinsChange(
-    component: Component,
-    state: ComponentState,
-    nodeStates: ReadonlyMap<UUID, NodeElectricalState>,
-    targetTick: number
-  ): BehaviorResult;
+      _component: Component,
+      componentState: ComponentState,
+      _nodeStates: ReadonlyMap<UUID, INodeElectricalState>,
+      _targetTick: number
+  ): IBehaviorResult {
+
+    return {
+      componentState: componentState,
+      hasChanged: false,
+      shouldCancelPending: false,
+      scheduledEvents: [],
+    };
+  }
 
   /**
-   * Define component state change in response to a User command being received
-   *
-   * @param component - The component being evaluated
-   * @param state - component state prior to this evaluation
-   * @param command - UserCommand to process
-   * @returns Result containing updated state and scheduled events
+   * Default: no conductivity between pins
+   * @param _component
+   * @param _state
+   * @param _conductivityType
+   * @param _pinId
+   * @param _otherPinId
    */
-  onUserCommand(component: Component, state: ComponentState, command: UserCommand): BehaviorResult;
+  allowConductivity(
+      _component: Component,
+      _state: ComponentState,
+      _conductivityType: ENodeSourceType,
+      _pinId: string,
+      _otherPinId: string
+  ): boolean {
+    return false;
+  }
 
-  /**
-   * Define component state change in response to a ScheduledEvent firing at ready
-   *
-   * @param component - The component being evaluated
-   * @param state - component state prior to this evaluation
-   * @param event - firing ScheduledEvent to process
-   * @returns Result containing updated state and scheduled events
-   */
-  onEventFiring(component: Component, state: ComponentState, event: ScheduledEvent): BehaviorResult;
+  onUserCommand(
+      _component: Component,
+      state: ComponentState,
+      _command: IUserCommand
+  ): IBehaviorResult {
+    return {
+      componentState: state,
+      hasChanged: false,
+      shouldCancelPending: false,
+      scheduledEvents: [],
+    };
+  }
+
+  onEventFiring(
+      _component: Component,
+      state: ComponentState,
+      _event: IScheduledEvent
+  ): IBehaviorResult {
+    return {
+      componentState: state,
+      hasChanged: false,
+      shouldCancelPending: false,
+      scheduledEvents: [],
+    };
+  }
 }
+

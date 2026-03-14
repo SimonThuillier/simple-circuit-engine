@@ -7,12 +7,13 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Circuit, ComponentType, Position, Rotation, ENodeType } from 'simple-circuit-engine/core';
+import { CircuitOptions } from '../../../src/core/topology/CircuitOptions.js';
 
 describe('Component Lifecycle Integration', () => {
   let circuit: Circuit;
 
   beforeEach(() => {
-    circuit = new Circuit();
+    circuit = new Circuit(new CircuitOptions());
   });
 
   describe('component creation and pin ENodes', () => {
@@ -54,19 +55,19 @@ describe('Component Lifecycle Integration', () => {
         new Rotation(0)
       );
       const comp2 = circuit.addComponent(
-        ComponentType.Transistor,
+        ComponentType.Inverter,
         new Position(10, 10),
         new Rotation(0)
       );
 
       // Each component has its own pins
       expect(comp1.pins.length).toBe(2);
-      expect(comp2.pins.length).toBe(3);
+      expect(comp2.pins.length).toBe(4);
 
       // Pin IDs should not overlap
       const allPins = [...comp1.pins, ...comp2.pins];
       const uniquePins = new Set(allPins);
-      expect(uniquePins.size).toBe(5);
+      expect(uniquePins.size).toBe(6);
     });
   });
 
@@ -240,7 +241,7 @@ describe('Component Lifecycle Integration', () => {
         new Rotation(90)
       );
       const comp2 = circuit.addComponent(
-        ComponentType.Transistor,
+        ComponentType.Inverter,
         new Position(30, 40),
         new Rotation(180)
       );
@@ -268,7 +269,7 @@ describe('Component Lifecycle Integration', () => {
       expect(restoredComp2?.position.x).toBe(30);
       expect(restoredComp2?.position.y).toBe(40);
       expect(restoredComp2?.rotation.angle).toBe(180);
-      expect(restoredComp2?.pins.length).toBe(3);
+      expect(restoredComp2?.pins.length).toBe(4);
     });
 
     it('should handle empty circuit serialization', () => {
@@ -311,16 +312,16 @@ describe('Component Lifecycle Integration', () => {
   describe('automatic pin ENode creation (US2)', () => {
     it('should automatically create ENodes for component pins', () => {
       const component = circuit.addComponent(
-        ComponentType.Transistor,
+        ComponentType.Inverter,
         new Position(10, 20),
         new Rotation(0)
       );
 
-      // Component should have 3 pin IDs
-      expect(component.pins.length).toBe(3);
+      // Component should have 4 pin IDs (vcc, input, output, gnd)
+      expect(component.pins.length).toBe(4);
 
       // Each pin should have a corresponding ENode
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 4; i++) {
         const pinId = component.pins[i];
         const enode = circuit.getENode(pinId!);
 
@@ -338,14 +339,14 @@ describe('Component Lifecycle Integration', () => {
         new Rotation(0)
       );
       const comp2 = circuit.addComponent(
-        ComponentType.Transistor,
+        ComponentType.Inverter,
         new Position(10, 10),
         new Rotation(0)
       );
 
-      // Total ENodes should be 2 + 3 = 5
+      // Total ENodes should be 2 + 4 = 6
       const allENodes = circuit.getAllENodes();
-      expect(allENodes.length).toBe(5);
+      expect(allENodes.length).toBe(6);
 
       // Verify comp1 pins
       for (let i = 0; i < 2; i++) {
@@ -354,7 +355,7 @@ describe('Component Lifecycle Integration', () => {
       }
 
       // Verify comp2 pins
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 4; i++) {
         const enode = circuit.getENode(comp2.pins[i]!);
         expect(enode?.component).toBe(comp2.id);
       }

@@ -6,12 +6,13 @@
  */
 
 import * as THREE from 'three';
-import { Circuit } from '../../src/core/Circuit';
+import { Circuit } from '../../src/core/topology/Circuit';
+import { CircuitOptions } from '../../src/core/topology/CircuitOptions';
 import { CircuitRunner } from '../../src/core/simulation/CircuitRunner';
 import { BehaviorRegistry } from '../../src/core/simulation/behaviors/BehaviorRegistry';
-import { ComponentType } from '../../src/core/types/ComponentType';
 import type { Component } from '../../../src/core/components/Component';
 import type { ComponentVisualFactory } from '../../src/scene/shared/components/ComponentVisualFactory';
+import {ComponentType} from "../../src";
 
 /**
  * Create a simple mock circuit for testing
@@ -23,15 +24,17 @@ export function createMockCircuit(
   options: {
     name?: string;
     componentCount?: number;
+    componentTypes?: ComponentType[];
     wireCount?: number;
   } = {}
 ): Circuit {
-  const circuit = new Circuit(options.name ?? 'Test Circuit');
+  const circuit = new Circuit(new CircuitOptions(options.name ?? 'Test Circuit'));
 
   // Add components if requested
   const componentCount = options.componentCount ?? 0;
   for (let i = 0; i < componentCount; i++) {
-    circuit.addComponent(ComponentType.Battery, { x: i * 2, y: 0 }, 0);
+    const type = options.componentTypes?.[i] ?? ComponentType.Battery;
+    circuit.addComponent(type, { x: i * 2, y: 0 }, 0);
   }
 
   // Add wires if requested and there are components with pins

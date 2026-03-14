@@ -13,8 +13,8 @@ import {
 import { DefaultVisualFactory } from '../../../src/scene/shared/components/DefaultVisualFactory';
 import { SmallLEDVisualFactory } from '../../../src/scene/shared/components/basic/SmallLEDVisualFactory';
 import { SwitchVisualFactory } from '../../../src/scene/shared/components/basic/SwitchVisualFactory';
-import type { Component } from '../../../src/core/Component';
-import { ComponentType } from '../../../src/core/types/ComponentType';
+import type { Component } from '../../../src/core/topology/Component';
+import {ComponentType, ENode, ENodeType} from '../../../src/core';
 import { createMockCircuit } from '../helpers';
 import type { SmallLEDState } from '../../../src/core/simulation/states/basic/SmallLEDState';
 import type { SwitchState } from '../../../src/core/simulation/states/basic/SwitchState';
@@ -347,18 +347,20 @@ describe('ComponentVisualFactoryBase', () => {
   describe('createPinGroup()', () => {
     it('should create a pin group with correct userData', () => {
       const testFactory = new TestVisualFactory();
-      const pinGroup = (testFactory as any).createPinGroup('comp-123', 'pin-456', 'testPin');
+      const node = new ENode(ENodeType.Pin, 'comp-123', 'testPin');
+      const pinGroup = (testFactory as any).createPinGroup(node);
 
       expect(pinGroup).toBeInstanceOf(THREE.Group);
       expect(pinGroup.userData.type).toBe('enodeGroup');
       expect(pinGroup.userData.componentId).toBe('comp-123');
-      expect(pinGroup.userData.enodeId).toBe('pin-456');
+      expect(pinGroup.userData.enodeId).toBe(node.id);
       expect(pinGroup.userData.label).toBe('testPin');
     });
 
     it('should create hitbox and visual meshes', () => {
       const testFactory = new TestVisualFactory();
-      const pinGroup = (testFactory as any).createPinGroup('comp-123', 'pin-456', 'testPin');
+      const node = new ENode(ENodeType.Pin, 'comp-123', 'testPin');
+      const pinGroup = (testFactory as any).createPinGroup(node);
 
       let hitboxFound = false;
       let visualFound = false;
@@ -464,7 +466,7 @@ describe('SmallLEDVisualFactory - Animation', () => {
       componentTypes: [ComponentType.SmallLED],
     });
     component = circuit.getAllComponents()[0];
-    visual = factory.createVisual(component);
+    visual = factory.createVisual(component, circuit);
   });
 
   describe('updateAnimation()', () => {
@@ -541,7 +543,7 @@ describe('SwitchVisualFactory - Animation', () => {
       componentTypes: [ComponentType.Switch],
     });
     component = circuit.getAllComponents()[0];
-    visual = factory.createVisual(component);
+    visual = factory.createVisual(component, circuit);
   });
 
   describe('updateAnimation()', () => {
@@ -559,7 +561,7 @@ describe('SwitchVisualFactory - Animation', () => {
       // Get initial rotation
       let contactorGroup: THREE.Object3D | null = null;
       visual.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.userData.part === 'contactor') {
+        if (child.userData.part === 'contactor') {
           contactorGroup = child;
         }
       });

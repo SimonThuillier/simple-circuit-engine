@@ -36,7 +36,7 @@ This code set up the main CircuitEngine instance in edit mode on a new Circuit, 
 
 ```javascript
 import { WebGLRenderer } from 'three';
-import { Circuit, BehaviorRegistry, registerBasicComponentsBehaviors } from 'simple-circuit-engine/core';
+import { Circuit, CircuitOptions, BehaviorRegistry, registerBasicComponentsBehaviors } from 'simple-circuit-engine/core';
 import { CircuitEngine, engineOptions, GroupedFactoryRegistry, DefaultVisualFactory, registerBasicComponentsBehaviors } from 'simple-circuit-engine/scene';
 
 // Create component factory registry with basic components visual factories (for scene objects creation - rendering)
@@ -50,8 +50,8 @@ const behaviorRegistry = registerBasicComponentsBehaviors(new BehaviorRegistry()
 const container = document.getElementById('canva-container')!;
 const engine = new CircuitEngine(componentsFactoryRegistry, behaviorRegistry);
 engine.initialize(container, engineOptions());
-// set engine circuit to a new empty circuit (which it does by default)
-engine.setCircuit(new Circuit());
+// set engine circuit to a new empty circuit
+engine.setCircuit(new Circuit(new CircuitOptions()));
 
 // Create and setup WebGL renderer
 const renderer = new WebGLRenderer({ antialias: true, alpha: false });

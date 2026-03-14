@@ -17,7 +17,7 @@ const sampleCircuitPath = resolve(
 const relayCircuitPath = resolve(__dirname, '../../output/sample-circuits/relay-circuit.json');
 const transistorCircuitPath = resolve(
   __dirname,
-  '../../output/sample-circuits/transistor-circuit.json'
+  '../../output/sample-circuits/inverter-circuit.json'
 );
 
 describe('Integration Tests', () => {
@@ -75,8 +75,8 @@ describe('Integration Tests', () => {
     });
   });
 
-  describe('transistor-circuit.json', () => {
-    it('should render transistor-circuit.json within 3 seconds', () => {
+  describe('inverter-circuit.json', () => {
+    it('should render inverter-circuit.json within 3 seconds', () => {
       const startTime = Date.now();
 
       const circuitJson = readFileSync(transistorCircuitPath, 'utf-8');
@@ -93,11 +93,11 @@ describe('Integration Tests', () => {
       const endTime = Date.now();
       const duration = endTime - startTime;
 
-      // Verify transistor exists
-      expect(dot).toContain('transistor');
-      expect(dot).toContain('collector');
-      expect(dot).toContain('base');
-      expect(dot).toContain('emitter');
+      // Verify inverter exists
+      expect(dot).toContain('inverter');
+      expect(dot).toContain('vcc');
+      expect(dot).toContain('input');
+      expect(dot).toContain('output');
 
       // Performance check (excluding actual SVG rendering, just parsing + DOT generation)
       expect(duration).toBeLessThan(3000);

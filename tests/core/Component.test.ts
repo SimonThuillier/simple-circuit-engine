@@ -119,7 +119,7 @@ describe('Component', () => {
     it('should return the pins array', () => {
       const pins = ['pin-1', 'pin-2', 'pin-3'];
       const component = new Component(
-        ComponentType.Transistor,
+        ComponentType.Inverter,
         new Position(0, 0),
         new Rotation(0),
         pins
@@ -131,7 +131,7 @@ describe('Component', () => {
     it('should preserve pin order', () => {
       const pins = ['pin-a', 'pin-b', 'pin-c'];
       const component = new Component(
-        ComponentType.Transistor,
+        ComponentType.Inverter,
         new Position(0, 0),
         new Rotation(0),
         pins
@@ -229,7 +229,7 @@ describe('Component', () => {
 
     it('should roundtrip correctly', () => {
       const original = new Component(
-        ComponentType.Transistor,
+        ComponentType.Inverter,
         new Position(15, 25),
         new Rotation(180),
         ['pin-a', 'pin-b', 'pin-c']

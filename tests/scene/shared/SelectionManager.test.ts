@@ -10,12 +10,12 @@ import {
   SelectionManager,
   type SelectionCallback,
 } from '../../../src/scene/shared/SelectionManager';
-import type { UUID } from '../../../src/core/types/Identifier';
 import type {
   HoverableType,
   SelectionData,
   MonoSelectionData,
 } from '../../../src/scene/shared/types';
+import {UUID} from "../../../src";
 
 describe('SelectionManager', () => {
   let selectionManager: SelectionManager;

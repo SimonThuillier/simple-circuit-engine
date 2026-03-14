@@ -11,20 +11,22 @@ import {
   RelayBehavior,
   SmallLEDBehavior,
   SwitchBehavior,
-  TransistorBehavior,
-  BufferBehavior,
-  AndGateBehavior,
-  And4GateBehavior,
-  And8GateBehavior,
-  OrGateBehavior,
-  Or4GateBehavior,
-  Or8GateBehavior,
+  InverterBehavior,
+  DoubleThrowSwitchBehavior,
+  NandGateBehavior,
+  Nand4GateBehavior,
+  Nand8GateBehavior,
+  NorGateBehavior,
+  Nor4GateBehavior,
+  Nor8GateBehavior,
   XorGateBehavior,
+  Xor4GateBehavior,
+  Xor8GateBehavior,
 } from './simulation/behaviors';
 
 /**
  * Register all basic component behaviors in the given registry
- * Basic components are : Battery, Lightbulb, RectangleLED, Relay, SmallLED, Switch, Transistor, Buffer
+ * Basic components are : Battery, Lightbulb, RectangleLED, Relay, SmallLED, Switch, double switch
  * @public
  * @param registry
  * @return the input behavior registry for chaining
@@ -37,26 +39,28 @@ export function registerBasicComponentsBehaviors(registry: BehaviorRegistry): Be
     .register(new RelayBehavior())
     .register(new SmallLEDBehavior())
     .register(new SwitchBehavior())
-    .register(new TransistorBehavior())
-    .register(new BufferBehavior());
+    .register(new DoubleThrowSwitchBehavior());
   return registry;
 }
 
 /**
  * Register all gates component behaviors in the given registry
- * Gates components are : AndGate (2,4,8), OrGate (2,4,8), XorGate
+ * Gates components are : Inverter, NandGate (2,4,8), NorGate (2,4,8), XorGate (2,4,8)
  * @public
  * @param registry
  * @return the input behavior registry for chaining
  */
 export function registerGatesComponentsBehaviors(registry: BehaviorRegistry): BehaviorRegistry {
   registry
-    .register(new AndGateBehavior())
-    .register(new And4GateBehavior())
-    .register(new And8GateBehavior())
-    .register(new OrGateBehavior())
-    .register(new Or4GateBehavior())
-    .register(new Or8GateBehavior())
-    .register(new XorGateBehavior());
+    .register(new InverterBehavior())
+    .register(new NandGateBehavior())
+    .register(new Nand4GateBehavior())
+    .register(new Nand8GateBehavior())
+    .register(new NorGateBehavior())
+    .register(new Nor4GateBehavior())
+    .register(new Nor8GateBehavior())
+    .register(new XorGateBehavior())
+    .register(new Xor4GateBehavior())
+    .register(new Xor8GateBehavior());
   return registry;
 }

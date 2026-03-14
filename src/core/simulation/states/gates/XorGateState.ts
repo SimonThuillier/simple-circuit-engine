@@ -3,25 +3,16 @@
  * @module core/simulation/states
  */
 
-import type { UUID } from '../../../types/Identifier';
-import { ComponentState } from '../ComponentState';
+import {LogicGateState} from "./index";
+import type {UUID} from "../../../utils/types";
 
 /**
  * Simulation state for XOR Gate components.
- * Gates can be "low", "rising", "high", or "falling".
  *
  * @public
  */
-export class XorGateState extends ComponentState {
+export class XorGateState extends LogicGateState {
   constructor(componentId: UUID, initialState: string = 'low') {
     super(componentId, initialState);
-  }
-
-  get isInTransition(): boolean {
-    return this.state === 'rising' || this.state === 'falling';
-  }
-
-  get isHigh(): boolean {
-    return this.state === 'high';
   }
 }

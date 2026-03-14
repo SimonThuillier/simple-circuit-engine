@@ -7,8 +7,9 @@ import type { MapControls } from 'three/addons/controls/MapControls.js';
 import type { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import type { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import type { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
+import type { IUserCommand, IRunnerOptions } from 'simple-circuit-engine/core';
 
-import type { UUID, ComponentType, UserCommand, RunnerOptions } from 'simple-circuit-engine/core';
+import type { UUID, ComponentType, ENode } from 'simple-circuit-engine/core';
 
 import type { IFactoryRegistry } from './components/ComponentVisualFactory';
 import type { BranchingPointVisualFactory } from './BranchingPointVisualFactory';
@@ -17,6 +18,17 @@ import type { HoverManager } from './HoverManager';
 
 // Re-export Line2 types for convenience
 export type { Line2, LineGeometry, LineMaterial };
+
+/**
+ * Lightweight context passed to visual factories so they can access
+ * ENode data (subtype, source, wires…) when creating pin visuals.
+ *
+ * Circuit satisfies this interface structurally — controllers can pass
+ * `this._circuit` directly without a wrapper.
+ */
+export interface VisualContext {
+  getENode(id: UUID): ENode | undefined;
+}
 
 /**
  * Object types that can be interacted within the scene controllerType to render
@@ -124,7 +136,7 @@ export interface ControllerEventMap {
   simulationPaused: { tick: number };
   simulationStepped: { tick: number; result: unknown };
   simulationTick: { tick: number; dirty: unknown };
-  simulationUserCommand: UserCommand;
+  simulationUserCommand: IUserCommand;
   simulationStopped: { tick: number };
   simulationSpeedChanged: { previousSpeed: number; newSpeed: number };
 }
@@ -450,7 +462,7 @@ export interface EngineOptions {
    * Options passed to CircuitRunner when created
    * @default { enableHistory: false }
    */
-  runnerOptions?: RunnerOptions;
+  runnerOptions?: IRunnerOptions;
 }
 
 /**
@@ -482,6 +494,9 @@ export interface ConfigFieldDefinition {
 
   /** Step increment for number type */
   step?: number;
+
+  /** Whether this field is read-only in the form */
+  disabled?: boolean;
 }
 
 /**

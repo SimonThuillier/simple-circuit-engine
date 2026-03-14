@@ -3,14 +3,20 @@
  * @module core/simulation/behaviors
  */
 
-import type { Component } from '../../../Component';
+import type { Component } from '../../../topology/Component';
 import type { ComponentState } from '../../states/ComponentState';
-import { ComponentType } from '../../../types/ComponentType';
-import { SmallLEDBehavior } from './SmallLEDBehavior';
 import { RectangleLEDState } from '../../states/basic/RectangleLEDState';
+import type {INodeElectricalState} from "../../states";
+import {BipolarLightEmitterBehaviorMixin} from "./index";
+import type {IBehaviorResult, IComponentBehavior} from "../types";
+import type {UUID} from "../../../utils/types";
+import {ComponentType} from "../../../topology/types";
 
-export class RectangleLEDBehavior extends SmallLEDBehavior {
-  override readonly componentType = ComponentType.RectangleLED;
+export class RectangleLEDBehavior extends BipolarLightEmitterBehaviorMixin implements IComponentBehavior {
+
+  constructor() {
+    super(ComponentType.RectangleLED);
+  }
 
   /**
    * Create initial state for a RectangleLED.
@@ -18,10 +24,34 @@ export class RectangleLEDBehavior extends SmallLEDBehavior {
    * @param component - The smallLED component
    * @returns LED Initial state (always active and delivering voltage)
    */
-  override createInitialState(component: Component): ComponentState {
-    if (component.type !== ComponentType.RectangleLED) {
+  createInitialState(component: Component): ComponentState {
+    if (component.type !== this._componentType) {
       throw new Error(`Invalid component type for RectangleLEDBehavior: ${component.type}`);
     }
     return new RectangleLEDState(component.id);
+  }
+
+  /**
+   * only symmetrical behavior of LEDS is handled for now
+   * @param component
+   * @param state
+   * @param nodeStates
+   * @param targetTick
+   */
+  override onPinsChange(
+      component: Component,
+      state: ComponentState,
+      nodeStates: ReadonlyMap<UUID, INodeElectricalState>,
+      targetTick: number
+  ): IBehaviorResult {
+    const pinStates = this.getPinStates(component, nodeStates);
+
+    let activationCondition =
+        (pinStates.get('pin2')!.hasVoltage && pinStates.get('pin2')!.hasCurrent) ||
+        (pinStates.get('pin1')!.hasVoltage && pinStates.get('pin1')!.hasCurrent) ||
+        (pinStates.get('pin2')!.hasVoltage && pinStates.get('pin1')!.hasCurrent) ||
+        (pinStates.get('pin1')!.hasVoltage && pinStates.get('pin2')!.hasCurrent);
+
+    return this.getBehavior(component, state, activationCondition, targetTick);
   }
 }

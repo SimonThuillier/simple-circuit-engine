@@ -10,17 +10,16 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { CircuitEngine } from '../../src/scene/CircuitEngine';
 import { FactoryRegistry, DefaultVisualFactory } from '../../src/scene/shared/components';
 import { BehaviorRegistry } from '../../src/core/simulation/behaviors/BehaviorRegistry';
-import { Circuit } from '../../src/core/Circuit';
-import { ComponentType } from '../../src/core/types/ComponentType';
+import { Circuit } from '../../src/core/topology/Circuit';
 import type { IFactoryRegistry } from '../../src/scene/shared/components/ComponentVisualFactory';
-import { createMockCircuit } from './helpers';
-import { SIMULATION_SPEED } from '../../src';
+import { CircuitOptions } from '../../src/core/topology/CircuitOptions';
+import {ComponentType, SIMULATION_SPEED} from "../../src";
 
 /**
  * Create a simple test circuit with two batteries wired together
  */
 function createTestCircuit(): Circuit {
-  const circuit = new Circuit('Test Circuit');
+  const circuit = new Circuit(new CircuitOptions('Test Circuit'));
   const battery1 = circuit.addComponent(ComponentType.Battery, { x: 0, y: 0 }, 0);
   const battery2 = circuit.addComponent(ComponentType.Battery, { x: 2, y: 0 }, 0);
 

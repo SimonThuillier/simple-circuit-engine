@@ -3,18 +3,20 @@
  * @module core/simulation/behaviors
  */
 
-import type { UUID } from '../../../types/Identifier';
-import type { Component } from '../../../Component';
-import type { ENodeSourceType } from '../../../types/ENodeSourceType';
-import type { NodeElectricalState } from '../../states/basic/NodeElectricalState';
+import type { Component } from '../../../topology/Component';
 import type { ComponentState } from '../../states/ComponentState';
-import type { ScheduledEvent, UserCommand } from '../../types';
-import type { ComponentBehavior, BehaviorResult } from '../ComponentBehavior';
-import { ComponentType } from '../../../types/ComponentType';
 import { LightbulbState } from '../../states/basic/LightbulbState';
+import {BipolarLightEmitterBehaviorMixin} from "./index";
+import type {IBehaviorResult, IComponentBehavior} from "../types";
+import type {INodeElectricalState} from "../../states";
+import type {UUID} from "../../../utils/types";
+import {ComponentType} from "../../../topology/types";
 
-export class LightbulbBehavior implements ComponentBehavior {
-  readonly componentType = ComponentType.Lightbulb;
+export class LightbulbBehavior extends BipolarLightEmitterBehaviorMixin implements IComponentBehavior {
+
+  constructor() {
+    super(ComponentType.Lightbulb);
+  }
 
   /**
    * Create initial state for a lightbulb.
@@ -23,20 +25,10 @@ export class LightbulbBehavior implements ComponentBehavior {
    * @returns lightbulbInitial state (always active and delivering voltage)
    */
   createInitialState(component: Component): ComponentState {
-    if (component.type !== ComponentType.Lightbulb) {
+    if (component.type !== this._componentType) {
       throw new Error(`Invalid component type for lightbulbBehavior: ${component.type}`);
     }
     return new LightbulbState(component.id);
-  }
-
-  allowConductivity(
-    _component: Component,
-    _state: ComponentState,
-    _conductivityType: ENodeSourceType,
-    _pinId: string,
-    _otherPinId: string
-  ): boolean {
-    return true; // lightbulb always allows conductivity
   }
 
   /**
@@ -45,17 +37,13 @@ export class LightbulbBehavior implements ComponentBehavior {
    * @param nodeStates
    * @param targetTick
    */
-  onPinsChange(
+  override onPinsChange(
     component: Component,
     state: ComponentState,
-    nodeStates: ReadonlyMap<UUID, NodeElectricalState>,
+    nodeStates: ReadonlyMap<UUID, INodeElectricalState>,
     targetTick: number
-  ): BehaviorResult {
-    const pinStates: Map<string, NodeElectricalState> = new Map();
-
-    for (const pinId of component.pins) {
-      pinStates.set(component.getPinLabel(pinId)!, nodeStates.get(pinId as UUID)!);
-    }
+  ): IBehaviorResult {
+    const pinStates = this.getPinStates(component, nodeStates);
 
     let activationCondition =
       (pinStates.get('pin1')!.hasVoltage && pinStates.get('pin1')!.hasCurrent) ||
@@ -63,83 +51,6 @@ export class LightbulbBehavior implements ComponentBehavior {
       (pinStates.get('pin1')!.hasVoltage && pinStates.get('pin2')!.hasCurrent) ||
       (pinStates.get('pin2')!.hasVoltage && pinStates.get('pin1')!.hasCurrent);
 
-    let hasChanged = false;
-    const scheduledEvents: ScheduledEvent[] = [];
-
-    if (activationCondition) {
-      if (state.state === 'off' || state.state === 'goingOff') {
-        hasChanged = true;
-        state.state = 'goingOn';
-        state.startTick = targetTick;
-        scheduledEvents.push({
-          targetId: component.id,
-          scheduledAtTick: targetTick,
-          readyAtTick: targetTick + 1, // TODO handle component config later
-          type: 'GoingOnEnd',
-          parameters: undefined,
-        });
-        state.state = 'goingOn';
-      }
-    } else {
-      if (state.state === 'on' || state.state === 'goingOn') {
-        hasChanged = true;
-        state.state = 'goingOff';
-        state.startTick = targetTick;
-        scheduledEvents.push({
-          targetId: component.id,
-          scheduledAtTick: targetTick,
-          readyAtTick: targetTick + 1, // TODO handle component config later
-          type: 'GoingOffEnd',
-          parameters: undefined,
-        });
-        state.state = 'goingOff';
-      }
-    }
-
-    return {
-      componentState: state,
-      hasChanged: hasChanged,
-      scheduledEvents: scheduledEvents,
-    };
-  }
-
-  onUserCommand(
-    _component: Component,
-    state: ComponentState,
-    _command: UserCommand
-  ): BehaviorResult {
-    return {
-      componentState: state,
-      hasChanged: false,
-      scheduledEvents: [],
-    };
-  }
-
-  onEventFiring(
-    _component: Component,
-    state: ComponentState,
-    event: ScheduledEvent
-  ): BehaviorResult {
-    let hasChanged = false;
-
-    if (event.type === 'GoingOffEnd') {
-      if (state.state !== 'off') {
-        hasChanged = true;
-        state.startTick = event.readyAtTick;
-        state.state = 'off';
-      }
-    } else if (event.type === 'GoingOnEnd') {
-      if (state.state !== 'on') {
-        hasChanged = true;
-        state.startTick = event.readyAtTick;
-        state.state = 'on';
-      }
-    }
-
-    return {
-      componentState: state,
-      hasChanged: hasChanged,
-      scheduledEvents: [],
-    };
+    return this.getBehavior(component, state, activationCondition, targetTick);
   }
 }

@@ -3,18 +3,18 @@
  * @module core/simulation/behaviors
  */
 
-import type { UUID } from '../../../types/Identifier';
-import type { NodeElectricalState } from '../../states/basic/NodeElectricalState';
-import type { ScheduledEvent, UserCommand } from '../../types';
-import { Component } from '../../../Component';
-import { ComponentType } from '../../../types/ComponentType';
-import { ENodeSourceType } from '../../../types/ENodeSourceType';
-import type { ComponentBehavior, BehaviorResult } from '../ComponentBehavior';
+import { Component } from '../../../topology/Component';
+import {ComponentBehaviorMixin} from '../ComponentBehavior';
 import { BatteryState } from '../../states/basic/BatteryState';
 import type { ComponentState } from '../../states/ComponentState';
+import type {IComponentBehavior} from "../types";
+import {ComponentType} from "../../../topology/types";
 
-export class BatteryBehavior implements ComponentBehavior {
-  readonly componentType = ComponentType.Battery;
+export class BatteryBehavior extends ComponentBehaviorMixin implements IComponentBehavior {
+
+  constructor() {
+    super(ComponentType.Battery);
+  }
 
   /**
    * Create initial state for a battery.
@@ -23,69 +23,9 @@ export class BatteryBehavior implements ComponentBehavior {
    * @returns Battery Initial state (always active and delivering voltage)
    */
   createInitialState(component: Component): ComponentState {
-    if (component.type !== ComponentType.Battery) {
+    if (component.type !== this._componentType) {
       throw new Error(`Invalid component type for BatteryBehavior: ${component.type}`);
     }
     return new BatteryState(component.id);
-  }
-
-  allowConductivity(
-    _component: Component,
-    _state: ComponentState,
-    _conductivityType: ENodeSourceType,
-    _pinId: string,
-    _otherPinId: string
-  ): boolean {
-    return false;
-  }
-
-  /**
-   * Batteries are always on, and their pins are locked so this is more of a decorative function
-   * @param component
-   * @param componentState
-   * @param nodeStates
-   * @param _targetTick
-   */
-  onPinsChange(
-    component: Component,
-    componentState: ComponentState,
-    nodeStates: ReadonlyMap<UUID, NodeElectricalState>,
-    _targetTick: number
-  ): BehaviorResult {
-    const pinStates: Map<string, NodeElectricalState> = new Map();
-
-    for (const pinId in component.pins) {
-      pinStates.set(component.getPinLabel(pinId)!, nodeStates.get(pinId as UUID)!);
-    }
-
-    return {
-      componentState: componentState,
-      hasChanged: false,
-      scheduledEvents: [],
-    };
-  }
-
-  onUserCommand(
-    _component: Component,
-    state: ComponentState,
-    _command: UserCommand
-  ): BehaviorResult {
-    return {
-      componentState: state,
-      hasChanged: false,
-      scheduledEvents: [],
-    };
-  }
-
-  onEventFiring(
-    _component: Component,
-    state: ComponentState,
-    _event: ScheduledEvent
-  ): BehaviorResult {
-    return {
-      componentState: state,
-      hasChanged: false,
-      scheduledEvents: [],
-    };
   }
 }
