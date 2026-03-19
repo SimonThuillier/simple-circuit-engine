@@ -75,8 +75,12 @@ export abstract class ComponentState {
     return this._expirationTick;
   }
 
+  public get nextState(): string | null {
+    return this._nextState;
+  }
+
   public get hasExpiration(): boolean {
-    return this._expirationTick < 0 || !this._nextState || this._nextState === this.state;
+    return this._expirationTick >= 0 && !!this._nextState && this._nextState !== this.state;
   }
 
   public setNextState(nextState: string, expirationTick: number): void {

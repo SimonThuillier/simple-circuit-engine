@@ -1,5 +1,5 @@
 import { ComponentVisualFactoryBase } from '../ComponentVisualFactory';
-import {type Component, type ComponentState, ClockState} from 'simple-circuit-engine/core';
+import {type Component, type ComponentState} from 'simple-circuit-engine/core';
 import * as THREE from 'three';
 import { RingGeometry, CyclicTrapezoidGeometry } from '../../utils/GeometryUtils';
 import type {ConfigFormDefinition, VisualContext} from '../../types';
@@ -97,6 +97,7 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
       component: Component,
       material: THREE.MeshStandardMaterial): THREE.Group {
     const handGroup = new THREE.Group();
+    handGroup.name = 'handGroup';
     handGroup.userData = {
       type: 'component',
       componentId: component.id,
@@ -178,30 +179,120 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
 
   override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>) {
     const handGroup = this.findHandGroup(object3D);
+    if (!handGroup) return;
 
-    if (handGroup) {
-      if (config.get('startHigh') == 'true') {
-        handGroup.rotation.copy(this.HIGH_TICK_ROTATION);
-      } else {
-        handGroup.rotation.copy(this.LOW_TICK_ROTATION);
-      }
+    handGroup.userData.startHigh = config.get('startHigh') === 'true';
+
+    if (handGroup.userData.startHigh) {
+      handGroup.rotation.copy(this.HIGH_TICK_ROTATION);
+    } else {
+      handGroup.rotation.copy(this.LOW_TICK_ROTATION);
     }
-
 
     this.updateAnimation(object3D, null);
   }
 
   /**
-   * Update Clock animation based on simulation state
+   * Update Clock animation based on simulation state.
+   *
+   * When state is non-null: animates hand rotation toward the current state's target.
+   * If the state has a planned transition (hasExpiration), creates a smooth animation
+   * from the current visual rotation to the target using Three.js AnimationMixer.
+   * Otherwise snaps to the target position.
+   *
+   * When state is null (leaving simulation): stops all animations, cleans up mixer,
+   * and resets hand to config-based default rotation.
    *
    * @param object3D - The Object3D created by createVisual()
-   * @param state - The Clock's current simulation state
+   * @param state - The Clock's current simulation state, or null to reset
    */
   override updateAnimation(object3D: THREE.Object3D, state: ComponentState | null): void {
     const handGroup = this.findHandGroup(object3D);
     if (!handGroup) return;
 
-    console.log(state);
+    // Leaving simulation: cleanup and reset
+    if (!state) {
+      this._cleanupMixer(object3D, handGroup);
+      return;
+    }
+
+    // Determine rotation target from current state
+    const targetY = state.state === 'high' ? -Math.PI : 0;
+
+    // If there's a planned transition, animate smoothly
+    if (state.hasExpiration) {
+      this._animateHand(object3D, handGroup, targetY);
+      return;
+    }
+
+    // No planned transition: snap to position
+    handGroup.rotation.y = targetY;
+  }
+
+  /**
+   * Create a smooth animation from current hand rotation to targetY
+   */
+  private _animateHand(object3D: THREE.Object3D, handGroup: THREE.Object3D, targetY: number): void {
+    const ticksPerSecond: number = object3D.userData.ticksPerSecond ?? 2;
+
+    // Get or create mixer
+    let mixer: THREE.AnimationMixer = object3D.userData.mixer;
+    if (!mixer) {
+      mixer = new THREE.AnimationMixer(object3D);
+      object3D.userData.mixer = mixer;
+    }
+
+    // Stop and uncache previous animation
+    if (object3D.userData.currentAction) {
+      (object3D.userData.currentAction as THREE.AnimationAction).stop();
+    }
+    if (object3D.userData.currentClip) {
+      mixer.uncacheClip(object3D.userData.currentClip as THREE.AnimationClip);
+    }
+
+    // Read current visual rotation (handles interruption: start from current position)
+    const currentY = handGroup.rotation.y;
+
+    // Compute real duration in seconds: one tick duration = 1/ticksPerSecond
+    const tickDuration = 1 / ticksPerSecond;
+
+    // Create keyframe track for handGroup.rotation[y]
+    const track = new THREE.NumberKeyframeTrack(
+      'handGroup.rotation[y]',
+      [0, tickDuration],
+      [currentY, targetY]
+    );
+
+    const clip = new THREE.AnimationClip('clockHandRotation', tickDuration, [track]);
+    const action = mixer.clipAction(clip);
+    action.loop = THREE.LoopOnce;
+    action.clampWhenFinished = true;
+    action.play();
+
+    // Store references for cleanup/interruption
+    object3D.userData.currentAction = action;
+    object3D.userData.currentClip = clip;
+  }
+
+  /**
+   * Stop all animations, clean up mixer, and reset hand to config-based default rotation.
+   */
+  private _cleanupMixer(object3D: THREE.Object3D, handGroup: THREE.Object3D): void {
+    const mixer = object3D.userData.mixer as THREE.AnimationMixer | undefined;
+    if (mixer) {
+      mixer.stopAllAction();
+      mixer.uncacheRoot(object3D);
+      delete object3D.userData.mixer;
+    }
+    delete object3D.userData.currentAction;
+    delete object3D.userData.currentClip;
+
+    // Reset to config-based default rotation
+    if (handGroup.userData.startHigh) {
+      handGroup.rotation.copy(this.HIGH_TICK_ROTATION);
+    } else {
+      handGroup.rotation.copy(this.LOW_TICK_ROTATION);
+    }
   }
 
   /**

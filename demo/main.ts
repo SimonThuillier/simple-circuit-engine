@@ -2,7 +2,7 @@
  * Main entry point for the CircuitEngine demo (dev mode)
  * Uses ES modules directly with Vite HMR support
  */
-import { AxesHelper, WebGLRenderer } from 'three';
+import { AxesHelper, Clock, WebGLRenderer } from 'three';
 
 import {
   Circuit,
@@ -59,8 +59,11 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 container.appendChild(renderer.domElement);
 
 // Animation loop
+const clock = new Clock();
 function animate() {
   requestAnimationFrame(animate);
+  const delta = clock.getDelta();
+  engine.update(delta);
   engine.getControls().update();
   renderer.render(engine.getScene(), engine.getCamera());
 }

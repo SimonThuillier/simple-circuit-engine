@@ -128,6 +128,9 @@ export class CircuitRunnerController extends AbstractCircuitController {
     // Convert TPS to interval and apply
     this._tickIntervalMs = Math.round(1000 / clampedTps);
 
+    // Update animation timescales for in-flight animations
+    this._updateAnimationTimescales(clampedTps);
+
     // If playing, restart interval with new value
     if (this._isPlaying) {
       this.pause();
@@ -437,9 +440,47 @@ export class CircuitRunnerController extends AbstractCircuitController {
       const state = this._runner.getComponentState(componentId);
       if (!state) continue;
 
+      // Stamp ticksPerSecond on userData for animation duration computation
+      object3D.userData.ticksPerSecond = this.simulationSpeed;
+
       // Get factory and update animation
       const factory = this.factoryRegistry.get(component.type);
       factory.updateAnimation(object3D, state);
+    }
+  }
+
+  /**
+   * Update all active AnimationMixers.
+   * Called per frame from the render loop via CircuitEngine.update(delta).
+   *
+   * @param delta - Time in seconds since last frame
+   */
+  updateAnimations(delta: number): void {
+    for (const object3D of this._componentObject3Ds.values()) {
+      const mixer = object3D.userData.mixer as THREE.AnimationMixer | undefined;
+      if (!mixer) continue;
+      mixer.update(delta);
+    }
+  }
+
+  /**
+   * Recompute animation timescales when simulation speed changes mid-animation.
+   * Updates ticksPerSecond on userData and adjusts active action timeScales.
+   */
+  private _updateAnimationTimescales(newTps: number): void {
+    for (const object3D of this._componentObject3Ds.values()) {
+      const mixer = object3D.userData.mixer as THREE.AnimationMixer | undefined;
+      if (!mixer) continue;
+
+      const previousTps = (object3D.userData.ticksPerSecond as number) ?? 2;
+      object3D.userData.ticksPerSecond = newTps;
+
+      // Adjust timeScale of active action to match new speed
+      const action = object3D.userData.currentAction as THREE.AnimationAction | undefined;
+      if (!action) continue;
+
+      // Scale ratio: new speed / old speed
+      action.timeScale = newTps / previousTps;
     }
   }
 
@@ -770,7 +811,12 @@ export class CircuitRunnerController extends AbstractCircuitController {
       return;
     }
 
-    // TODO : see if there are specific disposals to do (animations ?)
+    // Clean up AnimationMixer if present
+    const mixer = group.userData.mixer as THREE.AnimationMixer | undefined;
+    if (mixer) {
+      mixer.stopAllAction();
+      mixer.uncacheRoot(group);
+    }
 
     this._scene!.remove(group);
     // Parcours complet pour disposer toutes les géométries / matériaux des enfants
@@ -797,8 +843,6 @@ export class CircuitRunnerController extends AbstractCircuitController {
     const group = this._enodeObject3Ds.get(id);
     if (!group) return;
 
-    // TODO : see if there are specific disposals to do (animations ?)
-
     group?.traverse((obj) => {
       if (obj instanceof THREE.Mesh) {
         if (obj.geometry) {
@@ -819,14 +863,12 @@ export class CircuitRunnerController extends AbstractCircuitController {
 
   private _removeWireObject3D(id: string): void {
     if (this._wireObject3Ds.has(id)) {
-      // TODO : see if there are specific disposals to do (animations ?)
       // Use WireVisualManager to remove wire (handles all disposal and delete from map)
       this.wireVisualManager.removeWire(id);
     }
   }
 
   protected _removeAllVisuals(): void {
-    // TODO : see if there are specific disposals to do (animations ?)
     // Remove all wire meshes
     for (const id of Array.from(this._wireObject3Ds.keys())) {
       this._removeWireObject3D(id);
