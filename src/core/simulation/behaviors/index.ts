@@ -19,6 +19,7 @@ export { RelayBehavior } from './basic/RelayBehavior';
 export { SmallLEDBehavior } from './basic/SmallLEDBehavior';
 export { SwitchBehavior } from './basic/SwitchBehavior';
 export { DoubleThrowSwitchBehavior } from './basic/DoubleThrowSwitchBehavior';
+export { ClockBehavior } from './basic/ClockBehavior';
 
 // gates
 export { InverterBehavior } from './gates/InverterBehavior';

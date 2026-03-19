@@ -406,22 +406,67 @@
     "divisions": 10,
     "cameraOptions": {
       "position": {
-        "x": -0.29722328635837764,
-        "y": 9.834227768419042,
-        "z": -0.29199063610203657
+        "x": -5.719117215089004,
+        "y": 6.76242298310627,
+        "z": 1.9709351036317928
       },
       "lookAtPosition": {
-        "x": -0.28079390502490414,
-        "y": 1.1208717626392892,
-        "z": -2.3846028376414794
+        "x": -0.28305959439765777,
+        "y": 1.114804073536907,
+        "z": -2.3713623102794052
       },
       "fov": 75,
       "near": 0.1,
       "far": 1000
     }
   },
-  "components": [],
-  "enodes": [],
+  "components": [
+    {
+      "id": "a03a5ac1-c421-49cc-a003-10e7661ab111",
+      "type": "clock",
+      "position": {
+        "x": -3,
+        "y": 3
+      },
+      "rotation": 0,
+      "pins": [
+        "c540b184-99be-4784-a859-644654e17cbb",
+        "7ade927c-74ca-4392-a918-7a9e17231db9",
+        "25e6b92f-c872-499c-9b1e-baefe9c62568"
+      ],
+      "config": {
+        "startHigh": "true",
+        "halfPeriod": "2"
+      },
+      "editable": true
+    }
+  ],
+  "enodes": [
+    {
+      "id": "c540b184-99be-4784-a859-644654e17cbb",
+      "type": "Pin",
+      "source": "Voltage",
+      "subtype": "vcc",
+      "component": "a03a5ac1-c421-49cc-a003-10e7661ab111",
+      "pinLabel": "vcc"
+    },
+    {
+      "id": "7ade927c-74ca-4392-a918-7a9e17231db9",
+      "type": "Pin",
+      "source": null,
+      "subtype": "logicOutput",
+      "component": "a03a5ac1-c421-49cc-a003-10e7661ab111",
+      "pinLabel": "output"
+    },
+    {
+      "id": "25e6b92f-c872-499c-9b1e-baefe9c62568",
+      "type": "Pin",
+      "source": "Current",
+      "subtype": "gnd",
+      "component": "a03a5ac1-c421-49cc-a003-10e7661ab111",
+      "pinLabel": "gnd"
+    }
+  ],
   "wires": []
 }</textarea
             >

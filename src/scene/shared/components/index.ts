@@ -26,6 +26,7 @@ export { RelayVisualFactory } from './basic/RelayVisualFactory';
 export { SmallLEDVisualFactory } from './basic/SmallLEDVisualFactory';
 export { SwitchVisualFactory } from './basic/SwitchVisualFactory';
 export { DoubleThrowSwitchVisualFactory } from './basic/DoubleThrowSwitchVisualFactory';
+export { ClockVisualFactory } from './basic/ClockVisualFactory';
 
 // gates
 export { InverterVisualFactory } from './gates/InverterVisualFactory';

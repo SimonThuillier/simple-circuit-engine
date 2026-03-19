@@ -167,6 +167,7 @@ export enum ComponentType {
     Relay = 'relay',
     SmallLED = 'smallLED',
     RectangleLED = 'rectangleLED',
+    Clock = 'clock',
     // Gates
     Inverter = 'inverter',
     NandGate = 'nandGate',
@@ -287,6 +288,19 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
         config: new Map([
             ['text', 'Label'],
             ['size', '1'],
+        ]),
+    },
+    [ComponentType.Clock]: {
+        id: ComponentType.Clock,
+        name: 'Clock',
+        pins: new Map([
+            ['vcc', {subtype: 'vcc', sourceType: ENodeSourceType.Voltage}],
+            ['output', {subtype: 'logicOutput', sourceType: undefined}],
+            ['gnd', {subtype: 'gnd', sourceType: ENodeSourceType.Current}],
+        ]),
+        config: new Map([
+            ['startHigh', 'true'],
+            ['halfPeriod', '2'],
         ]),
     },
     [ComponentType.Inverter]: {

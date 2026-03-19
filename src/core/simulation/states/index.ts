@@ -18,6 +18,7 @@ export { RelayState } from './basic/RelayState';
 export { SmallLEDState } from './basic/SmallLEDState';
 export { SwitchState } from './basic/SwitchState';
 export { DoubleThrowSwitchState } from './basic/DoubleThrowSwitchState';
+export { ClockState } from './basic/ClockState';
 
 // gates
 export { InverterState } from './gates/InverterState';
