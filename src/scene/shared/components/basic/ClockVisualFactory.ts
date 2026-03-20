@@ -11,10 +11,20 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
   /** Shared Clock envelope geometry */
   private readonly envelopeGeometry = RingGeometry(0.7, 0.8, 0.4, 32);
   /** Shared Clock hand geometry */
-  private readonly handGeometry = CyclicTrapezoidGeometry(0.7, 0.18, 0.01, 0.1, 0.35, 16);
+  private readonly handGeometry = CyclicTrapezoidGeometry(0.7, 0.16, 0.01, 0.1, 0.3, 16);
+
+  private readonly handMaterial = new THREE.MeshLambertMaterial(
+      {
+        color: 0xffffff,
+        emissive: 0xffffff,
+        emissiveIntensity: 0.8,
+      }
+  );
+
+
 
   private readonly HIGH_TICK_ROTATION =
-      new THREE.Euler(0,-Math.PI,0);
+      new THREE.Euler(0,Math.PI,0);
   private readonly LOW_TICK_ROTATION =
       new THREE.Euler(0,0,0);
 
@@ -38,6 +48,40 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
     const hitbox = this.createComponentHitbox(component.id, group.id, 2, 2, 2);
     group.add(hitbox);
 
+
+
+    // astral areas
+    const astralGeom = new THREE.CylinderGeometry(
+        0.69,0.69,0.4,
+        16,3,
+        false,
+        Math.PI/2,
+        Math.PI
+    );
+
+    const highAstralMat = new THREE.MeshLambertMaterial(
+        {
+          color: 0xff0000,
+          transparent: true,
+          opacity: 0.4
+        }
+    )
+    const highAstral = new THREE.Mesh(astralGeom, highAstralMat);
+    highAstral.position.set(0,0.2,0);
+    group.add(highAstral);
+
+    const lowAstralMat = new THREE.MeshLambertMaterial(
+        {
+          color: 0x0000ff,
+          transparent: true,
+          opacity: 0.4
+        }
+    )
+    const lowAstral = new THREE.Mesh(astralGeom, lowAstralMat);
+    lowAstral.rotateY(Math.PI);
+    lowAstral.position.set(0,0.2,0);
+    group.add(lowAstral);
+
     const envelope = new THREE.Mesh(this.envelopeGeometry, material);
     envelope.userData = {
       type: 'component',
@@ -50,7 +94,7 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
 
     const handGroup = this.createHandGroup(component, material);
     group.add(handGroup);
-    handGroup.add(new THREE.AxesHelper(1));
+    //handGroup.add(new THREE.AxesHelper(1));
     handGroup.rotation.copy(this.HIGH_TICK_ROTATION);
 
 
@@ -109,7 +153,7 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
     handGroup.updateMatrixWorld(true);
 
 
-    const hand = new THREE.Mesh(this.handGeometry, material);
+    const hand = new THREE.Mesh(this.handGeometry, this.handMaterial);
     hand.userData = {
       type: 'component',
       componentId: component.id,
@@ -172,6 +216,7 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
   override mapFormToCoreConfig(formData: Map<string, any>): Map<string, string> {
     const config = new Map<string, string>();
     const startHigh = formData.get('startHigh');
+    console.log(startHigh);
     config.set('startHigh', startHigh ? 'true' : 'false');
     config.set('halfPeriod', formData.get('halfPeriod').toString());
     return config;
@@ -188,8 +233,6 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
     } else {
       handGroup.rotation.copy(this.LOW_TICK_ROTATION);
     }
-
-    this.updateAnimation(object3D, null);
   }
 
   /**
@@ -216,25 +259,46 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
       return;
     }
 
-    // Determine rotation target from current state
-    const targetY = state.state === 'high' ? -Math.PI : 0;
-
-    // If there's a planned transition, animate smoothly
-    if (state.hasExpiration) {
-      this._animateHand(object3D, handGroup, targetY);
+    // If there's no planned transition, cleanup mixer and snap to nominal position
+    if (!state.hasExpiration) {
+      this._cleanupMixer(object3D, handGroup);
+      console.log('initialState', state);
+      console.log(state.state);
+      handGroup.rotation.copy(this.getStateRotation(state.state));
       return;
     }
 
-    // No planned transition: snap to position
-    handGroup.rotation.y = targetY;
+    const startRotation = this.getStateRotation(state.state!!).y;
+    const targetRotation = this.getStateRotation(state.nextState!!).y;
+
+    this._animateHand(object3D, handGroup,
+        startRotation,
+        state.startTick,
+        targetRotation,
+        state.expirationTick);
   }
 
   /**
-   * Create a smooth animation from current hand rotation to targetY
+   * Create a smooth animation from current hand rotation to targetRotation
    */
-  private _animateHand(object3D: THREE.Object3D, handGroup: THREE.Object3D, targetY: number): void {
-    const ticksPerSecond: number = object3D.userData.ticksPerSecond ?? 2;
+  private _animateHand(object3D: THREE.Object3D, handGroup: THREE.Object3D,
+                       startRotation:number,
+                       startTick: number,
+                       targetRotation: number,
+                       targetTick: number): void {
 
+    // prevent duplicate guard
+    if (object3D.userData.currentActionStart == startTick) {
+      console.log('guard');
+      return;
+    }
+
+    const ticksPerSecond: number = object3D.userData.ticksPerSecond ?? 2;
+    console.log('startTick', startTick);
+    console.log('targetTick', targetTick);
+    console.log('ticksPerSecond', ticksPerSecond);
+    const span = targetTick - startTick;
+    console.log('span', span);
     // Get or create mixer
     let mixer: THREE.AnimationMixer = object3D.userData.mixer;
     if (!mixer) {
@@ -242,6 +306,8 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
       object3D.userData.mixer = mixer;
     }
 
+    //reading before stopping
+    const currentRotation = handGroup.rotation.y % (2*Math.PI);
     // Stop and uncache previous animation
     if (object3D.userData.currentAction) {
       (object3D.userData.currentAction as THREE.AnimationAction).stop();
@@ -250,26 +316,29 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
       mixer.uncacheClip(object3D.userData.currentClip as THREE.AnimationClip);
     }
 
-    // Read current visual rotation (handles interruption: start from current position)
-    const currentY = handGroup.rotation.y;
+    console.log('currentRotation', currentRotation);
 
-    // Compute real duration in seconds: one tick duration = 1/ticksPerSecond
-    const tickDuration = 1 / ticksPerSecond;
+    // Compute real duration in seconds: one tick duration = span/ticksPerSecond
+    const durationSeconds = span / ticksPerSecond;
+    targetRotation = currentRotation - Math.PI;
 
     // Create keyframe track for handGroup.rotation[y]
     const track = new THREE.NumberKeyframeTrack(
       'handGroup.rotation[y]',
-      [0, tickDuration],
-      [currentY, targetY]
+      [0, durationSeconds],
+      [currentRotation, targetRotation]
     );
 
-    const clip = new THREE.AnimationClip('clockHandRotation', tickDuration, [track]);
+    const clip = new THREE.AnimationClip('clockHandRotation',
+        durationSeconds, [track]);
     const action = mixer.clipAction(clip);
     action.loop = THREE.LoopOnce;
     action.clampWhenFinished = true;
+    console.log('play action');
     action.play();
 
     // Store references for cleanup/interruption
+    object3D.userData.currentActionStart = startTick;
     object3D.userData.currentAction = action;
     object3D.userData.currentClip = clip;
   }
@@ -293,6 +362,13 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
     } else {
       handGroup.rotation.copy(this.LOW_TICK_ROTATION);
     }
+  }
+
+  private getStateRotation(state: string){
+    if (state === 'high') {
+      return this.HIGH_TICK_ROTATION
+    }
+    return this.LOW_TICK_ROTATION;
   }
 
   /**

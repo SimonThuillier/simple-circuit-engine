@@ -77,6 +77,17 @@ export interface IComponentBehavior {
         otherPinId: string
     ): boolean;
     /**
+     * Define custom component behavior at simulation start
+     * For most components it's a no-op but some components to bootstrap their cycling
+     * Warning: if this methods return non null behavior it preempts normal initialization at tick 0
+     * @param component
+     * @param componentState
+     */
+    onStart(
+        component: Component,
+        componentState: ComponentState,
+    ): IBehaviorResult | null
+    /**
      * Define component state change in response to its pins state change (after propagateConductivity)
      *
      * @param component - The component being evaluated

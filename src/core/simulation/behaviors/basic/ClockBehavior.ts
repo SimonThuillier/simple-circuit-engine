@@ -2,19 +2,14 @@
  * Clock component behavior implementation
  * @module core/simulation/behaviors
  */
-
-import type {UUID} from "../../../utils/types";
-
 import { Component } from '../../../topology/Component';
 import {ComponentBehaviorMixin} from '../ComponentBehavior';
-import type { ComponentState } from '../../states/ComponentState';
+import  { type ComponentState } from '../../states/ComponentState';
 import type {IComponentBehavior, IBehaviorResult} from "../types";
 import {ComponentType, ENodeSourceType} from "../../../topology/types";
 import {ClockState} from "../../states/basic/ClockState";
 
 import {type IScheduledEvent} from '../../types';
-
-import type {INodeElectricalState} from "../../states";
 
 
 export class ClockBehavior extends ComponentBehaviorMixin implements IComponentBehavior {
@@ -34,10 +29,13 @@ export class ClockBehavior extends ComponentBehaviorMixin implements IComponentB
       throw new Error(`Invalid component type for ClockBehavior: ${component.type}`);
     }
     const state = new ClockState(component.id);
-    const startHigh = component.config.get('halfPeriod') == 'true';
+    console.log('clock start high', component.config.get('startHigh'));
+    const startHigh = component.config.get('startHigh') == 'true';
     state.setState(startHigh ? 'high' : 'low', 0);
+    const halfPeriod = Number(component.config.get('halfPeriod'));
+    state.setNextState(startHigh ? 'low' : 'high', halfPeriod);
 
-    return new ClockState(component.id);
+    return state;
   }
 
   override allowConductivity(
@@ -58,32 +56,31 @@ export class ClockBehavior extends ComponentBehaviorMixin implements IComponentB
     }
 
     if (pinLabels.includes('gnd') && pinLabels.includes('output')) {
-      return state.state === 'low';
+      const result = state.state === 'low';
+      console.log('clock conductivity gnd-output', state.state, result);
+      return result;
     }
 
     if (pinLabels.includes('vcc') && pinLabels.includes('output')) {
-      return state.state === 'high';
+      const result = state.state === 'high';
+      console.warn('clock conductivity vcc-output', state.state, result);
+      return result;
     }
     return false;
   }
 
   /**
-   * This method will only be called at initial state calculation for a Clock
-   * If forces it to emit an event for changing its output after the first half-period and recursively on and on...
+   * Clock onStart allows to bootstrap cycling
    * @param component
    * @param state
-   * @param _nodeStates
-   * @param targetTick
    */
-  override onPinsChange(
+  override onStart(
       component: Component,
-      state: ComponentState,
-      _nodeStates: ReadonlyMap<UUID, INodeElectricalState>,
-      targetTick: number
-  ): IBehaviorResult {
-    const halfPeriod = Number(component.config.get('halfPeriod'));
+      state: ComponentState): IBehaviorResult | null {
 
-    state.setState(state.state, targetTick);
+    const targetTick = 0;
+    const halfPeriod = Number(component.config.get('halfPeriod'));
+    console.log('onStart', targetTick);
     state.setNextState(
         state.state === 'high' ? 'low': 'high',
         targetTick + halfPeriod
@@ -92,7 +89,7 @@ export class ClockBehavior extends ComponentBehaviorMixin implements IComponentB
     return {
       componentState: state,
       hasChanged: true,
-      shouldCancelPending: false,
+      shouldCancelPending: true,
       scheduledEvents: [{
         targetId: component.id,
         scheduledAtTick: state.startTick,
@@ -108,7 +105,6 @@ export class ClockBehavior extends ComponentBehaviorMixin implements IComponentB
       state: ComponentState,
       event: IScheduledEvent
   ): IBehaviorResult {
-
     if(event.type !== 'tick'){
       return {
         componentState: state,
@@ -128,7 +124,7 @@ export class ClockBehavior extends ComponentBehaviorMixin implements IComponentB
         event.readyAtTick + halfPeriod
     );
 
-    console.log(`Clock ticking to ${state.state}`);
+    console.warn(`Clock ticking at ${event.readyAtTick} to ${state.state}`);
 
     return {
       componentState: state,

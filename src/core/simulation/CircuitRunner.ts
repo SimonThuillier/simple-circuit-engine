@@ -377,6 +377,20 @@ export class CircuitRunner {
           // Propagate before processing this component so it sees current electrical state
           this.propagateConductivity();
 
+          // Components returning a onStart behavior override the standard initialization process
+          // Notably they can schedule events ahead
+          const customOnStartResult = behavior.onStart(component, componentState);
+          if(!!customOnStartResult) {
+            (currentState.componentStates as Map<UUID, ComponentState>).set(
+                component.id,
+                customOnStartResult.componentState
+            );
+            for (const event of customOnStartResult.scheduledEvents) {
+              this.eventQueue.schedule(event);
+            }
+            continue;
+          }
+
           // Let the component react to current pin states
           const result = behavior.onPinsChange(
             component,

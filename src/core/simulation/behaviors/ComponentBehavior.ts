@@ -54,6 +54,18 @@ export abstract class ComponentBehaviorMixin {
   }
 
   /**
+   * Default: no custom onStart behavior
+   * @param _component
+   * @param _componentState
+   */
+  onStart(
+      _component: Component,
+      _componentState: ComponentState,
+  ): IBehaviorResult | null {
+    return null
+  }
+
+  /**
    * Default: nothing happens
    * @param _component
    * @param componentState

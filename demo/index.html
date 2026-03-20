@@ -406,14 +406,14 @@
     "divisions": 10,
     "cameraOptions": {
       "position": {
-        "x": -5.719117215089004,
-        "y": 6.76242298310627,
-        "z": 1.9709351036317928
+        "x": 1.317317925385872,
+        "y": 6.057938356603884,
+        "z": -1.4981461485979013
       },
       "lookAtPosition": {
-        "x": -0.28305959439765777,
-        "y": 1.114804073536907,
-        "z": -2.3713623102794052
+        "x": 1.3968984567347653,
+        "y": 1.0822043823249996,
+        "z": -3.7847739961017086
       },
       "fov": 75,
       "near": 0.1,
@@ -436,7 +436,24 @@
       ],
       "config": {
         "startHigh": "true",
-        "halfPeriod": "2"
+        "halfPeriod": "5"
+      },
+      "editable": true
+    },
+    {
+      "id": "a759524e-1b83-4e8d-9ece-a037966383ca",
+      "type": "lightbulb",
+      "position": {
+        "x": 2,
+        "y": 3
+      },
+      "rotation": 0,
+      "pins": [
+        "e8bb5a58-f224-4011-8319-a59227df4689",
+        "4a919dfe-6201-41f5-8e60-46abf5733f6b"
+      ],
+      "config": {
+        "size": "1"
       },
       "editable": true
     }
@@ -465,9 +482,32 @@
       "subtype": "gnd",
       "component": "a03a5ac1-c421-49cc-a003-10e7661ab111",
       "pinLabel": "gnd"
+    },
+    {
+      "id": "e8bb5a58-f224-4011-8319-a59227df4689",
+      "type": "Pin",
+      "source": null,
+      "subtype": "free",
+      "component": "a759524e-1b83-4e8d-9ece-a037966383ca",
+      "pinLabel": "pin1"
+    },
+    {
+      "id": "4a919dfe-6201-41f5-8e60-46abf5733f6b",
+      "type": "Pin",
+      "source": "Current",
+      "subtype": "free",
+      "component": "a759524e-1b83-4e8d-9ece-a037966383ca",
+      "pinLabel": "pin2"
     }
   ],
-  "wires": []
+  "wires": [
+    {
+      "id": "80c3dfd0-7617-4b50-b95e-9c58e308b1c9",
+      "node1": "7ade927c-74ca-4392-a918-7a9e17231db9",
+      "node2": "e8bb5a58-f224-4011-8319-a59227df4689",
+      "intermediatePositions": []
+    }
+  ]
 }</textarea
             >
             <div class="json-buttons">

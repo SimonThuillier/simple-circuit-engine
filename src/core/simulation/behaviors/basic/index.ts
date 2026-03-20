@@ -23,30 +23,28 @@ export abstract class BipolarLightEmitterBehaviorMixin extends ComponentBehavior
         if (activationCondition) {
             if (state.state === 'off' || state.state === 'goingOff') {
                 hasChanged = true;
-                state.state = 'goingOn';
-                state.startTick = targetTick;
+                state.setState('goingOn', targetTick);
+                state.setNextState('on', targetTick + 1); // TODO handle component config later ?
                 scheduledEvents.push({
                     targetId: component.id,
-                    scheduledAtTick: targetTick,
-                    readyAtTick: targetTick + 1, // TODO handle component config later ?
+                    scheduledAtTick: state.startTick,
+                    readyAtTick: state.expirationTick,
                     type: 'GoingOnEnd',
                     parameters: undefined,
                 });
-                state.state = 'goingOn';
             }
         } else {
             if (state.state === 'on' || state.state === 'goingOn') {
                 hasChanged = true;
-                state.state = 'goingOff';
-                state.startTick = targetTick;
+                state.setState('goingOff', targetTick);
+                state.setNextState('off', targetTick + 1); // TODO handle component config later ?
                 scheduledEvents.push({
                     targetId: component.id,
-                    scheduledAtTick: targetTick,
-                    readyAtTick: targetTick + 1, // TODO handle component config later ?
+                    scheduledAtTick: state.startTick,
+                    readyAtTick: state.expirationTick,
                     type: 'GoingOffEnd',
                     parameters: undefined,
                 });
-                state.state = 'goingOff';
             }
         }
 
@@ -78,14 +76,12 @@ export abstract class BipolarLightEmitterBehaviorMixin extends ComponentBehavior
         if (event.type === 'GoingOffEnd') {
             if (state.state !== 'off') {
                 hasChanged = true;
-                state.startTick = event.readyAtTick;
-                state.state = 'off';
+                state.setState('off', event.readyAtTick);
             }
         } else if (event.type === 'GoingOnEnd') {
             if (state.state !== 'on') {
                 hasChanged = true;
-                state.startTick = event.readyAtTick;
-                state.state = 'on';
+                state.setState('on', event.readyAtTick);
             }
         }
 
