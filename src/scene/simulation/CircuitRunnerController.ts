@@ -22,7 +22,7 @@ import {
   BehaviorRegistry,
 } from 'simple-circuit-engine/core';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
-import type { SharedResources, HoveredElement, ControllerOptions } from '../shared/types';
+import type { AnimationContext, SharedResources, HoveredElement, ControllerOptions } from '../shared/types';
 import { AbstractCircuitController } from '../shared/AbstractCircuitController';
 import { gridToWorldPosition, gridToWorldRotation } from '../shared/utils/GeometryUtils';
 
@@ -36,6 +36,9 @@ import { gridToWorldPosition, gridToWorldRotation } from '../shared/utils/Geomet
 export class CircuitRunnerController extends AbstractCircuitController {
   private _runner: CircuitRunner | null = null;
   private _behaviorRegistry: BehaviorRegistry;
+
+  // Animation context shared with visual factories
+  private _animationContext: AnimationContext | null = null;
 
   // Playback control state
   private _autoPlay = false;
@@ -128,8 +131,13 @@ export class CircuitRunnerController extends AbstractCircuitController {
     // Convert TPS to interval and apply
     this._tickIntervalMs = Math.round(1000 / clampedTps);
 
-    // Update animation timescales for in-flight animations
+    // Update animation timescales for in-flight animations (reads old tps from context)
     this._updateAnimationTimescales(clampedTps);
+
+    // Update context with new tps AFTER timescale adjustment
+    if (this._animationContext) {
+      this._animationContext.ticksPerSecond = clampedTps;
+    }
 
     // If playing, restart interval with new value
     if (this._isPlaying) {
@@ -241,10 +249,15 @@ export class CircuitRunnerController extends AbstractCircuitController {
       this.stop();
       this._runner = null;
       this._removeSimulationStateVisuals();
+      this.factoryRegistry.setAnimationContext(null);
+      this._animationContext = null;
     } else {
       if (!this._circuit) return;
       // recreate runner for the current circuit (which can have been modified in edit mode while this controller was inactive)
       this._runner = new CircuitRunner(this._circuit, this._behaviorRegistry);
+      // Create and fan out animation context before visual update
+      this._animationContext = { ticksPerSecond: this.simulationSpeed, simulationStatus: 'initial' };
+      this.factoryRegistry.setAnimationContext(this._animationContext);
       // update graphics
       this._fullUpdate();
       // if autoplay launch !
@@ -272,6 +285,9 @@ export class CircuitRunnerController extends AbstractCircuitController {
         if (!this._active) return; // nothing more to do if not active
         // if active launch the thing
         this._runner = new CircuitRunner(circuit, this._behaviorRegistry);
+        // Create/refresh animation context before visual update
+        this._animationContext = { ticksPerSecond: this.simulationSpeed, simulationStatus: 'initial' };
+        this.factoryRegistry.setAnimationContext(this._animationContext);
         // update graphics
         this._fullUpdate();
         // if autoplay launch !
@@ -315,6 +331,11 @@ export class CircuitRunnerController extends AbstractCircuitController {
       return; // Already playing
     }
     this._isPlaying = true;
+    if (this._animationContext) {
+      this._animationContext.simulationStatus = 'playing';
+    }
+    // Kick all factories so animations start/resume now that status is 'playing'
+    this._visualUpdateFromSimulationState();
     this.emit('simulationPlayed', { tick: this._runner.getCurrentTick() });
 
     // Start interval loop
@@ -335,6 +356,9 @@ export class CircuitRunnerController extends AbstractCircuitController {
     }
 
     this._isPlaying = false;
+    if (this._animationContext) {
+      this._animationContext.simulationStatus = 'paused';
+    }
 
     // Clear interval
     if (this._simulationLoopId !== null) {
@@ -386,6 +410,9 @@ export class CircuitRunnerController extends AbstractCircuitController {
     // If playing, pause first
     if (this._isPlaying) {
       this.pause();
+    }
+    if (this._animationContext) {
+      this._animationContext.simulationStatus = 'initial';
     }
     this._runner.reset();
     // Update visuals to initial state
@@ -440,9 +467,6 @@ export class CircuitRunnerController extends AbstractCircuitController {
       const state = this._runner.getComponentState(componentId);
       if (!state) continue;
 
-      // Stamp ticksPerSecond on userData for animation duration computation
-      object3D.userData.ticksPerSecond = this.simulationSpeed;
-
       // Get factory and update animation
       const factory = this.factoryRegistry.get(component.type);
       factory.updateAnimation(object3D, state);
@@ -456,6 +480,8 @@ export class CircuitRunnerController extends AbstractCircuitController {
    * @param delta - Time in seconds since last frame
    */
   updateAnimations(delta: number): void {
+    if (!this._animationContext || this._animationContext.simulationStatus !== 'playing') return;
+
     for (const object3D of this._componentObject3Ds.values()) {
       const mixer = object3D.userData.mixer as THREE.AnimationMixer | undefined;
       if (!mixer) continue;
@@ -468,12 +494,11 @@ export class CircuitRunnerController extends AbstractCircuitController {
    * Updates ticksPerSecond on userData and adjusts active action timeScales.
    */
   private _updateAnimationTimescales(newTps: number): void {
+    const previousTps = this._animationContext?.ticksPerSecond ?? newTps;
+
     for (const object3D of this._componentObject3Ds.values()) {
       const mixer = object3D.userData.mixer as THREE.AnimationMixer | undefined;
       if (!mixer) continue;
-
-      const previousTps = (object3D.userData.ticksPerSecond as number) ?? 2;
-      object3D.userData.ticksPerSecond = newTps;
 
       // Adjust timeScale of active action to match new speed
       const action = object3D.userData.currentAction as THREE.AnimationAction | undefined;

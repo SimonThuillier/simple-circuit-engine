@@ -6,13 +6,20 @@
  * Supports dynamic registration and fallback for unknown component types.
  */
 
-import {type Component, type ComponentType, type ComponentState, ENode} from 'simple-circuit-engine/core';
+import {
+  type Component,
+  type ComponentType,
+  type ComponentState,
+  ENode,
+  type IComponentTypeMetadata
+} from 'simple-circuit-engine/core';
 import { ENodeSourceType } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
 import { HitboxLayers } from '../utils/LayerConstants';
 
-import type { ConfigFormDefinition, VisualContext } from '../types';
+import type { AnimationContext, ConfigFormDefinition, VisualContext } from '../types';
 import type {Direction2D} from "../utils/GeometryUtils";
+import {MeshLambertMaterial} from "three";
 
 /**
  * Interface for component visual factories
@@ -189,6 +196,14 @@ export interface IComponentVisualFactory {
    * Converts UI values back to core string format (e.g., true → "open").
    */
   mapFormToCoreConfig(formData: Map<string, any>): Map<string, string>;
+
+  /**
+   * Set the shared animation context for simulation-aware factories.
+   * Called by the registry fan-out when entering/leaving simulation.
+   *
+   * @param ctx - Animation context, or null when leaving simulation
+   */
+  setAnimationContext(ctx: AnimationContext | null): void;
 }
 
 /**
@@ -222,17 +237,89 @@ export interface IComponentVisualFactory {
  * ```
  */
 export abstract class ComponentVisualFactoryBase implements IComponentVisualFactory {
+  /** Shared animation context injected by the registry during simulation */
+  protected _animationContext: AnimationContext | null = null;
+
   /** Default hover glow color (light blue) */
   protected static readonly DEFAULT_HOVER_COLOR = 0x4488ff;
 
   /** Default hover emissive intensity */
   protected static readonly DEFAULT_HOVER_INTENSITY = 0.6;
 
-  /** Default selection glow color (orange) */
-  protected static readonly DEFAULT_SELECTION_COLOR = 0xff8800;
 
-  /** Default selection emissive intensity (higher than hover) */
-  protected static readonly DEFAULT_SELECTION_INTENSITY = 0.8;
+  protected readonly MATERIALS: Readonly<Record<string, Record<string, THREE.MeshLambertMaterial>>> = {
+    WHITE : {
+      NORMAL: new THREE.MeshLambertMaterial({
+        color: 0xffffff,
+        userData: { sceMat: 'WHITE'}
+      }),
+      HOVERED: new THREE.MeshLambertMaterial({
+        color: 0xffffff,
+        emissive: 0x4488ff,
+        emissiveIntensity: 0.6,
+        userData: { sceMat: 'WHITE'}
+      }),
+      SELECTED: new THREE.MeshLambertMaterial({
+        color: 0xffffff,
+        emissive: 0xff8800,
+        emissiveIntensity: 0.8,
+        userData: { sceMat: 'WHITE'}
+      })
+    },
+    SHINY_SILVER : {
+      NORMAL: new THREE.MeshLambertMaterial({
+        color: 0xC0C0C0,
+        emissive: 0xffffff,
+        emissiveIntensity: 0.8,
+        userData: { sceMat: 'SHINY_SILVER'}
+      }),
+      HOVERED: new THREE.MeshLambertMaterial({
+        color: 0xC0C0C0,
+        emissive: 0x4488ff,
+        emissiveIntensity: 0.9,
+        userData: { sceMat: 'SHINY_SILVER'}
+      }),
+      SELECTED: new THREE.MeshLambertMaterial({
+        color: 0xC0C0C0,
+        emissive: 0xff8800,
+        emissiveIntensity: 0.9,
+        userData: { sceMat: 'SHINY_SILVER'}
+      })
+    },
+    GLASS : {
+      NORMAL: new THREE.MeshLambertMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.75,
+        userData: { sceMat: 'GLASS'}
+      }),
+      HOVERED: new THREE.MeshLambertMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.8,
+        emissive: 0x4488ff,
+        emissiveIntensity: 0.6,
+        userData: { sceMat: 'GLASS'}
+      }),
+      SELECTED: new THREE.MeshLambertMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.9,
+        emissive: 0xff8800,
+        emissiveIntensity: 0.8,
+        userData: { sceMat: 'GLASS'}
+      })
+    }
+  }
+
+  protected getMat(category: string, variant: string = 'NORMAL'): MeshLambertMaterial {
+    const matCat = this.MATERIALS[category];
+    if(!matCat){
+      return this.MATERIALS.WHITE!!.NORMAL!!;
+    }
+    return matCat[variant] || this.MATERIALS.WHITE!!.NORMAL!!;
+  }
+
 
   defaultRotation() {
     return 0;
@@ -278,10 +365,13 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
       if (child.userData.materialLocked) return; // this flag indicates material is locked by animation
 
       const material = child.material;
-      if (material.visible === false) return;
-      if (!(material instanceof THREE.MeshStandardMaterial)) return;
-      material.emissive.setHex(ComponentVisualFactoryBase.DEFAULT_HOVER_COLOR);
-      material.emissiveIntensity = ComponentVisualFactoryBase.DEFAULT_HOVER_INTENSITY;
+      if (material.visible === false
+          || !material.userData ||
+          !material.userData.sceMat) return;
+
+      const matCategory = this.MATERIALS[material.userData.sceMat];
+      if(!matCategory) return;
+      child.material = matCategory.HOVERED;
     });
   }
 
@@ -305,8 +395,13 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
       if (child.userData.materialLocked) return; // this flag indicates material is locked by animation
 
       const material = child.material;
-      if (!(material instanceof THREE.MeshStandardMaterial)) return;
-      material.emissiveIntensity = 0;
+      if (material.visible === false
+          || !material.userData ||
+          !material.userData.sceMat) return;
+
+      const matCategory = this.MATERIALS[material.userData.sceMat];
+      if(!matCategory) return;
+      child.material = matCategory.NORMAL;
     });
   }
 
@@ -328,12 +423,15 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
         return;
       }
       if (!(child instanceof THREE.Mesh)) return;
+
       const material = child.material;
-      if (material.visible === false || material.opacity < 0.5) return;
-      if (!(material instanceof THREE.MeshStandardMaterial)) return;
-      // Apply selection effect (overrides hover if present)
-      material.emissive.setHex(ComponentVisualFactoryBase.DEFAULT_SELECTION_COLOR);
-      material.emissiveIntensity = ComponentVisualFactoryBase.DEFAULT_SELECTION_INTENSITY;
+      if (material.visible === false
+          || !material.userData ||
+          !material.userData.sceMat) return;
+
+      const matCategory = this.MATERIALS[material.userData.sceMat];
+      if(!matCategory) return;
+      child.material = matCategory.SELECTED;
     });
 
     object3D.userData.isSelected = true;
@@ -357,11 +455,15 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
         return;
       }
       if (!(child instanceof THREE.Mesh)) return;
+
       const material = child.material;
-      if (material.visible === false || material.opacity < 0.5) return;
-      if (!(material instanceof THREE.MeshStandardMaterial)) return;
-      // remove selection effect
-      material.emissiveIntensity = 0;
+      if (material.visible === false
+          || !material.userData ||
+          !material.userData.sceMat) return;
+
+      const matCategory = this.MATERIALS[material.userData.sceMat];
+      if(!matCategory) return;
+      child.material = matCategory.NORMAL;
     });
     object3D.userData.isSelected = false;
   }
@@ -405,7 +507,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
       node: ENode,
       pointsTo: Direction2D = 'right',
       visualRotation: THREE.Euler | null = null
-      ): THREE.Group {
+  ): THREE.Group {
     if (!node.component){
       throw new Error('This method only manage components eNodes (pins)');
     }
@@ -437,12 +539,12 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     // Hitbox (hemisphere, raycastable)
     const hitboxGeom = new THREE.SphereGeometry(hitboxRadius, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
     const hitbox = new THREE.Mesh(
-      hitboxGeom,
-      new THREE.MeshStandardMaterial({
-        color: ComponentVisualFactoryBase.DEFAULT_HOVER_COLOR,
-        transparent: true,
-        opacity: 0,
-      })
+        hitboxGeom,
+        new THREE.MeshBasicMaterial({
+          color: ComponentVisualFactoryBase.DEFAULT_HOVER_COLOR,
+          transparent: true,
+          opacity: 0,
+        })
     );
     hitbox.userData = {...userInfos, type: 'enodeHitbox'};
     hitbox.layers.set(HitboxLayers.ENODE);
@@ -450,12 +552,12 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
 
     // Visual sphere
     const visual = new THREE.Mesh(
-      new THREE.SphereGeometry(visualRadius, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
-      new THREE.MeshStandardMaterial({
-        color: this.pinColorForSourceType(node.source || null),
-        emissive: this.pinColorForSourceType(node.source || null),
-        emissiveIntensity: 0,
-      })
+        new THREE.SphereGeometry(visualRadius, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+        new THREE.MeshLambertMaterial({
+          color: this.pinColorForSourceType(node.source || null),
+          emissive: this.pinColorForSourceType(node.source || null),
+          emissiveIntensity: 0,
+        })
     );
     visual.userData = {
       ...userInfos,
@@ -480,8 +582,8 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
    */
   protected createPinCounterpart(
       pinGroup: THREE.Group,
-      material: THREE.MeshStandardMaterial
-      ): THREE.Mesh | null {
+      material: THREE.MeshLambertMaterial
+  ): THREE.Mesh | null {
 
     const pinVisual = this.findPinVisualFromGroup(pinGroup);
     if(!pinVisual){
@@ -523,9 +625,9 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     let pinGroup: THREE.Group | null = null;
     object3D.traverse((child) => {
       if (
-        child.userData.type === 'enodeGroup' &&
-        child.userData.label === label &&
-        child instanceof THREE.Group
+          child.userData.type === 'enodeGroup' &&
+          child.userData.label === label &&
+          child instanceof THREE.Group
       ) {
         pinGroup = child;
       }
@@ -576,11 +678,11 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
    * @returns THREE.Mesh configured as component hitbox
    */
   protected createComponentHitbox(
-    componentId: string,
-    groupId: number,
-    width: number,
-    height: number,
-    depth: number
+      componentId: string,
+      groupId: number,
+      width: number,
+      height: number,
+      depth: number
   ): THREE.Mesh {
     const geometry = new THREE.BoxGeometry(width, height, depth);
     const material = new THREE.MeshBasicMaterial({
@@ -657,16 +759,17 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     pinGroup.userData.sourceType = sourceType;
 
     const visual = pinGroup.children.find((child) => child.userData.type === 'enode') as
-      | THREE.Mesh
-      | undefined;
+        | THREE.Mesh
+        | undefined;
 
-    if (!visual || !(visual.material instanceof THREE.MeshStandardMaterial)) {
+    if (!visual) {
       return;
     }
     visual.userData.sourceType = sourceType;
     const color = this.pinColorForSourceType(sourceType);
-    visual.material.color.setHex(color);
-    visual.material.emissive.setHex(color);
+    const material = visual.material as THREE.MeshLambertMaterial;
+    material.color.setHex(color);
+    material.emissive.setHex(color);
   }
 
   /**
@@ -680,7 +783,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
 
     pinGroup.traverse((child) => {
       if (child instanceof THREE.Mesh) {
-        const material = child.material as THREE.MeshStandardMaterial;
+        const material = child.material as THREE.MeshLambertMaterial;
 
         if (child.userData.type === 'enodeHitbox') {
           material.opacity = 0.3;
@@ -704,11 +807,11 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     pinGroup.userData.isHovered = false;
 
     const source: ENodeSourceType | null =
-      pinGroup.userData.sourceType || null;
+        pinGroup.userData.sourceType || null;
 
     pinGroup.traverse((child) => {
       if (child instanceof THREE.Mesh) {
-        const material = child.material as THREE.MeshStandardMaterial;
+        const material = child.material as THREE.MeshLambertMaterial;
 
         if (child.userData.type === 'enodeHitbox') {
           material.opacity = 0;
@@ -717,7 +820,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
           material.emissiveIntensity = source ? 1 : 0;
           if (!source && pinGroup.userData.electricalState) {
             const emissiveColor = this.pinColorForElectricalState(
-              pinGroup.userData.electricalState
+                pinGroup.userData.electricalState
             );
             material.emissive.setHex(emissiveColor);
             material.emissiveIntensity = emissiveColor === 0x000000 ? 0 : 1;
@@ -767,6 +870,13 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
       config.set(key, String(value));
     }
     return config;
+  }
+
+  /**
+   * Set the shared animation context for simulation-aware factories.
+   */
+  setAnimationContext(ctx: AnimationContext | null): void {
+    this._animationContext = ctx;
   }
 }
 
@@ -833,4 +943,11 @@ export interface IFactoryRegistry {
    * @returns Array of ComponentType values that have registered factories
    */
   getRegisteredTypes(): ComponentType[];
+
+  /**
+   * Fan out animation context to all registered factories and the fallback.
+   *
+   * @param ctx - Animation context, or null when leaving simulation
+   */
+  setAnimationContext(ctx: AnimationContext | null): void;
 }

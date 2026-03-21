@@ -3,7 +3,7 @@
  * @module tests/unit/rendering/FactoryRegistry.test
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as THREE from 'three';
 import { createMockCircuit } from '../helpers';
 import {
@@ -12,6 +12,7 @@ import {
   DefaultVisualFactory,
 } from '../../../src/scene/shared/components';
 import {ComponentType} from "../../../src";
+import type { AnimationContext } from '../../../src/scene/shared/types';
 
 describe('FactoryRegistry', () => {
   let registry: FactoryRegistry;
@@ -300,6 +301,7 @@ describe('FactoryRegistry', () => {
         applySelection: (_component) => {},
         removeSelection: (_component) => {},
         updateAnimation: (_component) => {},
+        setAnimationContext: () => {},
       };
 
       const customRegistry = new FactoryRegistry(customFallback);
@@ -316,6 +318,43 @@ describe('FactoryRegistry', () => {
       expect(mesh.geometry).toBeInstanceOf(THREE.SphereGeometry);
       const material = mesh.material as THREE.MeshStandardMaterial;
       expect(material.color.getHex()).toBe(0xffaa00);
+    });
+  });
+
+  describe('setAnimationContext()', () => {
+    it('should propagate context to all registered factories and fallback', () => {
+      const factory1 = new DefaultVisualFactory();
+      const factory2 = new DefaultVisualFactory();
+      const spy1 = vi.spyOn(factory1, 'setAnimationContext');
+      const spy2 = vi.spyOn(factory2, 'setAnimationContext');
+      const fallback = new DefaultVisualFactory();
+      const spyFallback = vi.spyOn(fallback, 'setAnimationContext');
+
+      const reg = new FactoryRegistry(fallback);
+      reg.register(ComponentType.Battery, factory1);
+      reg.register(ComponentType.Switch, factory2);
+
+      const ctx: AnimationContext = { ticksPerSecond: 5, simulationStatus: 'playing' };
+      reg.setAnimationContext(ctx);
+
+      expect(spy1).toHaveBeenCalledWith(ctx);
+      expect(spy2).toHaveBeenCalledWith(ctx);
+      expect(spyFallback).toHaveBeenCalledWith(ctx);
+    });
+
+    it('should propagate null to clear context', () => {
+      const factory = new DefaultVisualFactory();
+      const spy = vi.spyOn(factory, 'setAnimationContext');
+      const fallback = new DefaultVisualFactory();
+      const spyFallback = vi.spyOn(fallback, 'setAnimationContext');
+
+      const reg = new FactoryRegistry(fallback);
+      reg.register(ComponentType.Battery, factory);
+
+      reg.setAnimationContext(null);
+
+      expect(spy).toHaveBeenCalledWith(null);
+      expect(spyFallback).toHaveBeenCalledWith(null);
     });
   });
 });

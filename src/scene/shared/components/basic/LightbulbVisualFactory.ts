@@ -18,10 +18,15 @@ import type { ConfigFormDefinition, VisualContext } from '../../types';
  */
 export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
   /** Lightbulb lit color (yellow glow) */
-  private static readonly BULB_LIT_COLOR = 0xffff00;
-
+  private readonly BULB_LIT_COLOR = 0xffff00;
   /** Lightbulb lit emissive intensity */
-  private static readonly BULB_LIT_INTENSITY = 1.0;
+  private readonly BULB_LIT_INTENSITY = 1.0;
+
+  private readonly BASE_GEOMETRY = new THREE.CylinderGeometry(
+      0.3, 0.15, 0.4,
+      12, 6, false, 0, Math.PI * 2);
+  private readonly BULB_GEOMETRY = new THREE.SphereGeometry(
+      0.5, 16, 16);
 
   createVisual(component: Component, context: VisualContext): THREE.Object3D {
     // Root group (not rendered, just organizational)
@@ -37,32 +42,27 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
     group.add(hitbox);
 
     // Visuals
-    const baseMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
-    const baseGeometry = new THREE.CylinderGeometry(0.23, 0.2, 0.5, 16, 4, false, 0, Math.PI * 2);
-    const base = new THREE.Mesh(baseGeometry, baseMaterial);
+    const base = new THREE.Mesh(this.BASE_GEOMETRY, this.MATERIALS.WHITE.NORMAL);
     base.userData = {
       type: 'component',
       componentId: component.id,
-      part: 'base',
+      part: 'base'
     };
     base.position.set(0, 0.2, 0);
     group.add(base);
 
-    const bulbMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
-    bulbMaterial.opacity = 0.55;
-    const bulbGeometry = new THREE.SphereGeometry(0.5, 12, 8);
-    const bulb = new THREE.Mesh(bulbGeometry, bulbMaterial);
+    const bulb = new THREE.Mesh(this.BULB_GEOMETRY, this.MATERIALS.GLASS!!.NORMAL!!);
     bulb.userData = {
       type: 'component',
       componentId: component.id,
-      part: 'bulb',
+      part: 'bulb'
     };
     bulb.position.set(0, 0.8, 0);
     group.add(bulb);
 
     // pins (not called if preview - no pins)
     if (component.pins.length > 0) {
-      this.createPinsVisual(component, context, group, baseMaterial);
+      this.createPinsVisual(component, context, group, this.MATERIALS.WHITE!!.NORMAL!!);
     }
 
     this.updateFromConfiguration(group, component.config);
@@ -73,7 +73,7 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
       component: Component,
       context: VisualContext,
       group: THREE.Group,
-      material: THREE.MeshStandardMaterial) {
+      material: THREE.MeshLambertMaterial) {
     const pin1Node = context.getENode(component.pins[0]!);
     if (pin1Node) {
       const pin1Group = this.createPinGroup(pin1Node, 'left');
@@ -162,8 +162,8 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
       // Apply LED glow
       bulbMesh.userData.materialLocked = true;
       bulbMesh.material.opacity = 1;
-      bulbMesh.material.emissive.setHex(LightbulbVisualFactory.BULB_LIT_COLOR);
-      bulbMesh.material.emissiveIntensity = LightbulbVisualFactory.BULB_LIT_INTENSITY;
+      bulbMesh.material.emissive.setHex(this.BULB_LIT_COLOR);
+      bulbMesh.material.emissiveIntensity = this.BULB_LIT_INTENSITY;
     } else {
       // Remove glow
       bulbMesh.userData.materialLocked = false;
@@ -184,14 +184,12 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
    */
   private findBulbMesh(
     object3D: THREE.Object3D
-  ): (THREE.Mesh & { material: THREE.MeshStandardMaterial }) | null {
-    let bulbMesh: (THREE.Mesh & { material: THREE.MeshStandardMaterial }) | null = null;
+  ): (THREE.Mesh) | null {
+    let bulbMesh: (THREE.Mesh) | null = null;
 
     object3D.traverse((child) => {
       if (child instanceof THREE.Mesh && child.userData.part === 'bulb') {
-        if (child.material instanceof THREE.MeshStandardMaterial) {
-          bulbMesh = child as THREE.Mesh & { material: THREE.MeshStandardMaterial };
-        }
+          bulbMesh = child as THREE.Mesh;
       }
     });
 

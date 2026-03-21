@@ -57,13 +57,13 @@ export class ClockBehavior extends ComponentBehaviorMixin implements IComponentB
 
     if (pinLabels.includes('gnd') && pinLabels.includes('output')) {
       const result = state.state === 'low';
-      console.log('clock conductivity gnd-output', state.state, result);
+      //console.log('clock conductivity gnd-output', state.state, result);
       return result;
     }
 
     if (pinLabels.includes('vcc') && pinLabels.includes('output')) {
       const result = state.state === 'high';
-      console.warn('clock conductivity vcc-output', state.state, result);
+      //console.warn('clock conductivity vcc-output', state.state, result);
       return result;
     }
     return false;
@@ -80,7 +80,7 @@ export class ClockBehavior extends ComponentBehaviorMixin implements IComponentB
 
     const targetTick = 0;
     const halfPeriod = Number(component.config.get('halfPeriod'));
-    console.log('onStart', targetTick);
+    //console.log('onStart', targetTick);
     state.setNextState(
         state.state === 'high' ? 'low': 'high',
         targetTick + halfPeriod
@@ -95,7 +95,7 @@ export class ClockBehavior extends ComponentBehaviorMixin implements IComponentB
         scheduledAtTick: state.startTick,
         readyAtTick: state.expirationTick,
         type: 'tick',
-        parameters: undefined,
+        parameters: new Map([['exclusive', 'true']]),
       }],
     };
   }
@@ -105,7 +105,7 @@ export class ClockBehavior extends ComponentBehaviorMixin implements IComponentB
       state: ComponentState,
       event: IScheduledEvent
   ): IBehaviorResult {
-    if(event.type !== 'tick'){
+    if(event.type !== 'tick') {
       return {
         componentState: state,
         hasChanged: false,
@@ -124,7 +124,7 @@ export class ClockBehavior extends ComponentBehaviorMixin implements IComponentB
         event.readyAtTick + halfPeriod
     );
 
-    console.warn(`Clock ticking at ${event.readyAtTick} to ${state.state}`);
+    //console.warn(`Clock ticking at ${event.readyAtTick} to ${state.state}`);
 
     return {
       componentState: state,
@@ -135,7 +135,7 @@ export class ClockBehavior extends ComponentBehaviorMixin implements IComponentB
         scheduledAtTick: state.startTick,
         readyAtTick: state.expirationTick,
         type: 'tick',
-        parameters: undefined,
+        parameters: new Map([['exclusive', 'true']]),
       }],
     };
   }

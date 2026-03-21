@@ -9,80 +9,62 @@ import type {ConfigFormDefinition, VisualContext} from '../../types';
  */
 export class ClockVisualFactory extends ComponentVisualFactoryBase {
   /** Shared Clock envelope geometry */
-  private readonly envelopeGeometry = RingGeometry(0.7, 0.8, 0.4, 32);
+  private readonly ENVELOPE_GEOMETRY = RingGeometry(0.7, 0.8, 0.4, 32);
   /** Shared Clock hand geometry */
-  private readonly handGeometry = CyclicTrapezoidGeometry(0.7, 0.16, 0.01, 0.1, 0.3, 16);
-
-  private readonly handMaterial = new THREE.MeshLambertMaterial(
-      {
-        color: 0xffffff,
-        emissive: 0xffffff,
-        emissiveIntensity: 0.8,
+  private readonly HAND_GEOMETRY = CyclicTrapezoidGeometry(0.7, 0.16, 0.01, 0.1, 0.3, 16);
+  /** Shared Clock area geometry */
+  private readonly AREA_GEOMETRY = new THREE.CylinderGeometry(
+      0.69,0.69,0.4,
+      16,3,
+      false,
+      Math.PI/2,
+      Math.PI
+  );
+  private readonly RED_AREA_MAT = new THREE.MeshLambertMaterial({
+        color: 0xff0000,
+        transparent: true,
+        opacity: 0.4,
+        emissive: 0xff0000,
+        emissiveIntensity: 0.2,
+      }
+  );
+  private readonly BLUE_AREA_MAT = new THREE.MeshLambertMaterial({
+        color: 0x0000ff,
+        transparent: true,
+        opacity: 0.4,
+        emissive: 0x0000ff,
+        emissiveIntensity: 0.2,
       }
   );
 
 
-
-  private readonly HIGH_TICK_ROTATION =
-      new THREE.Euler(0,Math.PI,0);
-  private readonly LOW_TICK_ROTATION =
-      new THREE.Euler(0,0,0);
+  private readonly HIGH_TICK_ROTATION = new THREE.Euler(0,Math.PI,0);
+  private readonly LOW_TICK_ROTATION = new THREE.Euler(0,0,0);
 
 
   createVisual(component: Component, context: VisualContext): THREE.Object3D {
-
-    const material = new THREE.MeshStandardMaterial({ color: 0xffffff });
-    material.emissive.setHex(0xffffff);
-    material.emissiveIntensity = 0;
-
     // Root group (not rendered, just organizational)
     const group = new THREE.Group();
     //group.add(new THREE.AxesHelper(3));
     group.userData = {
       type: 'componentGroup',
       componentId: component.id,
-      componentType: component.type,
-      material: material
+      componentType: component.type
     };
     // Component hitbox (invisible, raycastable)
     const hitbox = this.createComponentHitbox(component.id, group.id, 2, 2, 2);
     group.add(hitbox);
 
-
-
-    // astral areas
-    const astralGeom = new THREE.CylinderGeometry(
-        0.69,0.69,0.4,
-        16,3,
-        false,
-        Math.PI/2,
-        Math.PI
-    );
-
-    const highAstralMat = new THREE.MeshLambertMaterial(
-        {
-          color: 0xff0000,
-          transparent: true,
-          opacity: 0.4
-        }
-    )
-    const highAstral = new THREE.Mesh(astralGeom, highAstralMat);
-    highAstral.position.set(0,0.2,0);
-    group.add(highAstral);
-
-    const lowAstralMat = new THREE.MeshLambertMaterial(
-        {
-          color: 0x0000ff,
-          transparent: true,
-          opacity: 0.4
-        }
-    )
-    const lowAstral = new THREE.Mesh(astralGeom, lowAstralMat);
+    // areas
+    const highArea = new THREE.Mesh(this.AREA_GEOMETRY, this.RED_AREA_MAT);
+    highArea.position.set(0,0.2,0);
+    group.add(highArea);
+    const lowAstral = new THREE.Mesh(this.AREA_GEOMETRY, this.BLUE_AREA_MAT);
     lowAstral.rotateY(Math.PI);
     lowAstral.position.set(0,0.2,0);
     group.add(lowAstral);
 
-    const envelope = new THREE.Mesh(this.envelopeGeometry, material);
+    const envelope = new THREE.Mesh(this.ENVELOPE_GEOMETRY, this.getMat('WHITE'));
     envelope.userData = {
       type: 'component',
       componentId: group.userData.componentId,
@@ -92,7 +74,7 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
     envelope.position.set(0, 0, 0);
     group.add(envelope);
 
-    const handGroup = this.createHandGroup(component, material);
+    const handGroup = this.createHandGroup(component);
     group.add(handGroup);
     //handGroup.add(new THREE.AxesHelper(1));
     handGroup.rotation.copy(this.HIGH_TICK_ROTATION);
@@ -137,9 +119,7 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
     }
   }
 
-  private createHandGroup(
-      component: Component,
-      material: THREE.MeshStandardMaterial): THREE.Group {
+  private createHandGroup(component: Component): THREE.Group {
     const handGroup = new THREE.Group();
     handGroup.name = 'handGroup';
     handGroup.userData = {
@@ -153,7 +133,7 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
     handGroup.updateMatrixWorld(true);
 
 
-    const hand = new THREE.Mesh(this.handGeometry, this.handMaterial);
+    const hand = new THREE.Mesh(this.HAND_GEOMETRY, this.getMat('SHINY_SILVER'));
     hand.userData = {
       type: 'component',
       componentId: component.id,
@@ -216,7 +196,6 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
   override mapFormToCoreConfig(formData: Map<string, any>): Map<string, string> {
     const config = new Map<string, string>();
     const startHigh = formData.get('startHigh');
-    console.log(startHigh);
     config.set('startHigh', startHigh ? 'true' : 'false');
     config.set('halfPeriod', formData.get('halfPeriod').toString());
     return config;
@@ -253,17 +232,24 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
     const handGroup = this.findHandGroup(object3D);
     if (!handGroup) return;
 
-    // Leaving simulation: cleanup and reset
-    if (!state) {
+    console.log('update animation called', this._animationContext!!.simulationStatus );
+
+    // No animation context / Leaving simulation: cleanup and reset
+    if (!state || !this._animationContext) {
       this._cleanupMixer(object3D, handGroup);
       return;
     }
+    // When paused or initial: snap to current state position (mixer won't advance)
+    if (this._animationContext.simulationStatus !== 'playing') {
+      handGroup.rotation.copy(this.getStateRotation(state.state));
+      return;
+    }
+
+
 
     // If there's no planned transition, cleanup mixer and snap to nominal position
     if (!state.hasExpiration) {
       this._cleanupMixer(object3D, handGroup);
-      console.log('initialState', state);
-      console.log(state.state);
       handGroup.rotation.copy(this.getStateRotation(state.state));
       return;
     }
@@ -282,23 +268,18 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
    * Create a smooth animation from current hand rotation to targetRotation
    */
   private _animateHand(object3D: THREE.Object3D, handGroup: THREE.Object3D,
-                       startRotation:number,
+                       _startRotation:number,
                        startTick: number,
                        targetRotation: number,
                        targetTick: number): void {
 
     // prevent duplicate guard
     if (object3D.userData.currentActionStart == startTick) {
-      console.log('guard');
       return;
     }
 
-    const ticksPerSecond: number = object3D.userData.ticksPerSecond ?? 2;
-    console.log('startTick', startTick);
-    console.log('targetTick', targetTick);
-    console.log('ticksPerSecond', ticksPerSecond);
+    const ticksPerSecond: number = this._animationContext!.ticksPerSecond;
     const span = targetTick - startTick;
-    console.log('span', span);
     // Get or create mixer
     let mixer: THREE.AnimationMixer = object3D.userData.mixer;
     if (!mixer) {
@@ -316,8 +297,6 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
       mixer.uncacheClip(object3D.userData.currentClip as THREE.AnimationClip);
     }
 
-    console.log('currentRotation', currentRotation);
-
     // Compute real duration in seconds: one tick duration = span/ticksPerSecond
     const durationSeconds = span / ticksPerSecond;
     targetRotation = currentRotation - Math.PI;
@@ -334,7 +313,6 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
     const action = mixer.clipAction(clip);
     action.loop = THREE.LoopOnce;
     action.clampWhenFinished = true;
-    console.log('play action');
     action.play();
 
     // Store references for cleanup/interruption

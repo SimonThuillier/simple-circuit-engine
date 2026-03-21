@@ -45,7 +45,7 @@ engine.initialize(container, {
   initialMode: initialMode,
   controllerOptions: {
     mapControls: { zoomSpeed: 2 },
-    simulationAutoPlay: true,
+    simulationAutoPlay: false,
     simulationSpeed: 1,
   },
 });

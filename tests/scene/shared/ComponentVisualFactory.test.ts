@@ -18,6 +18,7 @@ import {ComponentType, ENode, ENodeType} from '../../../src/core';
 import { createMockCircuit } from '../helpers';
 import type { SmallLEDState } from '../../../src/core/simulation/states/basic/SmallLEDState';
 import type { SwitchState } from '../../../src/core/simulation/states/basic/SwitchState';
+import type { AnimationContext } from '../../../src/scene/shared/types';
 
 /**
  * Test factory that extends ComponentVisualFactoryBase
@@ -377,6 +378,28 @@ describe('ComponentVisualFactoryBase', () => {
 
       expect(hitboxFound).toBe(true);
       expect(visualFound).toBe(true);
+    });
+  });
+
+  describe('setAnimationContext()', () => {
+    it('should store the context', () => {
+      const testFactory = new TestVisualFactory();
+      const ctx: AnimationContext = { ticksPerSecond: 5, simulationStatus: 'playing' };
+
+      testFactory.setAnimationContext(ctx);
+
+      // Access protected field via cast
+      expect((testFactory as any)._animationContext).toBe(ctx);
+    });
+
+    it('should clear the context when null is passed', () => {
+      const testFactory = new TestVisualFactory();
+      const ctx: AnimationContext = { ticksPerSecond: 5, simulationStatus: 'playing' };
+
+      testFactory.setAnimationContext(ctx);
+      testFactory.setAnimationContext(null);
+
+      expect((testFactory as any)._animationContext).toBeNull();
     });
   });
 

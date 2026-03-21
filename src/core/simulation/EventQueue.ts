@@ -35,7 +35,9 @@ export class EventQueue {
         `readyAtTick (${event.readyAtTick}) cannot be before scheduledAtTick (${event.scheduledAtTick})`
       );
     }
-
+    if(!!event.parameters && event.parameters.has('exclusive')){
+      this.removeEventsForTarget(event.targetId);
+    }
     this.heap.push(event);
     this.bubbleUp(this.heap.length - 1);
   }
@@ -88,6 +90,7 @@ export class EventQueue {
   /**
    * Remove all pending events targeting a specific component.
    * Used when a behavior signals shouldCancelPending (e.g., Vcc loss, input change during transition).
+   * Or when an event is flagged exclusive
    *
    * @param targetId - UUID of the component whose events should be removed
    * @returns Number of events removed

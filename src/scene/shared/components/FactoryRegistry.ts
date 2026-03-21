@@ -7,6 +7,7 @@
  */
 
 import type { ComponentType } from 'simple-circuit-engine/core';
+import type { AnimationContext } from '../types';
 import type { IComponentVisualFactory, IFactoryRegistry } from './ComponentVisualFactory';
 
 /**
@@ -119,5 +120,15 @@ export class FactoryRegistry implements IFactoryRegistry {
    */
   getRegisteredTypes(): ComponentType[] {
     return Array.from(this.factories.keys());
+  }
+
+  /**
+   * Fan out animation context to all registered factories and the fallback.
+   */
+  setAnimationContext(ctx: AnimationContext | null): void {
+    for (const factory of this.factories.values()) {
+      factory.setAnimationContext(ctx);
+    }
+    this.fallbackFactory.setAnimationContext(ctx);
   }
 }
