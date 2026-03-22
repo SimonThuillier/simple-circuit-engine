@@ -198,6 +198,7 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
         ]),
         config: new Map([
             ['initialState', 'open'],
+            ['transitionSpan', '1'],
             ['size', '1'],
         ]),
     },
@@ -211,6 +212,7 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
         ]),
         config: new Map([
             ['initialState', 'input1'],
+            ['transitionSpan', '1'],
             ['size', '1'],
         ]),
     },
@@ -230,7 +232,10 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
             ['pin1', {subtype: 'free', sourceType: undefined}],
             ['pin2', {subtype: 'free', sourceType: undefined}],
         ]),
-        config: new Map([['size', '1']]),
+        config: new Map([
+            ['transitionSpan', '1'],
+            ['size', '1']
+        ]),
     },
     [ComponentType.Relay]: {
         id: ComponentType.Relay,
@@ -243,6 +248,7 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
         ]),
         config: new Map([
             ['activationLogic', 'positive'],
+            ['transitionSpan', '1'],
             ['initializationOrder', ''],
         ]),
     },
@@ -254,6 +260,7 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
             ['pin2', {subtype: 'free', sourceType: undefined}],
         ]),
         config: new Map([
+            ['transitionSpan', '1'],
             ['idleColor', 'white'],
             ['activeColor', '#ffff00'],
             ['size', '1'],
@@ -268,6 +275,7 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
             ['pin2', {subtype: 'free', sourceType: undefined}],
         ]),
         config: new Map([
+            ['transitionSpan', '1'],
             ['idleColor', 'white'],
             ['activeColor', '#ffff00'],
             ['size', '1'],

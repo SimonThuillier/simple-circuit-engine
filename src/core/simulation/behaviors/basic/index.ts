@@ -1,7 +1,7 @@
 import type {Component} from '../../../topology/Component';
 import {ComponentState} from '../../states/ComponentState.js';
 import {type IScheduledEvent, TRANSITION_DEFAULTS} from '../../types';
-import {ComponentBehaviorMixin} from '../ComponentBehavior';
+import {ComponentBehaviorMixin, getTransitionSpan} from '../ComponentBehavior';
 import {ENodeSourceType} from "../../../topology/types";
 import type {IBehaviorResult} from "../types";
 
@@ -20,30 +20,32 @@ export abstract class BipolarLightEmitterBehaviorMixin extends ComponentBehavior
         let hasChanged = false;
         const scheduledEvents: IScheduledEvent[] = [];
 
+        const transitionSpan = getTransitionSpan(component.config);
+
         if (activationCondition) {
             if (state.state === 'off' || state.state === 'goingOff') {
                 hasChanged = true;
                 state.setState('goingOn', targetTick);
-                state.setNextState('on', targetTick + 1); // TODO handle component config later ?
+                state.setNextState('on', targetTick + transitionSpan);
                 scheduledEvents.push({
                     targetId: component.id,
                     scheduledAtTick: state.startTick,
                     readyAtTick: state.expirationTick,
                     type: 'GoingOnEnd',
-                    parameters: undefined,
+                    parameters: new Map([['exclusive', 'true']]),
                 });
             }
         } else {
             if (state.state === 'on' || state.state === 'goingOn') {
                 hasChanged = true;
                 state.setState('goingOff', targetTick);
-                state.setNextState('off', targetTick + 1); // TODO handle component config later ?
+                state.setNextState('off', targetTick + transitionSpan);
                 scheduledEvents.push({
                     targetId: component.id,
                     scheduledAtTick: state.startTick,
                     readyAtTick: state.expirationTick,
                     type: 'GoingOffEnd',
-                    parameters: undefined,
+                    parameters: new Map([['exclusive', 'true']]),
                 });
             }
         }
@@ -51,7 +53,7 @@ export abstract class BipolarLightEmitterBehaviorMixin extends ComponentBehavior
         return {
             componentState: state,
             hasChanged: hasChanged,
-            shouldCancelPending: false,
+            shouldCancelPending: true,
             scheduledEvents: scheduledEvents,
         };
     }
@@ -63,7 +65,7 @@ export abstract class BipolarLightEmitterBehaviorMixin extends ComponentBehavior
         _pinId: string,
         _otherPinId: string
     ): boolean {
-        return true; // TODO : see later if behavior changes for LEDs ?
+        return true;
     }
 
     override onEventFiring(

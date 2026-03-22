@@ -5,15 +5,15 @@
 
 import type {Component} from '../../topology/Component';
 import {ComponentState} from '../states/ComponentState.js';
-import type {IScheduledEvent, IUserCommand} from '../types';
+import {type IScheduledEvent, type IUserCommand, TRANSITION_DEFAULTS} from '../types';
 import type {IBehaviorResult} from "./types";
 import type {INodeElectricalState} from "../states/types";
 import type {UUID} from "../../utils/types";
 import {
+  COMPONENT_TYPE_METADATA,
   ComponentType,
-  type IComponentTypeMetadata,
   ENodeSourceType,
-  COMPONENT_TYPE_METADATA
+  type IComponentTypeMetadata
 } from "../../topology/types";
 
 /**
@@ -132,3 +132,15 @@ export abstract class ComponentBehaviorMixin {
   }
 }
 
+/**
+ * Get the transition span from component config.
+ * @param config - Component config map
+ * @returns Number of ticks for transition (minimum 1)
+ */
+export function getTransitionSpan(config: Map<string, string>): number {
+  const value = parseInt(config.get('transitionSpan') || '', 10);
+  if (isNaN(value) || value < 1) {
+    return TRANSITION_DEFAULTS.TRANSITION_SPAN_TICKS;
+  }
+  return value;
+}

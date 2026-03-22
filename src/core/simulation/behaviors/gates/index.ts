@@ -1,21 +1,11 @@
+import {ENodeSourceType, } from "../../../topology/types";
 import type {Component} from '../../../topology/Component';
+import {type INodeElectricalState} from "../../states/types";
 import {ComponentState} from '../../states/ComponentState.js';
-import {type IScheduledEvent, TRANSITION_DEFAULTS} from '../../types';
-import {ComponentBehaviorMixin} from '../ComponentBehavior';
-import {ENodeSourceType, type IBehaviorResult, type INodeElectricalState} from "simple-circuit-engine/core";
+import {type IScheduledEvent} from '../../types';
+import {ComponentBehaviorMixin, getTransitionSpan} from '../ComponentBehavior';
+import type {IBehaviorResult} from "../types";
 
-/**
- * Get the transition span from component config.
- * @param config - Component config map
- * @returns Number of ticks for transition (minimum 1)
- */
-export function getTransitionSpan(config: Map<string, string>): number {
-    const value = parseInt(config.get('transitionSpan') || '', 10);
-    if (isNaN(value) || value < 1) {
-        return TRANSITION_DEFAULTS.TRANSITION_SPAN_TICKS;
-    }
-    return value;
-}
 
 /**
  * to factorize default implementations in logic gates behaviors

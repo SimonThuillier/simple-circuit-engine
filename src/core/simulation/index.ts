@@ -29,5 +29,6 @@ export { DirtyTracker } from './DirtyTracker.js';
 export { StateManager } from './StateManager.js';
 // Core orchestrator
 export { CircuitRunner } from './CircuitRunner.js';
+export {getTransitionSpan} from "./behaviors/ComponentBehavior";
 
 

@@ -14,19 +14,28 @@ import type { ConfigFormDefinition, VisualContext } from '../../types';
  * - Component hitbox for raycasting
  *
  * Animation:
- * - Emissive glow when Lightbulb is lit (based on simulation state)
+ * - Smooth emissive glow transition when Lightbulb lights up or turns off
+ * - Uses AnimationMixer with material property tracks (emissive, opacity)
+ * - Clones shared GLASS material per-instance during simulation for independent animation
  */
 export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
   /** Lightbulb lit color (yellow glow) */
   private readonly BULB_LIT_COLOR = 0xffff00;
   /** Lightbulb lit emissive intensity */
   private readonly BULB_LIT_INTENSITY = 1.0;
+  /** Lightbulb unlit opacity */
+  private readonly BULB_UNLIT_OPACITY = 0.55;
 
   private readonly BASE_GEOMETRY = new THREE.CylinderGeometry(
       0.3, 0.15, 0.4,
       12, 6, false, 0, Math.PI * 2);
   private readonly BULB_GEOMETRY = new THREE.SphereGeometry(
       0.5, 16, 16);
+
+  /** Yellow in normalized RGB for ColorKeyframeTrack */
+  private readonly LIT_RGB = [1, 1, 0];
+  /** Black in normalized RGB for ColorKeyframeTrack */
+  private readonly UNLIT_RGB = [0, 0, 0];
 
   createVisual(component: Component, context: VisualContext): THREE.Object3D {
     // Root group (not rendered, just organizational)
@@ -42,7 +51,7 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
     group.add(hitbox);
 
     // Visuals
-    const base = new THREE.Mesh(this.BASE_GEOMETRY, this.MATERIALS.WHITE.NORMAL);
+    const base = new THREE.Mesh(this.BASE_GEOMETRY, this.getMat('WHITE'));
     base.userData = {
       type: 'component',
       componentId: component.id,
@@ -51,11 +60,13 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
     base.position.set(0, 0.2, 0);
     group.add(base);
 
-    const bulb = new THREE.Mesh(this.BULB_GEOMETRY, this.MATERIALS.GLASS!!.NORMAL!!);
+    const bulb = new THREE.Mesh(this.BULB_GEOMETRY, this.getMat('GLASS'));
+    bulb.name = 'bulb'; // required for AnimationMixer property binding
     bulb.userData = {
       type: 'component',
       componentId: component.id,
-      part: 'bulb'
+      part: 'bulb',
+      animateMat: true
     };
     bulb.position.set(0, 0.8, 0);
     group.add(bulb);
@@ -108,25 +119,34 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
    */
   override getConfigFormDefinition(): ConfigFormDefinition | null {
     return {
-      fields: [{ key: 'size', label: 'Size', type: 'number', min: 1, max: 16, step: 1 }],
+      fields: [
+        {
+          key: 'transitionSpan',
+          label: 'Lit delay (ticks)',
+          type: 'number',
+          min: 1,
+          step: 1
+        },
+          { key: 'size', label: 'Size', type: 'number', min: 1, max: 16, step: 1 }],
     };
   }
 
   override mapCoreConfigToForm(config: Map<string, string>): Map<string, any> {
     const formData = new Map<string, any>();
+    formData.set('transitionSpan', parseFloat(config.get('transitionSpan') || '1'));
     formData.set('size', parseFloat(config.get('size') || '1'));
     return formData;
   }
 
   /**
-   * Map form data to core config (T024)
-   * Converts boolean to "open"/"closed" strings
+   * Map form data to core config
    *
-   * @param formData - Form data with boolean initialState
-   * @returns Core config with string initialState
+   * @param formData - Form data with size
+   * @returns Core config with string size
    */
   override mapFormToCoreConfig(formData: Map<string, any>): Map<string, string> {
     const config = new Map<string, string>();
+    config.set('transitionSpan', formData.get('transitionSpan').toString());
     config.set('size', formData.get('size').toString());
     return config;
   }
@@ -138,50 +158,192 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
   }
 
   /**
-   * Update Lightbulb animation based on simulation state
+   * Update Lightbulb animation based on simulation state.
    *
-   * @param object3D - The Object3D created by createVisual()
-   * @param state - The SmallLED's current simulation state
-   *
-   * @remarks
-   * Applies yellow emissive glow when Lightbulb is lit (state.isLit === true)
+   * - null state / no context: restore shared material, cleanup mixer
+   * - paused/initial: snap to target state
+   * - playing + transitional (goingOn/goingOff): smooth material animation
+   * - playing + stable (on/off): snap to final state
    */
   override updateAnimation(object3D: THREE.Object3D, state: ComponentState | null): void {
     const bulbMesh = this.findBulbMesh(object3D);
     if (!bulbMesh) return;
-    if (!state) {
-      bulbMesh.userData.materialLocked = false;
-      bulbMesh.material.opacity = 0.55;
-      bulbMesh.material.emissive.setHex(0x000000);
-      bulbMesh.material.emissiveIntensity = 0;
+
+    // Leaving simulation: restore shared material
+    if (!state || !this._animationContext) {
+      this._cleanupMixer(object3D);
+      this._restoreSharedMaterial(bulbMesh);
       return;
     }
 
     const lightbulbState = state as LightbulbState;
-    if (lightbulbState.isLit) {
-      // Apply LED glow
-      bulbMesh.userData.materialLocked = true;
-      bulbMesh.material.opacity = 1;
-      bulbMesh.material.emissive.setHex(this.BULB_LIT_COLOR);
-      bulbMesh.material.emissiveIntensity = this.BULB_LIT_INTENSITY;
-    } else {
-      // Remove glow
-      bulbMesh.userData.materialLocked = false;
-      bulbMesh.material.opacity = 0.55;
-      bulbMesh.material.emissive.setHex(0x000000);
-      bulbMesh.material.emissiveIntensity = 0;
+
+    // Paused/initial: snap to current state (mixer won't advance)
+    if (this._animationContext.simulationStatus !== 'playing') {
+      this._cleanupMixer(object3D);
+      this._snapToState(bulbMesh, lightbulbState.isLit);
+      return;
     }
+
+    // Playing + transitional state: animate
+    if (state.hasExpiration) {
+      console.log("lightbulb transitional");
+      this._animateBulb(object3D, bulbMesh, state);
+      return;
+    }
+
+    console.log("lightbulb NOT transitional");
+    // Playing + stable state: snap, cleanup mixer
+    this._cleanupMixer(object3D);
+    this._snapToState(bulbMesh, lightbulbState.isLit);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Material clone / restore
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Clone the shared GLASS material for independent per-instance animation.
+   * No-op if already cloned.
+   */
+  private _ensureClonedMaterial(bulbMesh: THREE.Mesh): void {
+    if (bulbMesh.userData.clonedMat) return;
+    bulbMesh.material = (bulbMesh.material as THREE.MeshLambertMaterial).clone();
+    bulbMesh.userData.clonedMat = true;
   }
 
   /**
-   * Find the bulb mesh within the component group
-   *
-   * @param object3D - The Object3D group created by createVisual()
-   * @returns The LED mesh if found, null otherwise
-   *
-   * @remarks
-   * Searches for a mesh with userData.part === 'bulb'
+   * Dispose the per-instance clone and restore the shared GLASS.NORMAL material.
+   * No-op if not cloned.
    */
+  private _restoreSharedMaterial(bulbMesh: THREE.Mesh): void {
+    if (!bulbMesh.userData.clonedMat) return;
+    (bulbMesh.material as THREE.MeshLambertMaterial).dispose();
+    bulbMesh.material = this.getMat('GLASS');
+    bulbMesh.userData.clonedMat = false;
+    bulbMesh.userData.materialLocked = false;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Snap (immediate state application)
+  // ---------------------------------------------------------------------------
+
+  private _snapToState(bulbMesh: THREE.Mesh, isLit: boolean): void {
+    this._ensureClonedMaterial(bulbMesh);
+    const mat = bulbMesh.material as THREE.MeshLambertMaterial;
+
+    if (isLit) {
+      mat.emissive.setHex(this.BULB_LIT_COLOR);
+      mat.emissiveIntensity = this.BULB_LIT_INTENSITY;
+      mat.opacity = 1;
+      bulbMesh.userData.materialLocked = true;
+    } else {
+      mat.emissive.setHex(0x000000);
+      mat.emissiveIntensity = 0;
+      mat.opacity = this.BULB_UNLIT_OPACITY;
+      bulbMesh.userData.materialLocked = false;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // AnimationMixer management
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Create a smooth material animation for goingOn / goingOff transitions.
+   */
+  private _animateBulb(
+    object3D: THREE.Object3D,
+    bulbMesh: THREE.Mesh,
+    state: ComponentState
+  ): void {
+    // Prevent duplicate animation for same transition
+    if (object3D.userData.currentActionStart === state.startTick) return;
+
+    this._ensureClonedMaterial(bulbMesh);
+    bulbMesh.userData.materialLocked = true;
+
+    const tps = this._animationContext!.ticksPerSecond;
+    const span = state.expirationTick - state.startTick;
+    const durationSeconds = span / tps;
+
+    // Get or create mixer
+    let mixer: THREE.AnimationMixer = object3D.userData.mixer;
+    if (!mixer) {
+      mixer = new THREE.AnimationMixer(object3D);
+      object3D.userData.mixer = mixer;
+    }
+
+    // Read current material values BEFORE stopping previous action,
+    // so mid-transition interrupts (goingOff→goingOn) animate from actual visual state
+    const mat = bulbMesh.material as THREE.MeshLambertMaterial;
+    const currentIntensity = mat.emissiveIntensity;
+    const currentOpacity = mat.opacity;
+    const currentRGB = [mat.emissive.r, mat.emissive.g, mat.emissive.b];
+
+    // Stop previous animation
+    if (object3D.userData.currentAction) {
+      (object3D.userData.currentAction as THREE.AnimationAction).stop();
+    }
+    if (object3D.userData.currentClip) {
+      mixer.uncacheClip(object3D.userData.currentClip as THREE.AnimationClip);
+    }
+
+    // Determine end values based on transition direction; start from current visual state
+    const isGoingOn = state.state === 'goingOn';
+    const endIntensity = isGoingOn ? this.BULB_LIT_INTENSITY : 0;
+    const endOpacity = isGoingOn ? 1 : this.BULB_UNLIT_OPACITY;
+    const endRGB = isGoingOn ? this.LIT_RGB : this.UNLIT_RGB;
+
+    const tracks = [
+      new THREE.NumberKeyframeTrack(
+        'bulb.material.emissiveIntensity',
+        [0, durationSeconds],
+        [currentIntensity, endIntensity]
+      ),
+      new THREE.NumberKeyframeTrack(
+        'bulb.material.opacity',
+        [0, durationSeconds],
+        [currentOpacity, endOpacity]
+      ),
+      new THREE.ColorKeyframeTrack(
+        'bulb.material.emissive',
+        [0, durationSeconds],
+        [...currentRGB, ...endRGB]
+      ),
+    ];
+
+    const clip = new THREE.AnimationClip('bulbGlow', durationSeconds, tracks);
+    const action = mixer.clipAction(clip);
+    action.loop = THREE.LoopOnce;
+    action.clampWhenFinished = true;
+    action.play();
+
+    // Store references for cleanup/interruption
+    object3D.userData.currentActionStart = state.startTick;
+    object3D.userData.currentAction = action;
+    object3D.userData.currentClip = clip;
+  }
+
+  /**
+   * Stop all animations, clean up mixer.
+   */
+  private _cleanupMixer(object3D: THREE.Object3D): void {
+    const mixer = object3D.userData.mixer as THREE.AnimationMixer | undefined;
+    if (mixer) {
+      mixer.stopAllAction();
+      mixer.uncacheRoot(object3D);
+      delete object3D.userData.mixer;
+    }
+    delete object3D.userData.currentAction;
+    delete object3D.userData.currentClip;
+    delete object3D.userData.currentActionStart;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
   private findBulbMesh(
     object3D: THREE.Object3D
   ): (THREE.Mesh) | null {
