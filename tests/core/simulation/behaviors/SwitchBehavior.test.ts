@@ -199,4 +199,73 @@ describe('SwitchBehavior - tickCount (017-simulation-speed)', () => {
       expect(result.scheduledEvents[0].readyAtTick).toBe(12);
     });
   });
+
+  describe('onPinsChange - output pin state parameters', () => {
+    it('should set outVoltage and outCurrent parameters from output pin state', () => {
+      const switchComp = createMockSwitch();
+      const state = behavior.createInitialState(switchComp) as SwitchState;
+      const outputPinId = switchComp.pins[1]!;
+
+      const nodeStates = new Map<string, { hasVoltage: boolean; hasCurrent: boolean; locked: boolean }>([
+        [outputPinId, { hasVoltage: true, hasCurrent: true, locked: false }],
+      ]);
+
+      const result = behavior.onPinsChange(switchComp, state, nodeStates as any, 0);
+
+      expect(result.hasChanged).toBe(true);
+      expect(result.shouldCancelPending).toBe(false);
+      expect(result.scheduledEvents).toHaveLength(0);
+      expect(state.parameters.get('outVoltage')).toBe('true');
+      expect(state.parameters.get('outCurrent')).toBe('true');
+    });
+
+    it('should not mark changed when parameters are the same', () => {
+      const switchComp = createMockSwitch();
+      const state = behavior.createInitialState(switchComp) as SwitchState;
+      const outputPinId = switchComp.pins[1]!;
+
+      const nodeStates = new Map<string, { hasVoltage: boolean; hasCurrent: boolean; locked: boolean }>([
+        [outputPinId, { hasVoltage: false, hasCurrent: true, locked: false }],
+      ]);
+
+      // First call sets parameters
+      behavior.onPinsChange(switchComp, state, nodeStates as any, 0);
+      // Second call with same values should not mark changed
+      const result = behavior.onPinsChange(switchComp, state, nodeStates as any, 1);
+
+      expect(result.hasChanged).toBe(false);
+    });
+
+    it('should mark changed when parameters differ', () => {
+      const switchComp = createMockSwitch();
+      const state = behavior.createInitialState(switchComp) as SwitchState;
+      const outputPinId = switchComp.pins[1]!;
+
+      const nodeStatesOff = new Map<string, { hasVoltage: boolean; hasCurrent: boolean; locked: boolean }>([
+        [outputPinId, { hasVoltage: false, hasCurrent: false, locked: false }],
+      ]);
+      const nodeStatesOn = new Map<string, { hasVoltage: boolean; hasCurrent: boolean; locked: boolean }>([
+        [outputPinId, { hasVoltage: true, hasCurrent: false, locked: false }],
+      ]);
+
+      behavior.onPinsChange(switchComp, state, nodeStatesOff as any, 0);
+      const result = behavior.onPinsChange(switchComp, state, nodeStatesOn as any, 1);
+
+      expect(result.hasChanged).toBe(true);
+      expect(state.parameters.get('outVoltage')).toBe('true');
+      expect(state.parameters.get('outCurrent')).toBe('false');
+    });
+
+    it('should handle missing output pin gracefully', () => {
+      const switchComp = createMockSwitch();
+      // Remove pins to simulate edge case
+      (switchComp as any).pins = ['pin-in'];
+      const state = behavior.createInitialState(switchComp) as SwitchState;
+
+      const nodeStates = new Map();
+      const result = behavior.onPinsChange(switchComp, state, nodeStates as any, 0);
+
+      expect(result.hasChanged).toBe(false);
+    });
+  });
 });

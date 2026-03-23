@@ -561,6 +561,8 @@ describe('SwitchVisualFactory - Animation', () => {
 
   beforeEach(() => {
     factory = new SwitchVisualFactory();
+    // Inject animation context so updateAnimation processes states
+    factory.setAnimationContext({ ticksPerSecond: 2, simulationStatus: 'playing' });
     circuit = createMockCircuit({
       componentCount: 1,
       componentTypes: [ComponentType.Switch],
@@ -571,20 +573,26 @@ describe('SwitchVisualFactory - Animation', () => {
 
   describe('updateAnimation()', () => {
     it('should rotate contactor based on state.isClosed', () => {
-      const closedState: SwitchState = {
+      const closedState = {
         componentId: component.id,
+        state: 'closed',
         isClosed: true,
-      } as SwitchState;
+        hasExpiration: false,
+        parameters: new Map<string, string>(),
+      } as unknown as SwitchState;
 
-      const openState: SwitchState = {
+      const openState = {
         componentId: component.id,
+        state: 'open',
         isClosed: false,
-      } as SwitchState;
+        hasExpiration: false,
+        parameters: new Map<string, string>(),
+      } as unknown as SwitchState;
 
       // Get initial rotation
       let contactorGroup: THREE.Object3D | null = null;
       visual.traverse((child) => {
-        if (child.userData.part === 'contactor') {
+        if (child.userData.part === 'contactorGroup') {
           contactorGroup = child;
         }
       });
@@ -610,6 +618,79 @@ describe('SwitchVisualFactory - Animation', () => {
 
         expect(closedOpenDifferent).toBe(true);
       }
+    });
+
+    it('should update contactor color based on output pin parameters', () => {
+      // Find contactor mesh
+      let contactorMesh: THREE.Mesh | null = null;
+      visual.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.userData.part === 'contactor') {
+          contactorMesh = child;
+        }
+      });
+      expect(contactorMesh).not.toBeNull();
+
+      // State with voltage + current on output pin
+      const stateWithBoth = {
+        componentId: component.id,
+        state: 'closed',
+        hasExpiration: false,
+        parameters: new Map<string, string>([
+          ['outVoltage', 'true'],
+          ['outCurrent', 'true'],
+        ]),
+      } as unknown as SwitchState;
+
+      factory.updateAnimation(visual, stateWithBoth);
+      const mat = (contactorMesh as unknown as THREE.Mesh).material as THREE.MeshLambertMaterial;
+      // Should be magenta (0xff00ff)
+      expect(mat.color.r).toBe(1);
+      expect(mat.color.g).toBe(0);
+      expect(mat.color.b).toBe(1);
+
+      // State with no voltage/current → white
+      const stateWithNone = {
+        componentId: component.id,
+        state: 'open',
+        hasExpiration: false,
+        parameters: new Map<string, string>([
+          ['outVoltage', 'false'],
+          ['outCurrent', 'false'],
+        ]),
+      } as unknown as SwitchState;
+
+      factory.updateAnimation(visual, stateWithNone);
+      expect(mat.color.r).toBe(1);
+      expect(mat.color.g).toBe(1);
+      expect(mat.color.b).toBe(1);
+    });
+
+    it('should restore shared material when leaving simulation', () => {
+      let contactorMesh: THREE.Mesh | null = null;
+      visual.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.userData.part === 'contactor') {
+          contactorMesh = child;
+        }
+      });
+      expect(contactorMesh).not.toBeNull();
+
+      // Enter simulation with colored contactor
+      const state = {
+        componentId: component.id,
+        state: 'closed',
+        hasExpiration: false,
+        parameters: new Map<string, string>([
+          ['outVoltage', 'true'],
+          ['outCurrent', 'false'],
+        ]),
+      } as unknown as SwitchState;
+
+      factory.updateAnimation(visual, state);
+      expect((contactorMesh as unknown as THREE.Mesh).userData.clonedMat).toBe(true);
+
+      // Leave simulation
+      factory.updateAnimation(visual, null);
+      expect((contactorMesh as unknown as THREE.Mesh).userData.clonedMat).toBeFalsy();
     });
   });
 });

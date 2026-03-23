@@ -43,6 +43,11 @@ export abstract class ComponentState {
   protected _nextState: string | null;
 
   /**
+   * extra state parameters
+   */
+  parameters: Map<string, string> = new Map();
+
+  /**
    * Create a new component state.
    *
    * @param componentId - UUID of the component

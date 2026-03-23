@@ -423,6 +423,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
         return;
       }
       if (!(child instanceof THREE.Mesh)) return;
+      if (child.userData.materialLocked) return;
 
       const material = child.material;
       if (material.visible === false
@@ -455,6 +456,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
         return;
       }
       if (!(child instanceof THREE.Mesh)) return;
+      if (child.userData.materialLocked) return;
 
       const material = child.material;
       if (material.visible === false
