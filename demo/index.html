@@ -402,13 +402,13 @@
       "name": "Untitled Circuit",
       "defaultLogicFamily": "CMOS1"
     },
-    "size": 11,
-    "divisions": 10,
+    "size": 15,
+    "divisions": 12,
     "cameraOptions": {
       "position": {
-        "x": -4.157083004698365,
-        "y": 10.409344671014829,
-        "z": 4.014528856323864
+        "x": -2.1541264241677314,
+        "y": 11.575414021322981,
+        "z": 2.894669040917963
       },
       "lookAtPosition": {
         "x": -0.9423904840816003,
@@ -532,6 +532,49 @@
         "halfPeriod": "1"
       },
       "editable": true
+    },
+    {
+      "id": "262dd547-6da6-43bd-aee6-cff578511f12",
+      "type": "smallLED",
+      "position": {
+        "x": 2,
+        "y": 5
+      },
+      "rotation": 0,
+      "pins": [
+        "135e8ebb-ee40-47b0-8cf8-4265166294b8",
+        "5cf04e1d-4622-485e-92dc-9d9d7e0ff477"
+      ],
+      "config": {
+        "transitionSpan": "1",
+        "idleColor": "white",
+        "activeColor": "#d400ff",
+        "size": "1",
+        "ywRatio": "1"
+      },
+      "editable": true
+    },
+    {
+      "id": "f4cb4434-7093-4283-b777-d0005a5e656d",
+      "type": "rectangleLED",
+      "position": {
+        "x": 2,
+        "y": 7
+      },
+      "rotation": 0,
+      "pins": [
+        "3d1b052d-32f7-428a-936c-55096012cdd6",
+        "aa7d55f3-f57e-4e29-bc8a-614af14cfed3"
+      ],
+      "config": {
+        "transitionSpan": "1",
+        "idleColor": "#2b2626",
+        "activeColor": "#116fe8",
+        "size": "1",
+        "hwRatio": "1",
+        "ywRatio": "1"
+      },
+      "editable": true
     }
   ],
   "enodes": [
@@ -646,6 +689,58 @@
       "subtype": "gnd",
       "component": "69e0b983-c2d5-4b95-933b-044468a891ac",
       "pinLabel": "gnd"
+    },
+    {
+      "id": "135e8ebb-ee40-47b0-8cf8-4265166294b8",
+      "type": "Pin",
+      "source": null,
+      "subtype": "free",
+      "component": "262dd547-6da6-43bd-aee6-cff578511f12",
+      "pinLabel": "pin1"
+    },
+    {
+      "id": "5cf04e1d-4622-485e-92dc-9d9d7e0ff477",
+      "type": "Pin",
+      "source": "Current",
+      "subtype": "free",
+      "component": "262dd547-6da6-43bd-aee6-cff578511f12",
+      "pinLabel": "pin2"
+    },
+    {
+      "id": "3d1b052d-32f7-428a-936c-55096012cdd6",
+      "type": "Pin",
+      "source": null,
+      "subtype": "free",
+      "component": "f4cb4434-7093-4283-b777-d0005a5e656d",
+      "pinLabel": "pin1"
+    },
+    {
+      "id": "aa7d55f3-f57e-4e29-bc8a-614af14cfed3",
+      "type": "Pin",
+      "source": "Current",
+      "subtype": "free",
+      "component": "f4cb4434-7093-4283-b777-d0005a5e656d",
+      "pinLabel": "pin2"
+    },
+    {
+      "id": "5b636e3c-a650-47ef-b4a8-c613a1abdef1",
+      "type": "BranchingPoint",
+      "source": null,
+      "subtype": "free",
+      "position": {
+        "x": 1,
+        "y": 5
+      }
+    },
+    {
+      "id": "eb6ae964-9d44-44ff-b6e2-189f3f3cc2bb",
+      "type": "BranchingPoint",
+      "source": null,
+      "subtype": "free",
+      "position": {
+        "x": 1,
+        "y": 3
+      }
     }
   ],
   "wires": [
@@ -656,9 +751,33 @@
       "intermediatePositions": []
     },
     {
-      "id": "50e2b590-19f4-401b-a12a-d0a0a128aa0b",
+      "id": "42ca035c-f5dc-498d-b0cd-a30ce4cf3811",
+      "node1": "135e8ebb-ee40-47b0-8cf8-4265166294b8",
+      "node2": "5b636e3c-a650-47ef-b4a8-c613a1abdef1",
+      "intermediatePositions": []
+    },
+    {
+      "id": "bfa2e299-e718-4083-b1ba-d44fceb73012",
+      "node1": "3d1b052d-32f7-428a-936c-55096012cdd6",
+      "node2": "5b636e3c-a650-47ef-b4a8-c613a1abdef1",
+      "intermediatePositions": []
+    },
+    {
+      "id": "7c2c0438-4b86-4c4d-af32-068ce7203502",
       "node1": "88324cf4-ebef-4ac6-878e-18d5a2af8ffd",
+      "node2": "eb6ae964-9d44-44ff-b6e2-189f3f3cc2bb",
+      "intermediatePositions": []
+    },
+    {
+      "id": "b404c70f-1a6c-49ec-be78-b8ca53353e5f",
+      "node1": "eb6ae964-9d44-44ff-b6e2-189f3f3cc2bb",
       "node2": "e8bb5a58-f224-4011-8319-a59227df4689",
+      "intermediatePositions": []
+    },
+    {
+      "id": "c84fe707-ebca-4db3-8057-fd4239ed12f9",
+      "node1": "5b636e3c-a650-47ef-b4a8-c613a1abdef1",
+      "node2": "eb6ae964-9d44-44ff-b6e2-189f3f3cc2bb",
       "intermediatePositions": []
     }
   ]

@@ -10,16 +10,16 @@ import {
   type Component,
   type ComponentType,
   type ComponentState,
-  ENode,
-  type IComponentTypeMetadata
+  ENode
 } from 'simple-circuit-engine/core';
 import { ENodeSourceType } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
 import { HitboxLayers } from '../utils/LayerConstants';
 
 import type { AnimationContext, ConfigFormDefinition, VisualContext } from '../types';
-import type {Direction2D} from "../utils/GeometryUtils";
-import {MeshLambertMaterial} from "three";
+import type { Direction2D } from '../utils/GeometryUtils';
+import { MeshLambertMaterial } from 'three';
+import { CMP_MATERIALS, CmpMatCategory, CmpMatType, CmpMatVariant } from './types';
 
 /**
  * Interface for component visual factories
@@ -247,77 +247,15 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
   protected static readonly DEFAULT_HOVER_INTENSITY = 0.6;
 
 
-  protected readonly MATERIALS: Readonly<Record<string, Record<string, THREE.MeshLambertMaterial>>> = {
-    WHITE : {
-      NORMAL: new THREE.MeshLambertMaterial({
-        color: 0xffffff,
-        userData: { sceMat: 'WHITE'}
-      }),
-      HOVERED: new THREE.MeshLambertMaterial({
-        color: 0xffffff,
-        emissive: 0x4488ff,
-        emissiveIntensity: 0.6,
-        userData: { sceMat: 'WHITE'}
-      }),
-      SELECTED: new THREE.MeshLambertMaterial({
-        color: 0xffffff,
-        emissive: 0xff8800,
-        emissiveIntensity: 0.8,
-        userData: { sceMat: 'WHITE'}
-      })
-    },
-    SHINY_SILVER : {
-      NORMAL: new THREE.MeshLambertMaterial({
-        color: 0xC0C0C0,
-        emissive: 0xffffff,
-        emissiveIntensity: 0.8,
-        userData: { sceMat: 'SHINY_SILVER'}
-      }),
-      HOVERED: new THREE.MeshLambertMaterial({
-        color: 0xC0C0C0,
-        emissive: 0x4488ff,
-        emissiveIntensity: 0.9,
-        userData: { sceMat: 'SHINY_SILVER'}
-      }),
-      SELECTED: new THREE.MeshLambertMaterial({
-        color: 0xC0C0C0,
-        emissive: 0xff8800,
-        emissiveIntensity: 0.9,
-        userData: { sceMat: 'SHINY_SILVER'}
-      })
-    },
-    GLASS : {
-      NORMAL: new THREE.MeshLambertMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0.75,
-        userData: { sceMat: 'GLASS'}
-      }),
-      HOVERED: new THREE.MeshLambertMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0.8,
-        emissive: 0x4488ff,
-        emissiveIntensity: 0.6,
-        userData: { sceMat: 'GLASS'}
-      }),
-      SELECTED: new THREE.MeshLambertMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0.9,
-        emissive: 0xff8800,
-        emissiveIntensity: 0.8,
-        userData: { sceMat: 'GLASS'}
-      })
+  protected getMat(
+    category: CmpMatCategory,
+    variant: CmpMatVariant = CmpMatVariant.NORMAL
+  ): MeshLambertMaterial {
+    const matCat = CMP_MATERIALS[category];
+    if (!matCat) {
+      return CMP_MATERIALS[CmpMatCategory.WHITE][CmpMatVariant.NORMAL];
     }
-  }
-
-  protected getMat(category: string, variant: string = 'NORMAL'): MeshLambertMaterial {
-    const matCat = this.MATERIALS[category];
-    if(!matCat){
-      return this.MATERIALS.WHITE!!.NORMAL!!;
-    }
-    return matCat[variant] || this.MATERIALS.WHITE!!.NORMAL!!;
+    return matCat[variant] || CMP_MATERIALS[CmpMatCategory.WHITE][CmpMatVariant.NORMAL];
   }
 
 
@@ -362,16 +300,14 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
         return;
       }
       if (!(child instanceof THREE.Mesh)) return;
-      if (child.userData.materialLocked) return; // this flag indicates material is locked by animation
 
       const material = child.material;
       if (material.visible === false
-          || !material.userData ||
-          !material.userData.sceMat) return;
+          || material.userData?.matType !== CmpMatType.SHARED) return;
 
-      const matCategory = this.MATERIALS[material.userData.sceMat];
-      if(!matCategory) return;
-      child.material = matCategory.HOVERED;
+      const matCategory = CMP_MATERIALS[material.userData.matCat as CmpMatCategory];
+      if (!matCategory) return;
+      child.material = matCategory[CmpMatVariant.HOVERED];
     });
   }
 
@@ -392,16 +328,14 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
         return;
       }
       if (!(child instanceof THREE.Mesh)) return;
-      if (child.userData.materialLocked) return; // this flag indicates material is locked by animation
 
       const material = child.material;
       if (material.visible === false
-          || !material.userData ||
-          !material.userData.sceMat) return;
+          || material.userData?.matType !== CmpMatType.SHARED) return;
 
-      const matCategory = this.MATERIALS[material.userData.sceMat];
-      if(!matCategory) return;
-      child.material = matCategory.NORMAL;
+      const matCategory = CMP_MATERIALS[material.userData.matCat as CmpMatCategory];
+      if (!matCategory) return;
+      child.material = matCategory[CmpMatVariant.NORMAL];
     });
   }
 
@@ -423,16 +357,14 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
         return;
       }
       if (!(child instanceof THREE.Mesh)) return;
-      if (child.userData.materialLocked) return;
 
       const material = child.material;
       if (material.visible === false
-          || !material.userData ||
-          !material.userData.sceMat) return;
+          || material.userData?.matType !== CmpMatType.SHARED) return;
 
-      const matCategory = this.MATERIALS[material.userData.sceMat];
-      if(!matCategory) return;
-      child.material = matCategory.SELECTED;
+      const matCategory = CMP_MATERIALS[material.userData.matCat as CmpMatCategory];
+      if (!matCategory) return;
+      child.material = matCategory[CmpMatVariant.SELECTED];
     });
 
     object3D.userData.isSelected = true;
@@ -456,16 +388,14 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
         return;
       }
       if (!(child instanceof THREE.Mesh)) return;
-      if (child.userData.materialLocked) return;
 
       const material = child.material;
       if (material.visible === false
-          || !material.userData ||
-          !material.userData.sceMat) return;
+          || material.userData?.matType !== CmpMatType.SHARED) return;
 
-      const matCategory = this.MATERIALS[material.userData.sceMat];
-      if(!matCategory) return;
-      child.material = matCategory.NORMAL;
+      const matCategory = CMP_MATERIALS[material.userData.matCat as CmpMatCategory];
+      if (!matCategory) return;
+      child.material = matCategory[CmpMatVariant.NORMAL];
     });
     object3D.userData.isSelected = false;
   }

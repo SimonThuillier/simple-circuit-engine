@@ -4,6 +4,7 @@
  */
 
 export type { IFactoryRegistry, IComponentVisualFactory } from './ComponentVisualFactory.js';
+export { CmpMatCategory, CmpMatVariant, CmpMatType, CMP_MATERIALS } from './types.js';
 
 export { FactoryRegistry } from './FactoryRegistry.js';
 export { DefaultVisualFactory } from './DefaultVisualFactory.js';

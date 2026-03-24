@@ -1,8 +1,9 @@
 import { ComponentVisualFactoryBase } from '../ComponentVisualFactory';
-import {type Component, type ComponentState} from 'simple-circuit-engine/core';
+import {CmpMatCategory, CmpMatType} from '../types';
+import { type Component, type ComponentState } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
 import { RingGeometry, CyclicTrapezoidGeometry } from '../../utils/GeometryUtils';
-import type {ConfigFormDefinition, VisualContext} from '../../types';
+import type { ConfigFormDefinition, VisualContext } from '../../types';
 
 /**
  * Visual factory for Clock
@@ -25,7 +26,8 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
         transparent: true,
         opacity: 0.4,
         emissive: 0xff0000,
-        emissiveIntensity: 0.2,
+        emissiveIntensity: 0.3,
+        userData: { matType: CmpMatType.FACTORY }
       }
   );
   private readonly BLUE_AREA_MAT = new THREE.MeshLambertMaterial({
@@ -33,7 +35,8 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
         transparent: true,
         opacity: 0.4,
         emissive: 0x0000ff,
-        emissiveIntensity: 0.2,
+        emissiveIntensity: 0.3,
+        userData: { matType: CmpMatType.FACTORY }
       }
   );
 
@@ -45,7 +48,6 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
   createVisual(component: Component, context: VisualContext): THREE.Object3D {
     // Root group (not rendered, just organizational)
     const group = new THREE.Group();
-    //group.add(new THREE.AxesHelper(3));
     group.userData = {
       type: 'componentGroup',
       componentId: component.id,
@@ -55,16 +57,7 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
     const hitbox = this.createComponentHitbox(component.id, group.id, 2, 2, 2);
     group.add(hitbox);
 
-    // areas
-    const highArea = new THREE.Mesh(this.AREA_GEOMETRY, this.RED_AREA_MAT);
-    highArea.position.set(0,0.2,0);
-    group.add(highArea);
-    const lowAstral = new THREE.Mesh(this.AREA_GEOMETRY, this.BLUE_AREA_MAT);
-    lowAstral.rotateY(Math.PI);
-    lowAstral.position.set(0,0.2,0);
-    group.add(lowAstral);
-
-    const envelope = new THREE.Mesh(this.ENVELOPE_GEOMETRY, this.getMat('WHITE'));
+    const envelope = new THREE.Mesh(this.ENVELOPE_GEOMETRY, this.getMat(CmpMatCategory.WHITE));
     envelope.userData = {
       type: 'component',
       componentId: group.userData.componentId,
@@ -74,17 +67,24 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
     envelope.position.set(0, 0, 0);
     group.add(envelope);
 
+    // red and blue areas
+    const highArea = new THREE.Mesh(this.AREA_GEOMETRY, this.RED_AREA_MAT);
+    highArea.position.set(0,0.2,0);
+    group.add(highArea);
+    const lowArea = new THREE.Mesh(this.AREA_GEOMETRY, this.BLUE_AREA_MAT);
+    lowArea.rotateY(Math.PI);
+    lowArea.position.set(0,0.2,0);
+    group.add(lowArea);
+
+    // hand
     const handGroup = this.createHandGroup(component);
     group.add(handGroup);
-    //handGroup.add(new THREE.AxesHelper(1));
     handGroup.rotation.copy(this.HIGH_TICK_ROTATION);
-
-
 
 
     // pins (not called if preview - no pins)
     if (component.pins.length > 0){
-      this.createPinsVisual(component, context, group, group.userData.material);
+      this.createPinsVisual(component, context, group);
     }
 
     this.updateFromConfiguration(group, component.config);
@@ -94,8 +94,7 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
   private createPinsVisual(
       component: Component,
       context: VisualContext,
-      group: THREE.Group,
-      _material: THREE.MeshStandardMaterial){
+      group: THREE.Group){
 
     const vccNode = context.getENode(component.pins[0]!);
     if (vccNode){
@@ -128,12 +127,11 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
       part: 'handGroup',
       initialState: 'open'
     };
-    //handGroup.add(new THREE.AxesHelper(2));
     handGroup.updateMatrix();
     handGroup.updateMatrixWorld(true);
 
 
-    const hand = new THREE.Mesh(this.HAND_GEOMETRY, this.getMat('SHINY_SILVER'));
+    const hand = new THREE.Mesh(this.HAND_GEOMETRY, this.getMat(CmpMatCategory.SHINY_SILVER));
     hand.userData = {
       type: 'component',
       componentId: component.id,
@@ -232,7 +230,7 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
     const handGroup = this.findHandGroup(object3D);
     if (!handGroup) return;
 
-    console.log('update animation called', this._animationContext!!.simulationStatus );
+    //console.log('update animation called', this._animationContext!!.simulationStatus );
 
     // No animation context / Leaving simulation: cleanup and reset
     if (!state || !this._animationContext) {

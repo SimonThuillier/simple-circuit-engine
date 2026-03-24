@@ -19,6 +19,7 @@ import { createMockCircuit } from '../helpers';
 import type { SmallLEDState } from '../../../src/core/simulation/states/basic/SmallLEDState';
 import type { SwitchState } from '../../../src/core/simulation/states/basic/SwitchState';
 import type { AnimationContext } from '../../../src/scene/shared/types';
+import { CmpMatCategory, CmpMatType, CmpMatVariant, CMP_MATERIALS } from '../../../src/scene/shared/components/types';
 
 /**
  * Test factory that extends ComponentVisualFactoryBase
@@ -30,14 +31,9 @@ class TestVisualFactory extends ComponentVisualFactoryBase {
     group.userData.componentId = component.id;
     group.userData.componentType = component.type;
 
-    // Add a mesh with standard material
+    // Add a mesh with shared material from CMP_MATERIALS
     const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshStandardMaterial({
-      color: 0x00ff00,
-      emissive: 0x000000,
-      emissiveIntensity: 0,
-    });
-    const mesh = new THREE.Mesh(geometry, material);
+    const mesh = new THREE.Mesh(geometry, this.getMat(CmpMatCategory.WHITE));
     group.add(mesh);
 
     return group;
@@ -58,116 +54,72 @@ describe('ComponentVisualFactoryBase', () => {
   });
 
   describe('applyHover()', () => {
-    it('should modify emissive color to default hover color', () => {
+    it('should swap shared material to HOVERED variant', () => {
+      const normalMat = CMP_MATERIALS[CmpMatCategory.WHITE][CmpMatVariant.NORMAL];
+      const hoveredMat = CMP_MATERIALS[CmpMatCategory.WHITE][CmpMatVariant.HOVERED];
+
       factory.applyHover(visual);
 
-      // Check that at least one mesh has the hover color
-      let foundHoverColor = false;
+      let foundHoveredMat = false;
       visual.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-          const material = child.material;
-          if (material.emissive.getHex() === ComponentVisualFactoryBase['DEFAULT_HOVER_COLOR']) {
-            foundHoverColor = true;
-          }
+        if (child instanceof THREE.Mesh && child.material === hoveredMat) {
+          foundHoveredMat = true;
         }
       });
-
-      expect(foundHoverColor).toBe(true);
+      expect(foundHoveredMat).toBe(true);
     });
 
-    it('should modify emissive intensity to default hover intensity', () => {
+    it('should apply hover emissive properties on HOVERED variant', () => {
       factory.applyHover(visual);
 
-      // Check that at least one mesh has the hover intensity
-      let foundHoverIntensity = false;
-      visual.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-          const material = child.material;
-          if (
-            material.emissiveIntensity === ComponentVisualFactoryBase['DEFAULT_HOVER_INTENSITY']
-          ) {
-            foundHoverIntensity = true;
-          }
-        }
-      });
-
-      expect(foundHoverIntensity).toBe(true);
+      const hoveredMat = CMP_MATERIALS[CmpMatCategory.WHITE][CmpMatVariant.HOVERED];
+      expect(hoveredMat.emissive.getHex()).toBe(0x4488ff);
+      expect(hoveredMat.emissiveIntensity).toBe(0.6);
     });
 
     it('should skip hover visual when component is selected', () => {
-      // Mark as selected
       visual.userData.isSelected = true;
+      const normalMat = CMP_MATERIALS[CmpMatCategory.WHITE][CmpMatVariant.NORMAL];
 
-      // Store current state
-      let originalEmissiveHex: number | undefined;
-      let originalIntensity: number | undefined;
-      visual.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-          originalEmissiveHex = child.material.emissive.getHex();
-          originalIntensity = child.material.emissiveIntensity;
-        }
-      });
-
-      // Apply hover
       factory.applyHover(visual);
 
-      // Should not have changed (selection takes precedence)
+      // Material should remain NORMAL (not swapped)
       visual.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-          expect(child.material.emissive.getHex()).toBe(originalEmissiveHex);
-          expect(child.material.emissiveIntensity).toBe(originalIntensity);
+        if (child instanceof THREE.Mesh && child.material.userData?.matType === CmpMatType.SHARED) {
+          expect(child.material).toBe(normalMat);
         }
       });
     });
 
     it('should skip invisible materials (hitboxes)', () => {
-      // Add an invisible hitbox mesh
-      const hitboxGeometry = new THREE.BoxGeometry(2, 2, 2);
-      const hitboxMaterial = new THREE.MeshStandardMaterial({
-        visible: false,
-        transparent: true,
-        opacity: 0.2,
-      });
-      const hitbox = new THREE.Mesh(hitboxGeometry, hitboxMaterial);
-      const originalIntensity = hitboxMaterial.emissiveIntensity;
+      const hitboxMaterial = new THREE.MeshBasicMaterial({ visible: false });
+      const hitbox = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), hitboxMaterial);
       visual.add(hitbox);
 
       factory.applyHover(visual);
 
-      // Hitbox emissive should not have changed
-      expect(hitboxMaterial.emissiveIntensity).toBe(originalIntensity);
+      // Hitbox material should be unchanged
+      expect(hitbox.material).toBe(hitboxMaterial);
     });
   });
 
   describe('removeHover()', () => {
-    it('should reset emissive intensity to 0', () => {
-      // Apply hover first
+    it('should restore shared material to NORMAL variant', () => {
+      const normalMat = CMP_MATERIALS[CmpMatCategory.WHITE][CmpMatVariant.NORMAL];
+
       factory.applyHover(visual);
-
-      // Verify hover is applied
-      let hoverApplied = false;
-      visual.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-          if (child.material.emissiveIntensity > 0) {
-            hoverApplied = true;
-          }
-        }
-      });
-      expect(hoverApplied).toBe(true);
-
-      // Remove hover
       factory.removeHover(visual);
 
-      // Check intensity is reset to 0
+      let foundNormalMat = false;
       visual.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-          expect(child.material.emissiveIntensity).toBe(0);
+        if (child instanceof THREE.Mesh && child.material === normalMat) {
+          foundNormalMat = true;
         }
       });
+      expect(foundNormalMat).toBe(true);
     });
 
     it('should be safe to call without prior applyHover', () => {
-      // Should not throw
       expect(() => {
         factory.removeHover(visual);
       }).not.toThrow();
@@ -177,49 +129,35 @@ describe('ComponentVisualFactoryBase', () => {
       factory.applyHover(visual);
       factory.removeHover(visual);
 
-      // Call again - should not throw
       expect(() => {
         factory.removeHover(visual);
       }).not.toThrow();
     });
 
     it('should skip when component is selected', () => {
-      // Apply selection first
       factory.applySelection(visual);
+      const selectedMat = CMP_MATERIALS[CmpMatCategory.WHITE][CmpMatVariant.SELECTED];
 
-      // Store selection state
-      let selectionEmissiveHex: number | undefined;
-      let selectionIntensity: number | undefined;
-      visual.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-          selectionEmissiveHex = child.material.emissive.getHex();
-          selectionIntensity = child.material.emissiveIntensity;
-        }
-      });
-
-      // Try to remove hover (should be ignored since selected)
       factory.removeHover(visual);
 
-      // Selection visual should remain unchanged
+      // Material should remain SELECTED
       visual.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-          expect(child.material.emissive.getHex()).toBe(selectionEmissiveHex);
-          expect(child.material.emissiveIntensity).toBe(selectionIntensity);
+        if (child instanceof THREE.Mesh && child.material.userData?.matType === CmpMatType.SHARED) {
+          expect(child.material).toBe(selectedMat);
         }
       });
     });
   });
 
   describe('applySelection()', () => {
-    it('should apply orange emissive glow to meshes', () => {
+    it('should swap shared material to SELECTED variant', () => {
+      const selectedMat = CMP_MATERIALS[CmpMatCategory.WHITE][CmpMatVariant.SELECTED];
+
       factory.applySelection(visual);
 
       visual.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-          // Skip invisible materials
-          if (child.material.visible === false || child.material.opacity < 0.5) {
-            return;
-          }
+        if (child instanceof THREE.Mesh && child.material.userData?.matType === CmpMatType.SHARED) {
+          expect(child.material).toBe(selectedMat);
           expect(child.material.emissive.getHex()).toBe(0xff8800);
           expect(child.material.emissiveIntensity).toBe(0.8);
         }
@@ -235,69 +173,49 @@ describe('ComponentVisualFactoryBase', () => {
     });
 
     it('should skip invisible materials (hitboxes)', () => {
-      // Add an invisible hitbox
-      const hitboxGeometry = new THREE.BoxGeometry(2, 2, 2);
-      const hitboxMaterial = new THREE.MeshStandardMaterial({
-        visible: false,
-        transparent: true,
-        opacity: 0.2,
-      });
-      const hitbox = new THREE.Mesh(hitboxGeometry, hitboxMaterial);
-      const originalIntensity = hitboxMaterial.emissiveIntensity;
+      const hitboxMaterial = new THREE.MeshBasicMaterial({ visible: false });
+      const hitbox = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), hitboxMaterial);
       visual.add(hitbox);
 
       factory.applySelection(visual);
 
-      // Hitbox should not have selection applied
-      expect(hitboxMaterial.emissiveIntensity).toBe(originalIntensity);
+      expect(hitbox.material).toBe(hitboxMaterial);
     });
 
     it('should take precedence over hover effect', () => {
-      // Apply hover first
+      const hoveredMat = CMP_MATERIALS[CmpMatCategory.WHITE][CmpMatVariant.HOVERED];
+      const selectedMat = CMP_MATERIALS[CmpMatCategory.WHITE][CmpMatVariant.SELECTED];
+
       factory.applyHover(visual);
 
-      // Verify hover is applied
+      // Verify hover material is applied
       visual.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-          expect(child.material.emissive.getHex()).toBe(0x4488ff);
+        if (child instanceof THREE.Mesh && child.material.userData?.matType === CmpMatType.SHARED) {
+          expect(child.material).toBe(hoveredMat);
         }
       });
 
-      // Then apply selection
+      // Apply selection — should override hover
       factory.applySelection(visual);
 
       visual.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-          // Selection color should be applied (orange), not hover color (blue)
-          expect(child.material.emissive.getHex()).toBe(0xff8800);
-          expect(child.material.emissiveIntensity).toBe(0.8);
+        if (child instanceof THREE.Mesh && child.material.userData?.matType === CmpMatType.SHARED) {
+          expect(child.material).toBe(selectedMat);
         }
       });
     });
   });
 
   describe('removeSelection()', () => {
-    it('should reset emissive intensity to 0', () => {
-      // Apply selection
+    it('should restore shared material to NORMAL variant', () => {
+      const normalMat = CMP_MATERIALS[CmpMatCategory.WHITE][CmpMatVariant.NORMAL];
+
       factory.applySelection(visual);
-
-      // Verify selection is applied
-      let selectionApplied = false;
-      visual.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-          if (child.material.emissiveIntensity === 0.8) {
-            selectionApplied = true;
-          }
-        }
-      });
-      expect(selectionApplied).toBe(true);
-
-      // Remove selection
       factory.removeSelection(visual);
 
       visual.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-          expect(child.material.emissiveIntensity).toBe(0);
+        if (child instanceof THREE.Mesh && child.material.userData?.matType === CmpMatType.SHARED) {
+          expect(child.material).toBe(normalMat);
         }
       });
     });
@@ -459,19 +377,18 @@ describe('DefaultVisualFactory', () => {
   });
 
   describe('hover effects', () => {
-    it('should inherit default hover behavior from base class', () => {
+    it('should skip private materials (no matType) during hover', () => {
       const group = factory.createVisual(component);
+      const meshBefore = group.children[1] as THREE.Mesh;
+      const materialBefore = meshBefore.material;
 
       // Apply hover
       factory.applyHover(group);
 
-      // Should apply emissive glow to body mesh
-      const mesh = group.children[1] as THREE.Mesh;
-      const material = mesh.material as THREE.MeshStandardMaterial;
-      expect(material.emissive.getHex()).toBe(ComponentVisualFactoryBase['DEFAULT_HOVER_COLOR']);
-      expect(material.emissiveIntensity).toBe(
-        ComponentVisualFactoryBase['DEFAULT_HOVER_INTENSITY']
-      );
+      // DefaultVisualFactory uses inline MeshStandardMaterial (no matType/sceMat)
+      // so hover should not swap the material — same instance reference
+      const meshAfter = group.children[1] as THREE.Mesh;
+      expect(meshAfter.material).toBe(materialBefore);
     });
   });
 });
@@ -484,6 +401,8 @@ describe('SmallLEDVisualFactory - Animation', () => {
 
   beforeEach(() => {
     factory = new SmallLEDVisualFactory();
+    // Inject animation context so updateAnimation processes states (paused → snap path)
+    factory.setAnimationContext({ ticksPerSecond: 2, simulationStatus: 'paused' });
     circuit = createMockCircuit({
       componentCount: 1,
       componentTypes: [ComponentType.SmallLED],
@@ -508,9 +427,9 @@ describe('SmallLEDVisualFactory - Animation', () => {
       visual.traverse((child) => {
         if (child instanceof THREE.Mesh && child.userData.part === 'led') {
           ledMeshFound = true;
-          const material = child.material as THREE.MeshStandardMaterial;
-          expect(material.emissive.getHex()).toBeGreaterThan(0); // Should have some emissive color
-          expect(material.emissiveIntensity).toBeGreaterThan(0); // Should have intensity > 0
+          const material = child.material as THREE.MeshLambertMaterial;
+          expect(material.emissive.getHex()).toBeGreaterThan(0);
+          expect(material.emissiveIntensity).toBeGreaterThan(0);
         }
       });
 
@@ -542,9 +461,9 @@ describe('SmallLEDVisualFactory - Animation', () => {
       visual.traverse((child) => {
         if (child instanceof THREE.Mesh && child.userData.part === 'led') {
           ledMeshFound = true;
-          const material = child.material as THREE.MeshStandardMaterial;
-          expect(material.emissive.getHex()).toBe(0x000000); // Black (no emissive)
-          expect(material.emissiveIntensity).toBe(0); // Zero intensity
+          const material = child.material as THREE.MeshLambertMaterial;
+          expect(material.emissive.getHex()).toBe(0x000000);
+          expect(material.emissiveIntensity).toBe(0);
         }
       });
 
@@ -686,11 +605,13 @@ describe('SwitchVisualFactory - Animation', () => {
       } as unknown as SwitchState;
 
       factory.updateAnimation(visual, state);
-      expect((contactorMesh as unknown as THREE.Mesh).userData.clonedMat).toBe(true);
+      const matAfterAnim = (contactorMesh as unknown as THREE.Mesh).material as THREE.MeshLambertMaterial;
+      expect(matAfterAnim.userData.matType).toBe(CmpMatType.ANIMATION_CLONE);
 
       // Leave simulation
       factory.updateAnimation(visual, null);
-      expect((contactorMesh as unknown as THREE.Mesh).userData.clonedMat).toBeFalsy();
+      const matAfterRestore = (contactorMesh as unknown as THREE.Mesh).material as THREE.MeshLambertMaterial;
+      expect(matAfterRestore.userData.matType).toBe(CmpMatType.SHARED);
     });
   });
 });

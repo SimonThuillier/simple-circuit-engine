@@ -1,4 +1,5 @@
 import { ComponentVisualFactoryBase } from '../ComponentVisualFactory';
+import { CmpMatCategory, CmpMatType } from '../types';
 import type { Component, ComponentState } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
 import type { ConfigFormDefinition, VisualContext } from '../../types';
@@ -44,9 +45,9 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
     };
 
     // Component hitbox (invisible, raycastable)
-    const hitbox = this.createComponentHitbox(component.id, group.id, 1.6, 3, 1);
+    const hitbox = this.createComponentHitbox(component.id, group.id, 2.4, 3, 0.8);
     group.add(hitbox);
-    hitbox.position.set(-0.2,0,0.3);
+    hitbox.position.set(-0.2,0,0);
 
     // Contactor
     const contactorGroup = new THREE.Group();
@@ -57,13 +58,12 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
       part: 'contactorGroup',
       initialState: 'open',
     };
-    contactorGroup.add(new THREE.AxesHelper(1));
     contactorGroup.position.set(0.6, 0, 0);
     contactorGroup.rotation.copy(this.OPEN_ROTATION);
     group.add(contactorGroup);
 
     const contactor = new THREE.Mesh(
-        this.CONTACTOR_GEOMETRY, this.getMat('WHITE'));
+        this.CONTACTOR_GEOMETRY, this.getMat(CmpMatCategory.WHITE));
     contactor.name = 'contactor'; // required for findContactorMesh lookup
     contactor.userData = { part: 'contactor' };
     contactor.position.set(-0.65, 0, 0);
@@ -72,7 +72,7 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
 
     // pins (not called if preview - no pins)
     if (component.pins.length > 0) {
-      this.createPinsVisual(component, context, group, this.getMat('WHITE'));
+      this.createPinsVisual(component, context, group);
     }
 
     this.updateFromConfiguration(group, component.config);
@@ -82,8 +82,7 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
   private createPinsVisual(
       component: Component,
       context: VisualContext,
-      group: THREE.Group,
-      material: THREE.MeshLambertMaterial) {
+      group: THREE.Group) {
     const inputNode = context.getENode(component.pins[0]!);
     if (inputNode) {
       const inputPinGroup = this.createPinGroup(inputNode,'left');
@@ -91,7 +90,7 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
       group.add(inputPinGroup);
 
       const inputPinCounterpart =
-          this.createPinCounterpart(inputPinGroup, material);
+          this.createPinCounterpart(inputPinGroup, this.getMat(CmpMatCategory.WHITE));
       if(!!inputPinCounterpart){
         group.add(inputPinCounterpart);
       }
@@ -104,7 +103,7 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
       group.add(outputPinGroup);
 
       const outputPinCounterpart =
-          this.createPinCounterpart(outputPinGroup, material);
+          this.createPinCounterpart(outputPinGroup, this.getMat(CmpMatCategory.WHITE));
       if(!!outputPinCounterpart){
         group.add(outputPinCounterpart);
       }
@@ -379,17 +378,17 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
   // ---------------------------------------------------------------------------
 
   private _ensureClonedMaterial(contactorMesh: THREE.Mesh): void {
-    if (contactorMesh.userData.clonedMat) return;
-    contactorMesh.material = this.getMat('WHITE').clone();
-    contactorMesh.userData.clonedMat = true;
+    const mat = contactorMesh.material as THREE.MeshLambertMaterial;
+    if (mat.userData.matType === CmpMatType.ANIMATION_CLONE) return;
+    contactorMesh.material = this.getMat(CmpMatCategory.WHITE).clone();
+    (contactorMesh.material as THREE.MeshLambertMaterial).userData.matType = CmpMatType.ANIMATION_CLONE;
   }
 
   private _restoreSharedMaterial(contactorMesh: THREE.Mesh): void {
-    if (!contactorMesh.userData.clonedMat) return;
-    (contactorMesh.material as THREE.MeshLambertMaterial).dispose();
-    contactorMesh.material = this.getMat('WHITE');
-    contactorMesh.userData.clonedMat = false;
-    contactorMesh.userData.materialLocked = false;
+    const mat = contactorMesh.material as THREE.MeshLambertMaterial;
+    if (mat.userData.matType !== CmpMatType.ANIMATION_CLONE) return;
+    mat.dispose();
+    contactorMesh.material = this.getMat(CmpMatCategory.WHITE);
   }
 
   private _updateContactorColor(contactorMesh: THREE.Mesh, state: ComponentState): void {
@@ -410,7 +409,6 @@ export class SwitchVisualFactory extends ComponentVisualFactoryBase {
     } else {
       mat.color.copy(this.COLOR_NONE);
     }
-    contactorMesh.userData.materialLocked = true;
   }
 
   // ---------------------------------------------------------------------------

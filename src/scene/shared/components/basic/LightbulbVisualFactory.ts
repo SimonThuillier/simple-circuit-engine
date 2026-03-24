@@ -1,4 +1,5 @@
 import { ComponentVisualFactoryBase } from '../ComponentVisualFactory';
+import { CmpMatCategory, CmpMatType } from '../types';
 import type { Component, ComponentState, LightbulbState } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
 
@@ -6,13 +7,6 @@ import type { ConfigFormDefinition, VisualContext } from '../../types';
 
 /**
  * Visual factory for Lightbulb components
- *
- * Creates:
- * - LED cylinder mesh
- * - Input pin group
- * - Output pin group
- * - Component hitbox for raycasting
- *
  * Animation:
  * - Smooth emissive glow transition when Lightbulb lights up or turns off
  * - Uses AnimationMixer with material property tracks (emissive, opacity)
@@ -47,11 +41,11 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
     };
 
     // Component hitbox (invisible, raycastable)
-    const hitbox = this.createComponentHitbox(component.id, group.id, 1, 4, 1);
+    const hitbox = this.createComponentHitbox(component.id, group.id, 1, 3, 1);
     group.add(hitbox);
 
     // Visuals
-    const base = new THREE.Mesh(this.BASE_GEOMETRY, this.getMat('WHITE'));
+    const base = new THREE.Mesh(this.BASE_GEOMETRY, this.getMat(CmpMatCategory.WHITE));
     base.userData = {
       type: 'component',
       componentId: component.id,
@@ -60,20 +54,19 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
     base.position.set(0, 0.2, 0);
     group.add(base);
 
-    const bulb = new THREE.Mesh(this.BULB_GEOMETRY, this.getMat('GLASS'));
+    const bulb = new THREE.Mesh(this.BULB_GEOMETRY, this.getMat(CmpMatCategory.GLASS));
     bulb.name = 'bulb'; // required for AnimationMixer property binding
     bulb.userData = {
       type: 'component',
       componentId: component.id,
       part: 'bulb',
-      animateMat: true
     };
     bulb.position.set(0, 0.8, 0);
     group.add(bulb);
 
     // pins (not called if preview - no pins)
     if (component.pins.length > 0) {
-      this.createPinsVisual(component, context, group, this.MATERIALS.WHITE!!.NORMAL!!);
+      this.createPinsVisual(component, context, group);
     }
 
     this.updateFromConfiguration(group, component.config);
@@ -83,8 +76,7 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
   private createPinsVisual(
       component: Component,
       context: VisualContext,
-      group: THREE.Group,
-      material: THREE.MeshLambertMaterial) {
+      group: THREE.Group) {
     const pin1Node = context.getENode(component.pins[0]!);
     if (pin1Node) {
       const pin1Group = this.createPinGroup(pin1Node, 'left');
@@ -92,7 +84,7 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
       group.add(pin1Group);
 
       const pin1Counterpart =
-          this.createPinCounterpart(pin1Group, material);
+          this.createPinCounterpart(pin1Group, this.getMat(CmpMatCategory.WHITE));
       if(!!pin1Counterpart){
         group.add(pin1Counterpart);
       }
@@ -105,7 +97,7 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
       group.add(pin2Group);
 
       const pin2Counterpart =
-          this.createPinCounterpart(pin2Group, material);
+          this.createPinCounterpart(pin2Group, this.getMat(CmpMatCategory.WHITE));
       if(!!pin2Counterpart){
         group.add(pin2Counterpart);
       }
@@ -187,12 +179,10 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
 
     // Playing + transitional state: animate
     if (state.hasExpiration) {
-      console.log("lightbulb transitional");
       this._animateBulb(object3D, bulbMesh, state);
       return;
     }
 
-    console.log("lightbulb NOT transitional");
     // Playing + stable state: snap, cleanup mixer
     this._cleanupMixer(object3D);
     this._snapToState(bulbMesh, lightbulbState.isLit);
@@ -207,9 +197,10 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
    * No-op if already cloned.
    */
   private _ensureClonedMaterial(bulbMesh: THREE.Mesh): void {
-    if (bulbMesh.userData.clonedMat) return;
-    bulbMesh.material = (bulbMesh.material as THREE.MeshLambertMaterial).clone();
-    bulbMesh.userData.clonedMat = true;
+    const mat = bulbMesh.material as THREE.MeshLambertMaterial;
+    if (mat.userData.matType === CmpMatType.ANIMATION_CLONE) return;
+    bulbMesh.material = mat.clone();
+    (bulbMesh.material as THREE.MeshLambertMaterial).userData.matType = CmpMatType.ANIMATION_CLONE;
   }
 
   /**
@@ -217,11 +208,10 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
    * No-op if not cloned.
    */
   private _restoreSharedMaterial(bulbMesh: THREE.Mesh): void {
-    if (!bulbMesh.userData.clonedMat) return;
-    (bulbMesh.material as THREE.MeshLambertMaterial).dispose();
-    bulbMesh.material = this.getMat('GLASS');
-    bulbMesh.userData.clonedMat = false;
-    bulbMesh.userData.materialLocked = false;
+    const mat = bulbMesh.material as THREE.MeshLambertMaterial;
+    if (mat.userData.matType !== CmpMatType.ANIMATION_CLONE) return;
+    mat.dispose();
+    bulbMesh.material = this.getMat(CmpMatCategory.GLASS);
   }
 
   // ---------------------------------------------------------------------------
@@ -236,12 +226,10 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
       mat.emissive.setHex(this.BULB_LIT_COLOR);
       mat.emissiveIntensity = this.BULB_LIT_INTENSITY;
       mat.opacity = 1;
-      bulbMesh.userData.materialLocked = true;
     } else {
       mat.emissive.setHex(0x000000);
       mat.emissiveIntensity = 0;
       mat.opacity = this.BULB_UNLIT_OPACITY;
-      bulbMesh.userData.materialLocked = false;
     }
   }
 
@@ -261,7 +249,6 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
     if (object3D.userData.currentActionStart === state.startTick) return;
 
     this._ensureClonedMaterial(bulbMesh);
-    bulbMesh.userData.materialLocked = true;
 
     const tps = this._animationContext!.ticksPerSecond;
     const span = state.expirationTick - state.startTick;

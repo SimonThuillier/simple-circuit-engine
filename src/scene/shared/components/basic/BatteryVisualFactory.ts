@@ -2,17 +2,14 @@ import { ComponentVisualFactoryBase } from '../ComponentVisualFactory';
 import type { Component } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
 import type {VisualContext} from "../../types";
+import {CmpMatCategory} from "../types";
 
 /**
  * Visual factory for Battery components
- *
- * Creates:
- * - Cylinder mesh (white) for battery body
- * - Cathode pin group at z=-1
- * - Anode pin group at z=+1
- * - Component hitbox for raycasting
  */
 export class BatteryVisualFactory extends ComponentVisualFactoryBase {
+
+  private readonly BATTERY_GEOMETRY = new THREE.CylinderGeometry(0.5, 0.5, 2, 24);
 
   createVisual(component: Component, context: VisualContext): THREE.Object3D {
     // Root group (not rendered, just organizational)
@@ -28,9 +25,7 @@ export class BatteryVisualFactory extends ComponentVisualFactoryBase {
     group.add(hitbox);
 
     // Visual: battery cylinder
-    const cylinderGeometry = new THREE.CylinderGeometry(0.5, 0.5, 2, 24);
-    const cylinderMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
-    const cylinder = new THREE.Mesh(cylinderGeometry, cylinderMaterial);
+    const cylinder = new THREE.Mesh(this.BATTERY_GEOMETRY, this.getMat(CmpMatCategory.WHITE));
     cylinder.userData = {
       type: 'component',
       componentId: component.id,
