@@ -406,14 +406,14 @@
     "divisions": 12,
     "cameraOptions": {
       "position": {
-        "x": -2.1541264241677314,
-        "y": 11.575414021322981,
-        "z": 2.894669040917963
+        "x": -5.859765506476458,
+        "y": 12.356061692254254,
+        "z": 9.226015211413158
       },
       "lookAtPosition": {
-        "x": -0.9423904840816003,
-        "y": 0.4188342074054985,
-        "z": -3.596743366728487
+        "x": -1.4691353431655998,
+        "y": 3.994748269197053,
+        "z": 4.941157229014395
       },
       "fov": 75,
       "near": 0.1,
@@ -436,7 +436,7 @@
       ],
       "config": {
         "startHigh": "true",
-        "halfPeriod": "1"
+        "halfPeriod": "10"
       },
       "editable": true
     },
@@ -455,25 +455,6 @@
       "config": {
         "size": "1",
         "transitionSpan": "10"
-      },
-      "editable": true
-    },
-    {
-      "id": "45718e06-00af-4ab2-a400-86cb3c334639",
-      "type": "switch",
-      "position": {
-        "x": -1,
-        "y": 3
-      },
-      "rotation": 0,
-      "pins": [
-        "8e5f120f-fbb0-489b-ad1a-523048e42695",
-        "88324cf4-ebef-4ac6-878e-18d5a2af8ffd"
-      ],
-      "config": {
-        "initialState": "open",
-        "transitionSpan": "1",
-        "size": "1"
       },
       "editable": true
     },
@@ -575,6 +556,99 @@
         "ywRatio": "1"
       },
       "editable": true
+    },
+    {
+      "id": "d4ec0aa1-d86c-4b42-bd7d-5acbb36dce78",
+      "type": "doubleThrowSwitch",
+      "position": {
+        "x": -1,
+        "y": 3
+      },
+      "rotation": 0,
+      "pins": [
+        "a4ca0e9f-c0c7-4f82-b93f-dc956c43ce98",
+        "fe0d6ad9-1b07-4d55-8df8-d3e986e25b94",
+        "6ca50a26-4720-4762-b211-23140f99f8cb"
+      ],
+      "config": {
+        "initialState": "input1",
+        "transitionSpan": "5",
+        "size": "1"
+      },
+      "editable": true
+    },
+    {
+      "id": "5f02d202-784c-4ea4-ae72-63d974e8a5c0",
+      "type": "battery",
+      "position": {
+        "x": -4,
+        "y": -5
+      },
+      "rotation": 0,
+      "pins": [
+        "fe443a81-5027-451a-bb3b-895a9580c90c",
+        "8ef6b7e8-c587-479e-8e8c-9ad8cd0dfea6"
+      ],
+      "config": {},
+      "editable": true
+    },
+    {
+      "id": "a0420207-fa9f-418b-b88c-dd130dfbcc40",
+      "type": "lightbulb",
+      "position": {
+        "x": 4,
+        "y": -5
+      },
+      "rotation": 90,
+      "pins": [
+        "1b1ad231-e892-49b2-8b71-20ddc9d3a70f",
+        "249f1e92-1745-4010-8a27-10c30f8f7b03"
+      ],
+      "config": {
+        "transitionSpan": "1",
+        "size": "1"
+      },
+      "editable": true
+    },
+    {
+      "id": "2b0bb4ca-7b0e-49f2-b3d9-e3175835b412",
+      "type": "doubleThrowSwitch",
+      "position": {
+        "x": 2,
+        "y": -2
+      },
+      "rotation": 0,
+      "pins": [
+        "e94b69b3-e54e-4297-ab78-7cca5bc0cb97",
+        "0ee57261-e4b8-4899-8502-95ac9668e579",
+        "45984da0-07d9-4dae-9213-14626b61eaae"
+      ],
+      "config": {
+        "initialState": "input1",
+        "transitionSpan": "5",
+        "size": "1"
+      },
+      "editable": true
+    },
+    {
+      "id": "c3fe302c-a3da-47ef-bdaf-afce1e7aaf18",
+      "type": "doubleThrowSwitch",
+      "position": {
+        "x": -2,
+        "y": -2
+      },
+      "rotation": 180,
+      "pins": [
+        "f31f0935-584b-4748-b72f-cebb42213e88",
+        "554f33ad-66a4-4efd-bf16-c26c6f0d2973",
+        "6d911995-deb0-40c7-939f-b3cce6abf1dd"
+      ],
+      "config": {
+        "initialState": "input1",
+        "transitionSpan": "5",
+        "size": "1"
+      },
+      "editable": true
     }
   ],
   "enodes": [
@@ -617,22 +691,6 @@
       "subtype": "free",
       "component": "a759524e-1b83-4e8d-9ece-a037966383ca",
       "pinLabel": "pin2"
-    },
-    {
-      "id": "8e5f120f-fbb0-489b-ad1a-523048e42695",
-      "type": "Pin",
-      "source": null,
-      "subtype": "free",
-      "component": "45718e06-00af-4ab2-a400-86cb3c334639",
-      "pinLabel": "input"
-    },
-    {
-      "id": "88324cf4-ebef-4ac6-878e-18d5a2af8ffd",
-      "type": "Pin",
-      "source": null,
-      "subtype": "free",
-      "component": "45718e06-00af-4ab2-a400-86cb3c334639",
-      "pinLabel": "output"
     },
     {
       "id": "705581ca-8e31-4e23-97be-ca4e468f0e30",
@@ -741,15 +799,113 @@
         "x": 1,
         "y": 3
       }
+    },
+    {
+      "id": "a4ca0e9f-c0c7-4f82-b93f-dc956c43ce98",
+      "type": "Pin",
+      "source": "Voltage",
+      "subtype": "free",
+      "component": "d4ec0aa1-d86c-4b42-bd7d-5acbb36dce78",
+      "pinLabel": "input1"
+    },
+    {
+      "id": "fe0d6ad9-1b07-4d55-8df8-d3e986e25b94",
+      "type": "Pin",
+      "source": null,
+      "subtype": "free",
+      "component": "d4ec0aa1-d86c-4b42-bd7d-5acbb36dce78",
+      "pinLabel": "input2"
+    },
+    {
+      "id": "6ca50a26-4720-4762-b211-23140f99f8cb",
+      "type": "Pin",
+      "source": null,
+      "subtype": "free",
+      "component": "d4ec0aa1-d86c-4b42-bd7d-5acbb36dce78",
+      "pinLabel": "output"
+    },
+    {
+      "id": "fe443a81-5027-451a-bb3b-895a9580c90c",
+      "type": "Pin",
+      "source": "Voltage",
+      "subtype": "mainVcc",
+      "component": "5f02d202-784c-4ea4-ae72-63d974e8a5c0",
+      "pinLabel": "cathode"
+    },
+    {
+      "id": "8ef6b7e8-c587-479e-8e8c-9ad8cd0dfea6",
+      "type": "Pin",
+      "source": "Current",
+      "subtype": "mainGnd",
+      "component": "5f02d202-784c-4ea4-ae72-63d974e8a5c0",
+      "pinLabel": "anode"
+    },
+    {
+      "id": "1b1ad231-e892-49b2-8b71-20ddc9d3a70f",
+      "type": "Pin",
+      "source": null,
+      "subtype": "free",
+      "component": "a0420207-fa9f-418b-b88c-dd130dfbcc40",
+      "pinLabel": "pin1"
+    },
+    {
+      "id": "249f1e92-1745-4010-8a27-10c30f8f7b03",
+      "type": "Pin",
+      "source": null,
+      "subtype": "free",
+      "component": "a0420207-fa9f-418b-b88c-dd130dfbcc40",
+      "pinLabel": "pin2"
+    },
+    {
+      "id": "e94b69b3-e54e-4297-ab78-7cca5bc0cb97",
+      "type": "Pin",
+      "source": null,
+      "subtype": "free",
+      "component": "2b0bb4ca-7b0e-49f2-b3d9-e3175835b412",
+      "pinLabel": "input1"
+    },
+    {
+      "id": "0ee57261-e4b8-4899-8502-95ac9668e579",
+      "type": "Pin",
+      "source": null,
+      "subtype": "free",
+      "component": "2b0bb4ca-7b0e-49f2-b3d9-e3175835b412",
+      "pinLabel": "input2"
+    },
+    {
+      "id": "45984da0-07d9-4dae-9213-14626b61eaae",
+      "type": "Pin",
+      "source": null,
+      "subtype": "free",
+      "component": "2b0bb4ca-7b0e-49f2-b3d9-e3175835b412",
+      "pinLabel": "output"
+    },
+    {
+      "id": "f31f0935-584b-4748-b72f-cebb42213e88",
+      "type": "Pin",
+      "source": null,
+      "subtype": "free",
+      "component": "c3fe302c-a3da-47ef-bdaf-afce1e7aaf18",
+      "pinLabel": "input1"
+    },
+    {
+      "id": "554f33ad-66a4-4efd-bf16-c26c6f0d2973",
+      "type": "Pin",
+      "source": null,
+      "subtype": "free",
+      "component": "c3fe302c-a3da-47ef-bdaf-afce1e7aaf18",
+      "pinLabel": "input2"
+    },
+    {
+      "id": "6d911995-deb0-40c7-939f-b3cce6abf1dd",
+      "type": "Pin",
+      "source": null,
+      "subtype": "free",
+      "component": "c3fe302c-a3da-47ef-bdaf-afce1e7aaf18",
+      "pinLabel": "output"
     }
   ],
   "wires": [
-    {
-      "id": "d6d21167-bfee-4ad0-9005-8f6489b38553",
-      "node1": "7ade927c-74ca-4392-a918-7a9e17231db9",
-      "node2": "8e5f120f-fbb0-489b-ad1a-523048e42695",
-      "intermediatePositions": []
-    },
     {
       "id": "42ca035c-f5dc-498d-b0cd-a30ce4cf3811",
       "node1": "135e8ebb-ee40-47b0-8cf8-4265166294b8",
@@ -763,12 +919,6 @@
       "intermediatePositions": []
     },
     {
-      "id": "7c2c0438-4b86-4c4d-af32-068ce7203502",
-      "node1": "88324cf4-ebef-4ac6-878e-18d5a2af8ffd",
-      "node2": "eb6ae964-9d44-44ff-b6e2-189f3f3cc2bb",
-      "intermediatePositions": []
-    },
-    {
       "id": "b404c70f-1a6c-49ec-be78-b8ca53353e5f",
       "node1": "eb6ae964-9d44-44ff-b6e2-189f3f3cc2bb",
       "node2": "e8bb5a58-f224-4011-8319-a59227df4689",
@@ -778,6 +928,67 @@
       "id": "c84fe707-ebca-4db3-8057-fd4239ed12f9",
       "node1": "5b636e3c-a650-47ef-b4a8-c613a1abdef1",
       "node2": "eb6ae964-9d44-44ff-b6e2-189f3f3cc2bb",
+      "intermediatePositions": []
+    },
+    {
+      "id": "c18a86d7-39f3-4158-8e3c-ea4a1075659e",
+      "node1": "6ca50a26-4720-4762-b211-23140f99f8cb",
+      "node2": "eb6ae964-9d44-44ff-b6e2-189f3f3cc2bb",
+      "intermediatePositions": []
+    },
+    {
+      "id": "7535d109-4d13-40b2-b734-db76a17539ee",
+      "node1": "fe0d6ad9-1b07-4d55-8df8-d3e986e25b94",
+      "node2": "7ade927c-74ca-4392-a918-7a9e17231db9",
+      "intermediatePositions": []
+    },
+    {
+      "id": "426f9bd1-43c1-4112-9215-bd684f143ac9",
+      "node1": "249f1e92-1745-4010-8a27-10c30f8f7b03",
+      "node2": "8ef6b7e8-c587-479e-8e8c-9ad8cd0dfea6",
+      "intermediatePositions": [
+        {
+          "x": 4,
+          "y": -7
+        },
+        {
+          "x": -4,
+          "y": -7
+        }
+      ]
+    },
+    {
+      "id": "8fed023e-bc14-47ac-bb84-caed8eaf2230",
+      "node1": "fe443a81-5027-451a-bb3b-895a9580c90c",
+      "node2": "6d911995-deb0-40c7-939f-b3cce6abf1dd",
+      "intermediatePositions": [
+        {
+          "x": -4,
+          "y": -2
+        }
+      ]
+    },
+    {
+      "id": "764ae2d6-cfb2-4c6d-8fdf-a807e996a43a",
+      "node1": "1b1ad231-e892-49b2-8b71-20ddc9d3a70f",
+      "node2": "45984da0-07d9-4dae-9213-14626b61eaae",
+      "intermediatePositions": [
+        {
+          "x": 4,
+          "y": -2
+        }
+      ]
+    },
+    {
+      "id": "23f3f103-e165-4f56-b1b8-2bc222916073",
+      "node1": "554f33ad-66a4-4efd-bf16-c26c6f0d2973",
+      "node2": "0ee57261-e4b8-4899-8502-95ac9668e579",
+      "intermediatePositions": []
+    },
+    {
+      "id": "7579eb75-d8b0-4e48-83fd-e3a32b5bf112",
+      "node1": "f31f0935-584b-4748-b72f-cebb42213e88",
+      "node2": "e94b69b3-e54e-4297-ab78-7cca5bc0cb97",
       "intermediatePositions": []
     }
   ]

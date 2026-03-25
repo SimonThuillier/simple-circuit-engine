@@ -8,7 +8,6 @@ import type {ComponentState, INodeElectricalState} from '../../states';
 import {SwitchState} from '../../states';
 import type {IScheduledEvent, IUserCommand} from '../../types';
 import {ComponentBehaviorMixin, getTransitionSpan} from '../ComponentBehavior';
-import {getTickCount} from "./index";
 import type {IBehaviorResult, IComponentBehavior} from "../types";
 import {ComponentType, ENodeSourceType} from "../../../topology/types";
 import type {UUID} from "../../../utils";
@@ -105,11 +104,10 @@ export class SwitchBehavior extends ComponentBehaviorMixin implements IComponent
       );
       hasChanged = true;
 
-      const tickCount = getTickCount(command.parameters);
       scheduledEvents.push({
         targetId: component.id,
         scheduledAtTick: state.startTick,
-        readyAtTick: state.startTick + tickCount,
+        readyAtTick: state.expirationTick,
         type: state.state === 'closing' ? 'ClosingEnd' : 'OpeningEnd',
         parameters: new Map([['exclusive', 'true']]),
       });

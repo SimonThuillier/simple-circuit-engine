@@ -4,12 +4,12 @@
  */
 
 import type { Component } from '../../../topology/Component';
-import {type ComponentState, DoubleThrowSwitchState} from '../../states';
+import {type ComponentState, DoubleThrowSwitchState, type INodeElectricalState} from '../../states';
 import type { IScheduledEvent, IUserCommand } from '../../types';
-import {ComponentBehaviorMixin} from '../ComponentBehavior';
-import {getTickCount} from "./index";
+import {ComponentBehaviorMixin, getTransitionSpan} from '../ComponentBehavior';
 import type {IBehaviorResult, IComponentBehavior} from "../types";
 import {ComponentType, ENodeSourceType} from "../../../topology/types";
+import type {UUID} from "../../../utils";
 
 
 
@@ -60,29 +60,76 @@ export class DoubleThrowSwitchBehavior extends ComponentBehaviorMixin implements
     return false;
   }
 
+  /**
+   * used for contactor color change
+   * @param component
+   * @param componentState
+   * @param nodeStates
+   * @param _targetTick
+   */
+  override onPinsChange(
+      component: Component,
+      componentState: ComponentState,
+      nodeStates: ReadonlyMap<UUID, INodeElectricalState>,
+      _targetTick: number
+  ): IBehaviorResult {
+    const outputPinId = component.pins[2];
+    if (!outputPinId) {
+      return { componentState, hasChanged: false, shouldCancelPending: false, scheduledEvents: [] };
+    }
+
+    const outputState = nodeStates.get(outputPinId);
+    const newVoltage = outputState?.hasVoltage ? 'true' : 'false';
+    const newCurrent = outputState?.hasCurrent ? 'true' : 'false';
+
+    const prevVoltage = componentState.parameters.get('outVoltage');
+    const prevCurrent = componentState.parameters.get('outCurrent');
+
+    if (newVoltage === prevVoltage && newCurrent === prevCurrent) {
+      return { componentState, hasChanged: false, shouldCancelPending: false, scheduledEvents: [] };
+    }
+
+    componentState.parameters.set('outVoltage', newVoltage);
+    componentState.parameters.set('outCurrent', newCurrent);
+
+    return {
+      componentState,
+      hasChanged: true,
+      shouldCancelPending: false,
+      scheduledEvents: [],
+    };
+  }
+
   override onUserCommand(component: Component, state: ComponentState, command: IUserCommand): IBehaviorResult {
     let hasChanged = false;
     const scheduledEvents: IScheduledEvent[] = [];
 
+    const transitionSpan = getTransitionSpan(component.config);
+
     if (command.type === 'toggle_switch' && ['input1', 'input2'].includes(state.state)) {
-      state.state = state.state === 'input1' ? '1to2' : '2to1';
-      state.startTick = command.scheduledAtTick + 1;
+      state.setState(
+          state.state === 'input1' ? '1to2' : '2to1',
+          command.scheduledAtTick
+      );
+      state.setNextState(
+          state.state === '1to2' ? 'input2' : 'input1',
+          command.scheduledAtTick + transitionSpan
+      );
       hasChanged = true;
 
-      const tickCount = getTickCount(command.parameters);
       scheduledEvents.push({
         targetId: component.id,
         scheduledAtTick: state.startTick,
-        readyAtTick: state.startTick + tickCount,
+        readyAtTick: state.expirationTick,
         type: state.state === '1to2' ? 'ContactedInput2' : 'ContactedInput1',
-        parameters: undefined,
+        parameters: new Map([['exclusive', 'true']]),
       });
     }
 
     return {
       componentState: state,
       hasChanged: hasChanged,
-      shouldCancelPending: false,
+      shouldCancelPending: true,
       scheduledEvents: scheduledEvents,
     };
   }
@@ -96,15 +143,13 @@ export class DoubleThrowSwitchBehavior extends ComponentBehaviorMixin implements
 
     if (event.type === 'ContactedInput2') {
       if (state.state !== 'input2') {
+        state.setState('input2', event.readyAtTick);
         hasChanged = true;
-        state.startTick = event.readyAtTick;
-        state.state = 'input2';
       }
     } else if (event.type === 'ContactedInput1') {
       if (state.state !== 'input1') {
+        state.setState('input1', event.readyAtTick);
         hasChanged = true;
-        state.startTick = event.readyAtTick;
-        state.state = 'input1';
       }
     }
 
