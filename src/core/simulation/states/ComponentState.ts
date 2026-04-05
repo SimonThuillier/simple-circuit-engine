@@ -5,6 +5,7 @@
 
 
 import type {UUID} from "../../utils/types";
+import type {INodeElectricalState} from "./types";
 
 /**
  * Base class for component simulation state.
@@ -46,6 +47,12 @@ export abstract class ComponentState {
    * extra state parameters
    */
   parameters: Map<string, string> = new Map();
+
+  /**
+   * Pin electrical states, keyed by pin label (e.g. 'cmd_in', 'power_out').
+   * Composite keys use '*' separator for unions (e.g. 'cmd_in*cmd_out').
+   */
+  pinStates: Map<string, INodeElectricalState> = new Map();
 
   /**
    * Create a new component state.

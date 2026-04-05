@@ -407,14 +407,14 @@
     "divisions": 16,
     "cameraOptions": {
       "position": {
-        "x": 1.2409516850413473,
-        "y": 11.401713964322461,
-        "z": 0.6112989328095702
+        "x": 3.847550124559793,
+        "y": 23.697925993104874,
+        "z": 10.238178610855167
       },
       "lookAtPosition": {
-        "x": 1.2432900619328908,
-        "y": -0.05871498405899946,
-        "z": 0.37973079264939713
+        "x": 4.075108314779373,
+        "y": -0.29316886991031843,
+        "z": 10.236603880717984
       },
       "fov": 75,
       "near": 0.1,
@@ -481,7 +481,7 @@
         "c29bf53a-cb7c-4b67-9ac8-1ad3f40fe1e4"
       ],
       "config": {
-        "activationLogic": "negative",
+        "activationLogic": "positive",
         "initializationOrder": "0",
         "transitionSpan": "2",
         "size": "1"
@@ -538,7 +538,48 @@
       ],
       "config": {
         "startHigh": "true",
-        "halfPeriod": "1"
+        "halfPeriod": "2"
+      },
+      "editable": true
+    },
+    {
+      "id": "af0cca3e-fcd1-4aca-9714-a58b3bbe0047",
+      "type": "relay",
+      "position": {
+        "x": 7,
+        "y": -5
+      },
+      "rotation": 0,
+      "pins": [
+        "a4752904-811d-4605-8d27-b9ea66b2925c",
+        "b039bfb2-ecfa-45d0-94d4-d7b2e6650c08",
+        "d3ba5cd7-9c0f-4a13-9e4b-a7dbfcd8fec0",
+        "60888600-5e20-4419-8b23-87bfb8991476"
+      ],
+      "config": {
+        "activationLogic": "negative",
+        "transitionSpan": "2",
+        "initializationOrder": "0",
+        "size": "1"
+      },
+      "editable": true
+    },
+    {
+      "id": "62a2fb49-8650-4d88-bf72-97b18c7e1e12",
+      "type": "switch",
+      "position": {
+        "x": 9,
+        "y": -3
+      },
+      "rotation": 0,
+      "pins": [
+        "3ae40fff-9ac8-4d83-860c-3d2481d73d28",
+        "dd277384-0ae7-4a56-a939-f20753e4dbb1"
+      ],
+      "config": {
+        "initialState": "open",
+        "transitionSpan": "1",
+        "size": "1"
       },
       "editable": true
     }
@@ -695,6 +736,84 @@
       "subtype": "gnd",
       "component": "9daf6d42-1385-4c27-bf02-946e69aa6c98",
       "pinLabel": "gnd"
+    },
+    {
+      "id": "a4752904-811d-4605-8d27-b9ea66b2925c",
+      "type": "Pin",
+      "source": null,
+      "subtype": "free",
+      "component": "af0cca3e-fcd1-4aca-9714-a58b3bbe0047",
+      "pinLabel": "cmd_in"
+    },
+    {
+      "id": "b039bfb2-ecfa-45d0-94d4-d7b2e6650c08",
+      "type": "Pin",
+      "source": "Current",
+      "subtype": "free",
+      "component": "af0cca3e-fcd1-4aca-9714-a58b3bbe0047",
+      "pinLabel": "cmd_out"
+    },
+    {
+      "id": "d3ba5cd7-9c0f-4a13-9e4b-a7dbfcd8fec0",
+      "type": "Pin",
+      "source": "Voltage",
+      "subtype": "free",
+      "component": "af0cca3e-fcd1-4aca-9714-a58b3bbe0047",
+      "pinLabel": "power_in"
+    },
+    {
+      "id": "60888600-5e20-4419-8b23-87bfb8991476",
+      "type": "Pin",
+      "source": null,
+      "subtype": "free",
+      "component": "af0cca3e-fcd1-4aca-9714-a58b3bbe0047",
+      "pinLabel": "power_out"
+    },
+    {
+      "id": "85400188-bf41-4090-a540-05dcaa17328b",
+      "type": "BranchingPoint",
+      "source": null,
+      "subtype": "free",
+      "position": {
+        "x": 11,
+        "y": -6
+      }
+    },
+    {
+      "id": "16dee6b6-5fbd-4799-a4d2-63489a316e89",
+      "type": "BranchingPoint",
+      "source": null,
+      "subtype": "free",
+      "position": {
+        "x": 11,
+        "y": -3
+      }
+    },
+    {
+      "id": "efe88de6-5413-4a82-943e-dc071dac087b",
+      "type": "BranchingPoint",
+      "source": null,
+      "subtype": "free",
+      "position": {
+        "x": 6,
+        "y": -3
+      }
+    },
+    {
+      "id": "3ae40fff-9ac8-4d83-860c-3d2481d73d28",
+      "type": "Pin",
+      "source": null,
+      "subtype": "free",
+      "component": "62a2fb49-8650-4d88-bf72-97b18c7e1e12",
+      "pinLabel": "input"
+    },
+    {
+      "id": "dd277384-0ae7-4a56-a939-f20753e4dbb1",
+      "type": "Pin",
+      "source": null,
+      "subtype": "free",
+      "component": "62a2fb49-8650-4d88-bf72-97b18c7e1e12",
+      "pinLabel": "output"
     }
   ],
   "wires": [
@@ -726,6 +845,36 @@
       "id": "60fd0e94-2e5a-4a37-9ea6-2d5e515461c6",
       "node1": "db937927-4751-47b7-a5f8-7e8f563e29a6",
       "node2": "6ba11428-7870-4aae-a6c6-e193f4efcc05",
+      "intermediatePositions": []
+    },
+    {
+      "id": "c4ee0635-2d55-4ac3-8a21-d9a20b84b06c",
+      "node1": "60888600-5e20-4419-8b23-87bfb8991476",
+      "node2": "85400188-bf41-4090-a540-05dcaa17328b",
+      "intermediatePositions": []
+    },
+    {
+      "id": "d9dadaab-0be5-40b4-b442-518bb2a06d19",
+      "node1": "85400188-bf41-4090-a540-05dcaa17328b",
+      "node2": "16dee6b6-5fbd-4799-a4d2-63489a316e89",
+      "intermediatePositions": []
+    },
+    {
+      "id": "de77884f-ef4a-4b92-9d16-b5b1e58acc7e",
+      "node1": "a4752904-811d-4605-8d27-b9ea66b2925c",
+      "node2": "efe88de6-5413-4a82-943e-dc071dac087b",
+      "intermediatePositions": []
+    },
+    {
+      "id": "082b0df8-d19c-4974-af11-898607203659",
+      "node1": "dd277384-0ae7-4a56-a939-f20753e4dbb1",
+      "node2": "16dee6b6-5fbd-4799-a4d2-63489a316e89",
+      "intermediatePositions": []
+    },
+    {
+      "id": "3d8ff801-d612-47d9-a208-be26d1e7aa1b",
+      "node1": "3ae40fff-9ac8-4d83-860c-3d2481d73d28",
+      "node2": "efe88de6-5413-4a82-943e-dc071dac087b",
       "intermediatePositions": []
     }
   ]

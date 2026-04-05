@@ -35,9 +35,6 @@ export class EventQueue {
         `readyAtTick (${event.readyAtTick}) cannot be before scheduledAtTick (${event.scheduledAtTick})`
       );
     }
-    if(!!event.parameters && event.parameters.has('exclusive')){
-      this.removeEventsForTarget(event.targetId);
-    }
     this.heap.push(event);
     this.bubbleUp(this.heap.length - 1);
   }
@@ -88,9 +85,38 @@ export class EventQueue {
   }
 
   /**
+   * Schedule multiple events at once, optionally cancelling pending events for specific targets.
+   * More efficient than individual schedule() + removeEventsForTarget() calls:
+   * single filter pass for all cancellations, batch push, single heap rebuild.
+   *
+   * @param events - Events to schedule
+   * @param cancelTargets - Target IDs whose pending events should be removed before inserting
+   */
+  scheduleMany(events: ReadonlyArray<IScheduledEvent>, cancelTargets?: ReadonlySet<string>): void {
+    for (const event of events) {
+      if (event.readyAtTick < event.scheduledAtTick) {
+        throw new RangeError(
+          `readyAtTick (${event.readyAtTick}) cannot be before scheduledAtTick (${event.scheduledAtTick})`
+        );
+      }
+    }
+
+    if (cancelTargets && cancelTargets.size > 0) {
+      this.heap = this.heap.filter(e => !cancelTargets.has(e.targetId));
+    }
+
+    for (const event of events) {
+      this.heap.push(event);
+    }
+
+    if (events.length > 0 || (cancelTargets && cancelTargets.size > 0)) {
+      this.rebuildHeap();
+    }
+  }
+
+  /**
    * Remove all pending events targeting a specific component.
    * Used when a behavior signals shouldCancelPending (e.g., Vcc loss, input change during transition).
-   * Or when an event is flagged exclusive
    *
    * @param targetId - UUID of the component whose events should be removed
    * @returns Number of events removed

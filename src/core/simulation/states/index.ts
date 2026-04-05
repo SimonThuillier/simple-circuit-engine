@@ -4,6 +4,7 @@
  */
 
 export type {INodeElectricalState} from "./types";
+export {unionElectricalStates} from "./types";
 
 // Global circuit simulation state
 export { SimulationState } from "./SimulationState.js";

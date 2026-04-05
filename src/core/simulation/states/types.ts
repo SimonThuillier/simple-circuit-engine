@@ -22,3 +22,19 @@ export interface INodeElectricalState {
      */
     locked: boolean;
 }
+
+/**
+ * Compute the union of multiple electrical states.
+ * Useful to derive a combined pin state from two or more pins
+ * (e.g. cmd_in + cmd_out → coil state).
+ *
+ * @param states - Two or more electrical states to combine
+ * @returns A new state where hasVoltage/hasCurrent are OR'd across inputs, locked is always false
+ */
+export function unionElectricalStates(...states: INodeElectricalState[]): INodeElectricalState {
+    return {
+        hasVoltage: states.some(s => s.hasVoltage),
+        hasCurrent: states.some(s => s.hasCurrent),
+        locked: false,
+    };
+}

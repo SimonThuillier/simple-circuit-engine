@@ -13,7 +13,7 @@ import {BehaviorRegistry, type IBehaviorResult} from './behaviors';
 import type { ENode } from '../topology/ENode';
 import type { Component } from '../topology/Component';
 import type {INodeElectricalState} from "./states";
-import type {IUserCommand, IReachabilityResult, IRunnerOptions, IRunnerResult} from "./types";
+import type {IUserCommand, IScheduledEvent, IReachabilityResult, IRunnerOptions, IRunnerResult} from "./types";
 import type {UUID} from "../utils/types";
 import {ENodeSourceType, ENodeType} from "../topology/types";
 
@@ -233,6 +233,8 @@ export class CircuitRunner {
     const currentState = this.stateManager.getCurrentState();
 
     const results: IBehaviorResult[] = [];
+    const cancelTargets = new Set<UUID>();
+    const eventsToSchedule: IScheduledEvent[] = [];
 
     for (const command of this.commands.values()) {
       const component = this.circuit.getComponent(command.targetId) as Component;
@@ -244,16 +246,18 @@ export class CircuitRunner {
         command
       );
       if (result.shouldCancelPending) {
-        this.eventQueue.removeEventsForTarget(component.id);
+        cancelTargets.add(component.id);
       }
       for (const event of result.scheduledEvents) {
-        this.eventQueue.schedule(event);
+        eventsToSchedule.push(event);
       }
       results.push(result);
       if (result.hasChanged) {
         this.dirtyTracker.markComponentDirty(component.id);
       }
     }
+
+    this.eventQueue.scheduleMany(eventsToSchedule, cancelTargets);
     this.commands.clear();
 
     return results;
@@ -385,6 +389,9 @@ export class CircuitRunner {
                 component.id,
                 customOnStartResult.componentState
             );
+            if (customOnStartResult.shouldCancelPending) {
+              this.eventQueue.removeEventsForTarget(component.id);
+            }
             for (const event of customOnStartResult.scheduledEvents) {
               this.eventQueue.schedule(event);
             }
@@ -451,7 +458,6 @@ export class CircuitRunner {
     const results: IBehaviorResult[] = [];
 
     const updatedComponents = new Set<UUID>();
-    let eventCount = 0;
 
     // During initialization (tick 0), sort components by order to resolve feedback loops
     let sortedComponentIds = Array.from(componentsToAssess);
@@ -472,15 +478,14 @@ export class CircuitRunner {
       });
     }
 
+    const cancelTargets = new Set<UUID>();
+    const eventsToSchedule: IScheduledEvent[] = [];
+
     for (const componentId of sortedComponentIds) {
       const component = this.circuit.getComponent(componentId) as Component;
       const behavior = this.behaviorRegistry.get(component.type);
-      if (!behavior) {
-        // console.warn(
-        //   `No behavior registered for component type '${component.type}' (${component.id})`
-        // );
-        continue;
-      }
+      if (!behavior) continue;
+
       const res = behavior.onPinsChange(
         component,
         currentState.componentStates.get(componentId)!,
@@ -488,17 +493,18 @@ export class CircuitRunner {
         targetTick
       );
       if (res.shouldCancelPending) {
-        this.eventQueue.removeEventsForTarget(componentId);
+        cancelTargets.add(componentId);
       }
       if (res.hasChanged) {
         updatedComponents.add(componentId);
         results.push(res);
       }
       for (const event of res.scheduledEvents) {
-        this.eventQueue.schedule(event);
-        eventCount++;
+        eventsToSchedule.push(event);
       }
     }
+
+    this.eventQueue.scheduleMany(eventsToSchedule, cancelTargets);
 
     this.dirtyTracker.setDirtyComponents(updatedComponents);
     this.dirtyTracker.setDirtyEnodes(updatedNodes);
@@ -511,7 +517,7 @@ export class CircuitRunner {
       nodeUpdateCount: updatedNodes.size,
       wireUpdateCount: updatedWires.size,
       processedCommandCount: 0,
-      scheduledEventCount: eventCount,
+      scheduledEventCount: eventsToSchedule.length,
       firedEventCount: 0,
     };
   }
@@ -701,28 +707,26 @@ export class CircuitRunner {
     const readyEvents = this.eventQueue.getReadyEvents(targetTick);
 
     const results: IBehaviorResult[] = [];
+    const cancelTargets = new Set<UUID>();
+    const eventsToSchedule: IScheduledEvent[] = [];
 
     for (const event of readyEvents) {
       const component = this.circuit.getComponent(event.targetId) as Component;
       const behavior = this.behaviorRegistry.get(component.type);
-      if (!behavior) {
-        // console.warn(
-        //   `No behavior registered for component type '${component.type}' (${component.id})`
-        // );
-        continue;
-      }
+      if (!behavior) continue;
 
       const componentState = currentState.componentStates.get(component.id)!;
       const result = behavior.onEventFiring(component, componentState, event);
       if (result.shouldCancelPending) {
-        this.eventQueue.removeEventsForTarget(component.id);
+        cancelTargets.add(component.id);
       }
       for (const event of result.scheduledEvents) {
-        this.eventQueue.schedule(event);
+        eventsToSchedule.push(event);
       }
       results.push(result);
     }
 
+    this.eventQueue.scheduleMany(eventsToSchedule, cancelTargets);
     return results;
   }
 }

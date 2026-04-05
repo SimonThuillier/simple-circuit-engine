@@ -29,7 +29,6 @@ export class ClockBehavior extends ComponentBehaviorMixin implements IComponentB
       throw new Error(`Invalid component type for ClockBehavior: ${component.type}`);
     }
     const state = new ClockState(component.id);
-    console.log('clock start high', component.config.get('startHigh'));
     const startHigh = component.config.get('startHigh') == 'true';
     state.setState(startHigh ? 'high' : 'low', 0);
     const halfPeriod = Number(component.config.get('halfPeriod'));
