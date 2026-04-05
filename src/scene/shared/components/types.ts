@@ -82,13 +82,13 @@ export const CMP_MATERIALS: Readonly<
     [CmpMatVariant.NORMAL]: new THREE.MeshLambertMaterial({
       color: 0xc0c0c0,
       emissive: 0xffffff,
-      emissiveIntensity: 0.8,
+      emissiveIntensity: 0.7,
       userData: { matType: CmpMatType.SHARED, matCat: CmpMatCategory.SHINY_SILVER },
     }),
     [CmpMatVariant.HOVERED]: new THREE.MeshLambertMaterial({
       color: 0xc0c0c0,
       emissive: HOVER_COLOR,
-      emissiveIntensity: 0.9,
+      emissiveIntensity: 0.8,
       userData: { matType: CmpMatType.SHARED, matCat: CmpMatCategory.SHINY_SILVER },
     }),
     [CmpMatVariant.SELECTED]: new THREE.MeshLambertMaterial({

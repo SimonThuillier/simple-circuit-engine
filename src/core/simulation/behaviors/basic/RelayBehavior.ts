@@ -53,11 +53,11 @@ export class RelayBehavior extends ComponentBehaviorMixin implements IComponentB
   }
 
   override allowConductivity(
-    component: Component,
-    state: ComponentState,
-    _conductivityType: ENodeSourceType,
-    pinId: string,
-    otherPinId: string
+      component: Component,
+      state: ComponentState,
+      _conductivityType: ENodeSourceType,
+      pinId: string,
+      otherPinId: string
   ): boolean {
     if (pinId === otherPinId) return true;
     const pinLabel = component.getPinLabel(pinId);
@@ -82,80 +82,100 @@ export class RelayBehavior extends ComponentBehaviorMixin implements IComponentB
    * @param targetTick
    */
   override onPinsChange(
-    component: Component,
-    state: ComponentState,
-    nodeStates: ReadonlyMap<UUID, INodeElectricalState>,
-    targetTick: number
+      component: Component,
+      state: ComponentState,
+      nodeStates: ReadonlyMap<UUID, INodeElectricalState>,
+      targetTick: number
   ): IBehaviorResult {
     const pinStates = this.getPinStates(component, nodeStates);
 
-    const isCommanded =
-      (pinStates.get('cmd_in')!.hasVoltage && pinStates.get('cmd_in')!.hasCurrent) ||
-      (pinStates.get('cmd_out')!.hasVoltage && pinStates.get('cmd_out')!.hasCurrent) ||
-      (pinStates.get('cmd_in')!.hasVoltage && pinStates.get('cmd_out')!.hasCurrent) ||
-      (pinStates.get('cmd_out')!.hasVoltage && pinStates.get('cmd_in')!.hasCurrent);
 
+    const cmdHasVoltage = pinStates.get('cmd_in')!.hasVoltage || pinStates.get('cmd_out')!.hasVoltage;
+    const cmdHasCurrent = pinStates.get('cmd_in')!.hasCurrent || pinStates.get('cmd_out')!.hasCurrent;
+    const powerInHasVoltage = pinStates.get('power_in')!.hasVoltage;
+    const powerInHasCurrent = pinStates.get('power_in')!.hasCurrent;
+    const powerOutHasVoltage = pinStates.get('power_out')!.hasVoltage;
+    const powerOutHasCurrent = pinStates.get('power_out')!.hasCurrent;
+
+    let hasChanged = (String(cmdHasVoltage) !== state.parameters.get('cmd.voltage'))
+        || (String(cmdHasCurrent) !== state.parameters.get('cmd.current'))
+        || (String(powerInHasVoltage) !== state.parameters.get('power_in.voltage'))
+        || (String(powerInHasCurrent) !== state.parameters.get('power_in.current'))
+        || (String(powerOutHasVoltage) !== state.parameters.get('power_out.voltage'))
+        || (String(powerOutHasCurrent) !== state.parameters.get('power_out.current'));
+
+
+    const isCommanded = cmdHasVoltage && cmdHasCurrent;
     const shouldBeClosed =
-      component.config.get('activationLogic') === 'negative' ? !isCommanded : isCommanded;
+        component.config.get('activationLogic') === 'negative' ? !isCommanded : isCommanded;
 
-    let hasChanged = false;
     const scheduledEvents: IScheduledEvent[] = [];
     const transitionSpan = getTransitionSpan(component.config);
 
     if (shouldBeClosed) {
       if (state.state === 'open' || state.state === 'opening') {
+        // test to handle input transitions faster than component's own transitionSpan
+        let span = state.state === 'open' ? transitionSpan : Math.max(targetTick - state.startTick, 1);
         hasChanged = true;
-        state.state = 'closing';
-        state.startTick = targetTick;
+        state.setState('closing', targetTick);
+        state.setNextState('closed', targetTick + span);
         scheduledEvents.push({
           targetId: component.id,
-          scheduledAtTick: targetTick,
-          readyAtTick: targetTick + transitionSpan,
+          scheduledAtTick: state.startTick,
+          readyAtTick: state.expirationTick,
           type: 'ClosingEnd',
-          parameters: undefined,
+          parameters: new Map([['exclusive', 'true']]),
         });
       }
     } else {
       if (state.state === 'closed' || state.state === 'closing') {
+        // test to handle input transitions faster than component's own transitionSpan
+        let span = state.state === 'closed' ? transitionSpan : Math.max(targetTick - state.startTick, 1);
         hasChanged = true;
-        state.state = 'opening';
-        state.startTick = targetTick;
+        state.setState('opening', targetTick);
+        state.setNextState('open', targetTick + span);
         scheduledEvents.push({
           targetId: component.id,
-          scheduledAtTick: targetTick,
-          readyAtTick: targetTick + transitionSpan,
+          scheduledAtTick: state.startTick,
+          readyAtTick: state.expirationTick,
           type: 'OpeningEnd',
-          parameters: undefined,
+          parameters: new Map([['exclusive', 'true']]),
         });
       }
     }
 
+    state.parameters.set('cmd.voltage', String(cmdHasVoltage));
+    state.parameters.set('cmd.current', String(cmdHasCurrent));
+    state.parameters.set('power_in.voltage', String(powerInHasVoltage));
+    state.parameters.set('power_in.current', String(powerInHasCurrent));
+    state.parameters.set('power_out.voltage', String(powerOutHasVoltage));
+    state.parameters.set('power_out.current', String(powerOutHasCurrent));
+
+
     return {
       componentState: state,
       hasChanged: hasChanged,
-      shouldCancelPending: false,
+      shouldCancelPending: hasChanged,
       scheduledEvents: scheduledEvents,
     };
   }
 
   override onEventFiring(
-    _component: Component,
-    state: ComponentState,
-    event: IScheduledEvent
+      _component: Component,
+      state: ComponentState,
+      event: IScheduledEvent
   ): IBehaviorResult {
     let hasChanged = false;
 
     if (event.type === 'ClosingEnd') {
       if (state.state !== 'closed') {
+        state.setState('closed', event.readyAtTick);
         hasChanged = true;
-        state.startTick = event.readyAtTick;
-        state.state = 'closed';
       }
     } else if (event.type === 'OpeningEnd') {
       if (state.state !== 'open') {
+        state.setState('open', event.readyAtTick);
         hasChanged = true;
-        state.startTick = event.readyAtTick;
-        state.state = 'open';
       }
     }
 

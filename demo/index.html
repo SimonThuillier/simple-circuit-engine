@@ -398,22 +398,23 @@
             <textarea id="circuit-input" placeholder="Paste circuit JSON here...">
 {
   "metadata": {
+    "version": "0.0.11",
     "options": {
-      "name": "Untitled Circuit",
+      "name": "Relays chain",
       "defaultLogicFamily": "CMOS1"
     },
-    "size": 15,
-    "divisions": 12,
+    "size": 23,
+    "divisions": 16,
     "cameraOptions": {
       "position": {
-        "x": -5.859765506476458,
-        "y": 12.356061692254254,
-        "z": 9.226015211413158
+        "x": 1.2409516850413473,
+        "y": 11.401713964322461,
+        "z": 0.6112989328095702
       },
       "lookAtPosition": {
-        "x": -1.4691353431655998,
-        "y": 3.994748269197053,
-        "z": 4.941157229014395
+        "x": 1.2432900619328908,
+        "y": -0.05871498405899946,
+        "z": 0.37973079264939713
       },
       "fov": 75,
       "near": 0.1,
@@ -422,573 +423,309 @@
   },
   "components": [
     {
-      "id": "a03a5ac1-c421-49cc-a003-10e7661ab111",
-      "type": "clock",
+      "id": "1c2b8c50-f03e-4d9a-8362-ba5a2b6f4b81",
+      "type": "relay",
       "position": {
-        "x": -5,
-        "y": 3
-      },
-      "rotation": 0,
-      "pins": [
-        "c540b184-99be-4784-a859-644654e17cbb",
-        "7ade927c-74ca-4392-a918-7a9e17231db9",
-        "25e6b92f-c872-499c-9b1e-baefe9c62568"
-      ],
-      "config": {
-        "startHigh": "true",
-        "halfPeriod": "10"
-      },
-      "editable": true
-    },
-    {
-      "id": "a759524e-1b83-4e8d-9ece-a037966383ca",
-      "type": "lightbulb",
-      "position": {
-        "x": 2,
-        "y": 3
-      },
-      "rotation": 0,
-      "pins": [
-        "e8bb5a58-f224-4011-8319-a59227df4689",
-        "4a919dfe-6201-41f5-8e60-46abf5733f6b"
-      ],
-      "config": {
-        "size": "1",
-        "transitionSpan": "10"
-      },
-      "editable": true
-    },
-    {
-      "id": "4f749a35-2c52-473e-aa8a-987bc097bd69",
-      "type": "lightbulb",
-      "position": {
-        "x": 2,
+        "x": 0,
         "y": 0
       },
       "rotation": 0,
       "pins": [
-        "705581ca-8e31-4e23-97be-ca4e468f0e30",
-        "5f2d9d07-cacc-4bec-bbd0-93ea674f78eb"
+        "c641c811-cdcf-41cb-8c55-c5654bf25462",
+        "c2ecdd67-1bd1-434e-8d26-e50339deb020",
+        "ae3fba70-3cab-4610-91cf-7a87f7bbbc64",
+        "490e9f42-2876-490e-b9ec-195a04477e9a"
       ],
       "config": {
-        "transitionSpan": "10",
+        "activationLogic": "positive",
+        "initializationOrder": "0",
+        "transitionSpan": "2",
         "size": "1"
       },
       "editable": true
     },
     {
-      "id": "07029fea-382f-4376-97f6-3ffd76c4f23d",
-      "type": "switch",
+      "id": "49cd30dc-bac5-44b5-87a5-55bfbc172534",
+      "type": "relay",
       "position": {
-        "x": -1,
+        "x": 4,
         "y": 0
       },
       "rotation": 0,
       "pins": [
-        "e37c7f61-a643-4a32-8021-997dfc22f830",
-        "9b5ebe39-22d7-42fd-8731-926d1073b042"
+        "688a2433-c50c-4e4e-8433-384c881f73ff",
+        "3fc1787f-4096-4a9e-ae34-4a7b2d0516cb",
+        "50a40c70-ec3a-42c0-91ec-292ec50844a2",
+        "dd27ffc6-91a1-49ad-9822-063f6751133a"
+      ],
+      "config": {
+        "activationLogic": "positive",
+        "initializationOrder": "0",
+        "transitionSpan": "2",
+        "size": "1"
+      },
+      "editable": true
+    },
+    {
+      "id": "5a8861db-ec17-40de-aefb-ec3da0c1b2c6",
+      "type": "relay",
+      "position": {
+        "x": 8,
+        "y": 0
+      },
+      "rotation": 0,
+      "pins": [
+        "7caf8585-3882-474d-8818-415fe396dfe3",
+        "4efbf5e8-92e9-4c16-896f-abf98108c94a",
+        "b5a7f97e-2f93-49bb-aead-cbb99b475485",
+        "c29bf53a-cb7c-4b67-9ac8-1ad3f40fe1e4"
+      ],
+      "config": {
+        "activationLogic": "negative",
+        "initializationOrder": "0",
+        "transitionSpan": "2",
+        "size": "1"
+      },
+      "editable": true
+    },
+    {
+      "id": "fbe70ad4-5457-4578-b4b0-23ef7b368daf",
+      "type": "lightbulb",
+      "position": {
+        "x": 11,
+        "y": 0
+      },
+      "rotation": 0,
+      "pins": [
+        "f27c2bfd-37d5-48ba-8b81-7cd6636f8292",
+        "7801a312-7322-4de2-92ab-840a34a2b1bf"
+      ],
+      "config": {
+        "size": "1"
+      },
+      "editable": true
+    },
+    {
+      "id": "29c0b904-4c35-4ea1-81c1-66a471a621b5",
+      "type": "switch",
+      "position": {
+        "x": -4,
+        "y": 1
+      },
+      "rotation": 0,
+      "pins": [
+        "6ba11428-7870-4aae-a6c6-e193f4efcc05",
+        "4b9efbd1-5eb3-4ebc-a0d8-e03441f02798"
       ],
       "config": {
         "initialState": "open",
-        "transitionSpan": "1",
         "size": "1"
       },
       "editable": true
     },
     {
-      "id": "69e0b983-c2d5-4b95-933b-044468a891ac",
+      "id": "9daf6d42-1385-4c27-bf02-946e69aa6c98",
       "type": "clock",
       "position": {
-        "x": -5,
-        "y": 0
+        "x": -8,
+        "y": 1
       },
       "rotation": 0,
       "pins": [
-        "f02e9148-cd44-4a9c-a4b3-609700f594c9",
-        "530e8e4c-d5a1-48f9-90a9-40efb9f4ca79",
-        "c4b5cd0b-0032-45f3-84ed-5373790e7967"
+        "9d5cb3fb-d590-4dea-b54c-5edef2df0ce4",
+        "db937927-4751-47b7-a5f8-7e8f563e29a6",
+        "4a036038-c345-43cb-b553-c574cb7950b7"
       ],
       "config": {
         "startHigh": "true",
         "halfPeriod": "1"
       },
       "editable": true
-    },
-    {
-      "id": "262dd547-6da6-43bd-aee6-cff578511f12",
-      "type": "smallLED",
-      "position": {
-        "x": 2,
-        "y": 5
-      },
-      "rotation": 0,
-      "pins": [
-        "135e8ebb-ee40-47b0-8cf8-4265166294b8",
-        "5cf04e1d-4622-485e-92dc-9d9d7e0ff477"
-      ],
-      "config": {
-        "transitionSpan": "1",
-        "idleColor": "white",
-        "activeColor": "#d400ff",
-        "size": "1",
-        "ywRatio": "1"
-      },
-      "editable": true
-    },
-    {
-      "id": "f4cb4434-7093-4283-b777-d0005a5e656d",
-      "type": "rectangleLED",
-      "position": {
-        "x": 2,
-        "y": 7
-      },
-      "rotation": 0,
-      "pins": [
-        "3d1b052d-32f7-428a-936c-55096012cdd6",
-        "aa7d55f3-f57e-4e29-bc8a-614af14cfed3"
-      ],
-      "config": {
-        "transitionSpan": "1",
-        "idleColor": "#2b2626",
-        "activeColor": "#116fe8",
-        "size": "1",
-        "hwRatio": "1",
-        "ywRatio": "1"
-      },
-      "editable": true
-    },
-    {
-      "id": "d4ec0aa1-d86c-4b42-bd7d-5acbb36dce78",
-      "type": "doubleThrowSwitch",
-      "position": {
-        "x": -1,
-        "y": 3
-      },
-      "rotation": 0,
-      "pins": [
-        "a4ca0e9f-c0c7-4f82-b93f-dc956c43ce98",
-        "fe0d6ad9-1b07-4d55-8df8-d3e986e25b94",
-        "6ca50a26-4720-4762-b211-23140f99f8cb"
-      ],
-      "config": {
-        "initialState": "input1",
-        "transitionSpan": "5",
-        "size": "1"
-      },
-      "editable": true
-    },
-    {
-      "id": "5f02d202-784c-4ea4-ae72-63d974e8a5c0",
-      "type": "battery",
-      "position": {
-        "x": -4,
-        "y": -5
-      },
-      "rotation": 0,
-      "pins": [
-        "fe443a81-5027-451a-bb3b-895a9580c90c",
-        "8ef6b7e8-c587-479e-8e8c-9ad8cd0dfea6"
-      ],
-      "config": {},
-      "editable": true
-    },
-    {
-      "id": "a0420207-fa9f-418b-b88c-dd130dfbcc40",
-      "type": "lightbulb",
-      "position": {
-        "x": 4,
-        "y": -5
-      },
-      "rotation": 90,
-      "pins": [
-        "1b1ad231-e892-49b2-8b71-20ddc9d3a70f",
-        "249f1e92-1745-4010-8a27-10c30f8f7b03"
-      ],
-      "config": {
-        "transitionSpan": "1",
-        "size": "1"
-      },
-      "editable": true
-    },
-    {
-      "id": "2b0bb4ca-7b0e-49f2-b3d9-e3175835b412",
-      "type": "doubleThrowSwitch",
-      "position": {
-        "x": 2,
-        "y": -2
-      },
-      "rotation": 0,
-      "pins": [
-        "e94b69b3-e54e-4297-ab78-7cca5bc0cb97",
-        "0ee57261-e4b8-4899-8502-95ac9668e579",
-        "45984da0-07d9-4dae-9213-14626b61eaae"
-      ],
-      "config": {
-        "initialState": "input1",
-        "transitionSpan": "5",
-        "size": "1"
-      },
-      "editable": true
-    },
-    {
-      "id": "c3fe302c-a3da-47ef-bdaf-afce1e7aaf18",
-      "type": "doubleThrowSwitch",
-      "position": {
-        "x": -2,
-        "y": -2
-      },
-      "rotation": 180,
-      "pins": [
-        "f31f0935-584b-4748-b72f-cebb42213e88",
-        "554f33ad-66a4-4efd-bf16-c26c6f0d2973",
-        "6d911995-deb0-40c7-939f-b3cce6abf1dd"
-      ],
-      "config": {
-        "initialState": "input1",
-        "transitionSpan": "5",
-        "size": "1"
-      },
-      "editable": true
     }
   ],
   "enodes": [
     {
-      "id": "c540b184-99be-4784-a859-644654e17cbb",
+      "id": "c641c811-cdcf-41cb-8c55-c5654bf25462",
+      "type": "Pin",
+      "source": null,
+      "subtype": "free",
+      "component": "1c2b8c50-f03e-4d9a-8362-ba5a2b6f4b81",
+      "pinLabel": "cmd_in"
+    },
+    {
+      "id": "c2ecdd67-1bd1-434e-8d26-e50339deb020",
+      "type": "Pin",
+      "source": "Current",
+      "subtype": "free",
+      "component": "1c2b8c50-f03e-4d9a-8362-ba5a2b6f4b81",
+      "pinLabel": "cmd_out"
+    },
+    {
+      "id": "ae3fba70-3cab-4610-91cf-7a87f7bbbc64",
       "type": "Pin",
       "source": "Voltage",
-      "subtype": "vcc",
-      "component": "a03a5ac1-c421-49cc-a003-10e7661ab111",
-      "pinLabel": "vcc"
+      "subtype": "free",
+      "component": "1c2b8c50-f03e-4d9a-8362-ba5a2b6f4b81",
+      "pinLabel": "power_in"
     },
     {
-      "id": "7ade927c-74ca-4392-a918-7a9e17231db9",
-      "type": "Pin",
-      "source": null,
-      "subtype": "logicOutput",
-      "component": "a03a5ac1-c421-49cc-a003-10e7661ab111",
-      "pinLabel": "output"
-    },
-    {
-      "id": "25e6b92f-c872-499c-9b1e-baefe9c62568",
-      "type": "Pin",
-      "source": "Current",
-      "subtype": "gnd",
-      "component": "a03a5ac1-c421-49cc-a003-10e7661ab111",
-      "pinLabel": "gnd"
-    },
-    {
-      "id": "e8bb5a58-f224-4011-8319-a59227df4689",
+      "id": "490e9f42-2876-490e-b9ec-195a04477e9a",
       "type": "Pin",
       "source": null,
       "subtype": "free",
-      "component": "a759524e-1b83-4e8d-9ece-a037966383ca",
+      "component": "1c2b8c50-f03e-4d9a-8362-ba5a2b6f4b81",
+      "pinLabel": "power_out"
+    },
+    {
+      "id": "688a2433-c50c-4e4e-8433-384c881f73ff",
+      "type": "Pin",
+      "source": null,
+      "subtype": "free",
+      "component": "49cd30dc-bac5-44b5-87a5-55bfbc172534",
+      "pinLabel": "cmd_in"
+    },
+    {
+      "id": "3fc1787f-4096-4a9e-ae34-4a7b2d0516cb",
+      "type": "Pin",
+      "source": "Current",
+      "subtype": "free",
+      "component": "49cd30dc-bac5-44b5-87a5-55bfbc172534",
+      "pinLabel": "cmd_out"
+    },
+    {
+      "id": "50a40c70-ec3a-42c0-91ec-292ec50844a2",
+      "type": "Pin",
+      "source": "Voltage",
+      "subtype": "free",
+      "component": "49cd30dc-bac5-44b5-87a5-55bfbc172534",
+      "pinLabel": "power_in"
+    },
+    {
+      "id": "dd27ffc6-91a1-49ad-9822-063f6751133a",
+      "type": "Pin",
+      "source": null,
+      "subtype": "free",
+      "component": "49cd30dc-bac5-44b5-87a5-55bfbc172534",
+      "pinLabel": "power_out"
+    },
+    {
+      "id": "7caf8585-3882-474d-8818-415fe396dfe3",
+      "type": "Pin",
+      "source": null,
+      "subtype": "free",
+      "component": "5a8861db-ec17-40de-aefb-ec3da0c1b2c6",
+      "pinLabel": "cmd_in"
+    },
+    {
+      "id": "4efbf5e8-92e9-4c16-896f-abf98108c94a",
+      "type": "Pin",
+      "source": "Current",
+      "subtype": "free",
+      "component": "5a8861db-ec17-40de-aefb-ec3da0c1b2c6",
+      "pinLabel": "cmd_out"
+    },
+    {
+      "id": "b5a7f97e-2f93-49bb-aead-cbb99b475485",
+      "type": "Pin",
+      "source": "Voltage",
+      "subtype": "free",
+      "component": "5a8861db-ec17-40de-aefb-ec3da0c1b2c6",
+      "pinLabel": "power_in"
+    },
+    {
+      "id": "c29bf53a-cb7c-4b67-9ac8-1ad3f40fe1e4",
+      "type": "Pin",
+      "source": null,
+      "subtype": "free",
+      "component": "5a8861db-ec17-40de-aefb-ec3da0c1b2c6",
+      "pinLabel": "power_out"
+    },
+    {
+      "id": "f27c2bfd-37d5-48ba-8b81-7cd6636f8292",
+      "type": "Pin",
+      "source": null,
+      "subtype": "free",
+      "component": "fbe70ad4-5457-4578-b4b0-23ef7b368daf",
       "pinLabel": "pin1"
     },
     {
-      "id": "4a919dfe-6201-41f5-8e60-46abf5733f6b",
+      "id": "7801a312-7322-4de2-92ab-840a34a2b1bf",
       "type": "Pin",
       "source": "Current",
       "subtype": "free",
-      "component": "a759524e-1b83-4e8d-9ece-a037966383ca",
+      "component": "fbe70ad4-5457-4578-b4b0-23ef7b368daf",
       "pinLabel": "pin2"
     },
     {
-      "id": "705581ca-8e31-4e23-97be-ca4e468f0e30",
+      "id": "6ba11428-7870-4aae-a6c6-e193f4efcc05",
       "type": "Pin",
       "source": null,
       "subtype": "free",
-      "component": "4f749a35-2c52-473e-aa8a-987bc097bd69",
-      "pinLabel": "pin1"
-    },
-    {
-      "id": "5f2d9d07-cacc-4bec-bbd0-93ea674f78eb",
-      "type": "Pin",
-      "source": "Current",
-      "subtype": "free",
-      "component": "4f749a35-2c52-473e-aa8a-987bc097bd69",
-      "pinLabel": "pin2"
-    },
-    {
-      "id": "e37c7f61-a643-4a32-8021-997dfc22f830",
-      "type": "Pin",
-      "source": null,
-      "subtype": "free",
-      "component": "07029fea-382f-4376-97f6-3ffd76c4f23d",
+      "component": "29c0b904-4c35-4ea1-81c1-66a471a621b5",
       "pinLabel": "input"
     },
     {
-      "id": "9b5ebe39-22d7-42fd-8731-926d1073b042",
+      "id": "4b9efbd1-5eb3-4ebc-a0d8-e03441f02798",
       "type": "Pin",
       "source": null,
       "subtype": "free",
-      "component": "07029fea-382f-4376-97f6-3ffd76c4f23d",
+      "component": "29c0b904-4c35-4ea1-81c1-66a471a621b5",
       "pinLabel": "output"
     },
     {
-      "id": "f02e9148-cd44-4a9c-a4b3-609700f594c9",
+      "id": "9d5cb3fb-d590-4dea-b54c-5edef2df0ce4",
       "type": "Pin",
       "source": "Voltage",
       "subtype": "vcc",
-      "component": "69e0b983-c2d5-4b95-933b-044468a891ac",
+      "component": "9daf6d42-1385-4c27-bf02-946e69aa6c98",
       "pinLabel": "vcc"
     },
     {
-      "id": "530e8e4c-d5a1-48f9-90a9-40efb9f4ca79",
+      "id": "db937927-4751-47b7-a5f8-7e8f563e29a6",
       "type": "Pin",
       "source": null,
       "subtype": "logicOutput",
-      "component": "69e0b983-c2d5-4b95-933b-044468a891ac",
+      "component": "9daf6d42-1385-4c27-bf02-946e69aa6c98",
       "pinLabel": "output"
     },
     {
-      "id": "c4b5cd0b-0032-45f3-84ed-5373790e7967",
+      "id": "4a036038-c345-43cb-b553-c574cb7950b7",
       "type": "Pin",
       "source": "Current",
       "subtype": "gnd",
-      "component": "69e0b983-c2d5-4b95-933b-044468a891ac",
+      "component": "9daf6d42-1385-4c27-bf02-946e69aa6c98",
       "pinLabel": "gnd"
-    },
-    {
-      "id": "135e8ebb-ee40-47b0-8cf8-4265166294b8",
-      "type": "Pin",
-      "source": null,
-      "subtype": "free",
-      "component": "262dd547-6da6-43bd-aee6-cff578511f12",
-      "pinLabel": "pin1"
-    },
-    {
-      "id": "5cf04e1d-4622-485e-92dc-9d9d7e0ff477",
-      "type": "Pin",
-      "source": "Current",
-      "subtype": "free",
-      "component": "262dd547-6da6-43bd-aee6-cff578511f12",
-      "pinLabel": "pin2"
-    },
-    {
-      "id": "3d1b052d-32f7-428a-936c-55096012cdd6",
-      "type": "Pin",
-      "source": null,
-      "subtype": "free",
-      "component": "f4cb4434-7093-4283-b777-d0005a5e656d",
-      "pinLabel": "pin1"
-    },
-    {
-      "id": "aa7d55f3-f57e-4e29-bc8a-614af14cfed3",
-      "type": "Pin",
-      "source": "Current",
-      "subtype": "free",
-      "component": "f4cb4434-7093-4283-b777-d0005a5e656d",
-      "pinLabel": "pin2"
-    },
-    {
-      "id": "5b636e3c-a650-47ef-b4a8-c613a1abdef1",
-      "type": "BranchingPoint",
-      "source": null,
-      "subtype": "free",
-      "position": {
-        "x": 1,
-        "y": 5
-      }
-    },
-    {
-      "id": "eb6ae964-9d44-44ff-b6e2-189f3f3cc2bb",
-      "type": "BranchingPoint",
-      "source": null,
-      "subtype": "free",
-      "position": {
-        "x": 1,
-        "y": 3
-      }
-    },
-    {
-      "id": "a4ca0e9f-c0c7-4f82-b93f-dc956c43ce98",
-      "type": "Pin",
-      "source": "Voltage",
-      "subtype": "free",
-      "component": "d4ec0aa1-d86c-4b42-bd7d-5acbb36dce78",
-      "pinLabel": "input1"
-    },
-    {
-      "id": "fe0d6ad9-1b07-4d55-8df8-d3e986e25b94",
-      "type": "Pin",
-      "source": null,
-      "subtype": "free",
-      "component": "d4ec0aa1-d86c-4b42-bd7d-5acbb36dce78",
-      "pinLabel": "input2"
-    },
-    {
-      "id": "6ca50a26-4720-4762-b211-23140f99f8cb",
-      "type": "Pin",
-      "source": null,
-      "subtype": "free",
-      "component": "d4ec0aa1-d86c-4b42-bd7d-5acbb36dce78",
-      "pinLabel": "output"
-    },
-    {
-      "id": "fe443a81-5027-451a-bb3b-895a9580c90c",
-      "type": "Pin",
-      "source": "Voltage",
-      "subtype": "mainVcc",
-      "component": "5f02d202-784c-4ea4-ae72-63d974e8a5c0",
-      "pinLabel": "cathode"
-    },
-    {
-      "id": "8ef6b7e8-c587-479e-8e8c-9ad8cd0dfea6",
-      "type": "Pin",
-      "source": "Current",
-      "subtype": "mainGnd",
-      "component": "5f02d202-784c-4ea4-ae72-63d974e8a5c0",
-      "pinLabel": "anode"
-    },
-    {
-      "id": "1b1ad231-e892-49b2-8b71-20ddc9d3a70f",
-      "type": "Pin",
-      "source": null,
-      "subtype": "free",
-      "component": "a0420207-fa9f-418b-b88c-dd130dfbcc40",
-      "pinLabel": "pin1"
-    },
-    {
-      "id": "249f1e92-1745-4010-8a27-10c30f8f7b03",
-      "type": "Pin",
-      "source": null,
-      "subtype": "free",
-      "component": "a0420207-fa9f-418b-b88c-dd130dfbcc40",
-      "pinLabel": "pin2"
-    },
-    {
-      "id": "e94b69b3-e54e-4297-ab78-7cca5bc0cb97",
-      "type": "Pin",
-      "source": null,
-      "subtype": "free",
-      "component": "2b0bb4ca-7b0e-49f2-b3d9-e3175835b412",
-      "pinLabel": "input1"
-    },
-    {
-      "id": "0ee57261-e4b8-4899-8502-95ac9668e579",
-      "type": "Pin",
-      "source": null,
-      "subtype": "free",
-      "component": "2b0bb4ca-7b0e-49f2-b3d9-e3175835b412",
-      "pinLabel": "input2"
-    },
-    {
-      "id": "45984da0-07d9-4dae-9213-14626b61eaae",
-      "type": "Pin",
-      "source": null,
-      "subtype": "free",
-      "component": "2b0bb4ca-7b0e-49f2-b3d9-e3175835b412",
-      "pinLabel": "output"
-    },
-    {
-      "id": "f31f0935-584b-4748-b72f-cebb42213e88",
-      "type": "Pin",
-      "source": null,
-      "subtype": "free",
-      "component": "c3fe302c-a3da-47ef-bdaf-afce1e7aaf18",
-      "pinLabel": "input1"
-    },
-    {
-      "id": "554f33ad-66a4-4efd-bf16-c26c6f0d2973",
-      "type": "Pin",
-      "source": null,
-      "subtype": "free",
-      "component": "c3fe302c-a3da-47ef-bdaf-afce1e7aaf18",
-      "pinLabel": "input2"
-    },
-    {
-      "id": "6d911995-deb0-40c7-939f-b3cce6abf1dd",
-      "type": "Pin",
-      "source": null,
-      "subtype": "free",
-      "component": "c3fe302c-a3da-47ef-bdaf-afce1e7aaf18",
-      "pinLabel": "output"
     }
   ],
   "wires": [
     {
-      "id": "42ca035c-f5dc-498d-b0cd-a30ce4cf3811",
-      "node1": "135e8ebb-ee40-47b0-8cf8-4265166294b8",
-      "node2": "5b636e3c-a650-47ef-b4a8-c613a1abdef1",
+      "id": "5f18a65a-4c97-4966-a277-e0002e70ec2d",
+      "node1": "4b9efbd1-5eb3-4ebc-a0d8-e03441f02798",
+      "node2": "c641c811-cdcf-41cb-8c55-c5654bf25462",
       "intermediatePositions": []
     },
     {
-      "id": "bfa2e299-e718-4083-b1ba-d44fceb73012",
-      "node1": "3d1b052d-32f7-428a-936c-55096012cdd6",
-      "node2": "5b636e3c-a650-47ef-b4a8-c613a1abdef1",
+      "id": "19a17d8e-09a2-4691-9206-4f6f1e35da5e",
+      "node1": "c29bf53a-cb7c-4b67-9ac8-1ad3f40fe1e4",
+      "node2": "f27c2bfd-37d5-48ba-8b81-7cd6636f8292",
       "intermediatePositions": []
     },
     {
-      "id": "b404c70f-1a6c-49ec-be78-b8ca53353e5f",
-      "node1": "eb6ae964-9d44-44ff-b6e2-189f3f3cc2bb",
-      "node2": "e8bb5a58-f224-4011-8319-a59227df4689",
+      "id": "68d607f8-15d9-4fc5-b0ac-fdcb56c855ff",
+      "node1": "490e9f42-2876-490e-b9ec-195a04477e9a",
+      "node2": "688a2433-c50c-4e4e-8433-384c881f73ff",
       "intermediatePositions": []
     },
     {
-      "id": "c84fe707-ebca-4db3-8057-fd4239ed12f9",
-      "node1": "5b636e3c-a650-47ef-b4a8-c613a1abdef1",
-      "node2": "eb6ae964-9d44-44ff-b6e2-189f3f3cc2bb",
+      "id": "af68894a-b3b7-40ec-b8d7-bdb2887b9872",
+      "node1": "dd27ffc6-91a1-49ad-9822-063f6751133a",
+      "node2": "7caf8585-3882-474d-8818-415fe396dfe3",
       "intermediatePositions": []
     },
     {
-      "id": "c18a86d7-39f3-4158-8e3c-ea4a1075659e",
-      "node1": "6ca50a26-4720-4762-b211-23140f99f8cb",
-      "node2": "eb6ae964-9d44-44ff-b6e2-189f3f3cc2bb",
-      "intermediatePositions": []
-    },
-    {
-      "id": "7535d109-4d13-40b2-b734-db76a17539ee",
-      "node1": "fe0d6ad9-1b07-4d55-8df8-d3e986e25b94",
-      "node2": "7ade927c-74ca-4392-a918-7a9e17231db9",
-      "intermediatePositions": []
-    },
-    {
-      "id": "426f9bd1-43c1-4112-9215-bd684f143ac9",
-      "node1": "249f1e92-1745-4010-8a27-10c30f8f7b03",
-      "node2": "8ef6b7e8-c587-479e-8e8c-9ad8cd0dfea6",
-      "intermediatePositions": [
-        {
-          "x": 4,
-          "y": -7
-        },
-        {
-          "x": -4,
-          "y": -7
-        }
-      ]
-    },
-    {
-      "id": "8fed023e-bc14-47ac-bb84-caed8eaf2230",
-      "node1": "fe443a81-5027-451a-bb3b-895a9580c90c",
-      "node2": "6d911995-deb0-40c7-939f-b3cce6abf1dd",
-      "intermediatePositions": [
-        {
-          "x": -4,
-          "y": -2
-        }
-      ]
-    },
-    {
-      "id": "764ae2d6-cfb2-4c6d-8fdf-a807e996a43a",
-      "node1": "1b1ad231-e892-49b2-8b71-20ddc9d3a70f",
-      "node2": "45984da0-07d9-4dae-9213-14626b61eaae",
-      "intermediatePositions": [
-        {
-          "x": 4,
-          "y": -2
-        }
-      ]
-    },
-    {
-      "id": "23f3f103-e165-4f56-b1b8-2bc222916073",
-      "node1": "554f33ad-66a4-4efd-bf16-c26c6f0d2973",
-      "node2": "0ee57261-e4b8-4899-8502-95ac9668e579",
-      "intermediatePositions": []
-    },
-    {
-      "id": "7579eb75-d8b0-4e48-83fd-e3a32b5bf112",
-      "node1": "f31f0935-584b-4748-b72f-cebb42213e88",
-      "node2": "e94b69b3-e54e-4297-ab78-7cca5bc0cb97",
+      "id": "60fd0e94-2e5a-4a37-9ea6-2d5e515461c6",
+      "node1": "db937927-4751-47b7-a5f8-7e8f563e29a6",
+      "node2": "6ba11428-7870-4aae-a6c6-e193f4efcc05",
       "intermediatePositions": []
     }
   ]
