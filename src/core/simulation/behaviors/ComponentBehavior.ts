@@ -53,6 +53,24 @@ export abstract class ComponentBehaviorMixin {
     return pinStates;
   }
 
+  protected getChangedPins(
+      newPinStates: Map<string, INodeElectricalState>,
+      prevPinStates: Map<string, INodeElectricalState>
+  ): Set<string> {
+    const changedPins = new Set<string>();
+
+    for(const [key, newState] of newPinStates) {
+      if(!prevPinStates.has(key)) {
+        continue;
+      }
+      const prevState = prevPinStates.get(key);
+      if(newState.hasVoltage !== prevState?.hasVoltage || newState.hasCurrent !== prevState?.hasCurrent){
+        changedPins.add(key);
+      }
+    }
+    return changedPins;
+  }
+
   /**
    * Default: no custom onStart behavior
    * @param _component
