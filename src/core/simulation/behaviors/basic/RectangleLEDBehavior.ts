@@ -6,7 +6,7 @@
 import type { Component } from '../../../topology/Component';
 import type { ComponentState } from '../../states/ComponentState';
 import { RectangleLEDState } from '../../states/basic/RectangleLEDState';
-import type {INodeElectricalState} from "../../states";
+import {unionElectricalStates, type INodeElectricalState} from "../../states";
 import {BipolarLightEmitterBehaviorMixin} from "./index";
 import type {IBehaviorResult, IComponentBehavior} from "../types";
 import type {UUID} from "../../../utils/types";
@@ -44,13 +44,11 @@ export class RectangleLEDBehavior extends BipolarLightEmitterBehaviorMixin imple
       nodeStates: ReadonlyMap<UUID, INodeElectricalState>,
       targetTick: number
   ): IBehaviorResult {
-    const pinStates = this.getPinStates(component, nodeStates);
+    const newPinStates = this.getPinStates(component, nodeStates);
+    state.pinStates = newPinStates;
 
-    let activationCondition =
-        (pinStates.get('pin2')!.hasVoltage && pinStates.get('pin2')!.hasCurrent) ||
-        (pinStates.get('pin1')!.hasVoltage && pinStates.get('pin1')!.hasCurrent) ||
-        (pinStates.get('pin2')!.hasVoltage && pinStates.get('pin1')!.hasCurrent) ||
-        (pinStates.get('pin1')!.hasVoltage && pinStates.get('pin2')!.hasCurrent);
+    const union = unionElectricalStates(newPinStates.get('pin1')!, newPinStates.get('pin2')!);
+    const activationCondition = union.hasVoltage && union.hasCurrent;
 
     return this.getBehavior(component, state, activationCondition, targetTick);
   }

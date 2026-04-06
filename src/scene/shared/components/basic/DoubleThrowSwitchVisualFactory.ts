@@ -411,19 +411,18 @@ export class DoubleThrowSwitchVisualFactory extends ComponentVisualFactoryBase {
   }
 
   private _updateContactorColor(contactorMesh: THREE.Mesh, state: ComponentState): void {
-    if (!state.parameters) return;
+    if (!state.pinStates || !state.pinStates.has('output')) return;
 
     this._ensureClonedMaterial(contactorMesh);
     const mat = contactorMesh.material as THREE.MeshLambertMaterial;
 
-    const hasVoltage = state.parameters.get('outVoltage') === 'true';
-    const hasCurrent = state.parameters.get('outCurrent') === 'true';
+    const outputState = state.pinStates.get('output')!;
 
-    if (hasVoltage && hasCurrent) {
+    if (outputState.hasVoltage && outputState.hasCurrent) {
       mat.color.copy(this.COLOR_VOLTAGE_CURRENT);
-    } else if (hasCurrent) {
+    } else if (outputState.hasCurrent) {
       mat.color.copy(this.COLOR_CURRENT);
-    } else if (hasVoltage) {
+    } else if (outputState.hasVoltage) {
       mat.color.copy(this.COLOR_VOLTAGE);
     } else {
       mat.color.copy(this.COLOR_NONE);

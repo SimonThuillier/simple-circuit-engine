@@ -10,7 +10,7 @@ import {ComponentBehaviorMixin} from '../ComponentBehavior';
 import { RelayState } from '../../states/basic/RelayState';
 
 import type {IBehaviorResult, IComponentBehavior} from "../types";
-import type {INodeElectricalState} from "../../states";
+import {unionElectricalStates, type INodeElectricalState} from "../../states";
 import type {UUID} from "../../../utils/types";
 import {ComponentType, ENodeSourceType} from "../../../topology/types";
 
@@ -87,28 +87,21 @@ export class RelayBehavior extends ComponentBehaviorMixin implements IComponentB
       nodeStates: ReadonlyMap<UUID, INodeElectricalState>,
       targetTick: number
   ): IBehaviorResult {
-    const pinStates = this.getPinStates(component, nodeStates);
+    const newPinStates = this.getPinStates(component, nodeStates);
+    newPinStates.set('cmd_in*cmd_out', unionElectricalStates(
+        newPinStates.get('cmd_in')!, newPinStates.get('cmd_out')!));
+    newPinStates.set('power_in*power_out', unionElectricalStates(
+        newPinStates.get('power_in')!, newPinStates.get('power_out')!));
+    const prevPinStates = state.pinStates;
+    state.pinStates = newPinStates;
+    const changedPins = this.getChangedPins(newPinStates, prevPinStates);
 
-
-    const cmdHasVoltage = pinStates.get('cmd_in')!.hasVoltage || pinStates.get('cmd_out')!.hasVoltage;
-    const cmdHasCurrent = pinStates.get('cmd_in')!.hasCurrent || pinStates.get('cmd_out')!.hasCurrent;
-    const powerInHasVoltage = pinStates.get('power_in')!.hasVoltage;
-    const powerInHasCurrent = pinStates.get('power_in')!.hasCurrent;
-    const powerOutHasVoltage = pinStates.get('power_out')!.hasVoltage;
-    const powerOutHasCurrent = pinStates.get('power_out')!.hasCurrent;
-
-    let hasChanged = (String(cmdHasVoltage) !== state.parameters.get('cmd.voltage'))
-        || (String(cmdHasCurrent) !== state.parameters.get('cmd.current'))
-        || (String(powerInHasVoltage) !== state.parameters.get('power_in.voltage'))
-        || (String(powerInHasCurrent) !== state.parameters.get('power_in.current'))
-        || (String(powerOutHasVoltage) !== state.parameters.get('power_out.voltage'))
-        || (String(powerOutHasCurrent) !== state.parameters.get('power_out.current'));
-
-
-    const isCommanded = cmdHasVoltage && cmdHasCurrent;
+    const cmdUnion = newPinStates.get('cmd_in*cmd_out')!;
+    const isCommanded = cmdUnion.hasVoltage && cmdUnion.hasCurrent;
     const shouldBeClosed =
         component.config.get('activationLogic') === 'negative' ? !isCommanded : isCommanded;
 
+    let hasChanged = changedPins.size > 0;
     const scheduledEvents: IScheduledEvent[] = [];
     const transitionSpan = getTransitionSpan(component.config);
 
@@ -143,14 +136,6 @@ export class RelayBehavior extends ComponentBehaviorMixin implements IComponentB
         });
       }
     }
-
-    state.parameters.set('cmd.voltage', String(cmdHasVoltage));
-    state.parameters.set('cmd.current', String(cmdHasCurrent));
-    state.parameters.set('power_in.voltage', String(powerInHasVoltage));
-    state.parameters.set('power_in.current', String(powerInHasCurrent));
-    state.parameters.set('power_out.voltage', String(powerOutHasVoltage));
-    state.parameters.set('power_out.current', String(powerOutHasCurrent));
-
 
     return {
       componentState: state,

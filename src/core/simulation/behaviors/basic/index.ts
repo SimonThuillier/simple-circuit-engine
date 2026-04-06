@@ -21,12 +21,13 @@ export abstract class BipolarLightEmitterBehaviorMixin extends ComponentBehavior
         const scheduledEvents: IScheduledEvent[] = [];
 
         const transitionSpan = getTransitionSpan(component.config);
+        const span = state.expirationTick < 1 ? transitionSpan : Math.max(targetTick - state.startTick, 1);
 
         if (activationCondition) {
             if (state.state === 'off' || state.state === 'goingOff') {
                 hasChanged = true;
                 state.setState('goingOn', targetTick);
-                state.setNextState('on', targetTick + transitionSpan);
+                state.setNextState('on', targetTick + span);
                 scheduledEvents.push({
                     targetId: component.id,
                     scheduledAtTick: state.startTick,
@@ -39,7 +40,7 @@ export abstract class BipolarLightEmitterBehaviorMixin extends ComponentBehavior
             if (state.state === 'on' || state.state === 'goingOn') {
                 hasChanged = true;
                 state.setState('goingOff', targetTick);
-                state.setNextState('off', targetTick + transitionSpan);
+                state.setNextState('off', targetTick + span);
                 scheduledEvents.push({
                     targetId: component.id,
                     scheduledAtTick: state.startTick,

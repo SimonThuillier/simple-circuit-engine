@@ -63,37 +63,27 @@ export class DoubleThrowSwitchBehavior extends ComponentBehaviorMixin implements
   /**
    * used for contactor color change
    * @param component
-   * @param componentState
+   * @param state
    * @param nodeStates
    * @param _targetTick
    */
   override onPinsChange(
       component: Component,
-      componentState: ComponentState,
+      state: ComponentState,
       nodeStates: ReadonlyMap<UUID, INodeElectricalState>,
       _targetTick: number
   ): IBehaviorResult {
-    const outputPinId = component.pins[2];
-    if (!outputPinId) {
-      return { componentState, hasChanged: false, shouldCancelPending: false, scheduledEvents: [] };
+    const newPinStates = this.getPinStates(component, nodeStates);
+    const prevPinStates = state.pinStates;
+    state.pinStates = newPinStates;
+    const changedPins = this.getChangedPins(newPinStates, prevPinStates);
+
+    if (changedPins.size < 1 || !changedPins.has('output')) {
+      return { componentState: state, hasChanged: false, shouldCancelPending: false, scheduledEvents: [] };
     }
-
-    const outputState = nodeStates.get(outputPinId);
-    const newVoltage = outputState?.hasVoltage ? 'true' : 'false';
-    const newCurrent = outputState?.hasCurrent ? 'true' : 'false';
-
-    const prevVoltage = componentState.parameters.get('outVoltage');
-    const prevCurrent = componentState.parameters.get('outCurrent');
-
-    if (newVoltage === prevVoltage && newCurrent === prevCurrent) {
-      return { componentState, hasChanged: false, shouldCancelPending: false, scheduledEvents: [] };
-    }
-
-    componentState.parameters.set('outVoltage', newVoltage);
-    componentState.parameters.set('outCurrent', newCurrent);
 
     return {
-      componentState,
+      componentState: state,
       hasChanged: true,
       shouldCancelPending: false,
       scheduledEvents: [],

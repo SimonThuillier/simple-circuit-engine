@@ -373,31 +373,31 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
   // ===================================================================
 
   private _computeCoilColor(state: ComponentState): THREE.Color {
-    const v = state.parameters.get('cmd.voltage') === 'true';
-    const c = state.parameters.get('cmd.current') === 'true';
-    if (v && c) return this.COIL_COLOR_BOTH;
-    if (v) return this.COIL_COLOR_VOLTAGE;
-    if (c) return this.COIL_COLOR_CURRENT;
+    const cmdUnion = state.pinStates.get('cmd_in*cmd_out');
+    if (!cmdUnion) return this.COIL_COLOR_NONE;
+    if (cmdUnion.hasVoltage && cmdUnion.hasCurrent) return this.COIL_COLOR_BOTH;
+    if (cmdUnion.hasVoltage) return this.COIL_COLOR_VOLTAGE;
+    if (cmdUnion.hasCurrent) return this.COIL_COLOR_CURRENT;
     return this.COIL_COLOR_NONE;
   }
 
   private _computePowerColor(state: ComponentState): THREE.Color {
-    const pinV = state.parameters.get('power_in.voltage') === 'true';
-    const pinC = state.parameters.get('power_in.current') === 'true';
-    const poutV = state.parameters.get('power_out.voltage') === 'true';
-    const poutC = state.parameters.get('power_out.current') === 'true';
+    const powerIn = state.pinStates.get('power_in');
+    const powerOut = state.pinStates.get('power_out');
+    const powerUnion = state.pinStates.get('power_in*power_out');
+    if (!powerIn || !powerOut || !powerUnion) return this.POWER_COLOR_NONE;
 
-    // for closed or opening states we use the output as reference
-    if(state.state === 'closed' || state.state === 'opening') {
-      if ((pinV || poutV) && (pinC || poutC)) return this.POWER_COLOR_BOTH;
-      if (poutV) return this.POWER_COLOR_VOLTAGE;
-      if (poutC) return this.POWER_COLOR_CURRENT;
+    // for closed or opening states we use the union / output as reference
+    if (state.state === 'closed' || state.state === 'opening') {
+      if (powerUnion.hasVoltage && powerUnion.hasCurrent) return this.POWER_COLOR_BOTH;
+      if (powerOut.hasVoltage) return this.POWER_COLOR_VOLTAGE;
+      if (powerOut.hasCurrent) return this.POWER_COLOR_CURRENT;
       return this.POWER_COLOR_NONE;
     }
     // else it's more the input
-    if ((pinV) && (pinC)) return this.POWER_COLOR_BOTH;
-    if (pinV) return this.POWER_COLOR_VOLTAGE;
-    if (pinC) return this.POWER_COLOR_CURRENT;
+    if (powerIn.hasVoltage && powerIn.hasCurrent) return this.POWER_COLOR_BOTH;
+    if (powerIn.hasVoltage) return this.POWER_COLOR_VOLTAGE;
+    if (powerIn.hasCurrent) return this.POWER_COLOR_CURRENT;
     return this.POWER_COLOR_NONE;
   }
 

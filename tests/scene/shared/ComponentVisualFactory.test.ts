@@ -497,7 +497,7 @@ describe('SwitchVisualFactory - Animation', () => {
         state: 'closed',
         isClosed: true,
         hasExpiration: false,
-        parameters: new Map<string, string>(),
+        pinStates: new Map(),
       } as unknown as SwitchState;
 
       const openState = {
@@ -505,7 +505,7 @@ describe('SwitchVisualFactory - Animation', () => {
         state: 'open',
         isClosed: false,
         hasExpiration: false,
-        parameters: new Map<string, string>(),
+        pinStates: new Map(),
       } as unknown as SwitchState;
 
       // Get initial rotation
@@ -539,7 +539,7 @@ describe('SwitchVisualFactory - Animation', () => {
       }
     });
 
-    it('should update contactor color based on output pin parameters', () => {
+    it('should update contactor color based on output pin state', () => {
       // Find contactor mesh
       let contactorMesh: THREE.Mesh | null = null;
       visual.traverse((child) => {
@@ -554,9 +554,8 @@ describe('SwitchVisualFactory - Animation', () => {
         componentId: component.id,
         state: 'closed',
         hasExpiration: false,
-        parameters: new Map<string, string>([
-          ['outVoltage', 'true'],
-          ['outCurrent', 'true'],
+        pinStates: new Map([
+          ['output', { hasVoltage: true, hasCurrent: true, locked: false }],
         ]),
       } as unknown as SwitchState;
 
@@ -572,9 +571,8 @@ describe('SwitchVisualFactory - Animation', () => {
         componentId: component.id,
         state: 'open',
         hasExpiration: false,
-        parameters: new Map<string, string>([
-          ['outVoltage', 'false'],
-          ['outCurrent', 'false'],
+        pinStates: new Map([
+          ['output', { hasVoltage: false, hasCurrent: false, locked: false }],
         ]),
       } as unknown as SwitchState;
 
@@ -598,9 +596,8 @@ describe('SwitchVisualFactory - Animation', () => {
         componentId: component.id,
         state: 'closed',
         hasExpiration: false,
-        parameters: new Map<string, string>([
-          ['outVoltage', 'true'],
-          ['outCurrent', 'false'],
+        pinStates: new Map([
+          ['output', { hasVoltage: true, hasCurrent: false, locked: false }],
         ]),
       } as unknown as SwitchState;
 
