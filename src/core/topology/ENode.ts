@@ -6,8 +6,8 @@
  *
  * @module core/topology
  */
-import {type UUID, Position, generateUUID} from "../utils";
-import {ENodeSourceType, ENodeType, type IENode} from "./types";
+import { type UUID, Position, generateUUID } from '../utils';
+import { ENodeSourceType, ENodeType, type IENode } from './types';
 import type { Circuit } from './Circuit';
 
 /**
@@ -290,8 +290,14 @@ export class ENode {
   static fromJSON(json: IENode): ENode {
     const position = json.position ? Position.fromJSON(json.position) : undefined;
 
-    const enode = new ENode(json.type, json.component || undefined, json.pinLabel || undefined, position,
-        json.source || undefined, json.subtype ?? 'free');
+    const enode = new ENode(
+      json.type,
+      json.component || undefined,
+      json.pinLabel || undefined,
+      position,
+      json.source || undefined,
+      json.subtype ?? 'free'
+    );
 
     // Override generated ID with the one from JSON
     Object.defineProperty(enode, 'id', {

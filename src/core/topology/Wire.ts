@@ -6,9 +6,9 @@
  *
  * @module core/topology
  */
-import type {UUID} from "../utils";
-import {generateUUID, Position} from "../utils";
-import type {IWire} from "./types";
+import type { UUID } from '../utils';
+import { generateUUID, Position } from '../utils';
+import type { IWire } from './types';
 
 /**
  * Electrical connection between two ENodes.

@@ -1,14 +1,13 @@
 import { ComponentVisualFactoryBase } from '../ComponentVisualFactory';
 import type { Component } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
-import type {VisualContext} from "../../types";
-import {CmpMatCategory} from "../types";
+import type { VisualContext } from '../../types';
+import { CmpMatCategory } from '../types';
 
 /**
  * Visual factory for Battery components
  */
 export class BatteryVisualFactory extends ComponentVisualFactoryBase {
-
   private readonly BATTERY_GEOMETRY = new THREE.CylinderGeometry(0.5, 0.5, 2, 24);
 
   createVisual(component: Component, context: VisualContext): THREE.Object3D {
@@ -34,24 +33,23 @@ export class BatteryVisualFactory extends ComponentVisualFactoryBase {
     group.add(cylinder);
 
     // pins (not called if preview - no pins)
-    if (component.pins.length > 0){
+    if (component.pins.length > 0) {
       this.createPinsVisual(component, context, group);
     }
 
     return group;
   }
 
-  private createPinsVisual(component: Component, context: VisualContext, group: THREE.Group){
-
+  private createPinsVisual(component: Component, context: VisualContext, group: THREE.Group) {
     const cathodeNode = context.getENode(component.pins[0]!);
-    if(cathodeNode){
+    if (cathodeNode) {
       const cathodeGroup = this.createPinGroup(cathodeNode, 'top');
       cathodeGroup.position.set(0, 0, -1);
       group.add(cathodeGroup);
     }
 
     const anodeNode = context.getENode(component.pins[1]!);
-    if(anodeNode){
+    if (anodeNode) {
       const anodeGroup = this.createPinGroup(anodeNode, 'bottom');
       anodeGroup.position.set(0, 0, 1);
       group.add(anodeGroup);

@@ -8,12 +8,13 @@
 
 import * as THREE from 'three';
 import {
-    type Component,
-    type Wire,
-    type ENode,
-    type Circuit,
-    type IUserCommand,
-    TRANSITION_DEFAULTS, SIMULATION_SPEED
+  type Component,
+  type Wire,
+  type ENode,
+  type Circuit,
+  type IUserCommand,
+  TRANSITION_DEFAULTS,
+  SIMULATION_SPEED,
 } from 'simple-circuit-engine/core';
 import {
   ENodeType,
@@ -22,7 +23,12 @@ import {
   BehaviorRegistry,
 } from 'simple-circuit-engine/core';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
-import type { AnimationContext, SharedResources, HoveredElement, ControllerOptions } from '../shared/types';
+import type {
+  AnimationContext,
+  SharedResources,
+  HoveredElement,
+  ControllerOptions,
+} from '../shared/types';
 import { AbstractCircuitController } from '../shared/AbstractCircuitController';
 import { gridToWorldPosition, gridToWorldRotation } from '../shared/utils/GeometryUtils';
 
@@ -256,7 +262,10 @@ export class CircuitRunnerController extends AbstractCircuitController {
       // recreate runner for the current circuit (which can have been modified in edit mode while this controller was inactive)
       this._runner = new CircuitRunner(this._circuit, this._behaviorRegistry);
       // Create and fan out animation context before visual update
-      this._animationContext = { ticksPerSecond: this.simulationSpeed, simulationStatus: 'initial' };
+      this._animationContext = {
+        ticksPerSecond: this.simulationSpeed,
+        simulationStatus: 'initial',
+      };
       this.factoryRegistry.setAnimationContext(this._animationContext);
       // update graphics
       this._fullUpdate();
@@ -286,7 +295,10 @@ export class CircuitRunnerController extends AbstractCircuitController {
         // if active launch the thing
         this._runner = new CircuitRunner(circuit, this._behaviorRegistry);
         // Create/refresh animation context before visual update
-        this._animationContext = { ticksPerSecond: this.simulationSpeed, simulationStatus: 'initial' };
+        this._animationContext = {
+          ticksPerSecond: this.simulationSpeed,
+          simulationStatus: 'initial',
+        };
         this.factoryRegistry.setAnimationContext(this._animationContext);
         // update graphics
         this._fullUpdate();

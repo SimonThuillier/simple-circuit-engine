@@ -12,6 +12,7 @@ The scene module handles Three.js visualization, user interaction and simulation
 ## Organization
 
 `CircuitEngine.ts` is the main public facade. It creates shared resources (scene, camera, controls, registries, visual managers) and orchestrates two controllers:
+
 - `static/CircuitController.ts` handles the edition phase (build, edit, delete circuit elements).
 - `simulation/CircuitRunnerController.ts` handles the simulation phase (playback, tick animation, switch interaction).
 

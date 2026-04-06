@@ -57,7 +57,6 @@ export class LabelVisualFactory extends ComponentVisualFactoryBase {
   /** Padding around text in pixels */
   private static readonly PADDING = 8;
 
-
   createVisual(component: Component, _context: VisualContext): THREE.Object3D {
     const group = new THREE.Group();
     group.userData = {

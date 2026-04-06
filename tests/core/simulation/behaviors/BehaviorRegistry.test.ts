@@ -55,7 +55,11 @@ class MockBehavior implements IComponentBehavior {
     };
   }
 
-  onUserCommand(component: Component, state: ComponentState, command: IUserCommand): IBehaviorResult {
+  onUserCommand(
+    component: Component,
+    state: ComponentState,
+    command: IUserCommand
+  ): IBehaviorResult {
     return {
       componentState: state,
       hasChanged: false,
@@ -137,7 +141,9 @@ describe('BehaviorRegistry', () => {
     });
 
     it('should throw when behavior is undefined', () => {
-      expect(() => registry.register(undefined as unknown as IComponentBehavior)).toThrow(TypeError);
+      expect(() => registry.register(undefined as unknown as IComponentBehavior)).toThrow(
+        TypeError
+      );
     });
 
     it('should throw when componentType is empty string', () => {

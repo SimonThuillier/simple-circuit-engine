@@ -5,14 +5,14 @@
 
 import type { Component } from '../../../topology/Component';
 import type { ComponentState } from '../../states/ComponentState';
-import {type IScheduledEvent, TRANSITION_DEFAULTS} from '../../types';
-import {ComponentBehaviorMixin} from '../ComponentBehavior';
+import { type IScheduledEvent, TRANSITION_DEFAULTS } from '../../types';
+import { ComponentBehaviorMixin } from '../ComponentBehavior';
 import { RelayState } from '../../states/basic/RelayState';
 
-import type {IBehaviorResult, IComponentBehavior} from "../types";
-import {unionElectricalStates, type INodeElectricalState} from "../../states";
-import type {UUID} from "../../../utils/types";
-import {ComponentType, ENodeSourceType} from "../../../topology/types";
+import type { IBehaviorResult, IComponentBehavior } from '../types';
+import { unionElectricalStates, type INodeElectricalState } from '../../states';
+import type { UUID } from '../../../utils/types';
+import { ComponentType, ENodeSourceType } from '../../../topology/types';
 
 /**
  * Get the transition span from component config.
@@ -33,7 +33,6 @@ function getTransitionSpan(config: Map<string, string>): number {
  * @public
  */
 export class RelayBehavior extends ComponentBehaviorMixin implements IComponentBehavior {
-
   constructor() {
     super(ComponentType.Relay);
   }
@@ -53,11 +52,11 @@ export class RelayBehavior extends ComponentBehaviorMixin implements IComponentB
   }
 
   override allowConductivity(
-      component: Component,
-      state: ComponentState,
-      _conductivityType: ENodeSourceType,
-      pinId: string,
-      otherPinId: string
+    component: Component,
+    state: ComponentState,
+    _conductivityType: ENodeSourceType,
+    pinId: string,
+    otherPinId: string
   ): boolean {
     if (pinId === otherPinId) return true;
     const pinLabel = component.getPinLabel(pinId);
@@ -82,16 +81,20 @@ export class RelayBehavior extends ComponentBehaviorMixin implements IComponentB
    * @param targetTick
    */
   override onPinsChange(
-      component: Component,
-      state: ComponentState,
-      nodeStates: ReadonlyMap<UUID, INodeElectricalState>,
-      targetTick: number
+    component: Component,
+    state: ComponentState,
+    nodeStates: ReadonlyMap<UUID, INodeElectricalState>,
+    targetTick: number
   ): IBehaviorResult {
     const newPinStates = this.getPinStates(component, nodeStates);
-    newPinStates.set('cmd_in*cmd_out', unionElectricalStates(
-        newPinStates.get('cmd_in')!, newPinStates.get('cmd_out')!));
-    newPinStates.set('power_in*power_out', unionElectricalStates(
-        newPinStates.get('power_in')!, newPinStates.get('power_out')!));
+    newPinStates.set(
+      'cmd_in*cmd_out',
+      unionElectricalStates(newPinStates.get('cmd_in')!, newPinStates.get('cmd_out')!)
+    );
+    newPinStates.set(
+      'power_in*power_out',
+      unionElectricalStates(newPinStates.get('power_in')!, newPinStates.get('power_out')!)
+    );
     const prevPinStates = state.pinStates;
     state.pinStates = newPinStates;
     const changedPins = this.getChangedPins(newPinStates, prevPinStates);
@@ -99,7 +102,7 @@ export class RelayBehavior extends ComponentBehaviorMixin implements IComponentB
     const cmdUnion = newPinStates.get('cmd_in*cmd_out')!;
     const isCommanded = cmdUnion.hasVoltage && cmdUnion.hasCurrent;
     const shouldBeClosed =
-        component.config.get('activationLogic') === 'negative' ? !isCommanded : isCommanded;
+      component.config.get('activationLogic') === 'negative' ? !isCommanded : isCommanded;
 
     let hasChanged = changedPins.size > 0;
     const scheduledEvents: IScheduledEvent[] = [];
@@ -108,7 +111,8 @@ export class RelayBehavior extends ComponentBehaviorMixin implements IComponentB
     if (shouldBeClosed) {
       if (state.state === 'open' || state.state === 'opening') {
         // test to handle input transitions faster than component's own transitionSpan
-        let span = state.state === 'open' ? transitionSpan : Math.max(targetTick - state.startTick, 1);
+        let span =
+          state.state === 'open' ? transitionSpan : Math.max(targetTick - state.startTick, 1);
         hasChanged = true;
         state.setState('closing', targetTick);
         state.setNextState('closed', targetTick + span);
@@ -123,7 +127,8 @@ export class RelayBehavior extends ComponentBehaviorMixin implements IComponentB
     } else {
       if (state.state === 'closed' || state.state === 'closing') {
         // test to handle input transitions faster than component's own transitionSpan
-        let span = state.state === 'closed' ? transitionSpan : Math.max(targetTick - state.startTick, 1);
+        let span =
+          state.state === 'closed' ? transitionSpan : Math.max(targetTick - state.startTick, 1);
         hasChanged = true;
         state.setState('opening', targetTick);
         state.setNextState('open', targetTick + span);
@@ -146,9 +151,9 @@ export class RelayBehavior extends ComponentBehaviorMixin implements IComponentB
   }
 
   override onEventFiring(
-      _component: Component,
-      state: ComponentState,
-      event: IScheduledEvent
+    _component: Component,
+    state: ComponentState,
+    event: IScheduledEvent
   ): IBehaviorResult {
     let hasChanged = false;
 

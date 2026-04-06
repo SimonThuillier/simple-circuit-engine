@@ -8,9 +8,9 @@ Last updated: 2026-03-14
 
 ## Goals and principles
 
-To provide a vulgarization library that teaches the frontier between electronics and low level coding. 
+To provide a vulgarization library that teaches the frontier between electronics and low level coding.
 The electrical model is very simplified (no level of voltage/current, resistance, capacitance or inductance, type or frequency of current)
-and reduced to a logic state (has voltage/electrons sink true or false, has ground/electrons source true or false)/event engine. 
+and reduced to a logic state (has voltage/electrons sink true or false, has ground/electrons source true or false)/event engine.
 However, it aims to teach real-world electronic design principles so modeling of components propagation delay and logic families is emphasized.
 
 ## Active Technologies
@@ -32,7 +32,6 @@ Simple Circuit Engine follows a **Model-Controller** architecture with clear sep
 The core module is **dependency-free** and contains all domain logic.
 Refer to its [CLAUDE.md](src/core/CLAUDE.md) for more details.
 
-
 ### Scene Module (`src/scene/`)
 
 The scene module handles Three.js visualization, user interaction and simulation animation.
@@ -53,4 +52,3 @@ npm test && npm run lint
 ## Code Style
 
 TypeScript (strict mode), targeting ES2022: Follow standard conventions
-

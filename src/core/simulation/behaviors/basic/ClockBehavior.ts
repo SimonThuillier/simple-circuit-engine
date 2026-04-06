@@ -3,17 +3,15 @@
  * @module core/simulation/behaviors
  */
 import { Component } from '../../../topology/Component';
-import {ComponentBehaviorMixin} from '../ComponentBehavior';
-import  { type ComponentState } from '../../states/ComponentState';
-import type {IComponentBehavior, IBehaviorResult} from "../types";
-import {ComponentType, ENodeSourceType} from "../../../topology/types";
-import {ClockState} from "../../states/basic/ClockState";
+import { ComponentBehaviorMixin } from '../ComponentBehavior';
+import { type ComponentState } from '../../states/ComponentState';
+import type { IComponentBehavior, IBehaviorResult } from '../types';
+import { ComponentType, ENodeSourceType } from '../../../topology/types';
+import { ClockState } from '../../states/basic/ClockState';
 
-import {type IScheduledEvent} from '../../types';
-
+import { type IScheduledEvent } from '../../types';
 
 export class ClockBehavior extends ComponentBehaviorMixin implements IComponentBehavior {
-
   constructor() {
     super(ComponentType.Clock);
   }
@@ -38,11 +36,11 @@ export class ClockBehavior extends ComponentBehaviorMixin implements IComponentB
   }
 
   override allowConductivity(
-      component: Component,
-      state: ComponentState,
-      _conductivityType: ENodeSourceType,
-      pinId: string,
-      otherPinId: string
+    component: Component,
+    state: ComponentState,
+    _conductivityType: ENodeSourceType,
+    pinId: string,
+    otherPinId: string
   ): boolean {
     if (pinId === otherPinId) return true;
     const pinLabel = component.getPinLabel(pinId);
@@ -73,38 +71,34 @@ export class ClockBehavior extends ComponentBehaviorMixin implements IComponentB
    * @param component
    * @param state
    */
-  override onStart(
-      component: Component,
-      state: ComponentState): IBehaviorResult | null {
-
+  override onStart(component: Component, state: ComponentState): IBehaviorResult | null {
     const targetTick = 0;
     const halfPeriod = Number(component.config.get('halfPeriod'));
     //console.log('onStart', targetTick);
-    state.setNextState(
-        state.state === 'high' ? 'low': 'high',
-        targetTick + halfPeriod
-    );
+    state.setNextState(state.state === 'high' ? 'low' : 'high', targetTick + halfPeriod);
 
     return {
       componentState: state,
       hasChanged: true,
       shouldCancelPending: true,
-      scheduledEvents: [{
-        targetId: component.id,
-        scheduledAtTick: state.startTick,
-        readyAtTick: state.expirationTick,
-        type: 'tick',
-        parameters: new Map([['exclusive', 'true']]),
-      }],
+      scheduledEvents: [
+        {
+          targetId: component.id,
+          scheduledAtTick: state.startTick,
+          readyAtTick: state.expirationTick,
+          type: 'tick',
+          parameters: new Map([['exclusive', 'true']]),
+        },
+      ],
     };
   }
 
   override onEventFiring(
-      component: Component,
-      state: ComponentState,
-      event: IScheduledEvent
+    component: Component,
+    state: ComponentState,
+    event: IScheduledEvent
   ): IBehaviorResult {
-    if(event.type !== 'tick') {
+    if (event.type !== 'tick') {
       return {
         componentState: state,
         hasChanged: false,
@@ -114,14 +108,8 @@ export class ClockBehavior extends ComponentBehaviorMixin implements IComponentB
     }
 
     const halfPeriod = Number(component.config.get('halfPeriod'));
-    state.setState(
-        state.state === 'high' ? 'low': 'high',
-        event.readyAtTick
-    );
-    state.setNextState(
-        state.state === 'high' ? 'low': 'high',
-        event.readyAtTick + halfPeriod
-    );
+    state.setState(state.state === 'high' ? 'low' : 'high', event.readyAtTick);
+    state.setNextState(state.state === 'high' ? 'low' : 'high', event.readyAtTick + halfPeriod);
 
     //console.warn(`Clock ticking at ${event.readyAtTick} to ${state.state}`);
 
@@ -129,13 +117,15 @@ export class ClockBehavior extends ComponentBehaviorMixin implements IComponentB
       componentState: state,
       hasChanged: true,
       shouldCancelPending: true,
-      scheduledEvents: [{
-        targetId: component.id,
-        scheduledAtTick: state.startTick,
-        readyAtTick: state.expirationTick,
-        type: 'tick',
-        parameters: new Map([['exclusive', 'true']]),
-      }],
+      scheduledEvents: [
+        {
+          targetId: component.id,
+          scheduledAtTick: state.startTick,
+          readyAtTick: state.expirationTick,
+          type: 'tick',
+          parameters: new Map([['exclusive', 'true']]),
+        },
+      ],
     };
   }
 }

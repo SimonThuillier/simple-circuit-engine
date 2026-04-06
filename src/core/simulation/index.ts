@@ -8,19 +8,12 @@
  * @public
  */
 
-export {TRANSITION_DEFAULTS, SIMULATION_SPEED} from "./types.js";
-export type {
-    IUserCommand,
-    IRunnerOptions,
-    IScheduledEvent,
-    IDirtyElements
-} from "./types.js";
-
+export { TRANSITION_DEFAULTS, SIMULATION_SPEED } from './types.js';
+export type { IUserCommand, IRunnerOptions, IScheduledEvent, IDirtyElements } from './types.js';
 
 // states and behaviors
 export * from './states';
 export * from './behaviors';
-
 
 // Utilities
 export { EventQueue } from './EventQueue.js';
@@ -29,6 +22,4 @@ export { DirtyTracker } from './DirtyTracker.js';
 export { StateManager } from './StateManager.js';
 // Core orchestrator
 export { CircuitRunner } from './CircuitRunner.js';
-export {getTransitionSpan} from "./behaviors/ComponentBehavior";
-
-
+export { getTransitionSpan } from './behaviors/ComponentBehavior';

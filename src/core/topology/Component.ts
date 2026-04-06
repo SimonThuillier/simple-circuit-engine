@@ -6,9 +6,9 @@
  *
  * @module core/topology
  */
-import type {UUID} from "../utils";
+import type { UUID } from '../utils';
 import { generateUUID, Position, Rotation } from '../utils';
-import {COMPONENT_TYPE_METADATA, ComponentType, type IComponent} from "./types";
+import { COMPONENT_TYPE_METADATA, ComponentType, type IComponent } from './types';
 
 /**
  * Electrical component placed on the circuit grid.
@@ -116,7 +116,7 @@ export class Component {
     position: Position,
     rotation: Rotation,
     pins: ReadonlyArray<UUID>,
-    editable: boolean = true,
+    editable: boolean = true
   ) {
     this.id = generateUUID();
     this.type = type;
@@ -221,7 +221,7 @@ export class Component {
       rotation: this.rotation.toJSON(),
       pins: [...this.pins],
       config: Object.fromEntries(this.config),
-      editable: this.editable
+      editable: this.editable,
     };
   }
 

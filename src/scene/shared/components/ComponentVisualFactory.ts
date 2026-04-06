@@ -10,7 +10,7 @@ import {
   type Component,
   type ComponentType,
   type ComponentState,
-  ENode
+  ENode,
 } from 'simple-circuit-engine/core';
 import { ENodeSourceType } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
@@ -246,7 +246,6 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
   /** Default hover emissive intensity */
   protected static readonly DEFAULT_HOVER_INTENSITY = 0.6;
 
-
   protected getMat(
     category: CmpMatCategory,
     variant: CmpMatVariant = CmpMatVariant.NORMAL
@@ -257,7 +256,6 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     }
     return matCat[variant] || CMP_MATERIALS[CmpMatCategory.WHITE][CmpMatVariant.NORMAL];
   }
-
 
   defaultRotation() {
     return 0;
@@ -302,8 +300,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
       if (!(child instanceof THREE.Mesh)) return;
 
       const material = child.material;
-      if (material.visible === false
-          || material.userData?.matType !== CmpMatType.SHARED) return;
+      if (material.visible === false || material.userData?.matType !== CmpMatType.SHARED) return;
 
       const matCategory = CMP_MATERIALS[material.userData.matCat as CmpMatCategory];
       if (!matCategory) return;
@@ -330,8 +327,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
       if (!(child instanceof THREE.Mesh)) return;
 
       const material = child.material;
-      if (material.visible === false
-          || material.userData?.matType !== CmpMatType.SHARED) return;
+      if (material.visible === false || material.userData?.matType !== CmpMatType.SHARED) return;
 
       const matCategory = CMP_MATERIALS[material.userData.matCat as CmpMatCategory];
       if (!matCategory) return;
@@ -359,8 +355,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
       if (!(child instanceof THREE.Mesh)) return;
 
       const material = child.material;
-      if (material.visible === false
-          || material.userData?.matType !== CmpMatType.SHARED) return;
+      if (material.visible === false || material.userData?.matType !== CmpMatType.SHARED) return;
 
       const matCategory = CMP_MATERIALS[material.userData.matCat as CmpMatCategory];
       if (!matCategory) return;
@@ -390,8 +385,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
       if (!(child instanceof THREE.Mesh)) return;
 
       const material = child.material;
-      if (material.visible === false
-          || material.userData?.matType !== CmpMatType.SHARED) return;
+      if (material.visible === false || material.userData?.matType !== CmpMatType.SHARED) return;
 
       const matCategory = CMP_MATERIALS[material.userData.matCat as CmpMatCategory];
       if (!matCategory) return;
@@ -403,8 +397,8 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
   /**
    * @private
    */
-  private pointPinGroupToward(group: THREE.Group, direction: Direction2D){
-    switch(direction) {
+  private pointPinGroupToward(group: THREE.Group, direction: Direction2D) {
+    switch (direction) {
       case 'right':
         group.rotateZ(-Math.PI / 2);
         group.rotateY(Math.PI);
@@ -436,11 +430,11 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
    * @returns THREE.Group configured as pin group
    */
   protected createPinGroup(
-      node: ENode,
-      pointsTo: Direction2D = 'right',
-      visualRotation: THREE.Euler | null = null
+    node: ENode,
+    pointsTo: Direction2D = 'right',
+    visualRotation: THREE.Euler | null = null
   ): THREE.Group {
-    if (!node.component){
+    if (!node.component) {
       throw new Error('This method only manage components eNodes (pins)');
     }
 
@@ -454,48 +448,56 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
       enodeId: node.id,
       label: node.pinLabel,
       subtype: node.subtype,
-      lockedSourceType: lockedSubtypes.includes(node.subtype)
+      lockedSourceType: lockedSubtypes.includes(node.subtype),
     };
 
     const pinGroup = new THREE.Group();
-    pinGroup.userData = {...userInfos, type: 'enodeGroup', sourceType: node.source || null};
+    pinGroup.userData = { ...userInfos, type: 'enodeGroup', sourceType: node.source || null };
     // default radius
     let hitboxRadius = 0.9;
     let visualRadius = 0.3;
     // since those pins won't be used for wiring they can be smaller
-    if(smallSubtypes.includes(node.subtype)){
+    if (smallSubtypes.includes(node.subtype)) {
       hitboxRadius = 0.25;
       visualRadius = 0.2;
     }
 
     // Hitbox (hemisphere, raycastable)
-    const hitboxGeom = new THREE.SphereGeometry(hitboxRadius, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
-    const hitbox = new THREE.Mesh(
-        hitboxGeom,
-        new THREE.MeshBasicMaterial({
-          color: ComponentVisualFactoryBase.DEFAULT_HOVER_COLOR,
-          transparent: true,
-          opacity: 0,
-        })
+    const hitboxGeom = new THREE.SphereGeometry(
+      hitboxRadius,
+      16,
+      8,
+      0,
+      Math.PI * 2,
+      0,
+      Math.PI / 2
     );
-    hitbox.userData = {...userInfos, type: 'enodeHitbox'};
+    const hitbox = new THREE.Mesh(
+      hitboxGeom,
+      new THREE.MeshBasicMaterial({
+        color: ComponentVisualFactoryBase.DEFAULT_HOVER_COLOR,
+        transparent: true,
+        opacity: 0,
+      })
+    );
+    hitbox.userData = { ...userInfos, type: 'enodeHitbox' };
     hitbox.layers.set(HitboxLayers.ENODE);
     pinGroup.add(hitbox);
 
     // Visual sphere
     const visual = new THREE.Mesh(
-        new THREE.SphereGeometry(visualRadius, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
-        new THREE.MeshLambertMaterial({
-          color: this.pinColorForSourceType(node.source || null),
-          emissive: this.pinColorForSourceType(node.source || null),
-          emissiveIntensity: 0,
-        })
+      new THREE.SphereGeometry(visualRadius, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+      new THREE.MeshLambertMaterial({
+        color: this.pinColorForSourceType(node.source || null),
+        emissive: this.pinColorForSourceType(node.source || null),
+        emissiveIntensity: 0,
+      })
     );
     visual.userData = {
       ...userInfos,
       type: 'enode',
       sourceType: node.source || null,
-      radius: visualRadius
+      radius: visualRadius,
     };
     pinGroup.add(visual);
     if (!!visualRotation) {
@@ -513,34 +515,35 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
    * @protected
    */
   protected createPinCounterpart(
-      pinGroup: THREE.Group,
-      material: THREE.MeshLambertMaterial
+    pinGroup: THREE.Group,
+    material: THREE.MeshLambertMaterial
   ): THREE.Mesh | null {
-
     const pinVisual = this.findPinVisualFromGroup(pinGroup);
-    if(!pinVisual){
+    if (!pinVisual) {
       return null;
     }
 
     const visual = new THREE.Mesh(
-        new THREE.SphereGeometry(pinVisual.userData.radius, 16, 8,
-            0, Math.PI * 2, 0, Math.PI / 2),
-        material
+      new THREE.SphereGeometry(pinVisual.userData.radius, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+      material
     );
     visual.userData = {
       type: 'component',
       componentId: pinVisual.userData.componentId,
-      part: 'pinCounterpart'
-    }
+      part: 'pinCounterpart',
+    };
     visual.position.copy(pinGroup.position);
 
     const pinVisualRotation = pinVisual.rotation.clone();
 
-    visual.rotation.copy(new THREE.Euler(
+    visual.rotation.copy(
+      new THREE.Euler(
         -pinGroup.rotation.x,
         -pinGroup.rotation.y,
         -pinGroup.rotation.z,
-        pinGroup.rotation.order));
+        pinGroup.rotation.order
+      )
+    );
     visual.rotateX(-pinVisualRotation.x);
     visual.rotateY(-pinVisualRotation.y);
     visual.rotateZ(pinVisualRotation.z);
@@ -557,9 +560,9 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     let pinGroup: THREE.Group | null = null;
     object3D.traverse((child) => {
       if (
-          child.userData.type === 'enodeGroup' &&
-          child.userData.label === label &&
-          child instanceof THREE.Group
+        child.userData.type === 'enodeGroup' &&
+        child.userData.label === label &&
+        child instanceof THREE.Group
       ) {
         pinGroup = child;
       }
@@ -595,8 +598,6 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     return this.findPinVisualFromGroup(pinGroup);
   }
 
-
-
   /**
    * Create component hitbox mesh
    *
@@ -610,11 +611,11 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
    * @returns THREE.Mesh configured as component hitbox
    */
   protected createComponentHitbox(
-      componentId: string,
-      groupId: number,
-      width: number,
-      height: number,
-      depth: number
+    componentId: string,
+    groupId: number,
+    width: number,
+    height: number,
+    depth: number
   ): THREE.Mesh {
     const geometry = new THREE.BoxGeometry(width, height, depth);
     const material = new THREE.MeshBasicMaterial({
@@ -645,14 +646,14 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
 
   protected pinColorForSourceType(sourceType: ENodeSourceType | null): number {
     if (!sourceType) {
-      return 0xD4894C; // Copper for no source
+      return 0xd4894c; // Copper for no source
     }
     if (sourceType === ENodeSourceType.Voltage) {
       return 0xff0000; // Red for voltage
     } else if (sourceType === ENodeSourceType.Current) {
       return 0x0000ff; // Blue for current
     }
-    return 0xD4894C; // Copper by default
+    return 0xd4894c; // Copper by default
   }
 
   protected pinColorForElectricalState(state: 'current' | 'voltage' | 'vc' | 'idle'): number {
@@ -691,8 +692,8 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     pinGroup.userData.sourceType = sourceType;
 
     const visual = pinGroup.children.find((child) => child.userData.type === 'enode') as
-        | THREE.Mesh
-        | undefined;
+      | THREE.Mesh
+      | undefined;
 
     if (!visual) {
       return;
@@ -719,8 +720,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
 
         if (child.userData.type === 'enodeHitbox') {
           material.opacity = 0.3;
-        }
-        else if (child.userData.type === 'enode') {
+        } else if (child.userData.type === 'enode') {
           material.color.setHex(0x00ff00);
           // Apply hover effect
           material.emissiveIntensity = 0.9;
@@ -738,8 +738,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     }
     pinGroup.userData.isHovered = false;
 
-    const source: ENodeSourceType | null =
-        pinGroup.userData.sourceType || null;
+    const source: ENodeSourceType | null = pinGroup.userData.sourceType || null;
 
     pinGroup.traverse((child) => {
       if (child instanceof THREE.Mesh) {
@@ -752,7 +751,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
           material.emissiveIntensity = source ? 1 : 0;
           if (!source && pinGroup.userData.electricalState) {
             const emissiveColor = this.pinColorForElectricalState(
-                pinGroup.userData.electricalState
+              pinGroup.userData.electricalState
             );
             material.emissive.setHex(emissiveColor);
             material.emissiveIntensity = emissiveColor === 0x000000 ? 0 : 1;

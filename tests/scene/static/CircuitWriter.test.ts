@@ -11,7 +11,7 @@ import { Circuit } from '../../../src/core/topology/Circuit';
 import { CircuitOptions } from '../../../src/core/topology/CircuitOptions';
 import { Position } from '../../../src/core/utils/Position';
 import type { CircuitController } from '../../../src/scene/static/CircuitController';
-import {ComponentType, ENodeType} from "../../../src";
+import { ComponentType, ENodeType } from '../../../src';
 
 /**
  * Create a mock CircuitController with spied emit method

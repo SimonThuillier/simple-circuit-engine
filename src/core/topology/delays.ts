@@ -7,8 +7,8 @@
  * @module core/topology
  */
 
-import {ComponentType, type LogicFamily} from "./types";
-import {Component} from "./Component";
+import { ComponentType, type LogicFamily } from './types';
+import { Component } from './Component';
 
 // TTL1 delay lookup tables indexed by input count
 // Physical basis: multi-emitter BJTs mean NAND4 is still single-stage; NOR is disadvantaged
@@ -28,18 +28,16 @@ type GateFamily = 'NOT' | 'Buffer' | 'NAND' | 'AND' | 'NOR' | 'OR' | 'XOR' | 'XN
  * if not applicable / already implemented returns undefined
  * @param component
  */
-export function computeTransitionSpan(
-    component: Component,
-): number | undefined {
+export function computeTransitionSpan(component: Component): number | undefined {
   const logicFamily = component.config.get('defaultLogicFamily') as LogicFamily | undefined;
   if (!logicFamily || logicFamily === 'Sandbox') {
     return undefined;
   }
 
-  if(isLogicGate(component.type)) {
+  if (isLogicGate(component.type)) {
     const activationLogic = component.config.get('activationLogic') ?? 'negative';
     const classif = classifyGate(component.type, activationLogic);
-    if(!classif) return undefined;
+    if (!classif) return undefined;
     const delay = computeGateDelay(logicFamily, classif.gateFamily, classif.inputCount);
     return delay || undefined;
   }
@@ -50,16 +48,16 @@ export function computeTransitionSpan(
 
 function isLogicGate(type: ComponentType): boolean {
   return [
-      ComponentType.Inverter,
-      ComponentType.NandGate,
-      ComponentType.Nand4Gate,
-      ComponentType.Nand8Gate,
-      ComponentType.NorGate,
-      ComponentType.Nor4Gate,
-      ComponentType.Nor8Gate,
-      ComponentType.XorGate,
-      ComponentType.Xor4Gate,
-      ComponentType.Xor8Gate
+    ComponentType.Inverter,
+    ComponentType.NandGate,
+    ComponentType.Nand4Gate,
+    ComponentType.Nand8Gate,
+    ComponentType.NorGate,
+    ComponentType.Nor4Gate,
+    ComponentType.Nor8Gate,
+    ComponentType.XorGate,
+    ComponentType.Xor4Gate,
+    ComponentType.Xor8Gate,
   ].includes(type);
 }
 
@@ -72,29 +70,31 @@ function isLogicGate(type: ComponentType): boolean {
  * @param activationLogic - 'positive' or 'negative' from the component config
  * @returns Object with gateFamily and inputCount, or null if not a gate
  */
-export function classifyGate(componentType: ComponentType, activationLogic: string):
-    {gateFamily: GateFamily, inputCount: number} | null {
+export function classifyGate(
+  componentType: ComponentType,
+  activationLogic: string
+): { gateFamily: GateFamily; inputCount: number } | null {
   switch (componentType) {
     case ComponentType.Inverter:
       return { gateFamily: activationLogic === 'negative' ? 'NOT' : 'Buffer', inputCount: 1 };
     case ComponentType.NandGate:
       return { gateFamily: activationLogic === 'negative' ? 'NAND' : 'AND', inputCount: 2 };
     case ComponentType.Nand4Gate:
-      return { gateFamily: activationLogic === 'negative'  ? 'NAND' : 'AND', inputCount: 4 };
+      return { gateFamily: activationLogic === 'negative' ? 'NAND' : 'AND', inputCount: 4 };
     case ComponentType.Nand8Gate:
-      return { gateFamily: activationLogic === 'negative'  ? 'NAND' : 'AND', inputCount: 8 };
+      return { gateFamily: activationLogic === 'negative' ? 'NAND' : 'AND', inputCount: 8 };
     case ComponentType.NorGate:
-      return { gateFamily: activationLogic === 'negative'  ? 'NOR' : 'OR', inputCount: 2 };
+      return { gateFamily: activationLogic === 'negative' ? 'NOR' : 'OR', inputCount: 2 };
     case ComponentType.Nor4Gate:
-      return { gateFamily: activationLogic === 'negative'  ? 'NOR' : 'OR', inputCount: 4 };
+      return { gateFamily: activationLogic === 'negative' ? 'NOR' : 'OR', inputCount: 4 };
     case ComponentType.Nor8Gate:
-      return { gateFamily: activationLogic === 'negative'  ? 'NOR' : 'OR', inputCount: 8 };
+      return { gateFamily: activationLogic === 'negative' ? 'NOR' : 'OR', inputCount: 8 };
     case ComponentType.XorGate:
-      return { gateFamily: activationLogic === 'negative'  ? 'XNOR' : 'XOR', inputCount: 2 };
+      return { gateFamily: activationLogic === 'negative' ? 'XNOR' : 'XOR', inputCount: 2 };
     case ComponentType.Xor4Gate:
-      return { gateFamily: activationLogic === 'negative'  ? 'XNOR' : 'XOR', inputCount: 4 };
+      return { gateFamily: activationLogic === 'negative' ? 'XNOR' : 'XOR', inputCount: 4 };
     case ComponentType.Xor8Gate:
-      return { gateFamily: activationLogic === 'negative'  ? 'XNOR' : 'XOR', inputCount: 8 };
+      return { gateFamily: activationLogic === 'negative' ? 'XNOR' : 'XOR', inputCount: 8 };
     default:
       return null;
   }

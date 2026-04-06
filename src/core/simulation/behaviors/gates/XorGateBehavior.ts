@@ -6,11 +6,11 @@
 import type { Component } from '../../../topology/Component';
 import type { ComponentState } from '../../states/ComponentState';
 import { XorGateState } from '../../states/gates/XorGateState';
-import {LogicGateBehaviorMixin} from "./index";
-import type {IBehaviorResult, IComponentBehavior} from "../types";
-import type {INodeElectricalState} from "../../states";
-import type {UUID} from "../../../utils/types";
-import {ComponentType} from "../../../topology/types";
+import { LogicGateBehaviorMixin } from './index';
+import type { IBehaviorResult, IComponentBehavior } from '../types';
+import type { INodeElectricalState } from '../../states';
+import type { UUID } from '../../../utils/types';
+import { ComponentType } from '../../../topology/types';
 
 /**
  * Behavior implementation for XOR Gate components.
@@ -20,7 +20,6 @@ import {ComponentType} from "../../../topology/types";
  * @public
  */
 export class XorGateBehavior extends LogicGateBehaviorMixin implements IComponentBehavior {
-
   constructor() {
     super(ComponentType.XorGate);
   }
@@ -47,11 +46,15 @@ export class XorGateBehavior extends LogicGateBehaviorMixin implements IComponen
     state.pinStates = newPinStates;
 
     const vccGuardBehavior = this.vccGuardBehavior(state, newPinStates, targetTick);
-    if(vccGuardBehavior) {
+    if (vccGuardBehavior) {
       return vccGuardBehavior;
     }
-    const nonLogicInputGuardBehavior = this.nonLogicInputGuardBehavior(state, newPinStates, targetTick);
-    if(nonLogicInputGuardBehavior) {
+    const nonLogicInputGuardBehavior = this.nonLogicInputGuardBehavior(
+      state,
+      newPinStates,
+      targetTick
+    );
+    if (nonLogicInputGuardBehavior) {
       return nonLogicInputGuardBehavior;
     }
 

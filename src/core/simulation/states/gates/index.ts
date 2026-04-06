@@ -4,7 +4,7 @@
  */
 
 import { ComponentState } from '../ComponentState';
-import type {UUID} from "../../../utils/types";
+import type { UUID } from '../../../utils/types';
 
 /**
  * Simulation state for Logic gates components
@@ -13,27 +13,27 @@ import type {UUID} from "../../../utils/types";
  * @public
  */
 export abstract class LogicGateState extends ComponentState {
-    /**
-     * Create a new Inverter state.
-     *
-     * @param componentId - UUID of the Inverter component
-     * @param initialState - Initial operational state (default: "low")
-     */
-    protected constructor(componentId: UUID, initialState: string = 'low') {
-        super(componentId, initialState);
-    }
+  /**
+   * Create a new Inverter state.
+   *
+   * @param componentId - UUID of the Inverter component
+   * @param initialState - Initial operational state (default: "low")
+   */
+  protected constructor(componentId: UUID, initialState: string = 'low') {
+    super(componentId, initialState);
+  }
 
-    /**
-     * Check if output is in a rising or falling transition
-     */
-    get isInTransition(): boolean {
-        return this.state === 'rising' || this.state === 'falling';
-    }
+  /**
+   * Check if output is in a rising or falling transition
+   */
+  get isInTransition(): boolean {
+    return this.state === 'rising' || this.state === 'falling';
+  }
 
-    /**
-     * Check if output is high
-     */
-    get isHigh(): boolean {
-        return this.state === 'high';
-    }
+  /**
+   * Check if output is high
+   */
+  get isHigh(): boolean {
+    return this.state === 'high';
+  }
 }

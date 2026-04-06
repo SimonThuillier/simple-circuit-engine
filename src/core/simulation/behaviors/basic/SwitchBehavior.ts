@@ -3,14 +3,14 @@
  * @module core/simulation/behaviors
  */
 
-import type {Component} from '../../../topology/Component';
-import type {ComponentState, INodeElectricalState} from '../../states';
-import {SwitchState} from '../../states';
-import type {IScheduledEvent, IUserCommand} from '../../types';
-import {ComponentBehaviorMixin, getTransitionSpan} from '../ComponentBehavior';
-import type {IBehaviorResult, IComponentBehavior} from "../types";
-import {ComponentType, ENodeSourceType} from "../../../topology/types";
-import type {UUID} from "../../../utils";
+import type { Component } from '../../../topology/Component';
+import type { ComponentState, INodeElectricalState } from '../../states';
+import { SwitchState } from '../../states';
+import type { IScheduledEvent, IUserCommand } from '../../types';
+import { ComponentBehaviorMixin, getTransitionSpan } from '../ComponentBehavior';
+import type { IBehaviorResult, IComponentBehavior } from '../types';
+import { ComponentType, ENodeSourceType } from '../../../topology/types';
+import type { UUID } from '../../../utils';
 
 /**
  * Behavior implementation for switches components.
@@ -18,7 +18,6 @@ import type {UUID} from "../../../utils";
  * @public
  */
 export class SwitchBehavior extends ComponentBehaviorMixin implements IComponentBehavior {
-
   constructor() {
     super(ComponentType.Switch);
   }
@@ -55,10 +54,10 @@ export class SwitchBehavior extends ComponentBehaviorMixin implements IComponent
    * @param _targetTick
    */
   override onPinsChange(
-      component: Component,
-      state: ComponentState,
-      nodeStates: ReadonlyMap<UUID, INodeElectricalState>,
-      _targetTick: number
+    component: Component,
+    state: ComponentState,
+    nodeStates: ReadonlyMap<UUID, INodeElectricalState>,
+    _targetTick: number
   ): IBehaviorResult {
     const newPinStates = this.getPinStates(component, nodeStates);
     const prevPinStates = state.pinStates;
@@ -66,7 +65,12 @@ export class SwitchBehavior extends ComponentBehaviorMixin implements IComponent
     const changedPins = this.getChangedPins(newPinStates, prevPinStates);
 
     if (changedPins.size < 1 || !changedPins.has('output')) {
-      return { componentState: state, hasChanged: false, shouldCancelPending: false, scheduledEvents: [] };
+      return {
+        componentState: state,
+        hasChanged: false,
+        shouldCancelPending: false,
+        scheduledEvents: [],
+      };
     }
 
     return {
@@ -77,20 +81,21 @@ export class SwitchBehavior extends ComponentBehaviorMixin implements IComponent
     };
   }
 
-  override onUserCommand(component: Component, state: ComponentState, command: IUserCommand): IBehaviorResult {
+  override onUserCommand(
+    component: Component,
+    state: ComponentState,
+    command: IUserCommand
+  ): IBehaviorResult {
     let hasChanged = false;
     const scheduledEvents: IScheduledEvent[] = [];
 
     const transitionSpan = getTransitionSpan(component.config);
 
     if (command.type === 'toggle_switch' && ['open', 'closed'].includes(state.state)) {
-      state.setState(
-          state.state === 'open' ? 'closing' : 'opening',
-          command.scheduledAtTick
-      );
+      state.setState(state.state === 'open' ? 'closing' : 'opening', command.scheduledAtTick);
       state.setNextState(
-          state.state === 'closing' ? 'closed' : 'open',
-          command.scheduledAtTick + transitionSpan
+        state.state === 'closing' ? 'closed' : 'open',
+        command.scheduledAtTick + transitionSpan
       );
       hasChanged = true;
 

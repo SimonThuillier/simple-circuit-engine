@@ -3,8 +3,7 @@
  * @module core/simulation
  */
 
-
-import type {IScheduledEvent} from "./types";
+import type { IScheduledEvent } from './types';
 
 /**
  * Min-heap priority queue for scheduling future component transitions.
@@ -102,7 +101,7 @@ export class EventQueue {
     }
 
     if (cancelTargets && cancelTargets.size > 0) {
-      this.heap = this.heap.filter(e => !cancelTargets.has(e.targetId));
+      this.heap = this.heap.filter((e) => !cancelTargets.has(e.targetId));
     }
 
     for (const event of events) {

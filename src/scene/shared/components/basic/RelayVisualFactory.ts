@@ -33,7 +33,6 @@ interface RelayParts {
  *    Triggered on power param change. Deduped by target color hex.
  */
 export class RelayVisualFactory extends ComponentVisualFactoryBase {
-
   // ---------------------------------------------------------------------------
   // Geometries
   // ---------------------------------------------------------------------------
@@ -118,9 +117,10 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
   }
 
   private _createPinsVisual(
-      component: Component,
-      context: VisualContext,
-      group: THREE.Group): void {
+    component: Component,
+    context: VisualContext,
+    group: THREE.Group
+  ): void {
     const cmdOutNode = context.getENode(component.pins[1]!);
     if (cmdOutNode) {
       const cmdOutGroup = this.createPinGroup(cmdOutNode, 'left');
@@ -135,9 +135,14 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
       const powerInGroup = this.createPinGroup(powerInNode, 'right');
       powerInGroup.position.set(0.9, 0, -0.7);
       powerInGroup.renderOrder = 1;
-      powerInGroup.children.forEach((child) => { child.renderOrder = 1; });
+      powerInGroup.children.forEach((child) => {
+        child.renderOrder = 1;
+      });
       group.add(powerInGroup);
-      const counterpart = this.createPinCounterpart(powerInGroup, this.getMat(CmpMatCategory.WHITE));
+      const counterpart = this.createPinCounterpart(
+        powerInGroup,
+        this.getMat(CmpMatCategory.WHITE)
+      );
       if (counterpart) group.add(counterpart);
     }
 
@@ -155,7 +160,10 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
       const powerOutGroup = this.createPinGroup(powerOutNode, 'right');
       powerOutGroup.position.set(0.9, 0, 0.7);
       group.add(powerOutGroup);
-      const counterpart = this.createPinCounterpart(powerOutGroup, this.getMat(CmpMatCategory.WHITE));
+      const counterpart = this.createPinCounterpart(
+        powerOutGroup,
+        this.getMat(CmpMatCategory.WHITE)
+      );
       if (counterpart) group.add(counterpart);
     }
   }
@@ -201,9 +209,7 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
     return coilGroup;
   }
 
-  private _createContactorGroup(
-      componentId: String,
-      config: Map<string, string>): THREE.Group {
+  private _createContactorGroup(componentId: String, config: Map<string, string>): THREE.Group {
     const contactorGroup = new THREE.Group();
     contactorGroup.name = 'contactorGroup';
     contactorGroup.userData = {
@@ -214,9 +220,8 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
     };
 
     const activationLogic = config.get('activationLogic');
-    const geom = activationLogic === 'negative'
-        ? this.NEGATIVE_CONTACTOR_GEOM
-        : this.CONTACTOR_GEOM;
+    const geom =
+      activationLogic === 'negative' ? this.NEGATIVE_CONTACTOR_GEOM : this.CONTACTOR_GEOM;
 
     const contactor = new THREE.Mesh(geom, this.getMat(CmpMatCategory.WHITE));
     contactor.name = 'contactor';
@@ -278,16 +283,17 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
       const newVariant = config.get('activationLogic');
       if (currentVariant !== newVariant) {
         this._disposeContactorGroup(object3D);
-        const newGroup = this._createContactorGroup(
-            object3D.userData.componentId, config);
+        const newGroup = this._createContactorGroup(object3D.userData.componentId, config);
         object3D.add(newGroup);
         newGroup.position.set(0, 0, -0.7);
         newGroup.rotation.copy(this.IDLE_ROTATION);
       }
     }
 
-    object3D.userData.transitionSpanTicks =
-        Math.max(1, parseInt(config.get('transitionSpan') || '1', 10) || 1);
+    object3D.userData.transitionSpanTicks = Math.max(
+      1,
+      parseInt(config.get('transitionSpan') || '1', 10) || 1
+    );
 
     const scale = parseFloat(config.get('size') || '1');
     object3D.scale.set(scale, scale, scale);
@@ -411,8 +417,7 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
   // Snap helpers (immediate state application)
   // ===================================================================
 
-  private _snapMechanical(
-      parts: RelayParts, stateName: string, variant: string | undefined): void {
+  private _snapMechanical(parts: RelayParts, stateName: string, variant: string | undefined): void {
     const isTransitional = stateName === 'closing' || stateName === 'opening';
     if (isTransitional) {
       // Snap to start of transition
@@ -432,16 +437,15 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
     mat.color.copy(this._computeCoilColor(state));
   }
 
-  private _snapBarEffect(
-      parts: RelayParts, stateName: string, variant: string | undefined): void {
+  private _snapBarEffect(parts: RelayParts, stateName: string, variant: string | undefined): void {
     this._ensureBarClonedMaterial(parts);
     const mat = parts.coilBar.material as THREE.MeshLambertMaterial;
 
     // During transition snap, match mechanical start position
     const isTransitional = stateName === 'closing' || stateName === 'opening';
     const active = isTransitional
-        ? !this._isGoingActive(stateName, variant)
-        : this._isCmdActive(stateName, variant);
+      ? !this._isGoingActive(stateName, variant)
+      : this._isCmdActive(stateName, variant);
 
     const barDefaultMat = this.getMat(CmpMatCategory.SHINY_SILVER);
 
@@ -478,7 +482,7 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
 
     parts.coilBar.material = this.getMat(CmpMatCategory.SHINY_SILVER).clone();
     (parts.coilBar.material as THREE.MeshLambertMaterial).userData.matType =
-        CmpMatType.ANIMATION_CLONE;
+      CmpMatType.ANIMATION_CLONE;
   }
 
   /** Clone WHITE once and assign to both contactor and powerInBar. */
@@ -526,10 +530,11 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
   // ===================================================================
 
   private _animateMechanical(
-      object3D: THREE.Object3D,
-      parts: RelayParts,
-      state: ComponentState,
-      variant: string | undefined): void {
+    object3D: THREE.Object3D,
+    parts: RelayParts,
+    state: ComponentState,
+    variant: string | undefined
+  ): void {
     if (object3D.userData.mechStart === state.startTick) return;
 
     this._ensureBarClonedMaterial(parts);
@@ -569,21 +574,25 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
 
     const tracks = [
       new THREE.NumberKeyframeTrack(
-          'contactorGroup.rotation[z]',
-          [0, durationSecs],
-          [currentZ, targetRotZ]),
+        'contactorGroup.rotation[z]',
+        [0, durationSecs],
+        [currentZ, targetRotZ]
+      ),
       new THREE.NumberKeyframeTrack(
-          'coilBar.position[z]',
-          [0, durationSecs],
-          [currentBarZ, targetBarZ]),
+        'coilBar.position[z]',
+        [0, durationSecs],
+        [currentBarZ, targetBarZ]
+      ),
       new THREE.ColorKeyframeTrack(
-          'coilBar.material.emissive',
-          [0, durationSecs],
-          [...curEmRGB, targetGlow.r, targetGlow.g, targetGlow.b]),
+        'coilBar.material.emissive',
+        [0, durationSecs],
+        [...curEmRGB, targetGlow.r, targetGlow.g, targetGlow.b]
+      ),
       new THREE.NumberKeyframeTrack(
-          'coilBar.material.emissiveIntensity',
-          [0, durationSecs],
-          [curEmInt, targetGlowInt]),
+        'coilBar.material.emissiveIntensity',
+        [0, durationSecs],
+        [curEmInt, targetGlowInt]
+      ),
     ];
 
     const clip = new THREE.AnimationClip('relayMechanical', durationSecs, tracks);
@@ -602,9 +611,10 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
   // ===================================================================
 
   private _updateCoilColorAnim(
-      object3D: THREE.Object3D,
-      parts: RelayParts,
-      state: ComponentState): void {
+    object3D: THREE.Object3D,
+    parts: RelayParts,
+    state: ComponentState
+  ): void {
     const target = this._computeCoilColor(state);
     const key = target.getHexString();
     if (object3D.userData.coilColorKey === key) return;
@@ -631,9 +641,10 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
 
     const clip = new THREE.AnimationClip('relayCoilColor', durationSecs, [
       new THREE.ColorKeyframeTrack(
-          'coil0.material.color',
-          [0, durationSecs],
-          [...curRGB, target.r, target.g, target.b]),
+        'coil0.material.color',
+        [0, durationSecs],
+        [...curRGB, target.r, target.g, target.b]
+      ),
     ]);
     const action = mixer.clipAction(clip);
     action.loop = THREE.LoopOnce;
@@ -650,9 +661,10 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
   // ===================================================================
 
   private _updatePowerColorAnim(
-      object3D: THREE.Object3D,
-      parts: RelayParts,
-      state: ComponentState): void {
+    object3D: THREE.Object3D,
+    parts: RelayParts,
+    state: ComponentState
+  ): void {
     const target = this._computePowerColor(state);
     const key = target.getHexString();
     if (object3D.userData.powerColorKey === key) return;
@@ -679,9 +691,10 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
 
     const clip = new THREE.AnimationClip('relayPowerColor', durationSecs, [
       new THREE.ColorKeyframeTrack(
-          'contactor.material.color',
-          [0, durationSecs],
-          [...curRGB, target.r, target.g, target.b]),
+        'contactor.material.color',
+        [0, durationSecs],
+        [...curRGB, target.r, target.g, target.b]
+      ),
     ]);
     const action = mixer.clipAction(clip);
     action.loop = THREE.LoopOnce;

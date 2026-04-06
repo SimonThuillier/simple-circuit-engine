@@ -1,9 +1,9 @@
 import { ComponentVisualFactoryBase } from '../ComponentVisualFactory';
-import {type Component, type ComponentState} from 'simple-circuit-engine/core';
+import { type Component, type ComponentState } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
-import {CyclicTrapezoidGeometry, CyclicTrapezoidHoleGeometry} from '../../utils/GeometryUtils';
-import type {ConfigFormDefinition, VisualContext} from '../../types';
-import {CmpMatCategory, CmpMatType} from "../types";
+import { CyclicTrapezoidGeometry, CyclicTrapezoidHoleGeometry } from '../../utils/GeometryUtils';
+import type { ConfigFormDefinition, VisualContext } from '../../types';
+import { CmpMatCategory, CmpMatType } from '../types';
 
 /**
  * Visual factory for Inverter/Buffer components
@@ -21,7 +21,7 @@ export class InverterVisualFactory extends ComponentVisualFactoryBase {
   private readonly INVERTER_GEOM = CyclicTrapezoidGeometry(0.8, 1.6, 0, 0.08, 0.4, 16);
   /** Shared Inverter inner hole geometry */
   private readonly INVERTER_HOLE_GEOM = CyclicTrapezoidHoleGeometry(0.8, 1.6, 0, 0.08, 0.4, 16)!;
-  
+
   /** Shared Buffer envelope geometry */
   private readonly BUFFER_GEOM = CyclicTrapezoidGeometry(1, 1.6, 0.61, 0.08, 0.4, 16);
   /** Shared Buffer inner hole geometry */
@@ -32,14 +32,13 @@ export class InverterVisualFactory extends ComponentVisualFactoryBase {
   private readonly HOLE_EMISSIVE_HIGH_INTENSITY = 0.5;
   private readonly HOLE_EMISSIVE_LOW_INTENSITY = 0.2;
 
-
   createVisual(component: Component, context: VisualContext): THREE.Object3D {
     const group = new THREE.Group();
     group.userData = {
       type: 'componentGroup',
       componentId: component.id,
       componentType: component.type,
-      variant: 'inverter'
+      variant: 'inverter',
     };
 
     // Component hitbox (invisible, raycastable)
@@ -50,7 +49,7 @@ export class InverterVisualFactory extends ComponentVisualFactoryBase {
     this.replaceHole(group, false);
 
     // pins (not called if preview - no pins)
-    if (component.pins.length > 0){
+    if (component.pins.length > 0) {
       this.createPinsVisual(component, context, group);
     }
 
@@ -58,42 +57,40 @@ export class InverterVisualFactory extends ComponentVisualFactoryBase {
     return group;
   }
 
-  private createPinsVisual(
-      component: Component,
-      context: VisualContext,
-      group: THREE.Group){
-
+  private createPinsVisual(component: Component, context: VisualContext, group: THREE.Group) {
     const vccNode = context.getENode(component.pins[0]!);
-    if (vccNode){
+    if (vccNode) {
       const vccGroup = this.createPinGroup(vccNode, 'top', new THREE.Euler(0, 0, -0.8));
       vccGroup.position.set(-0.27, 0, -0.56);
       group.add(vccGroup);
     }
 
     const gndNode = context.getENode(component.pins[3]!);
-    if (gndNode){
+    if (gndNode) {
       const gndGroup = this.createPinGroup(gndNode, 'bottom', new THREE.Euler(0, 0, -0.8));
       gndGroup.position.set(-0.27, 0, 0.56);
       group.add(gndGroup);
     }
 
     const inputNode = context.getENode(component.pins[1]!);
-    if (inputNode){
+    if (inputNode) {
       const inputGroup = this.createPinGroup(inputNode, 'left');
       inputGroup.position.set(-0.5, 0, 0);
       group.add(inputGroup);
     }
 
     const outputNode = context.getENode(component.pins[2]!);
-    if(outputNode){
+    if (outputNode) {
       const outputGroup = this.createPinGroup(outputNode, 'right');
       outputGroup.position.set(0.45, 0, 0);
       group.add(outputGroup);
 
       // this counterpart act as negativeMarker when component is in its inverter config
-      const outputPinCounterpart =
-          this.createPinCounterpart(outputGroup, this.getMat(CmpMatCategory.WHITE));
-      if(!!outputPinCounterpart){
+      const outputPinCounterpart = this.createPinCounterpart(
+        outputGroup,
+        this.getMat(CmpMatCategory.WHITE)
+      );
+      if (!!outputPinCounterpart) {
         outputPinCounterpart.userData.part = 'negativeMarker';
         group.add(outputPinCounterpart);
       }
@@ -112,13 +109,13 @@ export class InverterVisualFactory extends ComponentVisualFactoryBase {
     }
 
     const envelope = activationLogic
-        ? new THREE.Mesh(this.BUFFER_GEOM, this.getMat(CmpMatCategory.WHITE))
-        : new THREE.Mesh(this.INVERTER_GEOM, this.getMat(CmpMatCategory.WHITE));
+      ? new THREE.Mesh(this.BUFFER_GEOM, this.getMat(CmpMatCategory.WHITE))
+      : new THREE.Mesh(this.INVERTER_GEOM, this.getMat(CmpMatCategory.WHITE));
     envelope.userData = {
       type: 'component',
       componentId: group.userData.componentId,
       part: 'envelope',
-      activationLogic: activationLogic
+      activationLogic: activationLogic,
     };
     envelope.rotateX(-Math.PI / 2);
     const envX = activationLogic ? -0.05 : -0.1;
@@ -139,8 +136,8 @@ export class InverterVisualFactory extends ComponentVisualFactoryBase {
     }
 
     const hole = activationLogic
-        ? new THREE.Mesh(this.BUFFER_HOLE_GEOM, this.getMat(CmpMatCategory.DARK_GRAY))
-        : new THREE.Mesh(this.INVERTER_HOLE_GEOM, this.getMat(CmpMatCategory.DARK_GRAY));
+      ? new THREE.Mesh(this.BUFFER_HOLE_GEOM, this.getMat(CmpMatCategory.DARK_GRAY))
+      : new THREE.Mesh(this.INVERTER_HOLE_GEOM, this.getMat(CmpMatCategory.DARK_GRAY));
     hole.name = 'hole'; // required for AnimationMixer property binding
     hole.userData = {
       type: 'component',
@@ -155,8 +152,6 @@ export class InverterVisualFactory extends ComponentVisualFactoryBase {
     group.add(hole);
     return hole;
   }
-
-
 
   /**
    * Get config form definition for Inverter
@@ -237,7 +232,8 @@ export class InverterVisualFactory extends ComponentVisualFactoryBase {
     const vccVisual = this.findPinVisual(object3D, 'vcc');
     const gndVisual = this.findPinVisual(object3D, 'gnd');
 
-    const inverterVariant = (config && config.has('activationLogic'))? config.get('activationLogic') !== 'positive': true;
+    const inverterVariant =
+      config && config.has('activationLogic') ? config.get('activationLogic') !== 'positive' : true;
 
     if (inverterVariant) {
       this.replaceEnvelope(object3D, false);
@@ -245,7 +241,7 @@ export class InverterVisualFactory extends ComponentVisualFactoryBase {
       if (object3D.userData.variant !== 'inverter') {
         object3D.userData.variant = 'inverter';
         // @ts-ignore
-        negativeMarkerMesh?.geometry.scale(10,10,10);
+        negativeMarkerMesh?.geometry.scale(10, 10, 10);
 
         if (!!vccVisual) {
           vccVisual.setRotationFromEuler(new THREE.Euler(0, 0, -0.8));
@@ -257,12 +253,12 @@ export class InverterVisualFactory extends ComponentVisualFactoryBase {
         }
       }
     } else {
-      if(object3D.userData.variant !== 'buffer'){
+      if (object3D.userData.variant !== 'buffer') {
         object3D.userData.variant = 'buffer';
         this.replaceEnvelope(object3D, true);
         this.replaceHole(object3D, true);
         // @ts-ignore
-        negativeMarkerMesh?.geometry.scale(0.1,0.1,0.1);
+        negativeMarkerMesh?.geometry.scale(0.1, 0.1, 0.1);
 
         if (!!vccVisual) {
           vccVisual.setRotationFromEuler(new THREE.Euler(0, 0, -0.5));
@@ -309,7 +305,8 @@ export class InverterVisualFactory extends ComponentVisualFactoryBase {
     if (this._animationContext.simulationStatus !== 'playing') {
       if (state.state === 'rising') {
         this._setHoleColor(holeMesh, this.HOLE_COLOR_LOW, this.HOLE_EMISSIVE_LOW_INTENSITY);
-      } else { // falling
+      } else {
+        // falling
         this._setHoleColor(holeMesh, this.HOLE_COLOR_HIGH, this.HOLE_EMISSIVE_HIGH_INTENSITY);
       }
       return;
@@ -379,7 +376,10 @@ export class InverterVisualFactory extends ComponentVisualFactoryBase {
     const mat = holeMesh.material as THREE.MeshLambertMaterial;
 
     const toColor = state.state === 'rising' ? this.HOLE_COLOR_HIGH : this.HOLE_COLOR_LOW;
-    const toIntensity = state.state === 'rising' ? this.HOLE_EMISSIVE_HIGH_INTENSITY : this.HOLE_EMISSIVE_LOW_INTENSITY;
+    const toIntensity =
+      state.state === 'rising'
+        ? this.HOLE_EMISSIVE_HIGH_INTENSITY
+        : this.HOLE_EMISSIVE_LOW_INTENSITY;
 
     // Read current values for mid-transition support
     const currentRGB = [mat.color.r, mat.color.g, mat.color.b];
@@ -436,14 +436,12 @@ export class InverterVisualFactory extends ComponentVisualFactoryBase {
    * @remarks
    * Searches for a mesh with userData.part === 'envelope'
    */
-  private findEnvelopeMesh(
-      object3D: THREE.Object3D
-  ): THREE.Mesh | null {
+  private findEnvelopeMesh(object3D: THREE.Object3D): THREE.Mesh | null {
     let envelopeMesh: THREE.Mesh | null = null;
 
     object3D.traverse((child) => {
       if (child instanceof THREE.Mesh && child.userData.part === 'envelope') {
-          envelopeMesh = child as THREE.Mesh;
+        envelopeMesh = child as THREE.Mesh;
       }
     });
     return envelopeMesh;
@@ -458,9 +456,7 @@ export class InverterVisualFactory extends ComponentVisualFactoryBase {
    * @remarks
    * Searches for a mesh with userData.part === 'hole'
    */
-  private findHoleMesh(
-      object3D: THREE.Object3D
-  ): THREE.Mesh | null {
+  private findHoleMesh(object3D: THREE.Object3D): THREE.Mesh | null {
     let holeMesh: THREE.Mesh | null = null;
 
     object3D.traverse((child) => {
@@ -480,9 +476,7 @@ export class InverterVisualFactory extends ComponentVisualFactoryBase {
    * @remarks
    * Searches for a mesh with userData.part === 'negativeMarker'
    */
-  protected findNegativeMarkerMesh(
-      object3D: THREE.Object3D
-  ): THREE.Mesh | null {
+  protected findNegativeMarkerMesh(object3D: THREE.Object3D): THREE.Mesh | null {
     let negativeMarkerMesh: THREE.Mesh | null = null;
 
     object3D.traverse((child) => {

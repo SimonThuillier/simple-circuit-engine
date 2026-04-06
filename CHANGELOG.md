@@ -35,8 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Logic **LOW** is now modeled as an input without voltage and with access to ground (appearing blue).
 - Logic gates now all have a special small `vcc` (voltage) and `gnd` (current) pin that reminds they must always be connected to those two to work.
 - inputs with both access to voltage and ground or none are considered **indeterminate** inputs for logic gates: receiving it on any input deactivate them (they output nothing).
-- A logic gate inactive but not indeterminate outputs at ground (blue) instead of nothing as before. 
-- various graphic improvements on components and scene rendering. 
+- A logic gate inactive but not indeterminate outputs at ground (blue) instead of nothing as before.
+- various graphic improvements on components and scene rendering.
 - Refactorization of `core` module.
 
 ### Removed

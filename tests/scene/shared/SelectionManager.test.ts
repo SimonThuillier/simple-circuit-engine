@@ -15,7 +15,7 @@ import type {
   SelectionData,
   MonoSelectionData,
 } from '../../../src/scene/shared/types';
-import {UUID} from "../../../src";
+import { UUID } from '../../../src';
 
 describe('SelectionManager', () => {
   let selectionManager: SelectionManager;

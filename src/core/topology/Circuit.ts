@@ -19,15 +19,19 @@ import {
   CIRCUIT_FILE_VERSION,
   COMPONENT_TYPE_METADATA,
   ComponentType,
-  ENodeSourceType, ENodeType,
-  type ICircuit, type IComponent, type IENode, type IWire
-} from "./types";
-import {CircuitOptions} from './CircuitOptions';
-import {CircuitMetadata} from "./CircuitMetadata";
-import {Component} from './Component';
-import {ENode} from './ENode';
-import {Wire} from './Wire';
-import {computeTransitionSpan,} from './delays';
+  ENodeSourceType,
+  ENodeType,
+  type ICircuit,
+  type IComponent,
+  type IENode,
+  type IWire,
+} from './types';
+import { CircuitOptions } from './CircuitOptions';
+import { CircuitMetadata } from './CircuitMetadata';
+import { Component } from './Component';
+import { ENode } from './ENode';
+import { Wire } from './Wire';
+import { computeTransitionSpan } from './delays';
 
 /**
  * Circuit container managing components, ENodes, and wires.
@@ -148,7 +152,7 @@ export class Circuit {
     config?: Map<string, string> | undefined
   ): Component {
     // Get component type metadata
-    const metadata = COMPONENT_TYPE_METADATA[type]
+    const metadata = COMPONENT_TYPE_METADATA[type];
 
     // Create component first (to get its ID)
     const component = new Component(type, position, rotation, []);
@@ -207,11 +211,11 @@ export class Circuit {
    * @param component - Component to resolve transitionSpan for
    */
   resolveTransitionSpan(component: Component): void {
-    if(!component.config.has('transitionSpan')) {
+    if (!component.config.has('transitionSpan')) {
       return;
     }
     const delay = computeTransitionSpan(component);
-    if(!!delay){
+    if (!!delay) {
       component.config.set('transitionSpan', String(delay));
     }
   }

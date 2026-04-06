@@ -32,8 +32,16 @@ describe('unionElectricalStates', () => {
   });
 
   it('should propagate true from either input', () => {
-    expect(unionElectricalStates(BOTH, OFF)).toEqual({ hasVoltage: true, hasCurrent: true, locked: false });
-    expect(unionElectricalStates(OFF, BOTH)).toEqual({ hasVoltage: true, hasCurrent: true, locked: false });
+    expect(unionElectricalStates(BOTH, OFF)).toEqual({
+      hasVoltage: true,
+      hasCurrent: true,
+      locked: false,
+    });
+    expect(unionElectricalStates(OFF, BOTH)).toEqual({
+      hasVoltage: true,
+      hasCurrent: true,
+      locked: false,
+    });
   });
 
   it('should always return locked: false', () => {

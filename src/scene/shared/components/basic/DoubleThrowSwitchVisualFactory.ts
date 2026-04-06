@@ -1,9 +1,6 @@
 import { ComponentVisualFactoryBase } from '../ComponentVisualFactory';
 import { CmpMatCategory, CmpMatType } from '../types';
-import type {
-  Component,
-  ComponentState,
-} from 'simple-circuit-engine/core';
+import type { Component, ComponentState } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
 import type { ConfigFormDefinition, VisualContext } from '../../types';
 
@@ -24,9 +21,9 @@ import type { ConfigFormDefinition, VisualContext } from '../../types';
  */
 export class DoubleThrowSwitchVisualFactory extends ComponentVisualFactoryBase {
   /** Rotation for switch connected to input1 */
-  private readonly INPUT1_ROTATION = new THREE.Euler(-Math.PI/2, -Math.PI/8, 0);
+  private readonly INPUT1_ROTATION = new THREE.Euler(-Math.PI / 2, -Math.PI / 8, 0);
   /** Rotation for switch connected to input2 */
-  private readonly INPUT2_ROTATION = new THREE.Euler(-Math.PI/2, Math.PI/8, 0);
+  private readonly INPUT2_ROTATION = new THREE.Euler(-Math.PI / 2, Math.PI / 8, 0);
 
   private readonly CONTACTOR_GEOMETRY = new THREE.BoxGeometry(1.4, 0.6, 0.1);
 
@@ -66,8 +63,7 @@ export class DoubleThrowSwitchVisualFactory extends ComponentVisualFactoryBase {
     contactorGroup.rotation.copy(this.INPUT1_ROTATION);
     group.add(contactorGroup);
 
-    const contactor = new THREE.Mesh(
-        this.CONTACTOR_GEOMETRY, this.getMat(CmpMatCategory.WHITE));
+    const contactor = new THREE.Mesh(this.CONTACTOR_GEOMETRY, this.getMat(CmpMatCategory.WHITE));
     contactor.name = 'contactor'; // required for findContactorMesh lookup
     contactor.userData = { part: 'contactor' };
     contactor.position.set(-0.7, 0, 0);
@@ -82,48 +78,48 @@ export class DoubleThrowSwitchVisualFactory extends ComponentVisualFactoryBase {
     return group;
   }
 
-  private createPinsVisual(
-      component: Component,
-      context: VisualContext,
-      group: THREE.Group) {
-
+  private createPinsVisual(component: Component, context: VisualContext, group: THREE.Group) {
     const input1Node = context.getENode(component.pins[0]!);
     if (input1Node) {
-      const input1PinGroup =
-          this.createPinGroup(input1Node, 'left', new THREE.Euler(0, 0.4, 0));
+      const input1PinGroup = this.createPinGroup(input1Node, 'left', new THREE.Euler(0, 0.4, 0));
       input1PinGroup.position.set(-1, -0.5, 0);
       group.add(input1PinGroup);
 
-      const input1PinCounterpart =
-          this.createPinCounterpart(input1PinGroup, this.getMat(CmpMatCategory.WHITE));
-      if(!!input1PinCounterpart){
+      const input1PinCounterpart = this.createPinCounterpart(
+        input1PinGroup,
+        this.getMat(CmpMatCategory.WHITE)
+      );
+      if (!!input1PinCounterpart) {
         group.add(input1PinCounterpart);
       }
     }
 
     const input2Node = context.getENode(component.pins[1]!);
     if (input2Node) {
-      const input2PinGroup =
-          this.createPinGroup(input2Node,'left', new THREE.Euler(0, -0.4, 0));
+      const input2PinGroup = this.createPinGroup(input2Node, 'left', new THREE.Euler(0, -0.4, 0));
       input2PinGroup.position.set(-1, 0.5, 0);
       group.add(input2PinGroup);
 
-      const input2PinCounterpart =
-          this.createPinCounterpart(input2PinGroup, this.getMat(CmpMatCategory.WHITE));
-      if(!!input2PinCounterpart){
+      const input2PinCounterpart = this.createPinCounterpart(
+        input2PinGroup,
+        this.getMat(CmpMatCategory.WHITE)
+      );
+      if (!!input2PinCounterpart) {
         group.add(input2PinCounterpart);
       }
     }
 
     const outputNode = context.getENode(component.pins[2]!);
     if (outputNode) {
-      const outputPinGroup = this.createPinGroup(outputNode,'right');
+      const outputPinGroup = this.createPinGroup(outputNode, 'right');
       outputPinGroup.position.set(0.6, 0, 0);
       group.add(outputPinGroup);
 
-      const outputPinCounterpart =
-          this.createPinCounterpart(outputPinGroup, this.getMat(CmpMatCategory.WHITE));
-      if(!!outputPinCounterpart){
+      const outputPinCounterpart = this.createPinCounterpart(
+        outputPinGroup,
+        this.getMat(CmpMatCategory.WHITE)
+      );
+      if (!!outputPinCounterpart) {
         group.add(outputPinCounterpart);
       }
     }
@@ -147,7 +143,7 @@ export class DoubleThrowSwitchVisualFactory extends ComponentVisualFactoryBase {
           label: 'Delay (ticks)',
           type: 'number',
           min: 1,
-          step: 1
+          step: 1,
         },
         {
           key: 'size',
@@ -400,7 +396,8 @@ export class DoubleThrowSwitchVisualFactory extends ComponentVisualFactoryBase {
     const mat = contactorMesh.material as THREE.MeshLambertMaterial;
     if (mat.userData.matType === CmpMatType.ANIMATION_CLONE) return;
     contactorMesh.material = this.getMat(CmpMatCategory.WHITE).clone();
-    (contactorMesh.material as THREE.MeshLambertMaterial).userData.matType = CmpMatType.ANIMATION_CLONE;
+    (contactorMesh.material as THREE.MeshLambertMaterial).userData.matType =
+      CmpMatType.ANIMATION_CLONE;
   }
 
   private _restoreSharedMaterial(contactorMesh: THREE.Mesh): void {

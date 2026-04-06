@@ -17,7 +17,7 @@ import {
   registerBasicComponentsFactories,
   registerGatesComponentsFactories,
 } from 'simple-circuit-engine/scene';
-import {CircuitOptions} from "../src";
+import { CircuitOptions } from '../src';
 
 // Create component factory registry with all visual factories
 const componentsFactoryRegistry = new GroupedFactoryRegistry(new DefaultVisualFactory());

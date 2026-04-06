@@ -1,9 +1,9 @@
-import {type Component} from 'simple-circuit-engine/core';
+import { type Component } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
-import {OrGateGeometry, OrGateHoleGeometry, XorGateTailGeometry} from '../../utils/GeometryUtils';
+import { OrGateGeometry, OrGateHoleGeometry, XorGateTailGeometry } from '../../utils/GeometryUtils';
 import { XorGateVisualFactory } from './XorGateVisualFactory';
 import type { VisualContext } from '../../types';
-import {CmpMatCategory} from "../types";
+import { CmpMatCategory } from '../types';
 
 /**
  * Visual factory for XOR gates components
@@ -23,7 +23,7 @@ export class Xor4GateVisualFactory extends XorGateVisualFactory {
   protected override readonly ENVELOPE_GEOM = OrGateGeometry(2, 3.6, 0.13, 0.4, 16);
   /** Shared inner hole geometry */
   protected override readonly HOLE_GEOM = OrGateHoleGeometry(2, 3.6, 0.13, 0.4, 16)!;
-      /** Shared geometry for negative marker **/
+  /** Shared geometry for negative marker **/
   protected override readonly NEG_MARKER_GEOM = new THREE.CylinderGeometry(
     0.25,
     0.25,
@@ -52,7 +52,7 @@ export class Xor4GateVisualFactory extends XorGateVisualFactory {
     envelope.userData = {
       type: 'component',
       componentId: component.id,
-      part: 'envelope'
+      part: 'envelope',
     };
     envelope.rotateX(-Math.PI / 2);
     envelope.rotateY(Math.PI);
@@ -60,6 +60,7 @@ export class Xor4GateVisualFactory extends XorGateVisualFactory {
     group.add(envelope);
 
     const hole = new THREE.Mesh(this.HOLE_GEOM, this.getMat(CmpMatCategory.DARK_GRAY));
+    hole.name = 'hole'; // required for AnimationMixer property binding
     hole.userData = {
       type: 'component',
       componentId: component.id,
@@ -82,7 +83,6 @@ export class Xor4GateVisualFactory extends XorGateVisualFactory {
     tail.position.set(-0.85, 0.35, 0);
     group.add(tail);
 
-
     // pins (not called if preview - no pins)
     if (component.pins.length > 0) {
       this.createPinsVisual(component, context, group);
@@ -92,7 +92,11 @@ export class Xor4GateVisualFactory extends XorGateVisualFactory {
     return group;
   }
 
-  protected override createPinsVisual(component: Component, context: VisualContext, group: THREE.Group) {
+  protected override createPinsVisual(
+    component: Component,
+    context: VisualContext,
+    group: THREE.Group
+  ) {
     const vccNode = context.getENode(component.pins[0]!);
     if (vccNode) {
       const vccGroup = this.createPinGroup(vccNode, 'bottom', new THREE.Euler(0, 0, 0.23));
@@ -102,7 +106,7 @@ export class Xor4GateVisualFactory extends XorGateVisualFactory {
 
     const gndNode = context.getENode(component.pins[6]!);
     if (gndNode) {
-      const gndGroup = this.createPinGroup(gndNode, 'top',new THREE.Euler(0, 0, 0.23));
+      const gndGroup = this.createPinGroup(gndNode, 'top', new THREE.Euler(0, 0, 0.23));
       gndGroup.position.set(0.15, 0, -1.73);
       group.add(gndGroup);
     }
@@ -152,7 +156,10 @@ export class Xor4GateVisualFactory extends XorGateVisualFactory {
     if (config.get('activationLogic') === 'negative') {
       holeMesh.userData.initialState = 'high';
       if (!negativeMarkerMesh) {
-        negativeMarkerMesh = new THREE.Mesh(this.NEG_MARKER_GEOM,this.getMat(CmpMatCategory.WHITE));
+        negativeMarkerMesh = new THREE.Mesh(
+          this.NEG_MARKER_GEOM,
+          this.getMat(CmpMatCategory.WHITE)
+        );
         negativeMarkerMesh.userData = {
           type: 'component',
           componentId: holeMesh.userData.componentId,

@@ -3,9 +3,8 @@
  * @module core/simulation/states
  */
 
-
-import type {UUID} from "../../utils/types";
-import type {INodeElectricalState} from "./types";
+import type { UUID } from '../../utils/types';
+import type { INodeElectricalState } from './types';
 
 /**
  * Base class for component simulation state.

@@ -1,5 +1,5 @@
 import { ComponentVisualFactoryBase } from '../ComponentVisualFactory';
-import {CmpMatCategory, CmpMatType} from '../types';
+import { CmpMatCategory, CmpMatType } from '../types';
 import type { Component, ComponentState, SmallLEDState } from 'simple-circuit-engine/core';
 import { presetOrHexToHex, hexToPresetOrHex } from '../../utils/ColorUtils';
 import * as THREE from 'three';
@@ -70,14 +70,14 @@ export class RectangleLEDVisualFactory extends ComponentVisualFactoryBase {
   private createPinsVisual(component: Component, context: VisualContext, group: THREE.Group) {
     const inputNode = context.getENode(component.pins[0]!);
     if (inputNode) {
-      const pin1Group = this.createPinGroup(inputNode,'left');
+      const pin1Group = this.createPinGroup(inputNode, 'left');
       pin1Group.position.set(-0.5, 0, 0);
       group.add(pin1Group);
     }
 
     const outputNode = context.getENode(component.pins[1]!);
     if (outputNode) {
-      const outputPinGroup = this.createPinGroup(outputNode,'right');
+      const outputPinGroup = this.createPinGroup(outputNode, 'right');
       outputPinGroup.position.set(0.5, 0, 0);
       group.add(outputPinGroup);
     }
@@ -96,7 +96,7 @@ export class RectangleLEDVisualFactory extends ComponentVisualFactoryBase {
           label: 'Lit delay (ticks)',
           type: 'number',
           min: 1,
-          step: 1
+          step: 1,
         },
         { key: 'idleColor', label: 'Idle Color', type: 'color' },
         { key: 'activeColor', label: 'Active Color', type: 'color' },
@@ -301,11 +301,7 @@ export class RectangleLEDVisualFactory extends ComponentVisualFactoryBase {
   /**
    * Create a smooth material animation for goingOn / goingOff transitions.
    */
-  private _animateLed(
-    object3D: THREE.Object3D,
-    ledMesh: THREE.Mesh,
-    state: ComponentState
-  ): void {
+  private _animateLed(object3D: THREE.Object3D, ledMesh: THREE.Mesh, state: ComponentState): void {
     // Prevent duplicate animation for same transition
     if (object3D.userData.currentActionStart === state.startTick) return;
 
@@ -387,10 +383,8 @@ export class RectangleLEDVisualFactory extends ComponentVisualFactoryBase {
   // Helpers
   // ---------------------------------------------------------------------------
 
-  private findLedMesh(
-    object3D: THREE.Object3D
-  ): (THREE.Mesh) | null {
-    let ledMesh: (THREE.Mesh) | null = null;
+  private findLedMesh(object3D: THREE.Object3D): THREE.Mesh | null {
+    let ledMesh: THREE.Mesh | null = null;
 
     object3D.traverse((child) => {
       if (child instanceof THREE.Mesh && child.userData.part === 'led') {

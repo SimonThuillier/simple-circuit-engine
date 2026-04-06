@@ -4,22 +4,26 @@
  */
 
 import type { Component } from '../../../topology/Component';
-import {type ComponentState, DoubleThrowSwitchState, type INodeElectricalState} from '../../states';
+import {
+  type ComponentState,
+  DoubleThrowSwitchState,
+  type INodeElectricalState,
+} from '../../states';
 import type { IScheduledEvent, IUserCommand } from '../../types';
-import {ComponentBehaviorMixin, getTransitionSpan} from '../ComponentBehavior';
-import type {IBehaviorResult, IComponentBehavior} from "../types";
-import {ComponentType, ENodeSourceType} from "../../../topology/types";
-import type {UUID} from "../../../utils";
-
-
+import { ComponentBehaviorMixin, getTransitionSpan } from '../ComponentBehavior';
+import type { IBehaviorResult, IComponentBehavior } from '../types';
+import { ComponentType, ENodeSourceType } from '../../../topology/types';
+import type { UUID } from '../../../utils';
 
 /**
  * Behavior implementation for switches components.
  *
  * @public
  */
-export class DoubleThrowSwitchBehavior extends ComponentBehaviorMixin implements IComponentBehavior {
-
+export class DoubleThrowSwitchBehavior
+  extends ComponentBehaviorMixin
+  implements IComponentBehavior
+{
   constructor() {
     super(ComponentType.DoubleThrowSwitch);
   }
@@ -68,10 +72,10 @@ export class DoubleThrowSwitchBehavior extends ComponentBehaviorMixin implements
    * @param _targetTick
    */
   override onPinsChange(
-      component: Component,
-      state: ComponentState,
-      nodeStates: ReadonlyMap<UUID, INodeElectricalState>,
-      _targetTick: number
+    component: Component,
+    state: ComponentState,
+    nodeStates: ReadonlyMap<UUID, INodeElectricalState>,
+    _targetTick: number
   ): IBehaviorResult {
     const newPinStates = this.getPinStates(component, nodeStates);
     const prevPinStates = state.pinStates;
@@ -79,7 +83,12 @@ export class DoubleThrowSwitchBehavior extends ComponentBehaviorMixin implements
     const changedPins = this.getChangedPins(newPinStates, prevPinStates);
 
     if (changedPins.size < 1 || !changedPins.has('output')) {
-      return { componentState: state, hasChanged: false, shouldCancelPending: false, scheduledEvents: [] };
+      return {
+        componentState: state,
+        hasChanged: false,
+        shouldCancelPending: false,
+        scheduledEvents: [],
+      };
     }
 
     return {
@@ -90,20 +99,21 @@ export class DoubleThrowSwitchBehavior extends ComponentBehaviorMixin implements
     };
   }
 
-  override onUserCommand(component: Component, state: ComponentState, command: IUserCommand): IBehaviorResult {
+  override onUserCommand(
+    component: Component,
+    state: ComponentState,
+    command: IUserCommand
+  ): IBehaviorResult {
     let hasChanged = false;
     const scheduledEvents: IScheduledEvent[] = [];
 
     const transitionSpan = getTransitionSpan(component.config);
 
     if (command.type === 'toggle_switch' && ['input1', 'input2'].includes(state.state)) {
-      state.setState(
-          state.state === 'input1' ? '1to2' : '2to1',
-          command.scheduledAtTick
-      );
+      state.setState(state.state === 'input1' ? '1to2' : '2to1', command.scheduledAtTick);
       state.setNextState(
-          state.state === '1to2' ? 'input2' : 'input1',
-          command.scheduledAtTick + transitionSpan
+        state.state === '1to2' ? 'input2' : 'input1',
+        command.scheduledAtTick + transitionSpan
       );
       hasChanged = true;
 

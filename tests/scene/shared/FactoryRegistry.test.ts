@@ -11,7 +11,7 @@ import {
   FactoryRegistry,
   DefaultVisualFactory,
 } from '../../../src/scene/shared/components';
-import {ComponentType} from "../../../src";
+import { ComponentType } from '../../../src';
 import type { AnimationContext } from '../../../src/scene/shared/types';
 
 describe('FactoryRegistry', () => {

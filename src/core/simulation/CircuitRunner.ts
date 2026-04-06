@@ -9,13 +9,19 @@ import { SimulationState } from './states/SimulationState';
 import { StateManager } from './StateManager.js';
 import { EventQueue } from './EventQueue.js';
 import { DirtyTracker } from './DirtyTracker.js';
-import {BehaviorRegistry, type IBehaviorResult} from './behaviors';
+import { BehaviorRegistry, type IBehaviorResult } from './behaviors';
 import type { ENode } from '../topology/ENode';
 import type { Component } from '../topology/Component';
-import type {INodeElectricalState} from "./states";
-import type {IUserCommand, IScheduledEvent, IReachabilityResult, IRunnerOptions, IRunnerResult} from "./types";
-import type {UUID} from "../utils/types";
-import {ENodeSourceType, ENodeType} from "../topology/types";
+import type { INodeElectricalState } from './states';
+import type {
+  IUserCommand,
+  IScheduledEvent,
+  IReachabilityResult,
+  IRunnerOptions,
+  IRunnerResult,
+} from './types';
+import type { UUID } from '../utils/types';
+import { ENodeSourceType, ENodeType } from '../topology/types';
 
 /**
  * Main circuit simulation controller.
@@ -384,10 +390,10 @@ export class CircuitRunner {
           // Components returning a onStart behavior override the standard initialization process
           // Notably they can schedule events ahead
           const customOnStartResult = behavior.onStart(component, componentState);
-          if(!!customOnStartResult) {
+          if (!!customOnStartResult) {
             (currentState.componentStates as Map<UUID, ComponentState>).set(
-                component.id,
-                customOnStartResult.componentState
+              component.id,
+              customOnStartResult.componentState
             );
             if (customOnStartResult.shouldCancelPending) {
               this.eventQueue.removeEventsForTarget(component.id);

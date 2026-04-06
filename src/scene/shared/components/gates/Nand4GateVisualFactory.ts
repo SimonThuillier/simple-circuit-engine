@@ -1,9 +1,9 @@
-import {type Component} from 'simple-circuit-engine/core';
+import { type Component } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
-import {AndGateGeometry, AndGateHoleGeometry} from '../../utils/GeometryUtils';
+import { AndGateGeometry, AndGateHoleGeometry } from '../../utils/GeometryUtils';
 import { NandGateVisualFactory } from './NandGateVisualFactory';
 import type { VisualContext } from '../../types';
-import {CmpMatCategory} from "../types";
+import { CmpMatCategory } from '../types';
 
 /**
  * Visual factory for NAND gates components
@@ -51,7 +51,7 @@ export class Nand4GateVisualFactory extends NandGateVisualFactory {
     envelope.userData = {
       type: 'component',
       componentId: component.id,
-      part: 'envelope'
+      part: 'envelope',
     };
     envelope.rotateX(-Math.PI / 2);
     envelope.rotateY(Math.PI);
@@ -59,6 +59,7 @@ export class Nand4GateVisualFactory extends NandGateVisualFactory {
     group.add(envelope);
 
     const hole = new THREE.Mesh(this.HOLE_GEOM, this.getMat(CmpMatCategory.DARK_GRAY));
+    hole.name = 'hole'; // required for AnimationMixer property binding
     hole.userData = {
       type: 'component',
       componentId: component.id,
@@ -70,7 +71,6 @@ export class Nand4GateVisualFactory extends NandGateVisualFactory {
     hole.position.set(-0.25, 0.35, 0);
     group.add(hole);
 
-
     // pins (not called if preview - no pins)
     if (component.pins.length > 0) {
       this.createPinsVisual(component, context, group);
@@ -80,7 +80,11 @@ export class Nand4GateVisualFactory extends NandGateVisualFactory {
     return group;
   }
 
-  protected override createPinsVisual(component: Component, context: VisualContext, group: THREE.Group) {
+  protected override createPinsVisual(
+    component: Component,
+    context: VisualContext,
+    group: THREE.Group
+  ) {
     const vccNode = context.getENode(component.pins[0]!);
     if (vccNode) {
       const vccGroup = this.createPinGroup(vccNode, 'bottom', new THREE.Euler(0, 0, 0.23));
@@ -125,7 +129,7 @@ export class Nand4GateVisualFactory extends NandGateVisualFactory {
 
     const outputNode = context.getENode(component.pins[5]!);
     if (outputNode) {
-      const outputGroup = this.createPinGroup(outputNode,'left');
+      const outputGroup = this.createPinGroup(outputNode, 'left');
       outputGroup.position.set(-1.22, 0, 0);
       group.add(outputGroup);
     }
@@ -140,7 +144,10 @@ export class Nand4GateVisualFactory extends NandGateVisualFactory {
     if (config.get('activationLogic') === 'negative') {
       holeMesh.userData.initialState = 'high';
       if (!negativeMarkerMesh) {
-        negativeMarkerMesh = new THREE.Mesh(this.NEG_MARKER_GEOM,this.getMat(CmpMatCategory.WHITE));
+        negativeMarkerMesh = new THREE.Mesh(
+          this.NEG_MARKER_GEOM,
+          this.getMat(CmpMatCategory.WHITE)
+        );
         negativeMarkerMesh.userData = {
           type: 'component',
           componentId: holeMesh.userData.componentId,

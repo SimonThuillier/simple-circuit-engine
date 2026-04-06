@@ -3,10 +3,7 @@
  * @module core/simulation/behaviors
  */
 
-export type {
-    IComponentBehavior,
-    IBehaviorResult
-} from "./types";
+export type { IComponentBehavior, IBehaviorResult } from './types';
 
 export { BehaviorRegistry } from './BehaviorRegistry.js';
 
@@ -32,5 +29,3 @@ export { Nor8GateBehavior } from './gates/Nor8GateBehavior';
 export { XorGateBehavior } from './gates/XorGateBehavior';
 export { Xor4GateBehavior } from './gates/Xor4GateBehavior';
 export { Xor8GateBehavior } from './gates/Xor8GateBehavior';
-
-

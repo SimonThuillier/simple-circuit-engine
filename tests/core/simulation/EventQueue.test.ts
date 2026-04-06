@@ -632,7 +632,7 @@ describe('EventQueue', () => {
 
       expect(queue.size()).toBe(4); // comp-2(10), comp-3(15), comp-4(8), comp-1(20)
       const ready = queue.getReadyEvents(100);
-      expect(ready.map(e => e.readyAtTick)).toEqual([8, 10, 15, 20]);
+      expect(ready.map((e) => e.readyAtTick)).toEqual([8, 10, 15, 20]);
     });
   });
 });

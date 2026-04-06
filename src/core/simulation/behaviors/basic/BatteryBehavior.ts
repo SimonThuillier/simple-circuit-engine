@@ -4,14 +4,13 @@
  */
 
 import { Component } from '../../../topology/Component';
-import {ComponentBehaviorMixin} from '../ComponentBehavior';
+import { ComponentBehaviorMixin } from '../ComponentBehavior';
 import { BatteryState } from '../../states/basic/BatteryState';
 import type { ComponentState } from '../../states/ComponentState';
-import type {IComponentBehavior} from "../types";
-import {ComponentType} from "../../../topology/types";
+import type { IComponentBehavior } from '../types';
+import { ComponentType } from '../../../topology/types';
 
 export class BatteryBehavior extends ComponentBehaviorMixin implements IComponentBehavior {
-
   constructor() {
     super(ComponentType.Battery);
   }

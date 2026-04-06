@@ -21,10 +21,16 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
   private readonly BULB_UNLIT_OPACITY = 0.55;
 
   private readonly BASE_GEOMETRY = new THREE.CylinderGeometry(
-      0.3, 0.15, 0.4,
-      12, 6, false, 0, Math.PI * 2);
-  private readonly BULB_GEOMETRY = new THREE.SphereGeometry(
-      0.5, 16, 16);
+    0.3,
+    0.15,
+    0.4,
+    12,
+    6,
+    false,
+    0,
+    Math.PI * 2
+  );
+  private readonly BULB_GEOMETRY = new THREE.SphereGeometry(0.5, 16, 16);
 
   /** Yellow in normalized RGB for ColorKeyframeTrack */
   private readonly LIT_RGB = [1, 1, 0];
@@ -49,7 +55,7 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
     base.userData = {
       type: 'component',
       componentId: component.id,
-      part: 'base'
+      part: 'base',
     };
     base.position.set(0, 0.2, 0);
     group.add(base);
@@ -73,32 +79,33 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
     return group;
   }
 
-  private createPinsVisual(
-      component: Component,
-      context: VisualContext,
-      group: THREE.Group) {
+  private createPinsVisual(component: Component, context: VisualContext, group: THREE.Group) {
     const pin1Node = context.getENode(component.pins[0]!);
     if (pin1Node) {
       const pin1Group = this.createPinGroup(pin1Node, 'left');
       pin1Group.position.set(-0.25, 0, 0);
       group.add(pin1Group);
 
-      const pin1Counterpart =
-          this.createPinCounterpart(pin1Group, this.getMat(CmpMatCategory.WHITE));
-      if(!!pin1Counterpart){
+      const pin1Counterpart = this.createPinCounterpart(
+        pin1Group,
+        this.getMat(CmpMatCategory.WHITE)
+      );
+      if (!!pin1Counterpart) {
         group.add(pin1Counterpart);
       }
     }
 
     const pin2Node = context.getENode(component.pins[1]!);
     if (pin2Node) {
-      const pin2Group = this.createPinGroup(pin2Node,'right');
+      const pin2Group = this.createPinGroup(pin2Node, 'right');
       pin2Group.position.set(0.25, 0, 0);
       group.add(pin2Group);
 
-      const pin2Counterpart =
-          this.createPinCounterpart(pin2Group, this.getMat(CmpMatCategory.WHITE));
-      if(!!pin2Counterpart){
+      const pin2Counterpart = this.createPinCounterpart(
+        pin2Group,
+        this.getMat(CmpMatCategory.WHITE)
+      );
+      if (!!pin2Counterpart) {
         group.add(pin2Counterpart);
       }
     }
@@ -117,9 +124,10 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
           label: 'Lit delay (ticks)',
           type: 'number',
           min: 1,
-          step: 1
+          step: 1,
         },
-          { key: 'size', label: 'Size', type: 'number', min: 1, max: 16, step: 1 }],
+        { key: 'size', label: 'Size', type: 'number', min: 1, max: 16, step: 1 },
+      ],
     };
   }
 
@@ -331,14 +339,12 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
   // Helpers
   // ---------------------------------------------------------------------------
 
-  private findBulbMesh(
-    object3D: THREE.Object3D
-  ): (THREE.Mesh) | null {
-    let bulbMesh: (THREE.Mesh) | null = null;
+  private findBulbMesh(object3D: THREE.Object3D): THREE.Mesh | null {
+    let bulbMesh: THREE.Mesh | null = null;
 
     object3D.traverse((child) => {
       if (child instanceof THREE.Mesh && child.userData.part === 'bulb') {
-          bulbMesh = child as THREE.Mesh;
+        bulbMesh = child as THREE.Mesh;
       }
     });
 

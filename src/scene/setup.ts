@@ -19,7 +19,7 @@ import {
   Nor8GateVisualFactory,
   XorGateVisualFactory,
   Xor4GateVisualFactory,
-  Xor8GateVisualFactory
+  Xor8GateVisualFactory,
 } from './shared/components';
 
 /**

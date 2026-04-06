@@ -16,7 +16,7 @@ import {
   LabelVisualFactory,
 } from '../../../src/scene/shared/components';
 import { registerBasicComponentsFactories } from '../../../src/scene/setup';
-import {ComponentType} from "../../../src";
+import { ComponentType } from '../../../src';
 import type { AnimationContext } from '../../../src/scene/shared/types';
 
 describe('GroupedFactoryRegistry', () => {

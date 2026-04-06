@@ -12,7 +12,7 @@ import { Rotation } from '../../../../src/core/utils/Rotation';
 import { RelayState } from '../../../../src/core/simulation/states/basic/RelayState';
 import type { NodeElectricalState } from '../../../../src/core/simulation';
 
-import {ComponentType, UUID} from "../../../../src";
+import { ComponentType, UUID } from '../../../../src';
 
 /**
  * Create a mock relay component with config

@@ -14,12 +14,17 @@ import { DefaultVisualFactory } from '../../../src/scene/shared/components/Defau
 import { SmallLEDVisualFactory } from '../../../src/scene/shared/components/basic/SmallLEDVisualFactory';
 import { SwitchVisualFactory } from '../../../src/scene/shared/components/basic/SwitchVisualFactory';
 import type { Component } from '../../../src/core/topology/Component';
-import {ComponentType, ENode, ENodeType} from '../../../src/core';
+import { ComponentType, ENode, ENodeType } from '../../../src/core';
 import { createMockCircuit } from '../helpers';
 import type { SmallLEDState } from '../../../src/core/simulation/states/basic/SmallLEDState';
 import type { SwitchState } from '../../../src/core/simulation/states/basic/SwitchState';
 import type { AnimationContext } from '../../../src/scene/shared/types';
-import { CmpMatCategory, CmpMatType, CmpMatVariant, CMP_MATERIALS } from '../../../src/scene/shared/components/types';
+import {
+  CmpMatCategory,
+  CmpMatType,
+  CmpMatVariant,
+  CMP_MATERIALS,
+} from '../../../src/scene/shared/components/types';
 
 /**
  * Test factory that extends ComponentVisualFactoryBase
@@ -554,9 +559,7 @@ describe('SwitchVisualFactory - Animation', () => {
         componentId: component.id,
         state: 'closed',
         hasExpiration: false,
-        pinStates: new Map([
-          ['output', { hasVoltage: true, hasCurrent: true, locked: false }],
-        ]),
+        pinStates: new Map([['output', { hasVoltage: true, hasCurrent: true, locked: false }]]),
       } as unknown as SwitchState;
 
       factory.updateAnimation(visual, stateWithBoth);
@@ -571,9 +574,7 @@ describe('SwitchVisualFactory - Animation', () => {
         componentId: component.id,
         state: 'open',
         hasExpiration: false,
-        pinStates: new Map([
-          ['output', { hasVoltage: false, hasCurrent: false, locked: false }],
-        ]),
+        pinStates: new Map([['output', { hasVoltage: false, hasCurrent: false, locked: false }]]),
       } as unknown as SwitchState;
 
       factory.updateAnimation(visual, stateWithNone);
@@ -596,18 +597,18 @@ describe('SwitchVisualFactory - Animation', () => {
         componentId: component.id,
         state: 'closed',
         hasExpiration: false,
-        pinStates: new Map([
-          ['output', { hasVoltage: true, hasCurrent: false, locked: false }],
-        ]),
+        pinStates: new Map([['output', { hasVoltage: true, hasCurrent: false, locked: false }]]),
       } as unknown as SwitchState;
 
       factory.updateAnimation(visual, state);
-      const matAfterAnim = (contactorMesh as unknown as THREE.Mesh).material as THREE.MeshLambertMaterial;
+      const matAfterAnim = (contactorMesh as unknown as THREE.Mesh)
+        .material as THREE.MeshLambertMaterial;
       expect(matAfterAnim.userData.matType).toBe(CmpMatType.ANIMATION_CLONE);
 
       // Leave simulation
       factory.updateAnimation(visual, null);
-      const matAfterRestore = (contactorMesh as unknown as THREE.Mesh).material as THREE.MeshLambertMaterial;
+      const matAfterRestore = (contactorMesh as unknown as THREE.Mesh)
+        .material as THREE.MeshLambertMaterial;
       expect(matAfterRestore.userData.matType).toBe(CmpMatType.SHARED);
     });
   });

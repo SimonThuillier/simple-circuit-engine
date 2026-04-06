@@ -4,7 +4,7 @@
  */
 
 import type { ComponentState, INodeElectricalState } from './index';
-import type {UUID} from "../../utils";
+import type { UUID } from '../../utils';
 
 /**
  * Represents the complete electrical state of the circuit at a specific time step.

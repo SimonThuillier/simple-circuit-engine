@@ -2,9 +2,8 @@
  * Clock component simulation state
  * @module core/simulation/states
  */
-import type {UUID} from "../../../utils";
+import type { UUID } from '../../../utils';
 import { ComponentState } from '../ComponentState';
-
 
 /**
  * Simulation state for Clock components.

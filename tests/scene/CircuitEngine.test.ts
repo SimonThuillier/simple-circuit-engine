@@ -13,7 +13,7 @@ import { BehaviorRegistry } from '../../src/core/simulation/behaviors/BehaviorRe
 import { Circuit } from '../../src/core/topology/Circuit';
 import type { IFactoryRegistry } from '../../src/scene/shared/components/ComponentVisualFactory';
 import { CircuitOptions } from '../../src/core/topology/CircuitOptions';
-import {ComponentType, SIMULATION_SPEED} from "../../src";
+import { ComponentType, SIMULATION_SPEED } from '../../src';
 
 /**
  * Create a simple test circuit with two batteries wired together

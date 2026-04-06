@@ -6,14 +6,16 @@
 import type { Component } from '../../../topology/Component';
 import type { ComponentState } from '../../states/ComponentState';
 import { LightbulbState } from '../../states/basic/LightbulbState';
-import {BipolarLightEmitterBehaviorMixin} from "./index";
-import type {IBehaviorResult, IComponentBehavior} from "../types";
-import {unionElectricalStates, type INodeElectricalState} from "../../states";
-import type {UUID} from "../../../utils/types";
-import {ComponentType} from "../../../topology/types";
+import { BipolarLightEmitterBehaviorMixin } from './index';
+import type { IBehaviorResult, IComponentBehavior } from '../types';
+import { unionElectricalStates, type INodeElectricalState } from '../../states';
+import type { UUID } from '../../../utils/types';
+import { ComponentType } from '../../../topology/types';
 
-export class LightbulbBehavior extends BipolarLightEmitterBehaviorMixin implements IComponentBehavior {
-
+export class LightbulbBehavior
+  extends BipolarLightEmitterBehaviorMixin
+  implements IComponentBehavior
+{
   constructor() {
     super(ComponentType.Lightbulb);
   }

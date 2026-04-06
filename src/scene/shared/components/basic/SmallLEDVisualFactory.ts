@@ -1,5 +1,5 @@
 import { ComponentVisualFactoryBase } from '../ComponentVisualFactory';
-import {CmpMatCategory, CmpMatType} from '../types';
+import { CmpMatCategory, CmpMatType } from '../types';
 import type { Component, ComponentState, SmallLEDState } from 'simple-circuit-engine/core';
 import { presetOrHexToHex, hexToPresetOrHex } from '../../utils/ColorUtils';
 import * as THREE from 'three';
@@ -42,9 +42,7 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
     group.add(hitbox);
 
     // Visual LED
-    const ledGeometry = new THREE.CylinderGeometry(
-        0.25, 0.25, 1, 16, 3,
-        false, 0, Math.PI * 2);
+    const ledGeometry = new THREE.CylinderGeometry(0.25, 0.25, 1, 16, 3, false, 0, Math.PI * 2);
     const ledMat = this.getMat(CmpMatCategory.WHITE).clone();
     ledMat.userData.matType = CmpMatType.PRIVATE;
 
@@ -69,32 +67,33 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
     return group;
   }
 
-  private createPinsVisual(
-      component: Component,
-      context: VisualContext,
-      group: THREE.Group) {
+  private createPinsVisual(component: Component, context: VisualContext, group: THREE.Group) {
     const inputNode = context.getENode(component.pins[0]!);
     if (inputNode) {
-      const pin1Group = this.createPinGroup(inputNode,'left');
+      const pin1Group = this.createPinGroup(inputNode, 'left');
       pin1Group.position.set(-0.25, 0, 0);
       group.add(pin1Group);
 
-      const pin1Counterpart =
-          this.createPinCounterpart(pin1Group, this.getMat(CmpMatCategory.WHITE));
-      if(!!pin1Counterpart){
+      const pin1Counterpart = this.createPinCounterpart(
+        pin1Group,
+        this.getMat(CmpMatCategory.WHITE)
+      );
+      if (!!pin1Counterpart) {
         group.add(pin1Counterpart);
       }
     }
 
     const outputNode = context.getENode(component.pins[1]!);
     if (outputNode) {
-      const pin2Group = this.createPinGroup(outputNode,'right');
+      const pin2Group = this.createPinGroup(outputNode, 'right');
       pin2Group.position.set(0.25, 0, 0);
       group.add(pin2Group);
 
-      const pin2Counterpart =
-          this.createPinCounterpart(pin2Group, this.getMat(CmpMatCategory.WHITE));
-      if(!!pin2Counterpart){
+      const pin2Counterpart = this.createPinCounterpart(
+        pin2Group,
+        this.getMat(CmpMatCategory.WHITE)
+      );
+      if (!!pin2Counterpart) {
         group.add(pin2Counterpart);
       }
     }
@@ -113,7 +112,7 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
           label: 'Lit delay (ticks)',
           type: 'number',
           min: 1,
-          step: 1
+          step: 1,
         },
         { key: 'idleColor', label: 'Idle Color', type: 'color' },
         { key: 'activeColor', label: 'Active Color', type: 'color' },
@@ -315,11 +314,7 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
   /**
    * Create a smooth material animation for goingOn / goingOff transitions.
    */
-  private _animateLed(
-    object3D: THREE.Object3D,
-    ledMesh: THREE.Mesh,
-    state: ComponentState
-  ): void {
+  private _animateLed(object3D: THREE.Object3D, ledMesh: THREE.Mesh, state: ComponentState): void {
     // Prevent duplicate animation for same transition
     if (object3D.userData.currentActionStart === state.startTick) return;
 
@@ -401,10 +396,8 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
   // Helpers
   // ---------------------------------------------------------------------------
 
-  private findLedMesh(
-    object3D: THREE.Object3D
-  ): (THREE.Mesh) | null {
-    let ledMesh: (THREE.Mesh) | null = null;
+  private findLedMesh(object3D: THREE.Object3D): THREE.Mesh | null {
+    let ledMesh: THREE.Mesh | null = null;
 
     object3D.traverse((child) => {
       if (child instanceof THREE.Mesh && child.userData.part === 'led') {

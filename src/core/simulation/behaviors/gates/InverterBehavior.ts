@@ -3,14 +3,14 @@
  * @module core/simulation/behaviors
  */
 
-import type {Component} from '../../../topology/Component';
-import {type ComponentState} from '../../states/ComponentState';
-import {InverterState} from '../../states/gates/InverterState';
-import { LogicGateBehaviorMixin} from "./index";
-import type {IBehaviorResult, IComponentBehavior} from "../types";
-import type {INodeElectricalState} from "../../states";
-import type {UUID} from "../../../utils/types";
-import {ComponentType} from "../../../topology/types";
+import type { Component } from '../../../topology/Component';
+import { type ComponentState } from '../../states/ComponentState';
+import { InverterState } from '../../states/gates/InverterState';
+import { LogicGateBehaviorMixin } from './index';
+import type { IBehaviorResult, IComponentBehavior } from '../types';
+import type { INodeElectricalState } from '../../states';
+import type { UUID } from '../../../utils/types';
+import { ComponentType } from '../../../topology/types';
 
 /**
  * Behavior implementation for Inverters components.
@@ -18,7 +18,6 @@ import {ComponentType} from "../../../topology/types";
  * @public
  */
 export class InverterBehavior extends LogicGateBehaviorMixin implements IComponentBehavior {
-
   constructor() {
     super(ComponentType.Inverter);
   }
@@ -54,17 +53,21 @@ export class InverterBehavior extends LogicGateBehaviorMixin implements ICompone
     state.pinStates = newPinStates;
 
     const vccGuardBehavior = this.vccGuardBehavior(state, newPinStates, targetTick);
-    if(vccGuardBehavior) {
+    if (vccGuardBehavior) {
       return vccGuardBehavior;
     }
-    const nonLogicInputGuardBehavior = this.nonLogicInputGuardBehavior(state, newPinStates, targetTick);
-    if(nonLogicInputGuardBehavior) {
+    const nonLogicInputGuardBehavior = this.nonLogicInputGuardBehavior(
+      state,
+      newPinStates,
+      targetTick
+    );
+    if (nonLogicInputGuardBehavior) {
       return nonLogicInputGuardBehavior;
     }
 
     const isCommanded = newPinStates.get('input')!.hasVoltage;
     const activationCondition =
-        component.config.get('activationLogic') === 'negative' ? !isCommanded : isCommanded;
+      component.config.get('activationLogic') === 'negative' ? !isCommanded : isCommanded;
 
     return this.getBehavior(component, state, activationCondition, targetTick);
   }

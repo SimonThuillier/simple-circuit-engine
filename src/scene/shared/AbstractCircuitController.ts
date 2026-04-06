@@ -8,7 +8,7 @@
 
 import * as THREE from 'three';
 import { MapControls } from 'three/addons/controls/MapControls.js';
-import {type UUID, type Circuit } from 'simple-circuit-engine/core';
+import { type UUID, type Circuit } from 'simple-circuit-engine/core';
 import { EventEmitter } from './EventEmitter';
 import type { IFactoryRegistry } from './components/ComponentVisualFactory';
 import type {
@@ -20,7 +20,8 @@ import type {
   WireHitboxUserData,
   ComponentHitboxUserData,
   EnodeHitboxUserData,
-  SharedResources, VisualContext,
+  SharedResources,
+  VisualContext,
 } from './types';
 import { createPerspectiveCamera, updateCamera } from './utils/CameraUtils';
 import { setupSceneLights } from './utils/LightingUtils';
@@ -136,8 +137,8 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
   // })
   get visualContext(): VisualContext {
     return {
-      getENode: (id: UUID) => this._circuit?.getENode(id)
-    }
+      getENode: (id: UUID) => this._circuit?.getENode(id),
+    };
   }
 
   protected get grid(): THREE.GridHelper | null {
@@ -427,8 +428,10 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
     if (!!this._circuit) {
       // Clear all existing visuals
       this._removeAllVisuals();
-      const oldCircuitName = (this._circuit.metadata && this._circuit.metadata.options)?
-          this._circuit.metadata.options.name: 'Unnamed Circuit';
+      const oldCircuitName =
+        this._circuit.metadata && this._circuit.metadata.options
+          ? this._circuit.metadata.options.name
+          : 'Unnamed Circuit';
       this._circuit = null;
       this.wireVisualManager.setCircuit(null);
       this.emit('circuitCleared', { name: oldCircuitName });
@@ -442,8 +445,10 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
     }
 
     if (circuit !== null) {
-      const nameOrDefault = (circuit.metadata && circuit.metadata.options)?
-          circuit.metadata.options.name: 'Unnamed Circuit';
+      const nameOrDefault =
+        circuit.metadata && circuit.metadata.options
+          ? circuit.metadata.options.name
+          : 'Unnamed Circuit';
       const options = this._options || controllerOptions();
       // Perform full update with new circuit
       this._circuit = circuit;
@@ -471,7 +476,7 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
         }
       }
       this.onSetCircuit();
-      this.emit('circuitLoaded', {name: nameOrDefault});
+      this.emit('circuitLoaded', { name: nameOrDefault });
     }
   }
 
