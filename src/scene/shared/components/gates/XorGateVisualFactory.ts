@@ -1,8 +1,9 @@
 import { ComponentVisualFactoryBase } from '../ComponentVisualFactory';
 import {type Component, type ComponentState, type XorGateState} from 'simple-circuit-engine/core';
 import * as THREE from 'three';
-import { OrGateGeometry, XorGateTailGeometry } from '../../utils/GeometryUtils';
+import {OrGateGeometry, OrGateHoleGeometry, XorGateTailGeometry} from '../../utils/GeometryUtils';
 import type { ConfigFormDefinition, VisualContext } from '../../types';
+import {CmpMatCategory} from "../types";
 
 /**
  * Visual factory for XOR gates components
@@ -16,24 +17,14 @@ import type { ConfigFormDefinition, VisualContext } from '../../types';
  * - Emissive glow when Gate is high (based on simulation state)
  */
 export class XorGateVisualFactory extends ComponentVisualFactoryBase {
-  /** Gate high color */
-  protected static readonly HIGH_COLOR = 0xffffff;
-  /** Gate high emissive intensity */
-  protected static readonly HIGH_INTENSITY = 0.3;
   /** XOR tail geometry */
-  protected readonly tailGeometry = XorGateTailGeometry(1.5, 1.6, 0.8, 0.1, 0.8, 0.4, 16);
+  protected readonly TAIL_GEOM = XorGateTailGeometry(1.5, 1.6, 0.8, 0.1, 0.8, 0.4, 16);
   /** Shared open envelope geometry */
-  protected readonly lowGeometry = OrGateGeometry(1.5, 1.6, 0.1, 0.4, 16);
-  /** Shared transient envelope geometry */
-  protected readonly transientGeometry = OrGateGeometry(1.5, 1.6, 0.4, 0.4, 16);
-  /** Shared transient envelope geometry */
-  protected readonly highGeometry = OrGateGeometry(1.5, 1.6, 0.799, 0.4, 16);
-  /** Shared material for negative marker **/
-  protected readonly negativeMarkerMaterial = new THREE.MeshStandardMaterial({
-    color: 0xfafafa,
-  });
+  protected readonly ENVELOPE_GEOM = OrGateGeometry(1.5, 1.6, 0.1, 0.4, 16);
+  /** Shared inner hole geometry */
+  protected readonly HOLE_GEOM = OrGateHoleGeometry(1.5, 1.6, 0.1, 0.4, 16)!;
   /** Shared geometry for negative marker **/
-  protected readonly negativeMarkerGeometry = new THREE.CylinderGeometry(
+  protected readonly NEG_MARKER_GEOM = new THREE.CylinderGeometry(
     0.2,
     0.2,
     0.4,
@@ -44,12 +35,16 @@ export class XorGateVisualFactory extends ComponentVisualFactoryBase {
     Math.PI * 2
   );
 
+  protected readonly HOLE_COLOR_HIGH = new THREE.Color(0xff4444);
+  protected readonly HOLE_COLOR_LOW = new THREE.Color(0x4444ff);
+  protected readonly HOLE_EMISSIVE_HIGH_INTENSITY = 0.5;
+  protected readonly HOLE_EMISSIVE_LOW_INTENSITY = 0.2;
+
   override defaultRotation() {
     return Math.PI;
   }
 
   createVisual(component: Component, context: VisualContext): THREE.Object3D {
-    // Root group (not rendered, just organizational)
     const group = new THREE.Group();
     group.userData = {
       type: 'componentGroup',
@@ -62,25 +57,30 @@ export class XorGateVisualFactory extends ComponentVisualFactoryBase {
     group.add(hitbox);
 
     // Visual Gate
-    const envelopeMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
-    envelopeMaterial.emissive.setHex(XorGateVisualFactory.HIGH_COLOR);
-    envelopeMaterial.emissiveIntensity = 0;
-    const envelope = new THREE.Mesh(this.lowGeometry, envelopeMaterial);
+    const envelope = new THREE.Mesh(this.ENVELOPE_GEOM, this.getMat(CmpMatCategory.WHITE));
     envelope.userData = {
       type: 'component',
       componentId: component.id,
-      part: 'envelope',
-      initialState: 'low',
+      part: 'envelope'
     };
     envelope.rotateX(-Math.PI / 2);
     envelope.rotateY(Math.PI);
     envelope.position.set(0, 0.35, 0);
     group.add(envelope);
 
-    //const tailMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
-    //tailMaterial.emissive.setHex(XorGateVisualFactory.HIGH_COLOR);
-    //tailMaterial.emissiveIntensity = 0;
-    const tail = new THREE.Mesh(this.tailGeometry, envelopeMaterial);
+    const hole = new THREE.Mesh(this.HOLE_GEOM, this.getMat(CmpMatCategory.DARK_GRAY));
+    hole.userData = {
+      type: 'component',
+      componentId: component.id,
+      part: 'hole',
+      initialState: 'low',
+    };
+    hole.rotateX(-Math.PI / 2);
+    hole.rotateY(Math.PI);
+    hole.position.set(0, 0.35, 0);
+    group.add(hole);
+
+    const tail = new THREE.Mesh(this.TAIL_GEOM, this.getMat(CmpMatCategory.WHITE));
     tail.userData = {
       type: 'component',
       componentId: component.id,
@@ -90,6 +90,7 @@ export class XorGateVisualFactory extends ComponentVisualFactoryBase {
     tail.rotateY(Math.PI);
     tail.position.set(-0.25, 0.35, 0);
     group.add(tail);
+
 
     // pins (not called if preview - no pins)
     if (component.pins.length > 0) {
@@ -209,21 +210,18 @@ export class XorGateVisualFactory extends ComponentVisualFactoryBase {
   }
 
   override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>) {
-    const envelopeMesh = this.findEnvelopeMesh(object3D);
-    if (!envelopeMesh) return;
+    const holeMesh = this.findHoleMesh(object3D);
+    if (!holeMesh) return;
 
     let negativeMarkerMesh = this.findNegativeMarkerMesh(object3D);
 
     if (config.get('activationLogic') === 'negative') {
-      envelopeMesh.userData.initialState = 'high';
+      holeMesh.userData.initialState = 'high';
       if (!negativeMarkerMesh) {
-        negativeMarkerMesh = new THREE.Mesh(
-          this.negativeMarkerGeometry,
-          this.negativeMarkerMaterial
-        );
+        negativeMarkerMesh = new THREE.Mesh(this.NEG_MARKER_GEOM,this.getMat(CmpMatCategory.WHITE));
         negativeMarkerMesh.userData = {
           type: 'component',
-          componentId: envelopeMesh.userData.componentId,
+          componentId: holeMesh.userData.componentId,
           part: 'negativeMarker',
         };
 
@@ -231,12 +229,11 @@ export class XorGateVisualFactory extends ComponentVisualFactoryBase {
         object3D.add(negativeMarkerMesh);
       }
     } else {
-      envelopeMesh.userData.initialState = 'low';
+      holeMesh.userData.initialState = 'low';
       if (negativeMarkerMesh) {
         object3D.remove(negativeMarkerMesh);
       }
     }
-    this.updateAnimation(object3D, null);
   }
 
   /**
@@ -246,30 +243,10 @@ export class XorGateVisualFactory extends ComponentVisualFactoryBase {
    * @param state - The component current simulation state
    */
   override updateAnimation(object3D: THREE.Object3D, state: ComponentState | null): void {
-    const envelopeMesh = this.findEnvelopeMesh(object3D);
-    if (!envelopeMesh) return;
-    if (!state) {
-      if (envelopeMesh.userData.initialState === 'high') {
-        envelopeMesh.geometry = this.highGeometry;
-        envelopeMesh.material.emissiveIntensity = XorGateVisualFactory.HIGH_INTENSITY;
-      } else {
-        envelopeMesh.geometry = this.lowGeometry;
-        envelopeMesh.material.emissiveIntensity = 0;
-      }
-      return;
-    }
+    const holeMesh = this.findHoleMesh(object3D);
+    if (!holeMesh) return;
 
-    const gateState = state as XorGateState;
-    if (gateState.isHigh) {
-      envelopeMesh.geometry = this.highGeometry;
-      envelopeMesh.material.emissiveIntensity = XorGateVisualFactory.HIGH_INTENSITY;
-    } else if (gateState.isInTransition) {
-      envelopeMesh.geometry = this.transientGeometry;
-      envelopeMesh.material.emissiveIntensity = 0.5 * XorGateVisualFactory.HIGH_INTENSITY;
-    } else {
-      envelopeMesh.geometry = this.lowGeometry;
-      envelopeMesh.material.emissiveIntensity = 0;
-    }
+    // TODO ...
   }
 
   /**
@@ -283,17 +260,37 @@ export class XorGateVisualFactory extends ComponentVisualFactoryBase {
    */
   protected findEnvelopeMesh(
     object3D: THREE.Object3D
-  ): (THREE.Mesh & { material: THREE.MeshStandardMaterial }) | null {
-    let envelopeMesh: (THREE.Mesh & { material: THREE.MeshStandardMaterial }) | null = null;
+  ): THREE.Mesh | null {
+    let envelopeMesh: THREE.Mesh | null = null;
 
     object3D.traverse((child) => {
       if (child instanceof THREE.Mesh && child.userData.part === 'envelope') {
-        if (child.material instanceof THREE.MeshStandardMaterial) {
-          envelopeMesh = child as THREE.Mesh & { material: THREE.MeshStandardMaterial };
-        }
+          envelopeMesh = child as THREE.Mesh;
       }
     });
     return envelopeMesh;
+  }
+
+  /**
+   * Find the hole mesh within the component group
+   *
+   * @param object3D - The Object3D group created by createVisual()
+   * @returns The hole mesh if found, null otherwise
+   *
+   * @remarks
+   * Searches for a mesh with userData.part === 'hole'
+   */
+  protected findHoleMesh(
+      object3D: THREE.Object3D
+  ): THREE.Mesh | null {
+    let holeMesh: THREE.Mesh | null = null;
+
+    object3D.traverse((child) => {
+      if (child instanceof THREE.Mesh && child.userData.part === 'hole') {
+        holeMesh = child as THREE.Mesh;
+      }
+    });
+    return holeMesh;
   }
 
   /**
@@ -307,14 +304,12 @@ export class XorGateVisualFactory extends ComponentVisualFactoryBase {
    */
   protected findNegativeMarkerMesh(
     object3D: THREE.Object3D
-  ): (THREE.Mesh & { material: THREE.MeshStandardMaterial }) | null {
-    let negativeMarkerMesh: (THREE.Mesh & { material: THREE.MeshStandardMaterial }) | null = null;
+  ): THREE.Mesh | null {
+    let negativeMarkerMesh: THREE.Mesh | null = null;
 
     object3D.traverse((child) => {
       if (child instanceof THREE.Mesh && child.userData.part === 'negativeMarker') {
-        if (child.material instanceof THREE.MeshStandardMaterial) {
-          negativeMarkerMesh = child as THREE.Mesh & { material: THREE.MeshStandardMaterial };
-        }
+          negativeMarkerMesh = child as THREE.Mesh;
       }
     });
     return negativeMarkerMesh;

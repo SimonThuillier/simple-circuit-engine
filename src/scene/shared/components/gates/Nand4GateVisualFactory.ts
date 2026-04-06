@@ -1,8 +1,9 @@
 import {type Component} from 'simple-circuit-engine/core';
 import * as THREE from 'three';
-import { AndGateGeometry } from '../../utils/GeometryUtils';
+import {AndGateGeometry, AndGateHoleGeometry} from '../../utils/GeometryUtils';
 import { NandGateVisualFactory } from './NandGateVisualFactory';
 import type { VisualContext } from '../../types';
+import {CmpMatCategory} from "../types";
 
 /**
  * Visual factory for NAND gates components
@@ -17,13 +18,11 @@ import type { VisualContext } from '../../types';
  */
 export class Nand4GateVisualFactory extends NandGateVisualFactory {
   /** Shared open envelope geometry */
-  protected override readonly lowGeometry = AndGateGeometry(2, 3.6, 0.13, 0.4, 16);
-  /** Shared transient envelope geometry */
-  protected override readonly transientGeometry = AndGateGeometry(2, 3.6, 0.55, 0.4, 16);
-  /** Shared transient envelope geometry */
-  protected override readonly highGeometry = AndGateGeometry(2, 3.6, 1, 0.4, 16);
+  protected override readonly ENVELOPE_GEOM = AndGateGeometry(2, 3.6, 0.13, 0.4, 16);
+  /** Shared inner hole geometry */
+  protected override readonly HOLE_GEOM = AndGateHoleGeometry(2, 3.6, 0.13, 0.4, 16)!;
   /** Shared geometry for negative marker **/
-  protected static override readonly negativeMarkerGeometry = new THREE.CylinderGeometry(
+  protected override readonly NEG_MARKER_GEOM = new THREE.CylinderGeometry(
     0.25,
     0.25,
     0.4,
@@ -45,24 +44,32 @@ export class Nand4GateVisualFactory extends NandGateVisualFactory {
 
     // Component hitbox (invisible, raycastable)
     const hitbox = this.createComponentHitbox(component.id, group.id, 2.5, 2, 3.8);
-    //hitbox.rotateY(Math.PI / 2);
     group.add(hitbox);
 
     // Visual Gate
-    const envelopeMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
-    envelopeMaterial.emissive.setHex(Nand4GateVisualFactory.HIGH_COLOR);
-    envelopeMaterial.emissiveIntensity = 0;
-    const envelope = new THREE.Mesh(this.lowGeometry, envelopeMaterial);
+    const envelope = new THREE.Mesh(this.ENVELOPE_GEOM, this.getMat(CmpMatCategory.WHITE));
     envelope.userData = {
       type: 'component',
       componentId: component.id,
-      part: 'envelope',
-      initialState: 'low',
+      part: 'envelope'
     };
     envelope.rotateX(-Math.PI / 2);
     envelope.rotateY(Math.PI);
     envelope.position.set(-0.25, 0.35, 0);
     group.add(envelope);
+
+    const hole = new THREE.Mesh(this.HOLE_GEOM, this.getMat(CmpMatCategory.DARK_GRAY));
+    hole.userData = {
+      type: 'component',
+      componentId: component.id,
+      part: 'hole',
+      initialState: 'low',
+    };
+    hole.rotateX(-Math.PI / 2);
+    hole.rotateY(Math.PI);
+    hole.position.set(-0.25, 0.35, 0);
+    group.add(hole);
+
 
     // pins (not called if preview - no pins)
     if (component.pins.length > 0) {
@@ -125,21 +132,18 @@ export class Nand4GateVisualFactory extends NandGateVisualFactory {
   }
 
   override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>) {
-    const envelopeMesh = this.findEnvelopeMesh(object3D);
-    if (!envelopeMesh) return;
+    const holeMesh = this.findHoleMesh(object3D);
+    if (!holeMesh) return;
 
     let negativeMarkerMesh = this.findNegativeMarkerMesh(object3D);
 
     if (config.get('activationLogic') === 'negative') {
-      envelopeMesh.userData.initialState = 'high';
+      holeMesh.userData.initialState = 'high';
       if (!negativeMarkerMesh) {
-        negativeMarkerMesh = new THREE.Mesh(
-          Nand4GateVisualFactory.negativeMarkerGeometry,
-          Nand4GateVisualFactory.negativeMarkerMaterial
-        );
+        negativeMarkerMesh = new THREE.Mesh(this.NEG_MARKER_GEOM,this.getMat(CmpMatCategory.WHITE));
         negativeMarkerMesh.userData = {
           type: 'component',
-          componentId: envelopeMesh.userData.componentId,
+          componentId: holeMesh.userData.componentId,
           part: 'negativeMarker',
         };
 
@@ -147,11 +151,10 @@ export class Nand4GateVisualFactory extends NandGateVisualFactory {
         object3D.add(negativeMarkerMesh);
       }
     } else {
-      envelopeMesh.userData.initialState = 'low';
+      holeMesh.userData.initialState = 'low';
       if (negativeMarkerMesh) {
         object3D.remove(negativeMarkerMesh);
       }
     }
-    this.updateAnimation(object3D, null);
   }
 }

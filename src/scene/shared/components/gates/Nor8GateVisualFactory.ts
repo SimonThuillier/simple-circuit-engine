@@ -1,8 +1,9 @@
 import {type Component} from 'simple-circuit-engine/core';
 import * as THREE from 'three';
-import { OrGateGeometry } from '../../utils/GeometryUtils';
+import {OrGateGeometry, OrGateHoleGeometry} from '../../utils/GeometryUtils';
 import { NorGateVisualFactory } from './NorGateVisualFactory';
 import type { VisualContext } from '../../types';
+import {CmpMatCategory} from "../types";
 
 /**
  * Visual factory for NOR gates components
@@ -17,13 +18,11 @@ import type { VisualContext } from '../../types';
  */
 export class Nor8GateVisualFactory extends NorGateVisualFactory {
   /** Shared open envelope geometry */
-  protected override readonly lowGeometry = OrGateGeometry(2.6, 7.5, 0.16, 0.4, 16);
-  /** Shared transient envelope geometry */
-  protected override readonly transientGeometry = OrGateGeometry(2.6, 7.5, 0.35, 0.4, 16);
-  /** Shared transient envelope geometry */
-  protected override readonly highGeometry = OrGateGeometry(2.6, 7.5, 1.3, 0.4, 16);
+  protected override readonly ENVELOPE_GEOM = OrGateGeometry(2.6, 7.5, 0.16, 0.4, 16);
+  /** Shared inner hole geometry */
+  protected override readonly HOLE_GEOM = OrGateHoleGeometry(2.6, 7.5, 0.16, 0.4, 16)!;
   /** Shared geometry for negative marker **/
-  protected static override readonly negativeMarkerGeometry = new THREE.CylinderGeometry(
+  protected override readonly NEG_MARKER_GEOM = new THREE.CylinderGeometry(
     0.35,
     0.35,
     0.4,
@@ -35,7 +34,6 @@ export class Nor8GateVisualFactory extends NorGateVisualFactory {
   );
 
   override createVisual(component: Component, context: VisualContext): THREE.Object3D {
-    // Root group (not rendered, just organizational)
     const group = new THREE.Group();
     group.userData = {
       type: 'componentGroup',
@@ -48,20 +46,29 @@ export class Nor8GateVisualFactory extends NorGateVisualFactory {
     group.add(hitbox);
 
     // Visual Gate
-    const envelopeMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
-    envelopeMaterial.emissive.setHex(Nor8GateVisualFactory.HIGH_COLOR);
-    envelopeMaterial.emissiveIntensity = 0;
-    const envelope = new THREE.Mesh(this.lowGeometry, envelopeMaterial);
+    const envelope = new THREE.Mesh(this.ENVELOPE_GEOM, this.getMat(CmpMatCategory.WHITE));
     envelope.userData = {
       type: 'component',
       componentId: component.id,
-      part: 'envelope',
-      initialState: 'low',
+      part: 'envelope'
     };
     envelope.rotateX(-Math.PI / 2);
     envelope.rotateY(Math.PI);
     envelope.position.set(-0.1, 0.35, 0);
     group.add(envelope);
+
+    const hole = new THREE.Mesh(this.HOLE_GEOM, this.getMat(CmpMatCategory.DARK_GRAY));
+    hole.userData = {
+      type: 'component',
+      componentId: component.id,
+      part: 'hole',
+      initialState: 'low',
+    };
+    hole.rotateX(-Math.PI / 2);
+    hole.rotateY(Math.PI);
+    hole.position.set(-0.1, 0.35, 0);
+    group.add(hole);
+
 
     // pins (not called if preview - no pins)
     if (component.pins.length > 0) {
@@ -152,21 +159,18 @@ export class Nor8GateVisualFactory extends NorGateVisualFactory {
   }
 
   override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>) {
-    const envelopeMesh = this.findEnvelopeMesh(object3D);
-    if (!envelopeMesh) return;
+    const holeMesh = this.findHoleMesh(object3D);
+    if (!holeMesh) return;
 
     let negativeMarkerMesh = this.findNegativeMarkerMesh(object3D);
 
     if (config.get('activationLogic') === 'negative') {
-      envelopeMesh.userData.initialState = 'high';
+      holeMesh.userData.initialState = 'high';
       if (!negativeMarkerMesh) {
-        negativeMarkerMesh = new THREE.Mesh(
-          Nor8GateVisualFactory.negativeMarkerGeometry,
-          Nor8GateVisualFactory.negativeMarkerMaterial
-        );
+        negativeMarkerMesh = new THREE.Mesh(this.NEG_MARKER_GEOM,this.getMat(CmpMatCategory.WHITE));
         negativeMarkerMesh.userData = {
           type: 'component',
-          componentId: envelopeMesh.userData.componentId,
+          componentId: holeMesh.userData.componentId,
           part: 'negativeMarker',
         };
 
@@ -174,11 +178,10 @@ export class Nor8GateVisualFactory extends NorGateVisualFactory {
         object3D.add(negativeMarkerMesh);
       }
     } else {
-      envelopeMesh.userData.initialState = 'low';
+      holeMesh.userData.initialState = 'low';
       if (negativeMarkerMesh) {
         object3D.remove(negativeMarkerMesh);
       }
     }
-    this.updateAnimation(object3D, null);
   }
 }

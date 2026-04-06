@@ -1,9 +1,9 @@
 import { ComponentVisualFactoryBase } from '../ComponentVisualFactory';
-import {type Component, type ComponentState, InverterState} from 'simple-circuit-engine/core';
+import {type Component, type ComponentState} from 'simple-circuit-engine/core';
 import * as THREE from 'three';
 import {CyclicTrapezoidGeometry, CyclicTrapezoidHoleGeometry} from '../../utils/GeometryUtils';
 import type {ConfigFormDefinition, VisualContext} from '../../types';
-import {CmpMatCategory} from "../types";
+import {CmpMatCategory, CmpMatType} from "../types";
 
 /**
  * Visual factory for Inverter/Buffer components
@@ -29,7 +29,8 @@ export class InverterVisualFactory extends ComponentVisualFactoryBase {
 
   private readonly HOLE_COLOR_HIGH = new THREE.Color(0xff4444);
   private readonly HOLE_COLOR_LOW = new THREE.Color(0x4444ff);
-  private readonly HOLE_COLOR_INDETERMINATE = new THREE.Color(0x1a1a1a);
+  private readonly HOLE_EMISSIVE_HIGH_INTENSITY = 0.5;
+  private readonly HOLE_EMISSIVE_LOW_INTENSITY = 0.2;
 
 
   createVisual(component: Component, context: VisualContext): THREE.Object3D {
@@ -117,8 +118,7 @@ export class InverterVisualFactory extends ComponentVisualFactoryBase {
       type: 'component',
       componentId: group.userData.componentId,
       part: 'envelope',
-      activationLogic: activationLogic,
-      initialState: activationLogic ? 'low' : 'high',
+      activationLogic: activationLogic
     };
     envelope.rotateX(-Math.PI / 2);
     const envX = activationLogic ? -0.05 : -0.1;
@@ -141,6 +141,7 @@ export class InverterVisualFactory extends ComponentVisualFactoryBase {
     const hole = activationLogic
         ? new THREE.Mesh(this.BUFFER_HOLE_GEOM, this.getMat(CmpMatCategory.DARK_GRAY))
         : new THREE.Mesh(this.INVERTER_HOLE_GEOM, this.getMat(CmpMatCategory.DARK_GRAY));
+    hole.name = 'hole'; // required for AnimationMixer property binding
     hole.userData = {
       type: 'component',
       componentId: group.userData.componentId,
@@ -273,7 +274,6 @@ export class InverterVisualFactory extends ComponentVisualFactoryBase {
         }
       }
     }
-    this.updateAnimation(object3D, null);
   }
 
   /**
@@ -283,13 +283,148 @@ export class InverterVisualFactory extends ComponentVisualFactoryBase {
    * @param state - The Inverter's current simulation state
    */
   override updateAnimation(object3D: THREE.Object3D, state: ComponentState | null): void {
-    if (!state) return;
-
     const holeMesh = this.findHoleMesh(object3D);
     if (!holeMesh) return;
 
-    const isBuffer = holeMesh.userData.activationLogic === true;
-    // TODO ...
+    // Leaving simulation, no animation context, or indeterminate: restore default appearance
+    if (!state || !this._animationContext || state.state === 'indeterminate') {
+      this._cleanupMixer(object3D);
+      this._restoreSharedHoleMaterial(holeMesh);
+      return;
+    }
+
+    if (state.state === 'high') {
+      this._cleanupMixer(object3D);
+      this._setHoleColor(holeMesh, this.HOLE_COLOR_HIGH, this.HOLE_EMISSIVE_HIGH_INTENSITY);
+      return;
+    }
+
+    if (state.state === 'low') {
+      this._cleanupMixer(object3D);
+      this._setHoleColor(holeMesh, this.HOLE_COLOR_LOW, this.HOLE_EMISSIVE_LOW_INTENSITY);
+      return;
+    }
+
+    // Paused + transitional: snap to start color (before the transition began)
+    if (this._animationContext.simulationStatus !== 'playing') {
+      if (state.state === 'rising') {
+        this._setHoleColor(holeMesh, this.HOLE_COLOR_LOW, this.HOLE_EMISSIVE_LOW_INTENSITY);
+      } else { // falling
+        this._setHoleColor(holeMesh, this.HOLE_COLOR_HIGH, this.HOLE_EMISSIVE_HIGH_INTENSITY);
+      }
+      return;
+    }
+
+    // Playing + transitional: animate
+    if (state.hasExpiration) {
+      this._animateHoleColor(object3D, holeMesh, state);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Hole material helpers
+  // ---------------------------------------------------------------------------
+
+  private _setHoleColor(holeMesh: THREE.Mesh, color: THREE.Color, emissiveIntensity: number): void {
+    this._ensureClonedHoleMaterial(holeMesh);
+    const mat = holeMesh.material as THREE.MeshLambertMaterial;
+    mat.color.copy(color);
+    mat.emissive.copy(color);
+    mat.emissiveIntensity = emissiveIntensity;
+  }
+
+  private _ensureClonedHoleMaterial(holeMesh: THREE.Mesh): void {
+    const mat = holeMesh.material as THREE.MeshLambertMaterial;
+    if (mat.userData.matType === CmpMatType.ANIMATION_CLONE) return;
+    holeMesh.material = this.getMat(CmpMatCategory.DARK_GRAY).clone();
+    (holeMesh.material as THREE.MeshLambertMaterial).userData.matType = CmpMatType.ANIMATION_CLONE;
+  }
+
+  private _restoreSharedHoleMaterial(holeMesh: THREE.Mesh): void {
+    const mat = holeMesh.material as THREE.MeshLambertMaterial;
+    if (mat.userData.matType !== CmpMatType.ANIMATION_CLONE) return;
+    mat.dispose();
+    holeMesh.material = this.getMat(CmpMatCategory.DARK_GRAY);
+  }
+
+  private _cleanupMixer(object3D: THREE.Object3D): void {
+    const mixer = object3D.userData.mixer as THREE.AnimationMixer | undefined;
+    if (mixer) {
+      mixer.stopAllAction();
+      mixer.uncacheRoot(object3D);
+      delete object3D.userData.mixer;
+    }
+    delete object3D.userData.currentAction;
+    delete object3D.userData.currentClip;
+    delete object3D.userData.currentActionStart;
+  }
+
+  /**
+   * Animate the hole color between LOW and HIGH over the transition span.
+   * Reads current color for mid-transition support.
+   */
+  private _animateHoleColor(
+    object3D: THREE.Object3D,
+    holeMesh: THREE.Mesh,
+    state: ComponentState
+  ): void {
+    // Prevent duplicate animation for same transition
+    if (object3D.userData.currentActionStart === state.startTick) return;
+
+    const tps = this._animationContext!.ticksPerSecond;
+    const span = state.expirationTick - state.startTick;
+    const durationSeconds = span / tps;
+
+    this._ensureClonedHoleMaterial(holeMesh);
+    const mat = holeMesh.material as THREE.MeshLambertMaterial;
+
+    const toColor = state.state === 'rising' ? this.HOLE_COLOR_HIGH : this.HOLE_COLOR_LOW;
+    const toIntensity = state.state === 'rising' ? this.HOLE_EMISSIVE_HIGH_INTENSITY : this.HOLE_EMISSIVE_LOW_INTENSITY;
+
+    // Read current values for mid-transition support
+    const currentRGB = [mat.color.r, mat.color.g, mat.color.b];
+    const endRGB = [toColor.r, toColor.g, toColor.b];
+    const currentIntensity = mat.emissiveIntensity;
+
+    let mixer: THREE.AnimationMixer = object3D.userData.mixer;
+    if (!mixer) {
+      mixer = new THREE.AnimationMixer(object3D);
+      object3D.userData.mixer = mixer;
+    }
+
+    // Stop previous action
+    if (object3D.userData.currentAction) {
+      (object3D.userData.currentAction as THREE.AnimationAction).stop();
+    }
+    if (object3D.userData.currentClip) {
+      mixer.uncacheClip(object3D.userData.currentClip as THREE.AnimationClip);
+    }
+
+    const clip = new THREE.AnimationClip('holeColor', durationSeconds, [
+      new THREE.ColorKeyframeTrack(
+        'hole.material.color',
+        [0, durationSeconds],
+        [...currentRGB, ...endRGB]
+      ),
+      new THREE.ColorKeyframeTrack(
+        'hole.material.emissive',
+        [0, durationSeconds],
+        [...currentRGB, ...endRGB]
+      ),
+      new THREE.NumberKeyframeTrack(
+        'hole.material.emissiveIntensity',
+        [0, durationSeconds],
+        [currentIntensity, toIntensity]
+      ),
+    ]);
+    const action = mixer.clipAction(clip);
+    action.loop = THREE.LoopOnce;
+    action.clampWhenFinished = true;
+    action.play();
+
+    object3D.userData.currentActionStart = state.startTick;
+    object3D.userData.currentAction = action;
+    object3D.userData.currentClip = clip;
   }
 
   /**
