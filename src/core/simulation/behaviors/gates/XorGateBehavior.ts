@@ -43,18 +43,20 @@ export class XorGateBehavior extends LogicGateBehaviorMixin implements IComponen
     nodeStates: ReadonlyMap<UUID, INodeElectricalState>,
     targetTick: number
   ): IBehaviorResult {
-    const pinStates = this.getPinStates(component, nodeStates);
-    const vccGuardBehavior = this.vccGuardBehavior(state, pinStates, targetTick);
+    const newPinStates = this.getPinStates(component, nodeStates);
+    state.pinStates = newPinStates;
+
+    const vccGuardBehavior = this.vccGuardBehavior(state, newPinStates, targetTick);
     if(vccGuardBehavior) {
       return vccGuardBehavior;
     }
-    const nonLogicInputGuardBehavior = this.nonLogicInputGuardBehavior(state, pinStates, targetTick);
+    const nonLogicInputGuardBehavior = this.nonLogicInputGuardBehavior(state, newPinStates, targetTick);
     if(nonLogicInputGuardBehavior) {
       return nonLogicInputGuardBehavior;
     }
 
-    const input1High = pinStates.get('input1')!.hasVoltage;
-    const input2High = pinStates.get('input2')!.hasVoltage;
+    const input1High = newPinStates.get('input1')!.hasVoltage;
+    const input2High = newPinStates.get('input2')!.hasVoltage;
     const oddParity = input1High !== input2High;
 
     const activationCondition =

@@ -50,17 +50,19 @@ export class InverterBehavior extends LogicGateBehaviorMixin implements ICompone
     nodeStates: ReadonlyMap<UUID, INodeElectricalState>,
     targetTick: number
   ): IBehaviorResult {
-    const pinStates = this.getPinStates(component, nodeStates);
-    const vccGuardBehavior = this.vccGuardBehavior(state, pinStates, targetTick);
+    const newPinStates = this.getPinStates(component, nodeStates);
+    state.pinStates = newPinStates;
+
+    const vccGuardBehavior = this.vccGuardBehavior(state, newPinStates, targetTick);
     if(vccGuardBehavior) {
       return vccGuardBehavior;
     }
-    const nonLogicInputGuardBehavior = this.nonLogicInputGuardBehavior(state, pinStates, targetTick);
+    const nonLogicInputGuardBehavior = this.nonLogicInputGuardBehavior(state, newPinStates, targetTick);
     if(nonLogicInputGuardBehavior) {
       return nonLogicInputGuardBehavior;
     }
 
-    const isCommanded = pinStates.get('input')!.hasVoltage;
+    const isCommanded = newPinStates.get('input')!.hasVoltage;
     const activationCondition =
         component.config.get('activationLogic') === 'negative' ? !isCommanded : isCommanded;
 

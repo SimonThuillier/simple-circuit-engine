@@ -33,7 +33,7 @@ export abstract class BipolarLightEmitterBehaviorMixin extends ComponentBehavior
                     scheduledAtTick: state.startTick,
                     readyAtTick: state.expirationTick,
                     type: 'GoingOnEnd',
-                    parameters: new Map([['exclusive', 'true']]),
+                    parameters: undefined,
                 });
             }
         } else {
@@ -46,7 +46,7 @@ export abstract class BipolarLightEmitterBehaviorMixin extends ComponentBehavior
                     scheduledAtTick: state.startTick,
                     readyAtTick: state.expirationTick,
                     type: 'GoingOffEnd',
-                    parameters: new Map([['exclusive', 'true']]),
+                    parameters: undefined,
                 });
             }
         }

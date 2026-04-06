@@ -17,6 +17,7 @@ export const enum CmpMatCategory {
   WHITE = 'WHITE',
   SHINY_SILVER = 'SHINY_SILVER',
   GLASS = 'GLASS',
+  DARK_GRAY = 'DARK_GRAY',
 }
 
 /** Material variant — visual state within a category */
@@ -120,6 +121,24 @@ export const CMP_MATERIALS: Readonly<
       emissive: SELECTION_COLOR,
       emissiveIntensity: 0.8,
       userData: { matType: CmpMatType.SHARED, matCat: CmpMatCategory.GLASS },
+    }),
+  },
+  [CmpMatCategory.DARK_GRAY]: {
+    [CmpMatVariant.NORMAL]: new THREE.MeshLambertMaterial({
+      color: 0x1a1a1a,
+      userData: { matType: CmpMatType.SHARED, matCat: CmpMatCategory.DARK_GRAY },
+    }),
+    [CmpMatVariant.HOVERED]: new THREE.MeshLambertMaterial({
+      color: 0x666666,
+      emissive: HOVER_COLOR,
+      emissiveIntensity: 0.6,
+      userData: { matType: CmpMatType.SHARED, matCat: CmpMatCategory.DARK_GRAY },
+    }),
+    [CmpMatVariant.SELECTED]: new THREE.MeshLambertMaterial({
+      color: 0x999999,
+      emissive: SELECTION_COLOR,
+      emissiveIntensity: 0.8,
+      userData: { matType: CmpMatType.SHARED, matCat: CmpMatCategory.DARK_GRAY },
     }),
   },
 };

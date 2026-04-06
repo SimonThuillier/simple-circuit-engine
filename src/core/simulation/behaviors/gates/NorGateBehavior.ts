@@ -43,17 +43,19 @@ export class NorGateBehavior extends LogicGateBehaviorMixin implements IComponen
     nodeStates: ReadonlyMap<UUID, INodeElectricalState>,
     targetTick: number
   ): IBehaviorResult {
-    const pinStates = this.getPinStates(component, nodeStates);
-    const vccGuardBehavior = this.vccGuardBehavior(state, pinStates, targetTick);
+    const newPinStates = this.getPinStates(component, nodeStates);
+    state.pinStates = newPinStates;
+
+    const vccGuardBehavior = this.vccGuardBehavior(state, newPinStates, targetTick);
     if(vccGuardBehavior) {
       return vccGuardBehavior;
     }
-    const nonLogicInputGuardBehavior = this.nonLogicInputGuardBehavior(state, pinStates, targetTick);
+    const nonLogicInputGuardBehavior = this.nonLogicInputGuardBehavior(state, newPinStates, targetTick);
     if(nonLogicInputGuardBehavior) {
       return nonLogicInputGuardBehavior;
     }
 
-    const anyInputHigh = pinStates.get('input1')!.hasVoltage || pinStates.get('input2')!.hasVoltage;
+    const anyInputHigh = newPinStates.get('input1')!.hasVoltage || newPinStates.get('input2')!.hasVoltage;
 
     const activationCondition =
       component.config.get('activationLogic') === 'negative' ? !anyInputHigh : anyInputHigh;

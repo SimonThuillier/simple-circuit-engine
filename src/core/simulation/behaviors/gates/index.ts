@@ -28,11 +28,16 @@ export abstract class LogicGateBehaviorMixin extends ComponentBehaviorMixin {
             return null;
         }
 
+        let hasChanged = false;
+        let shouldCancelPending = false;
+        const previousState = state.state;
         // go low immediately if no voltage
-        state.startTick = state.state === 'low' ? state.startTick : targetTick; // if component was already low we keep this startTick
-        const hasChanged = state.state !== 'low';
-        const shouldCancelPending = state.state !== 'low';
-        state.state = 'low'; // no vcc voltage -> nothing immediately
+        if (previousState !== 'low'){
+            state.setState('low', targetTick);
+            hasChanged = true;
+            shouldCancelPending = true;
+        }
+
         return {
             componentState: state,
             hasChanged: hasChanged,
@@ -82,11 +87,16 @@ export abstract class LogicGateBehaviorMixin extends ComponentBehaviorMixin {
             return null;
         }
 
+        let hasChanged = false;
+        let shouldCancelPending = false;
+        const previousState = state.state;
         // go indeterminate immediately
-        state.startTick = state.state === 'indeterminate' ? state.startTick : targetTick; // if component was already indeterminate we keep this startTick
-        const hasChanged = state.state !== 'indeterminate';
-        const shouldCancelPending = state.state !== 'indeterminate';
-        state.state = 'indeterminate';
+        if (previousState !== 'indeterminate'){
+            state.setState('indeterminate', targetTick);
+            hasChanged = true;
+            shouldCancelPending = true;
+        }
+
         return {
             componentState: state,
             hasChanged: hasChanged,
@@ -101,25 +111,32 @@ export abstract class LogicGateBehaviorMixin extends ComponentBehaviorMixin {
         activationCondition: boolean,
         targetTick: number
     ): IBehaviorResult {
-
-        const transitionSpan = getTransitionSpan(component.config);
         // technical guard clause: if state isn't a known value it's considered low (shouldn't happen but allow to simplify logic beneath)
         if(!['low', 'rising', 'high', 'falling', 'indeterminate'].includes(state.state)){
-            state.state = 'low';
+            state.setState('low', targetTick);
+            return {
+                componentState: state,
+                hasChanged: true,
+                shouldCancelPending: true, // goes back to low immediately and cancel pending RisingComplete event
+                scheduledEvents: [],
+            };
         }
 
+        const transitionSpan = getTransitionSpan(component.config);
+        const span = state.expirationTick < 1 ? transitionSpan : Math.max(targetTick - state.startTick, 1);
+
         if (activationCondition) {
-            if(state.state === 'low' || state.state === 'indeterminate'){
-                state.state = 'rising';
-                state.startTick = targetTick;
+            if(state.state === 'low' || state.state === 'falling' || state.state === 'indeterminate'){
+                state.setState('rising', targetTick);
+                state.setNextState('high', targetTick + span);
                 return {
                     componentState: state,
                     hasChanged: true,
-                    shouldCancelPending: false,
+                    shouldCancelPending: true,
                     scheduledEvents: [{
                         targetId: component.id,
-                        scheduledAtTick: targetTick,
-                        readyAtTick: targetTick + transitionSpan,
+                        scheduledAtTick: state.startTick,
+                        readyAtTick: state.expirationTick,
                         type: 'RisingComplete',
                         parameters: undefined,
                     }],
@@ -134,14 +151,6 @@ export abstract class LogicGateBehaviorMixin extends ComponentBehaviorMixin {
                     scheduledEvents: [],
                 };
             }
-            // last case: falling
-            state.state = 'high';
-            return {
-                componentState: state,
-                hasChanged: true,
-                shouldCancelPending: true, // goes back to high immediately and cancel pending FallingComplete event
-                scheduledEvents: [],
-            };
         }
         // case should deactivate
         if(state.state === 'falling' || state.state === 'low'){
@@ -153,24 +162,24 @@ export abstract class LogicGateBehaviorMixin extends ComponentBehaviorMixin {
                 scheduledEvents: [],
             };
         }
-        if(state.state === 'high'){
-            state.state = 'falling';
-            state.startTick = targetTick;
+        if(state.state === 'high' || state.state === 'rising' || state.state === 'indeterminate'){
+            state.setState('falling', targetTick);
+            state.setNextState('low', targetTick + span);
             return {
                 componentState: state,
                 hasChanged: true,
-                shouldCancelPending: false,
+                shouldCancelPending: true,
                 scheduledEvents: [{
                     targetId: component.id,
-                    scheduledAtTick: targetTick,
-                    readyAtTick: targetTick + transitionSpan,
+                    scheduledAtTick: state.startTick,
+                    readyAtTick: state.expirationTick,
                     type: 'FallingComplete',
                     parameters: undefined,
                 }],
             };
         }
-        // last case: rising or indeterminate
-        state.state = 'low';
+        // last case: shouldn't arrive here
+        state.setState('low', targetTick);
         return {
             componentState: state,
             hasChanged: true,
@@ -211,14 +220,12 @@ export abstract class LogicGateBehaviorMixin extends ComponentBehaviorMixin {
         if (event.type === 'RisingComplete') {
             if (state.state !== 'high') {
                 hasChanged = true;
-                state.startTick = event.readyAtTick;
-                state.state = 'high';
+                state.setState('high', event.readyAtTick);
             }
         } else if (event.type === 'FallingComplete') {
             if (state.state !== 'low') {
                 hasChanged = true;
-                state.startTick = event.readyAtTick;
-                state.state = 'low';
+                state.setState('low', event.readyAtTick);
             }
         }
 
