@@ -1,6 +1,6 @@
 import { ComponentVisualFactoryBase } from '../ComponentVisualFactory';
 import { CmpMatCategory, CmpMatType } from '../types';
-import type { Component, ComponentState, LightbulbState } from 'simple-circuit-engine/core';
+import { ComponentType, type Component, type ComponentState, type LightbulbState } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
 
 import type { ConfigFormDefinition, VisualContext } from '../../types';
@@ -37,7 +37,15 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
   /** Black in normalized RGB for ColorKeyframeTrack */
   private readonly UNLIT_RGB = [0, 0, 0];
 
+  constructor() {
+    super();
+    this._componentType = ComponentType.Lightbulb;
+  }
+
   createVisual(component: Component, context: VisualContext): THREE.Object3D {
+    if (component.type !== this._componentType) {
+      throw new Error(`Factory mismatch: expected "${this._componentType}", got "${component.type}"`);
+    }
     // Root group (not rendered, just organizational)
     const group = new THREE.Group();
     group.userData = {

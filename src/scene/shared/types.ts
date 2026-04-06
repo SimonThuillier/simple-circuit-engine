@@ -93,7 +93,8 @@ export type ControllerEvent =
   | 'simulationTick'
   | 'simulationUserCommand'
   | 'simulationStopped'
-  | 'simulationSpeedChanged';
+  | 'simulationSpeedChanged'
+  | 'componentHelpRequested';
 
 /**
  * Event payload map for type-safe event emission
@@ -154,6 +155,8 @@ export interface ControllerEventMap {
   simulationUserCommand: IUserCommand;
   simulationStopped: { tick: number };
   simulationSpeedChanged: { previousSpeed: number; newSpeed: number };
+  /** Emitted when user clicks a pin tooltip to request component help */
+  componentHelpRequested: { componentType: ComponentType };
 }
 
 /**
@@ -191,6 +194,7 @@ export interface EnodeHitboxUserData {
   enodeId: string;
   componentId: string | null;
   label: string | null;
+  componentType: ComponentType | null;
 }
 
 /**

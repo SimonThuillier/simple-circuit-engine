@@ -240,6 +240,9 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
   /** Shared animation context injected by the registry during simulation */
   protected _animationContext: AnimationContext | null = null;
 
+  /** ComponentType handled by this factory, set in each subclass constructor */
+  protected _componentType: ComponentType | null = null;
+
   /** Default hover glow color (light blue) */
   protected static readonly DEFAULT_HOVER_COLOR = 0x4488ff;
 
@@ -480,7 +483,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
         opacity: 0,
       })
     );
-    hitbox.userData = { ...userInfos, type: 'enodeHitbox' };
+    hitbox.userData = { ...userInfos, type: 'enodeHitbox', componentType: this._componentType };
     hitbox.layers.set(HitboxLayers.ENODE);
     pinGroup.add(hitbox);
 

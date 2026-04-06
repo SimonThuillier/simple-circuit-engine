@@ -1,6 +1,6 @@
 import { ComponentVisualFactoryBase } from '../ComponentVisualFactory';
 import { CmpMatCategory, CmpMatType } from '../types';
-import type { Component, ComponentState } from 'simple-circuit-engine/core';
+import { ComponentType, type Component, type ComponentState } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
 import type { ConfigFormDefinition, VisualContext } from '../../types';
 
@@ -36,7 +36,15 @@ export class DoubleThrowSwitchVisualFactory extends ComponentVisualFactoryBase {
   /** Contactor color when output has neither */
   private readonly COLOR_NONE = new THREE.Color(0xffffff);
 
+  constructor() {
+    super();
+    this._componentType = ComponentType.DoubleThrowSwitch;
+  }
+
   createVisual(component: Component, context: VisualContext): THREE.Object3D {
+    if (component.type !== this._componentType) {
+      throw new Error(`Factory mismatch: expected "${this._componentType}", got "${component.type}"`);
+    }
     // Root group (not rendered, just organizational)
     const group = new THREE.Group();
     group.userData = {

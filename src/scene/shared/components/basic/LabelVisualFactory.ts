@@ -7,7 +7,7 @@
  */
 
 import { ComponentVisualFactoryBase } from '../ComponentVisualFactory';
-import type { Component } from 'simple-circuit-engine/core';
+import { ComponentType, type Component } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
 import { BoxGeometry } from 'three';
 import type { ConfigFormDefinition, VisualContext } from '../../types';
@@ -57,7 +57,15 @@ export class LabelVisualFactory extends ComponentVisualFactoryBase {
   /** Padding around text in pixels */
   private static readonly PADDING = 8;
 
+  constructor() {
+    super();
+    this._componentType = ComponentType.Label;
+  }
+
   createVisual(component: Component, _context: VisualContext): THREE.Object3D {
+    if (component.type !== this._componentType) {
+      throw new Error(`Factory mismatch: expected "${this._componentType}", got "${component.type}"`);
+    }
     const group = new THREE.Group();
     group.userData = {
       type: 'componentGroup',

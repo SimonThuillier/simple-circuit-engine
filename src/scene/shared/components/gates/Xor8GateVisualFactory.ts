@@ -1,4 +1,4 @@
-import { type Component } from 'simple-circuit-engine/core';
+import { ComponentType, type Component } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
 import { OrGateGeometry, OrGateHoleGeometry, XorGateTailGeometry } from '../../utils/GeometryUtils';
 import { XorGateVisualFactory } from './XorGateVisualFactory';
@@ -35,7 +35,15 @@ export class Xor8GateVisualFactory extends XorGateVisualFactory {
     Math.PI * 2
   );
 
+  constructor() {
+    super();
+    this._componentType = ComponentType.Xor8Gate;
+  }
+
   override createVisual(component: Component, context: VisualContext): THREE.Object3D {
+    if (component.type !== this._componentType) {
+      throw new Error(`Factory mismatch: expected "${this._componentType}", got "${component.type}"`);
+    }
     const group = new THREE.Group();
     group.userData = {
       type: 'componentGroup',

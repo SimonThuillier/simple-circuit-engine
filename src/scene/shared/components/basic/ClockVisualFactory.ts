@@ -1,6 +1,6 @@
 import { ComponentVisualFactoryBase } from '../ComponentVisualFactory';
 import { CmpMatCategory, CmpMatType } from '../types';
-import { type Component, type ComponentState } from 'simple-circuit-engine/core';
+import { ComponentType, type Component, type ComponentState } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
 import { RingGeometry, CyclicTrapezoidGeometry } from '../../utils/GeometryUtils';
 import type { ConfigFormDefinition, VisualContext } from '../../types';
@@ -44,7 +44,15 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
   private readonly HIGH_TICK_ROTATION = new THREE.Euler(0, Math.PI, 0);
   private readonly LOW_TICK_ROTATION = new THREE.Euler(0, 0, 0);
 
+  constructor() {
+    super();
+    this._componentType = ComponentType.Clock;
+  }
+
   createVisual(component: Component, context: VisualContext): THREE.Object3D {
+    if (component.type !== this._componentType) {
+      throw new Error(`Factory mismatch: expected "${this._componentType}", got "${component.type}"`);
+    }
     // Root group (not rendered, just organizational)
     const group = new THREE.Group();
     group.userData = {

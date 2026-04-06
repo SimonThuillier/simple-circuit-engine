@@ -1,5 +1,5 @@
 import { ComponentVisualFactoryBase } from '../ComponentVisualFactory';
-import { type Component, type ComponentState } from 'simple-circuit-engine/core';
+import { ComponentType, type Component, type ComponentState } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
 import { CyclicTrapezoidGeometry, CyclicTrapezoidHoleGeometry } from '../../utils/GeometryUtils';
 import type { ConfigFormDefinition, VisualContext } from '../../types';
@@ -32,7 +32,15 @@ export class InverterVisualFactory extends ComponentVisualFactoryBase {
   private readonly HOLE_EMISSIVE_HIGH_INTENSITY = 0.5;
   private readonly HOLE_EMISSIVE_LOW_INTENSITY = 0.2;
 
+  constructor() {
+    super();
+    this._componentType = ComponentType.Inverter;
+  }
+
   createVisual(component: Component, context: VisualContext): THREE.Object3D {
+    if (component.type !== this._componentType) {
+      throw new Error(`Factory mismatch: expected "${this._componentType}", got "${component.type}"`);
+    }
     const group = new THREE.Group();
     group.userData = {
       type: 'componentGroup',

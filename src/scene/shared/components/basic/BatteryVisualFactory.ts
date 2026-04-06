@@ -1,5 +1,5 @@
 import { ComponentVisualFactoryBase } from '../ComponentVisualFactory';
-import type { Component } from 'simple-circuit-engine/core';
+import { ComponentType, type Component } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
 import type { VisualContext } from '../../types';
 import { CmpMatCategory } from '../types';
@@ -10,7 +10,15 @@ import { CmpMatCategory } from '../types';
 export class BatteryVisualFactory extends ComponentVisualFactoryBase {
   private readonly BATTERY_GEOMETRY = new THREE.CylinderGeometry(0.5, 0.5, 2, 24);
 
+  constructor() {
+    super();
+    this._componentType = ComponentType.Battery;
+  }
+
   createVisual(component: Component, context: VisualContext): THREE.Object3D {
+    if (component.type !== this._componentType) {
+      throw new Error(`Factory mismatch: expected "${this._componentType}", got "${component.type}"`);
+    }
     // Root group (not rendered, just organizational)
     const group = new THREE.Group();
     group.userData = {
