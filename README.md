@@ -35,7 +35,7 @@ In addition to `simple-circuit-engine` you must import the `three` and `lil-gui`
 This code set up the main CircuitEngine instance in edit mode on a new Circuit, handles THREE.js objects creation and rendering/animation in the canva-container HTML element.
 
 ```javascript
-import { WebGLRenderer } from 'three';
+import { WebGLRenderer, Clock } from 'three';
 import { Circuit, CircuitOptions, BehaviorRegistry, registerBasicComponentsBehaviors } from 'simple-circuit-engine/core';
 import { CircuitEngine, engineOptions, GroupedFactoryRegistry, DefaultVisualFactory, registerBasicComponentsBehaviors } from 'simple-circuit-engine/scene';
 
@@ -62,9 +62,12 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 // Append renderer to DOM
 container.appendChild(renderer.domElement);
 
-// Animation loop to animate the circuit scene in the canvas container
+// Animation loop
+const clock = new Clock();
 function animate() {
     requestAnimationFrame(animate);
+    const delta = clock.getDelta();
+    engine.update(delta);
     engine.getControls().update();
     renderer.render(engine.getScene(), engine.getCamera());
 }

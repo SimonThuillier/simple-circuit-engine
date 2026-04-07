@@ -13,13 +13,14 @@ export default defineConfig({
       formats: ['es'],
       fileName: (_format, entryName) => `${entryName}.js`,
     },
-    rollupOptions: {
+    rolldownOptions: {
       // Externalize dependencies that shouldn't be bundled
-      external: ['three', /^three\/addons\/.*/, /^three\/examples\/.*/],
+      external: ['three', /^three\/addons\/.*/, /^three\/examples\/.*/, 'lil-gui'],
       output: {
         // Provide global variables for externalized deps in UMD build
         globals: {
           three: 'THREE',
+          lilgui: 'LIL-GUI',
         },
         preserveModules: false,
       },

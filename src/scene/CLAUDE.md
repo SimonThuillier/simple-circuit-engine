@@ -4,9 +4,9 @@ The scene module handles Three.js visualization, user interaction and simulation
 
 ## Dependencies
 
-- TypeScript 5.9+ (strict mode), targeting ES2022
+- TypeScript 6.0+ (strict mode), targeting ES2022
 - `src/core` for domain modeling, objects, types and simulation engine.
-- **Three.js** 0.181+ for visualization (scene, camera, controls, 3D objects, Line2)
+- **Three.js** 0.183+ for visualization (scene, camera, controls, 3D objects, Line2)
 - lil-gui as helper for small interactive modal forms
 
 ## Organization
@@ -54,12 +54,12 @@ src/scene/
   |     +-- types.ts                    # Shared type definitions
   |     +-- utils/
   |           +-- CameraUtils.ts        # Perspective camera creation/updates
-  |           +-- ColorUtils.ts         # Color preset conversion
+  |           +-- ColorUtils.ts         # Color conversion and presets
   |           +-- ControlsUtils.ts      # MapControls initialization
   |           +-- GeometryUtils.ts      # Grid/snap, world<->grid conversion, screen math, custom extrude Geometries methods
   |           +-- LayerConstants.ts     # Hitbox layer definitions
   |           +-- LightingUtils.ts      # Scene lighting setup
-  |           +-- MaterialUtils.ts      # Line2/mesh material creation
+  |           +-- MaterialUtils.ts      # Common Shared materials and Line2/mesh material creation
   |           +-- Options.ts            # Default configuration merging
 ```
 

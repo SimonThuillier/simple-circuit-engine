@@ -15,8 +15,8 @@ However, it aims to teach real-world electronic design principles so modeling of
 
 ## Active Technologies
 
-- TypeScript 5.9+ (strict mode), targeting ES2022
-- Three.js 0.181+ (scene, camera, controls, 3D objects, Line2)
+- TypeScript 6.0+ (strict mode), targeting ES2022
+- Three.js 0.183+ (scene, camera, controls, 3D objects, Line2)
 - lil-gui as helper for small interactive modal forms
 - in-memory circuit model, optional loading/saving from/to a JSON file
 

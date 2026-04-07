@@ -9,7 +9,7 @@ Educational electronic / computer circuit Build & Simulation engine with THREE.j
 ## Quick Start
 
 ```typescript
-import { WebGLRenderer } from 'three';
+import { WebGLRenderer, Clock } from 'three';
 import {
   Circuit,
   CircuitOptions,
@@ -50,11 +50,15 @@ renderer.setSize(container.clientWidth, container.clientHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 // Append renderer to DOM
 container.appendChild(renderer.domElement);
-// Animation loop to animate the circuit scene in the canvas container
+
+// Animation loop
+const clock = new Clock();
 function animate() {
-  requestAnimationFrame(animate);
-  engine.getControls().update();
-  renderer.render(engine.getScene(), engine.getCamera());
+    requestAnimationFrame(animate);
+    const delta = clock.getDelta();
+    engine.update(delta);
+    engine.getControls().update();
+    renderer.render(engine.getScene(), engine.getCamera());
 }
 animate();
 ```
@@ -156,7 +160,6 @@ engine.on('simulationTick', (state) => { ... });
 
 ```json
 {
-  "three": "^0.181.0",
-  "lil-gui": "^0.21.0"
+  "three": "^0.183.2"
 }
 ```
