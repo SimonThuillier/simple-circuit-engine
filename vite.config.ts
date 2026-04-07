@@ -33,7 +33,6 @@ export default defineConfig({
     dts({
       include: ['src'],
       exclude: ['**/*.test.ts', '**/*.spec.ts'],
-      rollupTypes: true,
     }),
   ],
   resolve: {

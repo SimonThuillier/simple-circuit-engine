@@ -47,7 +47,7 @@
   },
   "scripts": {
     "dev:demo": "vite --config vite.demo.config.ts",
-    "build": "tsc && vite build",
+    "build": "tsc --noEmit && vite build",
     "prepublishOnly": "npm run build",
     "build:editor": "vite build --config vite.circuit-editor.config.ts && cp scripts/editor/circuit-editor.html output/",
     "build:simulator": "vite build --config vite.circuit-simulator.config.ts && cp scripts/simulator/circuit-simulator.html output/",
@@ -60,9 +60,6 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "generate:samples": "tsx scripts/samples/generate-sample-circuits.ts",
-    "docs:audit": "typedoc --validation.notDocumented --emit none 2>&1 | grep 'not documented'",
-    "docs:generate": "typedoc",
-    "docs:validate": "typedoc --treatWarningsAsErrors --treatValidationWarningsAsErrors",
     "lint:docs": "eslint src --ext .ts --rule 'tsdoc/syntax: error'",
     "check:unused": "npx knip"
   },

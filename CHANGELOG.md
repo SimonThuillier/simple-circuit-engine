@@ -9,11 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `clock` basic component that periodically switch from logic HIGH to logic LOW.
+- in edit mode added a pin/component toolTip when hovering a pin.
+
 ### Changed
+
+- Used three.js animation system to produce smooth animations during components transitions.
+- Significant improvements on relays transitions animations.
+- Improvements on lightbulbs rendering and animations. 
+- Switches and DoubleThrowSwitches are now toggled top to bottom instead of laterally during simulation. 
+- update of dependencies (typescript, vite, three)
+- made three.js a perrDependency to prevent duplicate imports from consumers.
+- Various optimizations on the `core` event/behaviors engine. 
 
 ### Removed
 
+- Script visualizer and its devDependencies.
+
 ### Fixed
+
+- Fixed logic gates negative marker global material change when one hovered/selected.
 
 ## [0.0.11] - 2026-03-14
 

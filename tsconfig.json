@@ -16,11 +16,12 @@
     "exactOptionalPropertyTypes": true,
     "noImplicitOverride": true,
 
-    /* Emit */
+    /* Emit — tsc is invoked with --noEmit; Vite (via vite-plugin-dts) owns declaration output */
+    "noEmit": true,
+    "rootDir": "./src",
     "declaration": true,
-    "declarationMap": true,
+    "declarationMap": false,
     "sourceMap": true,
-    "outDir": "./dist",
     "removeComments": false,
     "importHelpers": true,
     "newLine": "lf",
@@ -36,7 +37,6 @@
     "skipLibCheck": true,
 
     /* Path Mapping */
-    "baseUrl": ".",
     "paths": {
       "simple-circuit-engine/core": ["./src/core/index.ts"],
       "simple-circuit-engine/scene": ["./src/scene/index.ts"]
