@@ -22,7 +22,8 @@ import {
   XorGateBehavior,
   Xor4GateBehavior,
   Xor8GateBehavior,
-} from './simulation/behaviors';
+  ClockBehavior,
+} from './simulation';
 
 /**
  * Register all basic component behaviors in the given registry
@@ -39,7 +40,8 @@ export function registerBasicComponentsBehaviors(registry: BehaviorRegistry): Be
     .register(new RelayBehavior())
     .register(new SmallLEDBehavior())
     .register(new SwitchBehavior())
-    .register(new DoubleThrowSwitchBehavior());
+    .register(new DoubleThrowSwitchBehavior())
+    .register(new ClockBehavior());
   return registry;
 }
 

@@ -470,5 +470,169 @@ describe('EventQueue', () => {
 
       expect(ready[0]?.parameters).toBeUndefined();
     });
+
+    it('should not remove events for target when exclusive parameter is present', () => {
+      const existing: ScheduledEvent = {
+        targetId: 'comp-1',
+        scheduledAtTick: 0,
+        readyAtTick: 20,
+        type: 'existing',
+      };
+      const exclusive: ScheduledEvent = {
+        targetId: 'comp-1',
+        scheduledAtTick: 5,
+        readyAtTick: 15,
+        type: 'exclusive',
+        parameters: new Map([['exclusive', 'true']]),
+      };
+
+      queue.schedule(existing);
+      queue.schedule(exclusive);
+
+      // Both events should remain — schedule() no longer handles exclusive
+      expect(queue.size()).toBe(2);
+      const ready = queue.getReadyEvents(20);
+      expect(ready.length).toBe(2);
+    });
+  });
+
+  describe('removeEventsForTarget()', () => {
+    it('should remove all events for a specific target', () => {
+      queue.schedule({ targetId: 'comp-1', scheduledAtTick: 0, readyAtTick: 10, type: 'a' });
+      queue.schedule({ targetId: 'comp-1', scheduledAtTick: 1, readyAtTick: 20, type: 'b' });
+      queue.schedule({ targetId: 'comp-2', scheduledAtTick: 0, readyAtTick: 15, type: 'c' });
+
+      const removed = queue.removeEventsForTarget('comp-1');
+
+      expect(removed).toBe(2);
+      expect(queue.size()).toBe(1);
+      const ready = queue.getReadyEvents(100);
+      expect(ready.length).toBe(1);
+      expect(ready[0]!.targetId).toBe('comp-2');
+    });
+
+    it('should return 0 when no events match the target', () => {
+      queue.schedule({ targetId: 'comp-1', scheduledAtTick: 0, readyAtTick: 10, type: 'a' });
+
+      const removed = queue.removeEventsForTarget('comp-2');
+
+      expect(removed).toBe(0);
+      expect(queue.size()).toBe(1);
+    });
+
+    it('should return 0 on empty queue', () => {
+      const removed = queue.removeEventsForTarget('comp-1');
+      expect(removed).toBe(0);
+    });
+
+    it('should maintain heap order after removal', () => {
+      queue.schedule({ targetId: 'comp-1', scheduledAtTick: 0, readyAtTick: 5, type: 'a' });
+      queue.schedule({ targetId: 'comp-2', scheduledAtTick: 0, readyAtTick: 10, type: 'b' });
+      queue.schedule({ targetId: 'comp-1', scheduledAtTick: 0, readyAtTick: 15, type: 'c' });
+      queue.schedule({ targetId: 'comp-3', scheduledAtTick: 0, readyAtTick: 20, type: 'd' });
+
+      queue.removeEventsForTarget('comp-1');
+
+      const ready = queue.getReadyEvents(100);
+      expect(ready.length).toBe(2);
+      expect(ready[0]!.readyAtTick).toBe(10);
+      expect(ready[1]!.readyAtTick).toBe(20);
+    });
+  });
+
+  describe('scheduleMany()', () => {
+    it('should schedule multiple events at once', () => {
+      const events: ScheduledEvent[] = [
+        { targetId: 'comp-1', scheduledAtTick: 0, readyAtTick: 10, type: 'a' },
+        { targetId: 'comp-2', scheduledAtTick: 0, readyAtTick: 5, type: 'b' },
+        { targetId: 'comp-3', scheduledAtTick: 0, readyAtTick: 15, type: 'c' },
+      ];
+
+      queue.scheduleMany(events);
+
+      expect(queue.size()).toBe(3);
+      const ready = queue.getReadyEvents(20);
+      expect(ready[0]!.readyAtTick).toBe(5);
+      expect(ready[1]!.readyAtTick).toBe(10);
+      expect(ready[2]!.readyAtTick).toBe(15);
+    });
+
+    it('should cancel targets before inserting new events', () => {
+      queue.schedule({ targetId: 'comp-1', scheduledAtTick: 0, readyAtTick: 10, type: 'old' });
+      queue.schedule({ targetId: 'comp-2', scheduledAtTick: 0, readyAtTick: 20, type: 'keep' });
+
+      const newEvents: ScheduledEvent[] = [
+        { targetId: 'comp-1', scheduledAtTick: 5, readyAtTick: 15, type: 'new' },
+      ];
+
+      queue.scheduleMany(newEvents, new Set(['comp-1']));
+
+      expect(queue.size()).toBe(2); // old comp-1 removed, new comp-1 + comp-2
+      const ready = queue.getReadyEvents(100);
+      expect(ready[0]!.type).toBe('new');
+      expect(ready[1]!.type).toBe('keep');
+    });
+
+    it('should cancel targets even when no new events are provided', () => {
+      queue.schedule({ targetId: 'comp-1', scheduledAtTick: 0, readyAtTick: 10, type: 'a' });
+      queue.schedule({ targetId: 'comp-2', scheduledAtTick: 0, readyAtTick: 20, type: 'b' });
+
+      queue.scheduleMany([], new Set(['comp-1']));
+
+      expect(queue.size()).toBe(1);
+      const ready = queue.getReadyEvents(100);
+      expect(ready[0]!.targetId).toBe('comp-2');
+    });
+
+    it('should cancel multiple targets in a single pass', () => {
+      queue.schedule({ targetId: 'comp-1', scheduledAtTick: 0, readyAtTick: 10, type: 'a' });
+      queue.schedule({ targetId: 'comp-2', scheduledAtTick: 0, readyAtTick: 20, type: 'b' });
+      queue.schedule({ targetId: 'comp-3', scheduledAtTick: 0, readyAtTick: 30, type: 'c' });
+
+      queue.scheduleMany([], new Set(['comp-1', 'comp-3']));
+
+      expect(queue.size()).toBe(1);
+      const ready = queue.getReadyEvents(100);
+      expect(ready[0]!.targetId).toBe('comp-2');
+    });
+
+    it('should throw when any event has invalid ticks', () => {
+      const events: ScheduledEvent[] = [
+        { targetId: 'comp-1', scheduledAtTick: 0, readyAtTick: 10, type: 'valid' },
+        { targetId: 'comp-2', scheduledAtTick: 10, readyAtTick: 5, type: 'invalid' },
+      ];
+
+      expect(() => queue.scheduleMany(events)).toThrow(RangeError);
+      // Queue should not be modified on validation failure
+      expect(queue.size()).toBe(0);
+    });
+
+    it('should be a no-op when called with empty events and no cancel targets', () => {
+      queue.schedule({ targetId: 'comp-1', scheduledAtTick: 0, readyAtTick: 10, type: 'a' });
+
+      queue.scheduleMany([]);
+
+      expect(queue.size()).toBe(1);
+    });
+
+    it('should maintain heap order with mixed cancel and insert', () => {
+      // Pre-populate with events at various ticks
+      queue.schedule({ targetId: 'comp-1', scheduledAtTick: 0, readyAtTick: 5, type: 'a' });
+      queue.schedule({ targetId: 'comp-2', scheduledAtTick: 0, readyAtTick: 10, type: 'b' });
+      queue.schedule({ targetId: 'comp-3', scheduledAtTick: 0, readyAtTick: 15, type: 'c' });
+      queue.schedule({ targetId: 'comp-1', scheduledAtTick: 0, readyAtTick: 25, type: 'd' });
+
+      // Cancel comp-1 (ticks 5, 25) and insert new events
+      const newEvents: ScheduledEvent[] = [
+        { targetId: 'comp-4', scheduledAtTick: 3, readyAtTick: 8, type: 'e' },
+        { targetId: 'comp-1', scheduledAtTick: 3, readyAtTick: 20, type: 'f' },
+      ];
+
+      queue.scheduleMany(newEvents, new Set(['comp-1']));
+
+      expect(queue.size()).toBe(4); // comp-2(10), comp-3(15), comp-4(8), comp-1(20)
+      const ready = queue.getReadyEvents(100);
+      expect(ready.map((e) => e.readyAtTick)).toEqual([8, 10, 15, 20]);
+    });
   });
 });

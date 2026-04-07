@@ -2,6 +2,7 @@ import { ComponentType } from 'simple-circuit-engine/core';
 import {
   type IGroupedFactoryRegistry,
   BatteryVisualFactory,
+  ClockVisualFactory,
   LabelVisualFactory,
   LightbulbVisualFactory,
   RectangleLEDVisualFactory,
@@ -18,12 +19,12 @@ import {
   Nor8GateVisualFactory,
   XorGateVisualFactory,
   Xor4GateVisualFactory,
-  Xor8GateVisualFactory
+  Xor8GateVisualFactory,
 } from './shared/components';
 
 /**
  * Register all basic components visual factories in the basic group
- * Basic components are : Battery, Label, Switches, Lightbulb, RectangleLED, Relay, SmallLED
+ * Basic components are : Battery, Clock, Label, Switches, Lightbulb, RectangleLED, Relay, SmallLED
  * @public
  * @param registry - A grouped factory registry to populate
  * @returns The input registry for chaining
@@ -34,6 +35,7 @@ export function registerBasicComponentsFactories(
   return registry.addGroup('basic', 'Basic Components', (group) =>
     group
       .add(ComponentType.Battery, new BatteryVisualFactory())
+      .add(ComponentType.Clock, new ClockVisualFactory())
       .add(ComponentType.Label, new LabelVisualFactory())
       .add(ComponentType.Switch, new SwitchVisualFactory())
       .add(ComponentType.DoubleThrowSwitch, new DoubleThrowSwitchVisualFactory())

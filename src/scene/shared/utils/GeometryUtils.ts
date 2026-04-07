@@ -240,6 +240,49 @@ export function RingGeometry(
 }
 
 /**
+ * Returns the inner hole path for an AND gate body of the given dimensions.
+ * Handles both standard (width > height / 2) and tall (width ≤ height / 2) proportions.
+ * Returns null when thickness is large enough that the shape should be solid (no hole).
+ *
+ * @param width     - Total width, from left flat edge to rightmost arc point
+ * @param height    - Total height
+ * @param thickness - Wall thickness of the gate shell
+ */
+function _andGateHolePath(width: number, height: number, thickness: number): THREE.Path | null {
+  const halfW = width / 2;
+  const halfH = height / 2;
+  if (thickness > 0.9 * Math.min(halfH, halfW)) return null;
+
+  const hole = new THREE.Path();
+
+  if (width <= height / 2) {
+    // Tall case: inner hole uses the same arc formula as _AndGateTallGeometry
+    const innerHalfW = halfW - thickness;
+    const innerHalfH = halfH - thickness;
+    const cx_inner = -(innerHalfH * innerHalfH) / (4 * innerHalfW);
+    const radius_inner = (innerHalfH * innerHalfH + 4 * innerHalfW * innerHalfW) / (4 * innerHalfW);
+    const xComp_inner = -innerHalfW - cx_inner;
+    const angle_top_inner = Math.atan2(innerHalfH, xComp_inner);
+
+    hole.moveTo(-halfW + thickness, innerHalfH);
+    hole.lineTo(-halfW + thickness, -innerHalfH); // inner left side, going down
+    hole.absarc(cx_inner, 0, radius_inner, -angle_top_inner, angle_top_inner, false); // CCW, sweeping right
+    // arc ends at (-halfW + thickness, innerHalfH) = moveTo → Three.js auto-closes
+    return hole;
+  }
+
+  // Standard case: inner hole is AND gate shape shrunk by thickness, opposite winding
+  const arcCenterX = halfW - halfH;
+  const innerHalfH = halfH - thickness;
+  hole.moveTo(-halfW + thickness, -innerHalfH);
+  hole.lineTo(arcCenterX, -innerHalfH); // inner bottom edge, going right
+  hole.absarc(arcCenterX, 0, innerHalfH, -Math.PI / 2, Math.PI / 2, false); // inner right semicircle, CCW
+  hole.lineTo(-halfW + thickness, innerHalfH); // inner top edge, going left
+  // Three.js auto-closes back to moveTo point (inner left side, going down)
+  return hole;
+}
+
+/**
  * Internal variant of AndGateGeometry for tall gates where width ≤ height / 2.
  * In this regime a standard semicircle does not fit, so the entire right side is
  * a single circular arc passing through the top-left corner (-halfW, +halfH),
@@ -290,28 +333,8 @@ function _AndGateTallGeometry(
     bevelEnabled: false,
     steps,
   };
-  // if thickness is superior to 90% of halfH or  here we consider the geometry full (inner hole would be too small)
-  if (thickness > 0.9 * Math.min(halfH, halfW)) {
-    return new THREE.ExtrudeGeometry(shape, extrudeSettings);
-  }
-
-  // Inner hole: same formula applied to inset dimensions, opposite winding (CW overall)
-  // Inner right output point: (halfW - thickness, 0); inner corners: (-halfW + thickness, ±(halfH - thickness))
-  const innerHalfW = halfW - thickness;
-  const innerHalfH = halfH - thickness;
-  const cx_inner = -(innerHalfH * innerHalfH) / (4 * innerHalfW);
-  const radius_inner = (innerHalfH * innerHalfH + 4 * innerHalfW * innerHalfW) / (4 * innerHalfW);
-  const xComp_inner = -innerHalfW - cx_inner; // = (innerHalfH² - 4·innerHalfW²) / (4·innerHalfW)
-  const angle_top_inner = Math.atan2(innerHalfH, xComp_inner);
-
-  // Hole: left side going DOWN + CCW right arc (bottom to top, sweeping right)
-  const hole = new THREE.Path();
-  hole.moveTo(-halfW + thickness, innerHalfH);
-  hole.lineTo(-halfW + thickness, -innerHalfH); // inner left side, going down
-  hole.absarc(cx_inner, 0, radius_inner, -angle_top_inner, angle_top_inner, false); // CCW, sweeping right
-  // arc ends at (-halfW + thickness, innerHalfH) = moveTo → Three.js auto-closes
-  shape.holes.push(hole);
-
+  const hole = _andGateHolePath(width, height, thickness);
+  if (hole !== null) shape.holes.push(hole);
   return new THREE.ExtrudeGeometry(shape, extrudeSettings);
 }
 
@@ -367,22 +390,88 @@ export function AndGateGeometry(
     bevelEnabled: false,
     steps,
   };
-  // if thickness is superior to 90% of halfH or halfW we consider the geometry full (inner hole would be too small)
-  if (thickness > 0.9 * Math.min(halfH, halfW)) {
-    return new THREE.ExtrudeGeometry(shape, extrudeSettings);
+  const hole = _andGateHolePath(width, height, thickness);
+  if (hole !== null) shape.holes.push(hole);
+  return new THREE.ExtrudeGeometry(shape, extrudeSettings);
+}
+
+/**
+ * Create an ExtrudeGeometry for the inner hole of an AND gate body.
+ * Returns null when thickness is large enough that the gate has no hole.
+ * Handles both standard (width > height / 2) and tall (width ≤ height / 2) proportions.
+ *
+ * @param width     - Total width, from left flat edge to rightmost arc point
+ * @param height    - Total height
+ * @param thickness - Wall thickness of the gate shell
+ * @param depth     - Extrusion depth
+ * @param steps     - Number of extrusion steps
+ */
+export function AndGateHoleGeometry(
+  width: number,
+  height: number,
+  thickness: number,
+  depth: number,
+  steps: number = 1
+): ExtrudeGeometry | null {
+  const hole = _andGateHolePath(width, height, thickness);
+  if (hole === null) return null;
+  const shape = new THREE.Shape(hole.getPoints(64).reverse());
+  return new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, steps });
+}
+
+/**
+ * Returns the inner hole path for an OR gate body of the given dimensions.
+ * Handles both standard (width > height / 2) and tall (width ≤ height / 2) proportions.
+ * Returns null when thickness is large enough that the shape should be solid (no hole).
+ *
+ * @param width     - Total width
+ * @param height    - Total height
+ * @param thickness - Wall thickness of the gate shell
+ */
+function _orGateHolePath(width: number, height: number, thickness: number): THREE.Path | null {
+  const halfW = width / 2;
+  const halfH = height / 2;
+  if (thickness > 0.9 * Math.min(halfH, halfW)) return null;
+
+  // Back arc parameters — shared between standard and tall cases
+  const backInset = halfH * 0.4;
+  const u_b = (halfH * halfH - backInset * backInset) / (2 * backInset);
+  const cx_b = -halfW - u_b;
+  const r_b = u_b + backInset;
+
+  const innerHalfH = halfH - thickness;
+  const backWallThickness = Math.max(0.1, thickness / 2);
+  const r_b_inner = r_b + backWallThickness;
+  const inner_x_comp = Math.sqrt(r_b_inner * r_b_inner - innerHalfH * innerHalfH);
+  const angle_b_inner = Math.atan2(innerHalfH, inner_x_comp);
+  const inner_back_x = cx_b + inner_x_comp;
+
+  const hole = new THREE.Path();
+
+  if (width <= height / 2) {
+    // Tall case: inner right arc solved analytically from three points
+    const p = halfW - thickness; // inner output tip x-coordinate
+    const q = inner_back_x;
+    const cx_r = (q * q + innerHalfH * innerHalfH - p * p) / (2 * (q - p));
+    const radius_r = p - cx_r;
+    const angle_top_r = Math.atan2(innerHalfH, inner_back_x - cx_r);
+
+    hole.moveTo(inner_back_x, innerHalfH);
+    hole.absarc(cx_b, 0, r_b_inner, angle_b_inner, -angle_b_inner, true); // CW, top to bottom
+    hole.absarc(cx_r, 0, radius_r, -angle_top_r, angle_top_r, false); // CCW, bottom to top
+    // arc ends at (inner_back_x, innerHalfH) = moveTo → Three.js auto-closes
+    return hole;
   }
 
-  // Inner hole: same AND gate shape shrunk by thickness, traced with opposite winding
-  // (CCW arc from bottom to top) so Three.js treats it as a hole
-  const innerHalfH = halfH - thickness;
-  const hole = new THREE.Path();
-  hole.moveTo(-halfW + thickness, -innerHalfH);
+  // Standard case
+  const arcCenterX = halfW - halfH;
+  hole.moveTo(inner_back_x, innerHalfH);
+  hole.absarc(cx_b, 0, r_b_inner, angle_b_inner, -angle_b_inner, true); // CW from top to bottom
   hole.lineTo(arcCenterX, -innerHalfH); // inner bottom edge, going right
-  hole.absarc(arcCenterX, 0, innerHalfH, -Math.PI / 2, Math.PI / 2, false); // inner right semicircle, counter-clockwise
-  hole.lineTo(-halfW + thickness, innerHalfH); // inner top edge, going left
-  // Three.js auto-closes back to moveTo point (inner left side, going down)
-  shape.holes.push(hole);
-  return new THREE.ExtrudeGeometry(shape, extrudeSettings);
+  hole.absarc(arcCenterX, 0, innerHalfH, -Math.PI / 2, Math.PI / 2, false); // inner right semicircle, CCW
+  hole.lineTo(inner_back_x, innerHalfH); // inner top edge, going left
+  // Three.js auto-closes back to moveTo point
+  return hole;
 }
 
 /**
@@ -436,38 +525,8 @@ function _OrGateTallGeometry(
   // arc ends at (-halfW, -halfH) = moveTo → Three.js auto-closes
 
   const extrudeSettings = { depth, bevelEnabled: false, steps };
-  // if thickness is superior to 90% of halfH or halfW we consider the geometry full (inner hole would be too small)
-  if (thickness > 0.9 * Math.min(halfH, halfW)) {
-    return new THREE.ExtrudeGeometry(shape, extrudeSettings);
-  }
-
-  // Inner hole — opposite winding (CW overall)
-  const innerHalfH = halfH - thickness;
-
-  // Inner back arc: concentric offset (same center cx_b, radius += backWallThickness)
-  const backWallThickness = Math.max(0.1, thickness / 2);
-  const r_b_inner = r_b + backWallThickness;
-  const inner_x_comp = Math.sqrt(r_b_inner * r_b_inner - innerHalfH * innerHalfH);
-  const angle_b_inner = Math.atan2(innerHalfH, inner_x_comp);
-  const inner_back_x = cx_b + inner_x_comp; // x where inner back arc meets y = ±innerHalfH
-
-  // Inner right arc: passes through (inner_back_x, ±innerHalfH) and (halfW - thickness, 0)
-  // Center on x-axis at cx_r, solved from (p - cx_r)² = (q - cx_r)² + innerHalfH²
-  // → cx_r = (q² + innerHalfH² - p²) / (2·(q - p))
-  const p = halfW - thickness; // inner output tip x-coordinate
-  const q = inner_back_x;
-  const cx_r = (q * q + innerHalfH * innerHalfH - p * p) / (2 * (q - p));
-  const radius_r = p - cx_r;
-  const angle_top_r = Math.atan2(innerHalfH, inner_back_x - cx_r);
-
-  // Hole: CW back arc (top → bottom) then CCW right arc (bottom → top, sweeping through output tip)
-  const hole = new THREE.Path();
-  hole.moveTo(inner_back_x, innerHalfH);
-  hole.absarc(cx_b, 0, r_b_inner, angle_b_inner, -angle_b_inner, true); // CW, top to bottom
-  hole.absarc(cx_r, 0, radius_r, -angle_top_r, angle_top_r, false); // CCW, bottom to top
-  // arc ends at (inner_back_x, innerHalfH) = moveTo → Three.js auto-closes
-  shape.holes.push(hole);
-
+  const hole = _orGateHolePath(width, height, thickness);
+  if (hole !== null) shape.holes.push(hole);
   return new THREE.ExtrudeGeometry(shape, extrudeSettings);
 }
 
@@ -534,34 +593,33 @@ export function OrGateGeometry(
   shape.lineTo(-halfW, -halfH); // bottom edge, back to start
 
   const extrudeSettings = { depth, bevelEnabled: false, steps };
-  // if thickness is superior to 90% of halfH or halfW we consider the geometry full (inner hole would be too small)
-  if (thickness > 0.9 * Math.min(halfH, halfW)) {
-    return new THREE.ExtrudeGeometry(shape, extrudeSettings);
-  }
-
-  // Inner hole: opposite winding (CW overall)
-  const innerHalfH = halfH - thickness;
-
-  // Back arc inner wall: fixed perpendicular thickness, independent of the `thickness` parameter.
-  // Since both arcs share the same center (cx_b, 0), adding backWallThickness to r_b gives a
-  // concentric arc at exactly that perpendicular distance everywhere along the curve.
-  const backWallThickness = Math.max(0.1, thickness / 2);
-  const r_b_inner = r_b + backWallThickness;
-  // x-component from arc center to the inner arc at y = ±innerHalfH
-  const inner_x_comp = Math.sqrt(r_b_inner * r_b_inner - innerHalfH * innerHalfH);
-  const angle_b_inner = Math.atan2(innerHalfH, inner_x_comp);
-  const inner_back_x = cx_b + inner_x_comp; // x where inner back arc meets inner top/bottom edges
-
-  const hole = new THREE.Path();
-  hole.moveTo(inner_back_x, innerHalfH);
-  hole.absarc(cx_b, 0, r_b_inner, angle_b_inner, -angle_b_inner, true); // CW from top to bottom
-  hole.lineTo(arcCenterX, -innerHalfH); // inner bottom edge, going right
-  hole.absarc(arcCenterX, 0, innerHalfH, -Math.PI / 2, Math.PI / 2, false); // inner right semicircle, CCW
-  hole.lineTo(inner_back_x, innerHalfH); // inner top edge, going left
-  // Three.js auto-closes back to moveTo point (inner left side, going down)
-  shape.holes.push(hole);
-
+  const hole = _orGateHolePath(width, height, thickness);
+  if (hole !== null) shape.holes.push(hole);
   return new THREE.ExtrudeGeometry(shape, extrudeSettings);
+}
+
+/**
+ * Create an ExtrudeGeometry for the inner hole of an OR gate body.
+ * Returns null when thickness is large enough that the gate has no hole.
+ * Handles both standard (width > height / 2) and tall (width ≤ height / 2) proportions.
+ *
+ * @param width     - Total width
+ * @param height    - Total height
+ * @param thickness - Wall thickness of the gate shell
+ * @param depth     - Extrusion depth
+ * @param steps     - Number of extrusion steps
+ */
+export function OrGateHoleGeometry(
+  width: number,
+  height: number,
+  thickness: number,
+  depth: number,
+  steps: number = 1
+): ExtrudeGeometry | null {
+  const hole = _orGateHolePath(width, height, thickness);
+  if (hole === null) return null;
+  const shape = new THREE.Shape(hole.getPoints(64).reverse());
+  return new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, steps });
 }
 
 /**
@@ -812,6 +870,65 @@ export function LGeometry(
   return geometry;
 }
 
+/**
+ * Returns the inner hole path for a cyclic trapezoid of the given dimensions.
+ * Returns null when the geometry should be solid (no hole).
+ *
+ * @param width      - Total width
+ * @param tailHeight - Height of the left (tail) side
+ * @param headHeight - Height of the right (head) side (0 for triangle)
+ * @param thickness  - Wall thickness
+ */
+function _cyclicTrapezoidHolePath(
+  width: number,
+  tailHeight: number,
+  headHeight: number,
+  thickness: number
+): THREE.Path | null {
+  const halfW = width / 2;
+  const halfTailH = tailHeight / 2;
+  const halfHeadH = headHeight / 2;
+
+  if (thickness > 0.9 * Math.min(halfTailH, halfW)) return null;
+
+  // Perpendicular inset of the slanted edges.
+  // Top slant from (-halfW, halfTailH) to (halfW, halfHeadH):
+  //   dH = halfTailH − halfHeadH (height drop along the slant, ≥ 0)
+  //   L  = slant length = √(width² + dH²)
+  // Inner top-left  y = halfTailH  − thickness·(L + dH) / width
+  // Inner top-right y = halfHeadH  − thickness·(L − dH) / width
+  // (bottom corners symmetric about y = 0)
+  const dH = halfTailH - halfHeadH;
+  const L = Math.sqrt(width * width + dH * dH);
+  const innerTailHalfH = halfTailH - (thickness * (L + dH)) / width;
+  if (innerTailHalfH <= 0) return null;
+
+  const hole = new THREE.Path();
+
+  if (headHeight > 0) {
+    const innerHeadHalfH = halfHeadH - (thickness * (L - dH)) / width;
+    if (innerHeadHalfH <= 0 || width - 2 * thickness <= 0) return null;
+
+    // CW hole: TL → BL → BR → TR
+    hole.moveTo(-halfW + thickness, innerTailHalfH);
+    hole.lineTo(-halfW + thickness, -innerTailHalfH);
+    hole.lineTo(halfW - thickness, -innerHeadHalfH);
+    hole.lineTo(halfW - thickness, innerHeadHalfH);
+  } else {
+    // Triangle case: top and bottom inner slants meet at a single tip on the x-axis.
+    // tipX = halfW − thickness·L / halfTailH
+    const tipX = halfW - (thickness * L) / halfTailH;
+    if (tipX <= -halfW + thickness) return null;
+
+    // CW hole: TL → BL → tip
+    hole.moveTo(-halfW + thickness, innerTailHalfH);
+    hole.lineTo(-halfW + thickness, -innerTailHalfH);
+    hole.lineTo(tipX, 0);
+  }
+
+  return hole;
+}
+
 export function CyclicTrapezoidGeometry(
   width: number,
   tailHeight: number,
@@ -837,51 +954,32 @@ export function CyclicTrapezoidGeometry(
   // Three.js auto-closes back to moveTo
 
   const extrudeSettings = { depth, bevelEnabled: false, steps };
-
-  if (thickness > 0.9 * Math.min(halfTailH, halfW)) {
-    return new THREE.ExtrudeGeometry(shape, extrudeSettings);
-  }
-
-  // Perpendicular inset of the slanted edges.
-  // Top slant from (-halfW, halfTailH) to (halfW, halfHeadH):
-  //   dH = halfTailH − halfHeadH (height drop along the slant, ≥ 0)
-  //   L  = slant length = √(width² + dH²)
-  // Inner top-left  y = halfTailH  − thickness·(L + dH) / width
-  // Inner top-right y = halfHeadH  − thickness·(L − dH) / width
-  // (bottom corners symmetric about y = 0)
-  const dH = halfTailH - halfHeadH;
-  const L = Math.sqrt(width * width + dH * dH);
-
-  const innerTailHalfH = halfTailH - (thickness * (L + dH)) / width;
-  if (innerTailHalfH <= 0) {
-    return new THREE.ExtrudeGeometry(shape, extrudeSettings);
-  }
-
-  const hole = new THREE.Path();
-
-  if (headHeight > 0) {
-    const innerHeadHalfH = halfHeadH - (thickness * (L - dH)) / width;
-    if (innerHeadHalfH <= 0 || width - 2 * thickness <= 0) {
-      return new THREE.ExtrudeGeometry(shape, extrudeSettings);
-    }
-    // CW hole: TL → BL → BR → TR
-    hole.moveTo(-halfW + thickness, innerTailHalfH);
-    hole.lineTo(-halfW + thickness, -innerTailHalfH);
-    hole.lineTo(halfW - thickness, -innerHeadHalfH);
-    hole.lineTo(halfW - thickness, innerHeadHalfH);
-  } else {
-    // Triangle case: top and bottom inner slants meet at a single tip on the x-axis.
-    // tipX = halfW − thickness·L / halfTailH
-    const tipX = halfW - (thickness * L) / halfTailH;
-    if (tipX <= -halfW + thickness) {
-      return new THREE.ExtrudeGeometry(shape, extrudeSettings);
-    }
-    // CW hole: TL → BL → tip
-    hole.moveTo(-halfW + thickness, innerTailHalfH);
-    hole.lineTo(-halfW + thickness, -innerTailHalfH);
-    hole.lineTo(tipX, 0);
-  }
-
-  shape.holes.push(hole);
+  const hole = _cyclicTrapezoidHolePath(width, tailHeight, headHeight, thickness);
+  if (hole !== null) shape.holes.push(hole);
   return new THREE.ExtrudeGeometry(shape, extrudeSettings);
+}
+
+/**
+ * Create an ExtrudeGeometry for the inner hole of a cyclic trapezoid.
+ * Returns null when the geometry should be solid (no hole).
+ *
+ * @param width      - Total width
+ * @param tailHeight - Height of the left (tail) side
+ * @param headHeight - Height of the right (head) side (0 for triangle)
+ * @param thickness  - Wall thickness
+ * @param depth      - Extrusion depth
+ * @param steps      - Number of extrusion steps
+ */
+export function CyclicTrapezoidHoleGeometry(
+  width: number,
+  tailHeight: number,
+  headHeight: number,
+  thickness: number,
+  depth: number,
+  steps: number = 1
+): ExtrudeGeometry | null {
+  const hole = _cyclicTrapezoidHolePath(width, tailHeight, headHeight, thickness);
+  if (hole === null) return null;
+  const shape = new THREE.Shape(hole.getPoints(64).reverse());
+  return new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, steps });
 }

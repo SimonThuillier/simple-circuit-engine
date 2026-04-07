@@ -3,10 +3,7 @@
  * @module core/simulation/behaviors
  */
 
-export type {
-    IComponentBehavior,
-    IBehaviorResult
-} from "./types";
+export type { IComponentBehavior, IBehaviorResult } from './types';
 
 export { BehaviorRegistry } from './BehaviorRegistry.js';
 
@@ -19,6 +16,7 @@ export { RelayBehavior } from './basic/RelayBehavior';
 export { SmallLEDBehavior } from './basic/SmallLEDBehavior';
 export { SwitchBehavior } from './basic/SwitchBehavior';
 export { DoubleThrowSwitchBehavior } from './basic/DoubleThrowSwitchBehavior';
+export { ClockBehavior } from './basic/ClockBehavior';
 
 // gates
 export { InverterBehavior } from './gates/InverterBehavior';
@@ -31,5 +29,3 @@ export { Nor8GateBehavior } from './gates/Nor8GateBehavior';
 export { XorGateBehavior } from './gates/XorGateBehavior';
 export { Xor4GateBehavior } from './gates/Xor4GateBehavior';
 export { Xor8GateBehavior } from './gates/Xor8GateBehavior';
-
-

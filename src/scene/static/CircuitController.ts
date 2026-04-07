@@ -36,6 +36,7 @@ import { SelectionManager } from '../shared/SelectionManager';
 import { CircuitWriter } from './CircuitWriter';
 import { AbstractCircuitController } from '../shared/AbstractCircuitController';
 import { ConfigPanelWidget } from './tools/ConfigPanelWidget';
+import { PinTooltipWidget } from './PinTooltipWidget';
 import { controllerOptions } from '../shared/utils/Options';
 
 /**
@@ -54,6 +55,11 @@ export class CircuitController extends AbstractCircuitController {
   private _selectionManager: SelectionManager | null = null;
   // Config panel manager
   private _configPanelManager: ConfigPanelWidget | null = null;
+  // Pin tooltip widget
+  private _pinTooltipWidget: PinTooltipWidget | null = null;
+  private _lastClientX: number = 0;
+  private _lastClientY: number = 0;
+  private _tooltipMouseMoveHandler: ((e: MouseEvent) => void) | null = null;
   // Circuit RepositoryTool system
   private _tools: Map<ToolType, IEditingTool> = new Map();
   private _activeTool: ToolType | null = null;
@@ -89,6 +95,8 @@ export class CircuitController extends AbstractCircuitController {
     this._initializeSelectionManager();
     // Initialize Config Panel Manager
     this._initializeConfigPanelManager();
+    // Initialize Pin Tooltip
+    this._initializePinTooltip();
 
     this._initialized = true; // flag must be set before calling setActiveTool
     // standalone mode -> Controller active
@@ -145,6 +153,8 @@ export class CircuitController extends AbstractCircuitController {
       this._selectionManager.dispose();
       this._selectionManager = null;
     }
+    // dispose PinTooltipWidget
+    this._disposePinTooltip();
     // dispose own wireVisualManager
     this.wireVisualManager.dispose();
   }
@@ -154,6 +164,7 @@ export class CircuitController extends AbstractCircuitController {
       // Deactivate edit mode (which deactivates active tool and emits toolDeactivated)
       this.setEditMode(false);
       this._selectionManager?.deselect();
+      this._pinTooltipWidget?.hide();
     } else {
       if (this._initialized && this._options && this._options.defaultTool) {
         this.setEditMode(true);
@@ -331,6 +342,47 @@ export class CircuitController extends AbstractCircuitController {
       this._camera,
       this._container
     );
+  }
+
+  private _initializePinTooltip(): void {
+    this._pinTooltipWidget = new PinTooltipWidget((componentType) => {
+      this.emit('componentHelpRequested', { componentType });
+    });
+
+    this._tooltipMouseMoveHandler = (e: MouseEvent) => {
+      this._lastClientX = e.clientX;
+      this._lastClientY = e.clientY;
+      this._pinTooltipWidget?.updatePosition(e.clientX, e.clientY);
+    };
+    this._container!.addEventListener('mousemove', this._tooltipMouseMoveHandler);
+
+    this.on('hover', (payload) => {
+      if (
+        payload.objectType === 'enodeHitbox' &&
+        payload.userData?.type === 'enodeHitbox' &&
+        payload.userData.componentId !== null
+      ) {
+        const { label, componentType } = payload.userData;
+        if (label && componentType) {
+          this._pinTooltipWidget?.show(label, componentType, this._lastClientX, this._lastClientY);
+          return;
+        }
+      }
+      this._pinTooltipWidget?.hide();
+    });
+
+    this.on('unhover', () => this._pinTooltipWidget?.hide());
+  }
+
+  private _disposePinTooltip(): void {
+    if (this._tooltipMouseMoveHandler && this._container) {
+      this._container.removeEventListener('mousemove', this._tooltipMouseMoveHandler);
+      this._tooltipMouseMoveHandler = null;
+    }
+    if (this._pinTooltipWidget) {
+      this._pinTooltipWidget.dispose();
+      this._pinTooltipWidget = null;
+    }
   }
 
   /**

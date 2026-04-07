@@ -5,7 +5,7 @@
 
 import { ComponentState } from '../ComponentState';
 
-import type {UUID} from "../../../utils/types";
+import type { UUID } from '../../../utils/types';
 
 /**
  * Simulation state for Battery components.

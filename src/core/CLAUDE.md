@@ -39,7 +39,8 @@ Tick-based boolean simulation with state propagation, event scheduling and dirty
 
 Contains component states dataclasses
 
-Components are organized within groups: 
+Components are organized within groups:
+
 - basic (switches, lights, relays...)
 - logic gates
 - Future Upper level components (encoders/decoders, flip-flops, ...)
@@ -49,6 +50,7 @@ Components are organized within groups:
 Stateless strategy objects implementing `IComponentBehavior`. Registered in `BehaviorRegistry` by `ComponentType`.
 
 Each behavior implements:
+
 - `createInitialState(component)` — initial `ComponentState`
 - `allowConductivity(component, state, type, pinId, otherPinId)` — whether a pin pair conducts
 - `onPinsChange(component, state, nodeStates, targetTick)` — react to electrical input changes
@@ -79,8 +81,6 @@ Helper to register all built-in behaviors at once. Used by consuming application
 5. Pin changes are detected → behaviors' `onPinsChange()` called
 6. `DirtyTracker` records all mutations for the scene layer to consume
 
-
 ## Quality Gate
 
-Being the foundational domain package, `core` requested unit test coverage is 80% minimum. 
-
+Being the foundational domain package, `core` requested unit test coverage is 80% minimum.

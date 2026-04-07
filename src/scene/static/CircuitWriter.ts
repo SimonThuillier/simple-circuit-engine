@@ -531,6 +531,10 @@ export class CircuitWriter {
         config.set('initialState', config.get('initialState') === 'input1' ? 'input2' : 'input1');
         this.saveEditComponentConfig(component.id, config);
         return { hasChanged: true, component: component };
+      case ComponentType.Clock:
+        config.set('startHigh', config.get('startHigh') == 'true' ? 'false' : 'true');
+        this.saveEditComponentConfig(component.id, config);
+        return { hasChanged: true, component: component };
       default:
         if (!config.has('activationLogic')) {
           return { hasChanged: false, component: component };

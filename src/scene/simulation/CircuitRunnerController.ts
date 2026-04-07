@@ -8,12 +8,13 @@
 
 import * as THREE from 'three';
 import {
-    type Component,
-    type Wire,
-    type ENode,
-    type Circuit,
-    type IUserCommand,
-    TRANSITION_DEFAULTS, SIMULATION_SPEED
+  type Component,
+  type Wire,
+  type ENode,
+  type Circuit,
+  type IUserCommand,
+  TRANSITION_DEFAULTS,
+  SIMULATION_SPEED,
 } from 'simple-circuit-engine/core';
 import {
   ENodeType,
@@ -22,7 +23,12 @@ import {
   BehaviorRegistry,
 } from 'simple-circuit-engine/core';
 import type { IFactoryRegistry } from '../shared/components/ComponentVisualFactory';
-import type { SharedResources, HoveredElement, ControllerOptions } from '../shared/types';
+import type {
+  AnimationContext,
+  SharedResources,
+  HoveredElement,
+  ControllerOptions,
+} from '../shared/types';
 import { AbstractCircuitController } from '../shared/AbstractCircuitController';
 import { gridToWorldPosition, gridToWorldRotation } from '../shared/utils/GeometryUtils';
 
@@ -36,6 +42,9 @@ import { gridToWorldPosition, gridToWorldRotation } from '../shared/utils/Geomet
 export class CircuitRunnerController extends AbstractCircuitController {
   private _runner: CircuitRunner | null = null;
   private _behaviorRegistry: BehaviorRegistry;
+
+  // Animation context shared with visual factories
+  private _animationContext: AnimationContext | null = null;
 
   // Playback control state
   private _autoPlay = false;
@@ -127,6 +136,14 @@ export class CircuitRunnerController extends AbstractCircuitController {
 
     // Convert TPS to interval and apply
     this._tickIntervalMs = Math.round(1000 / clampedTps);
+
+    // Update animation timescales for in-flight animations (reads old tps from context)
+    this._updateAnimationTimescales(clampedTps);
+
+    // Update context with new tps AFTER timescale adjustment
+    if (this._animationContext) {
+      this._animationContext.ticksPerSecond = clampedTps;
+    }
 
     // If playing, restart interval with new value
     if (this._isPlaying) {
@@ -238,10 +255,18 @@ export class CircuitRunnerController extends AbstractCircuitController {
       this.stop();
       this._runner = null;
       this._removeSimulationStateVisuals();
+      this.factoryRegistry.setAnimationContext(null);
+      this._animationContext = null;
     } else {
       if (!this._circuit) return;
       // recreate runner for the current circuit (which can have been modified in edit mode while this controller was inactive)
       this._runner = new CircuitRunner(this._circuit, this._behaviorRegistry);
+      // Create and fan out animation context before visual update
+      this._animationContext = {
+        ticksPerSecond: this.simulationSpeed,
+        simulationStatus: 'initial',
+      };
+      this.factoryRegistry.setAnimationContext(this._animationContext);
       // update graphics
       this._fullUpdate();
       // if autoplay launch !
@@ -269,6 +294,12 @@ export class CircuitRunnerController extends AbstractCircuitController {
         if (!this._active) return; // nothing more to do if not active
         // if active launch the thing
         this._runner = new CircuitRunner(circuit, this._behaviorRegistry);
+        // Create/refresh animation context before visual update
+        this._animationContext = {
+          ticksPerSecond: this.simulationSpeed,
+          simulationStatus: 'initial',
+        };
+        this.factoryRegistry.setAnimationContext(this._animationContext);
         // update graphics
         this._fullUpdate();
         // if autoplay launch !
@@ -312,6 +343,11 @@ export class CircuitRunnerController extends AbstractCircuitController {
       return; // Already playing
     }
     this._isPlaying = true;
+    if (this._animationContext) {
+      this._animationContext.simulationStatus = 'playing';
+    }
+    // Kick all factories so animations start/resume now that status is 'playing'
+    this._visualUpdateFromSimulationState();
     this.emit('simulationPlayed', { tick: this._runner.getCurrentTick() });
 
     // Start interval loop
@@ -332,6 +368,9 @@ export class CircuitRunnerController extends AbstractCircuitController {
     }
 
     this._isPlaying = false;
+    if (this._animationContext) {
+      this._animationContext.simulationStatus = 'paused';
+    }
 
     // Clear interval
     if (this._simulationLoopId !== null) {
@@ -383,6 +422,9 @@ export class CircuitRunnerController extends AbstractCircuitController {
     // If playing, pause first
     if (this._isPlaying) {
       this.pause();
+    }
+    if (this._animationContext) {
+      this._animationContext.simulationStatus = 'initial';
     }
     this._runner.reset();
     // Update visuals to initial state
@@ -440,6 +482,42 @@ export class CircuitRunnerController extends AbstractCircuitController {
       // Get factory and update animation
       const factory = this.factoryRegistry.get(component.type);
       factory.updateAnimation(object3D, state);
+    }
+  }
+
+  /**
+   * Update all active AnimationMixers.
+   * Called per frame from the render loop via CircuitEngine.update(delta).
+   *
+   * @param delta - Time in seconds since last frame
+   */
+  updateAnimations(delta: number): void {
+    if (!this._animationContext || this._animationContext.simulationStatus !== 'playing') return;
+
+    for (const object3D of this._componentObject3Ds.values()) {
+      const mixer = object3D.userData.mixer as THREE.AnimationMixer | undefined;
+      if (!mixer) continue;
+      mixer.update(delta);
+    }
+  }
+
+  /**
+   * Recompute animation timescales when simulation speed changes mid-animation.
+   * Updates ticksPerSecond on userData and adjusts active action timeScales.
+   */
+  private _updateAnimationTimescales(newTps: number): void {
+    const previousTps = this._animationContext?.ticksPerSecond ?? newTps;
+
+    for (const object3D of this._componentObject3Ds.values()) {
+      const mixer = object3D.userData.mixer as THREE.AnimationMixer | undefined;
+      if (!mixer) continue;
+
+      // Adjust timeScale of active action to match new speed
+      const action = object3D.userData.currentAction as THREE.AnimationAction | undefined;
+      if (!action) continue;
+
+      // Scale ratio: new speed / old speed
+      action.timeScale = newTps / previousTps;
     }
   }
 
@@ -770,7 +848,12 @@ export class CircuitRunnerController extends AbstractCircuitController {
       return;
     }
 
-    // TODO : see if there are specific disposals to do (animations ?)
+    // Clean up AnimationMixer if present
+    const mixer = group.userData.mixer as THREE.AnimationMixer | undefined;
+    if (mixer) {
+      mixer.stopAllAction();
+      mixer.uncacheRoot(group);
+    }
 
     this._scene!.remove(group);
     // Parcours complet pour disposer toutes les géométries / matériaux des enfants
@@ -797,8 +880,6 @@ export class CircuitRunnerController extends AbstractCircuitController {
     const group = this._enodeObject3Ds.get(id);
     if (!group) return;
 
-    // TODO : see if there are specific disposals to do (animations ?)
-
     group?.traverse((obj) => {
       if (obj instanceof THREE.Mesh) {
         if (obj.geometry) {
@@ -819,14 +900,12 @@ export class CircuitRunnerController extends AbstractCircuitController {
 
   private _removeWireObject3D(id: string): void {
     if (this._wireObject3Ds.has(id)) {
-      // TODO : see if there are specific disposals to do (animations ?)
       // Use WireVisualManager to remove wire (handles all disposal and delete from map)
       this.wireVisualManager.removeWire(id);
     }
   }
 
   protected _removeAllVisuals(): void {
-    // TODO : see if there are specific disposals to do (animations ?)
     // Remove all wire meshes
     for (const id of Array.from(this._wireObject3Ds.keys())) {
       this._removeWireObject3D(id);

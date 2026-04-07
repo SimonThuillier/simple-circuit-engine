@@ -8,6 +8,7 @@
  */
 
 import type { ComponentType } from 'simple-circuit-engine/core';
+import type { AnimationContext } from '../types.js';
 import type { IComponentVisualFactory, IFactoryRegistry } from './ComponentVisualFactory.js';
 
 /**
@@ -283,6 +284,16 @@ export class GroupedFactoryRegistry implements IFactoryRegistry, IGroupedFactory
     }
 
     return true;
+  }
+
+  /**
+   * Fan out animation context to all registered factories and the fallback.
+   */
+  setAnimationContext(ctx: AnimationContext | null): void {
+    for (const factory of this._factories.values()) {
+      factory.setAnimationContext(ctx);
+    }
+    this._fallbackFactory.setAnimationContext(ctx);
   }
 
   /**

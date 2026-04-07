@@ -4,6 +4,7 @@
  */
 
 export type { IFactoryRegistry, IComponentVisualFactory } from './ComponentVisualFactory.js';
+export { CmpMatCategory, CmpMatVariant, CmpMatType, CMP_MATERIALS } from './types.js';
 
 export { FactoryRegistry } from './FactoryRegistry.js';
 export { DefaultVisualFactory } from './DefaultVisualFactory.js';
@@ -26,6 +27,7 @@ export { RelayVisualFactory } from './basic/RelayVisualFactory';
 export { SmallLEDVisualFactory } from './basic/SmallLEDVisualFactory';
 export { SwitchVisualFactory } from './basic/SwitchVisualFactory';
 export { DoubleThrowSwitchVisualFactory } from './basic/DoubleThrowSwitchVisualFactory';
+export { ClockVisualFactory } from './basic/ClockVisualFactory';
 
 // gates
 export { InverterVisualFactory } from './gates/InverterVisualFactory';

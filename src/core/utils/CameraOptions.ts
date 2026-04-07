@@ -5,9 +5,8 @@
  *
  * @module core/utils
  */
-import type {ICameraOptions} from "./types";
-import {Position3D} from './Position3D';
-
+import type { ICameraOptions } from './types';
+import { Position3D } from './Position3D';
 
 /**
  * Camera configuration options.

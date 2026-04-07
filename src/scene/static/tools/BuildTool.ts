@@ -1810,7 +1810,7 @@ export class BuildTool implements IEditingTool {
 
     for (const [_id, otherGroup] of componentObjects) {
       // to make this rule not too strict we signal overlap only if ghost box contains the center of other component box
-      if(previewBox.containsPoint(otherGroup.position)){
+      if (previewBox.containsPoint(otherGroup.position)) {
         return true;
       }
     }

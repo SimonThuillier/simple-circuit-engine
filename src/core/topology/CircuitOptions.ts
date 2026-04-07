@@ -3,7 +3,7 @@
  * Encapsulate user writable circuit options
  * @module core/topology
  */
-import {DEFAULT_LOGIC_FAMILY, type ICircuitOptions, type LogicFamily} from "./types";
+import { DEFAULT_LOGIC_FAMILY, type ICircuitOptions, type LogicFamily } from './types';
 
 export class CircuitOptions implements ICircuitOptions {
   /**

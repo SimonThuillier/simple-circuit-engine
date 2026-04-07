@@ -3,7 +3,7 @@
  * Represents a 3D position. Used for Camera placement
  * @module core/utils
  */
-import type {IPosition3D} from "./types";
+import type { IPosition3D } from './types';
 
 /**
  * 3D position.

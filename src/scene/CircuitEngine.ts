@@ -616,6 +616,21 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
   }
 
   // ============================================================================
+  // Per-frame Update
+  // ============================================================================
+
+  /**
+   * Update active animations. Call once per frame from the render loop.
+   * No-op if not initialized, disposed, or not in simulation mode.
+   *
+   * @param delta - Time in seconds since last frame (from THREE.Clock.getDelta())
+   */
+  update(delta: number): void {
+    if (!this._initialized || this._disposed || this._mode !== 'simulation') return;
+    this._simulationController!.updateAnimations(delta);
+  }
+
+  // ============================================================================
   // Three.js Access
   // ============================================================================
 

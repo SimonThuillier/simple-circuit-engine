@@ -3,8 +3,7 @@
  * @module core/simulation/behaviors
  */
 
-
-import type {IComponentBehavior} from "./types";
+import type { IComponentBehavior } from './types';
 
 /**
  * Registry for component behavior implementations.

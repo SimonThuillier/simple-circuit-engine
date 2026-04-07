@@ -1,6 +1,6 @@
 {
   "name": "simple-circuit-engine",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "Educational electronic circuits Build & Simulation engine with THREE.js 3D visualization",
   "type": "module",
   "main": "./dist/index.js",
@@ -47,9 +47,8 @@
   },
   "scripts": {
     "dev:demo": "vite --config vite.demo.config.ts",
-    "build": "tsc && vite build",
+    "build": "tsc --noEmit && vite build",
     "prepublishOnly": "npm run build",
-    "build:visualizer": "vite build --config vite.visualizer.config.ts && cp scripts/visualizer/circuit-topology-visualizer.html output/",
     "build:editor": "vite build --config vite.circuit-editor.config.ts && cp scripts/editor/circuit-editor.html output/",
     "build:simulator": "vite build --config vite.circuit-simulator.config.ts && cp scripts/simulator/circuit-simulator.html output/",
     "build:engine": "vite build --config vite.circuit-engine.config.ts && cp scripts/engine/circuit-engine.html output/",
@@ -61,33 +60,33 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "generate:samples": "tsx scripts/samples/generate-sample-circuits.ts",
-    "docs:audit": "typedoc --validation.notDocumented --emit none 2>&1 | grep 'not documented'",
-    "docs:generate": "typedoc",
-    "docs:validate": "typedoc --treatWarningsAsErrors --treatValidationWarningsAsErrors",
     "lint:docs": "eslint src --ext .ts --rule 'tsdoc/syntax: error'",
     "check:unused": "npx knip"
   },
-  "devDependencies": {
-    "d3": "^7.9.0",
-    "d3-graphviz": "^5.6.0",
-    "@types/d3": "^7.4.3",
-    "@types/d3-graphviz": "^2.6.10",
-    "@types/node": "^22.10.2",
-    "@types/three": "^0.181.0",
-    "@vitest/ui": "^4.0.15",
-    "jsdom": "^27.0.1",
-    "prettier": "3.7.1",
-    "tsx": "^4.20.6",
-    "typedoc": "^0.28.15",
-    "typescript": "^5.9.2",
-    "vite": "^7.2.0",
-    "vite-plugin-dts": "^4.3.0",
-    "vitest": "^4.0.15",
-    "knip": "^5.80.0"
-  },
   "dependencies": {
-    "three": "^0.181.0",
     "lil-gui": "^0.21.0"
+  },
+  "devDependencies": {
+    "three": "^0.183.2",
+    "@types/three": "^0.183.1",
+    "@types/node": "^25.5.2",
+    "jsdom": "^29.0.2",
+    "prettier": "3.8.1",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2",
+    "vite": "^8.0.7",
+    "vite-plugin-dts": "^4.5.4",
+    "vitest": "^4.1.3",
+    "@vitest/ui": "^4.1.3",
+    "knip": "^6.3.0"
+  },
+  "peerDependencies": {
+    "three": "^0.183.2"
+  },
+  "peerDependenciesMeta": {
+    "three": {
+      "optional": false
+    }
   },
   "engines": {
     "node": ">=18.0.0",

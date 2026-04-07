@@ -23,7 +23,13 @@ import { CameraOptions } from '../../src/core/utils/CameraOptions.js';
 
 describe('CircuitMetadata — defaultLogicFamily', () => {
   it('defaults to CMOS1', () => {
-    const meta = new CircuitMetadata(CIRCUIT_FILE_VERSION, new CircuitOptions('Test'), 10, 10, new CameraOptions());
+    const meta = new CircuitMetadata(
+      CIRCUIT_FILE_VERSION,
+      new CircuitOptions('Test'),
+      10,
+      10,
+      new CameraOptions()
+    );
     expect(meta.options.defaultLogicFamily).toBe('CMOS1');
   });
 

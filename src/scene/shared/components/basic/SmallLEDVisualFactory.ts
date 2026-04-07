@@ -1,5 +1,6 @@
 import { ComponentVisualFactoryBase } from '../ComponentVisualFactory';
-import type { Component, ComponentState, SmallLEDState } from 'simple-circuit-engine/core';
+import { CmpMatCategory, CmpMatType } from '../types';
+import { ComponentType, type Component, type ComponentState, type SmallLEDState } from 'simple-circuit-engine/core';
 import { presetOrHexToHex, hexToPresetOrHex } from '../../utils/ColorUtils';
 import * as THREE from 'three';
 import type { ConfigFormDefinition, VisualContext } from '../../types';
@@ -14,15 +15,28 @@ import type { ConfigFormDefinition, VisualContext } from '../../types';
  * - Component hitbox for raycasting
  *
  * Animation:
- * - Emissive glow when LED is lit (based on simulation state)
+ * - Smooth emissive glow transition when LED lights up or turns off
+ * - Uses AnimationMixer with material property tracks (emissive, emissiveIntensity)
+ * - Clones PRIVATE material per-instance during simulation for independent animation
  */
 export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
   /** LED lit color (yellow glow) */
-  private static readonly LED_LIT_COLOR = 0xffff00;
+  private readonly LED_LIT_COLOR = 0xffff00;
   /** LED lit emissive intensity */
-  private static readonly LED_LIT_INTENSITY = 1.0;
+  private readonly LED_LIT_INTENSITY = 1.0;
+
+  /** Black in normalized RGB for ColorKeyframeTrack */
+  private readonly UNLIT_RGB = [0, 0, 0];
+
+  constructor() {
+    super();
+    this._componentType = ComponentType.SmallLED;
+  }
 
   createVisual(component: Component, context: VisualContext): THREE.Object3D {
+    if (component.type !== this._componentType) {
+      throw new Error(`Factory mismatch: expected "${this._componentType}", got "${component.type}"`);
+    }
     // Root group (not rendered, just organizational)
     const group = new THREE.Group();
     group.userData = {
@@ -32,59 +46,62 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
     };
 
     // Component hitbox (invisible, raycastable)
-    const hitbox = this.createComponentHitbox(component.id, group.id, 1, 1, 1);
+    const hitbox = this.createComponentHitbox(component.id, group.id, 1, 3, 1);
     group.add(hitbox);
 
     // Visual LED
-    const material = new THREE.MeshStandardMaterial({ color: 0xffffff });
-    const ledGeometry = new THREE.CylinderGeometry(0.25, 0.25, 1, 16, 4, false, 0, Math.PI * 2);
-    const led = new THREE.Mesh(ledGeometry, material);
+    const ledGeometry = new THREE.CylinderGeometry(0.25, 0.25, 1, 16, 3, false, 0, Math.PI * 2);
+    const ledMat = this.getMat(CmpMatCategory.WHITE).clone();
+    ledMat.userData.matType = CmpMatType.PRIVATE;
+
+    const led = new THREE.Mesh(ledGeometry, ledMat);
+    led.name = 'led'; // required for AnimationMixer property binding
     led.userData = {
       type: 'component',
       componentId: component.id,
       part: 'led',
       idleColorHex: 0xffffff,
-      activeColorHex: SmallLEDVisualFactory.LED_LIT_COLOR,
+      activeColorHex: this.LED_LIT_COLOR,
     };
     led.position.set(0, 0.25, 0);
     group.add(led);
 
     // pins (not called if preview - no pins)
     if (component.pins.length > 0) {
-      this.createPinsVisual(component, context, group, material);
+      this.createPinsVisual(component, context, group);
     }
 
     this.updateFromConfiguration(group, component.config);
     return group;
   }
 
-  private createPinsVisual(
-      component: Component,
-      context: VisualContext,
-      group: THREE.Group,
-      material: THREE.MeshStandardMaterial) {
+  private createPinsVisual(component: Component, context: VisualContext, group: THREE.Group) {
     const inputNode = context.getENode(component.pins[0]!);
     if (inputNode) {
-      const pin1Group = this.createPinGroup(inputNode,'left');
+      const pin1Group = this.createPinGroup(inputNode, 'left');
       pin1Group.position.set(-0.25, 0, 0);
       group.add(pin1Group);
 
-      const pin1Counterpart =
-          this.createPinCounterpart(pin1Group, material);
-      if(!!pin1Counterpart){
+      const pin1Counterpart = this.createPinCounterpart(
+        pin1Group,
+        this.getMat(CmpMatCategory.WHITE)
+      );
+      if (!!pin1Counterpart) {
         group.add(pin1Counterpart);
       }
     }
 
     const outputNode = context.getENode(component.pins[1]!);
     if (outputNode) {
-      const pin2Group = this.createPinGroup(outputNode,'right');
+      const pin2Group = this.createPinGroup(outputNode, 'right');
       pin2Group.position.set(0.25, 0, 0);
       group.add(pin2Group);
 
-      const pin2Counterpart =
-          this.createPinCounterpart(pin2Group, material);
-      if(!!pin2Counterpart){
+      const pin2Counterpart = this.createPinCounterpart(
+        pin2Group,
+        this.getMat(CmpMatCategory.WHITE)
+      );
+      if (!!pin2Counterpart) {
         group.add(pin2Counterpart);
       }
     }
@@ -98,6 +115,13 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
   override getConfigFormDefinition(): ConfigFormDefinition | null {
     return {
       fields: [
+        {
+          key: 'transitionSpan',
+          label: 'Lit delay (ticks)',
+          type: 'number',
+          min: 1,
+          step: 1,
+        },
         { key: 'idleColor', label: 'Idle Color', type: 'color' },
         { key: 'activeColor', label: 'Active Color', type: 'color' },
         { key: 'size', label: 'Size', type: 'number', min: 1, max: 16, step: 1 },
@@ -115,6 +139,7 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
    */
   override mapCoreConfigToForm(config: Map<string, string>): Map<string, any> {
     const formData = new Map<string, any>();
+    formData.set('transitionSpan', parseFloat(config.get('transitionSpan') || '1'));
     const activeColor = config.get('activeColor') || '#ffff00';
     const idleColor = config.get('idleColor') || '#ffffff';
 
@@ -136,6 +161,7 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
    */
   override mapFormToCoreConfig(formData: Map<string, any>): Map<string, string> {
     const config = new Map<string, string>();
+    config.set('transitionSpan', formData.get('transitionSpan').toString());
     const activeColor = formData.get('activeColor');
     const idleColor = formData.get('idleColor');
 
@@ -155,25 +181,20 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
   /**
    * Update visual from configuration (T022)
    * Updates LED color based on activeColor config
-   *
-   * @param object3D - The Object3D created by createVisual()
-   * @param config - Component configuration map
-   *
-   * @remarks
-   * Updates the LED mesh color based on activeColor config value
-   * Supports both hex colors and color presets
    */
   override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>): void {
     const ledMesh = this.findLedMesh(object3D);
     const hitbox = this.findHitbox(object3D);
     if (!ledMesh || !hitbox) return;
 
+    const ledMat = ledMesh.material as THREE.MeshLambertMaterial;
+
     // changing colors
     const idleColor = config.get('idleColor');
     if (idleColor) {
       // Convert preset to hex if needed, then parse
       const idleColorHex = parseInt(presetOrHexToHex(idleColor).replace('#', ''), 16);
-      ledMesh.material.color.setHex(idleColorHex);
+      ledMat.color.setHex(idleColorHex);
       ledMesh.userData.idleColorHex = idleColorHex;
     }
     const activeColor = config.get('activeColor');
@@ -203,60 +224,192 @@ export class SmallLEDVisualFactory extends ComponentVisualFactoryBase {
 
     const scale = parseFloat(config.get('size') || '1');
     object3D.scale.set(scale, scale, scale);
+
+    this.updateAnimation(object3D, null);
   }
 
   /**
-   * Update LED animation based on simulation state
+   * Update LED animation based on simulation state.
    *
-   * @param object3D - The Object3D created by createVisual()
-   * @param state - The SmallLED's current simulation state
-   *
-   * @remarks
-   * Applies yellow emissive glow when LED is lit (state.isLit === true)
+   * - null state / no context: restore private material, cleanup mixer
+   * - paused/initial: snap to target state
+   * - playing + transitional (goingOn/goingOff): smooth material animation
+   * - playing + stable (on/off): snap to final state
    */
   override updateAnimation(object3D: THREE.Object3D, state: ComponentState | null): void {
     const ledMesh = this.findLedMesh(object3D);
     if (!ledMesh) return;
-    if (!state) {
-      ledMesh.userData.materialLocked = false;
-      ledMesh.material.emissive.setHex(0x000000);
-      ledMesh.material.emissiveIntensity = 0;
+
+    // Leaving simulation: restore private material
+    if (!state || !this._animationContext) {
+      this._cleanupMixer(object3D);
+      this._restorePrivateMaterial(ledMesh);
       return;
     }
 
     const ledState = state as SmallLEDState;
-    if (ledState.isLit) {
-      // Apply LED glow
-      ledMesh.userData.materialLocked = true;
-      ledMesh.material.emissive.setHex(ledMesh.userData.activeColorHex);
-      ledMesh.material.emissiveIntensity = SmallLEDVisualFactory.LED_LIT_INTENSITY;
-    } else {
-      // Remove glow
-      ledMesh.userData.materialLocked = false;
-      ledMesh.material.emissive.setHex(0x000000);
-      ledMesh.material.emissiveIntensity = 0;
+
+    // Paused/initial: snap to current state (mixer won't advance)
+    if (this._animationContext.simulationStatus !== 'playing') {
+      this._cleanupMixer(object3D);
+      this._snapToState(ledMesh, ledState.isLit);
+      return;
     }
+
+    // Playing + transitional state: animate
+    if (state.hasExpiration) {
+      this._animateLed(object3D, ledMesh, state);
+      return;
+    }
+
+    // Playing + stable state: snap, cleanup mixer
+    this._cleanupMixer(object3D);
+    this._snapToState(ledMesh, ledState.isLit);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Material clone / restore (PRIVATE → ANIMATION_CLONE → PRIVATE)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Clone the PRIVATE material for independent per-instance animation.
+   * Stashes the original PRIVATE material in mesh.userData.privateMat.
+   * No-op if already cloned.
+   */
+  private _ensureClonedMaterial(ledMesh: THREE.Mesh): void {
+    const mat = ledMesh.material as THREE.MeshLambertMaterial;
+    if (mat.userData.matType === CmpMatType.ANIMATION_CLONE) return;
+    ledMesh.userData.privateMat = mat;
+    ledMesh.material = mat.clone();
+    (ledMesh.material as THREE.MeshLambertMaterial).userData.matType = CmpMatType.ANIMATION_CLONE;
   }
 
   /**
-   * Find the LED mesh within the component group
-   *
-   * @param object3D - The Object3D group created by createVisual()
-   * @returns The LED mesh if found, null otherwise
-   *
-   * @remarks
-   * Searches for a mesh with userData.part === 'led'
+   * Dispose the animation clone and restore the stashed PRIVATE material.
+   * No-op if not cloned.
    */
-  private findLedMesh(
-    object3D: THREE.Object3D
-  ): (THREE.Mesh & { material: THREE.MeshStandardMaterial }) | null {
-    let ledMesh: (THREE.Mesh & { material: THREE.MeshStandardMaterial }) | null = null;
+  private _restorePrivateMaterial(ledMesh: THREE.Mesh): void {
+    const mat = ledMesh.material as THREE.MeshLambertMaterial;
+    if (mat.userData.matType !== CmpMatType.ANIMATION_CLONE) return;
+    mat.dispose();
+    if (ledMesh.userData.privateMat) {
+      ledMesh.material = ledMesh.userData.privateMat;
+      delete ledMesh.userData.privateMat;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Snap (immediate state application)
+  // ---------------------------------------------------------------------------
+
+  private _snapToState(ledMesh: THREE.Mesh, isLit: boolean): void {
+    this._ensureClonedMaterial(ledMesh);
+    const mat = ledMesh.material as THREE.MeshLambertMaterial;
+
+    if (isLit) {
+      mat.emissive.setHex(ledMesh.userData.activeColorHex);
+      mat.emissiveIntensity = this.LED_LIT_INTENSITY;
+    } else {
+      mat.emissive.setHex(0x000000);
+      mat.emissiveIntensity = 0;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // AnimationMixer management
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Create a smooth material animation for goingOn / goingOff transitions.
+   */
+  private _animateLed(object3D: THREE.Object3D, ledMesh: THREE.Mesh, state: ComponentState): void {
+    // Prevent duplicate animation for same transition
+    if (object3D.userData.currentActionStart === state.startTick) return;
+
+    this._ensureClonedMaterial(ledMesh);
+
+    const tps = this._animationContext!.ticksPerSecond;
+    const span = state.expirationTick - state.startTick;
+    const durationSeconds = span / tps;
+
+    // Get or create mixer
+    let mixer: THREE.AnimationMixer = object3D.userData.mixer;
+    if (!mixer) {
+      mixer = new THREE.AnimationMixer(object3D);
+      object3D.userData.mixer = mixer;
+    }
+
+    // Read current material values BEFORE stopping previous action,
+    // so mid-transition interrupts animate from actual visual state
+    const mat = ledMesh.material as THREE.MeshLambertMaterial;
+    const currentIntensity = mat.emissiveIntensity;
+    const currentRGB = [mat.emissive.r, mat.emissive.g, mat.emissive.b];
+
+    // Stop previous animation
+    if (object3D.userData.currentAction) {
+      (object3D.userData.currentAction as THREE.AnimationAction).stop();
+    }
+    if (object3D.userData.currentClip) {
+      mixer.uncacheClip(object3D.userData.currentClip as THREE.AnimationClip);
+    }
+
+    // Determine end values based on transition direction
+    const isGoingOn = state.state === 'goingOn';
+    const endIntensity = isGoingOn ? this.LED_LIT_INTENSITY : 0;
+    const activeHex = ledMesh.userData.activeColorHex as number;
+    const activeColor = new THREE.Color(activeHex);
+    const endRGB = isGoingOn ? [activeColor.r, activeColor.g, activeColor.b] : this.UNLIT_RGB;
+
+    const tracks = [
+      new THREE.NumberKeyframeTrack(
+        'led.material.emissiveIntensity',
+        [0, durationSeconds],
+        [currentIntensity, endIntensity]
+      ),
+      new THREE.ColorKeyframeTrack(
+        'led.material.emissive',
+        [0, durationSeconds],
+        [...currentRGB, ...endRGB]
+      ),
+    ];
+
+    const clip = new THREE.AnimationClip('ledGlow', durationSeconds, tracks);
+    const action = mixer.clipAction(clip);
+    action.loop = THREE.LoopOnce;
+    action.clampWhenFinished = true;
+    action.play();
+
+    // Store references for cleanup/interruption
+    object3D.userData.currentActionStart = state.startTick;
+    object3D.userData.currentAction = action;
+    object3D.userData.currentClip = clip;
+  }
+
+  /**
+   * Stop all animations, clean up mixer.
+   */
+  private _cleanupMixer(object3D: THREE.Object3D): void {
+    const mixer = object3D.userData.mixer as THREE.AnimationMixer | undefined;
+    if (mixer) {
+      mixer.stopAllAction();
+      mixer.uncacheRoot(object3D);
+      delete object3D.userData.mixer;
+    }
+    delete object3D.userData.currentAction;
+    delete object3D.userData.currentClip;
+    delete object3D.userData.currentActionStart;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
+  private findLedMesh(object3D: THREE.Object3D): THREE.Mesh | null {
+    let ledMesh: THREE.Mesh | null = null;
 
     object3D.traverse((child) => {
       if (child instanceof THREE.Mesh && child.userData.part === 'led') {
-        if (child.material instanceof THREE.MeshStandardMaterial) {
-          ledMesh = child as THREE.Mesh & { material: THREE.MeshStandardMaterial };
-        }
+        ledMesh = child as THREE.Mesh;
       }
     });
 

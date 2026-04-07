@@ -6,13 +6,20 @@
  * Supports dynamic registration and fallback for unknown component types.
  */
 
-import {type Component, type ComponentType, type ComponentState, ENode} from 'simple-circuit-engine/core';
+import {
+  type Component,
+  type ComponentType,
+  type ComponentState,
+  ENode,
+} from 'simple-circuit-engine/core';
 import { ENodeSourceType } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
 import { HitboxLayers } from '../utils/LayerConstants';
 
-import type { ConfigFormDefinition, VisualContext } from '../types';
-import type {Direction2D} from "../utils/GeometryUtils";
+import type { AnimationContext, ConfigFormDefinition, VisualContext } from '../types';
+import type { Direction2D } from '../utils/GeometryUtils';
+import { MeshLambertMaterial } from 'three';
+import { CMP_MATERIALS, CmpMatCategory, CmpMatType, CmpMatVariant } from './types';
 
 /**
  * Interface for component visual factories
@@ -189,6 +196,14 @@ export interface IComponentVisualFactory {
    * Converts UI values back to core string format (e.g., true → "open").
    */
   mapFormToCoreConfig(formData: Map<string, any>): Map<string, string>;
+
+  /**
+   * Set the shared animation context for simulation-aware factories.
+   * Called by the registry fan-out when entering/leaving simulation.
+   *
+   * @param ctx - Animation context, or null when leaving simulation
+   */
+  setAnimationContext(ctx: AnimationContext | null): void;
 }
 
 /**
@@ -222,17 +237,28 @@ export interface IComponentVisualFactory {
  * ```
  */
 export abstract class ComponentVisualFactoryBase implements IComponentVisualFactory {
+  /** Shared animation context injected by the registry during simulation */
+  protected _animationContext: AnimationContext | null = null;
+
+  /** ComponentType handled by this factory, set in each subclass constructor */
+  protected _componentType: ComponentType | null = null;
+
   /** Default hover glow color (light blue) */
   protected static readonly DEFAULT_HOVER_COLOR = 0x4488ff;
 
   /** Default hover emissive intensity */
   protected static readonly DEFAULT_HOVER_INTENSITY = 0.6;
 
-  /** Default selection glow color (orange) */
-  protected static readonly DEFAULT_SELECTION_COLOR = 0xff8800;
-
-  /** Default selection emissive intensity (higher than hover) */
-  protected static readonly DEFAULT_SELECTION_INTENSITY = 0.8;
+  protected getMat(
+    category: CmpMatCategory,
+    variant: CmpMatVariant = CmpMatVariant.NORMAL
+  ): MeshLambertMaterial {
+    const matCat = CMP_MATERIALS[category];
+    if (!matCat) {
+      return CMP_MATERIALS[CmpMatCategory.WHITE][CmpMatVariant.NORMAL];
+    }
+    return matCat[variant] || CMP_MATERIALS[CmpMatCategory.WHITE][CmpMatVariant.NORMAL];
+  }
 
   defaultRotation() {
     return 0;
@@ -275,13 +301,13 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
         return;
       }
       if (!(child instanceof THREE.Mesh)) return;
-      if (child.userData.materialLocked) return; // this flag indicates material is locked by animation
 
       const material = child.material;
-      if (material.visible === false) return;
-      if (!(material instanceof THREE.MeshStandardMaterial)) return;
-      material.emissive.setHex(ComponentVisualFactoryBase.DEFAULT_HOVER_COLOR);
-      material.emissiveIntensity = ComponentVisualFactoryBase.DEFAULT_HOVER_INTENSITY;
+      if (material.visible === false || material.userData?.matType !== CmpMatType.SHARED) return;
+
+      const matCategory = CMP_MATERIALS[material.userData.matCat as CmpMatCategory];
+      if (!matCategory) return;
+      child.material = matCategory[CmpMatVariant.HOVERED];
     });
   }
 
@@ -302,11 +328,13 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
         return;
       }
       if (!(child instanceof THREE.Mesh)) return;
-      if (child.userData.materialLocked) return; // this flag indicates material is locked by animation
 
       const material = child.material;
-      if (!(material instanceof THREE.MeshStandardMaterial)) return;
-      material.emissiveIntensity = 0;
+      if (material.visible === false || material.userData?.matType !== CmpMatType.SHARED) return;
+
+      const matCategory = CMP_MATERIALS[material.userData.matCat as CmpMatCategory];
+      if (!matCategory) return;
+      child.material = matCategory[CmpMatVariant.NORMAL];
     });
   }
 
@@ -328,12 +356,13 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
         return;
       }
       if (!(child instanceof THREE.Mesh)) return;
+
       const material = child.material;
-      if (material.visible === false || material.opacity < 0.5) return;
-      if (!(material instanceof THREE.MeshStandardMaterial)) return;
-      // Apply selection effect (overrides hover if present)
-      material.emissive.setHex(ComponentVisualFactoryBase.DEFAULT_SELECTION_COLOR);
-      material.emissiveIntensity = ComponentVisualFactoryBase.DEFAULT_SELECTION_INTENSITY;
+      if (material.visible === false || material.userData?.matType !== CmpMatType.SHARED) return;
+
+      const matCategory = CMP_MATERIALS[material.userData.matCat as CmpMatCategory];
+      if (!matCategory) return;
+      child.material = matCategory[CmpMatVariant.SELECTED];
     });
 
     object3D.userData.isSelected = true;
@@ -357,11 +386,13 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
         return;
       }
       if (!(child instanceof THREE.Mesh)) return;
+
       const material = child.material;
-      if (material.visible === false || material.opacity < 0.5) return;
-      if (!(material instanceof THREE.MeshStandardMaterial)) return;
-      // remove selection effect
-      material.emissiveIntensity = 0;
+      if (material.visible === false || material.userData?.matType !== CmpMatType.SHARED) return;
+
+      const matCategory = CMP_MATERIALS[material.userData.matCat as CmpMatCategory];
+      if (!matCategory) return;
+      child.material = matCategory[CmpMatVariant.NORMAL];
     });
     object3D.userData.isSelected = false;
   }
@@ -369,8 +400,8 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
   /**
    * @private
    */
-  private pointPinGroupToward(group: THREE.Group, direction: Direction2D){
-    switch(direction) {
+  private pointPinGroupToward(group: THREE.Group, direction: Direction2D) {
+    switch (direction) {
       case 'right':
         group.rotateZ(-Math.PI / 2);
         group.rotateY(Math.PI);
@@ -402,11 +433,11 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
    * @returns THREE.Group configured as pin group
    */
   protected createPinGroup(
-      node: ENode,
-      pointsTo: Direction2D = 'right',
-      visualRotation: THREE.Euler | null = null
-      ): THREE.Group {
-    if (!node.component){
+    node: ENode,
+    pointsTo: Direction2D = 'right',
+    visualRotation: THREE.Euler | null = null
+  ): THREE.Group {
+    if (!node.component) {
       throw new Error('This method only manage components eNodes (pins)');
     }
 
@@ -420,38 +451,46 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
       enodeId: node.id,
       label: node.pinLabel,
       subtype: node.subtype,
-      lockedSourceType: lockedSubtypes.includes(node.subtype)
+      lockedSourceType: lockedSubtypes.includes(node.subtype),
     };
 
     const pinGroup = new THREE.Group();
-    pinGroup.userData = {...userInfos, type: 'enodeGroup', sourceType: node.source || null};
+    pinGroup.userData = { ...userInfos, type: 'enodeGroup', sourceType: node.source || null };
     // default radius
     let hitboxRadius = 0.9;
     let visualRadius = 0.3;
     // since those pins won't be used for wiring they can be smaller
-    if(smallSubtypes.includes(node.subtype)){
+    if (smallSubtypes.includes(node.subtype)) {
       hitboxRadius = 0.25;
       visualRadius = 0.2;
     }
 
     // Hitbox (hemisphere, raycastable)
-    const hitboxGeom = new THREE.SphereGeometry(hitboxRadius, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+    const hitboxGeom = new THREE.SphereGeometry(
+      hitboxRadius,
+      16,
+      8,
+      0,
+      Math.PI * 2,
+      0,
+      Math.PI / 2
+    );
     const hitbox = new THREE.Mesh(
       hitboxGeom,
-      new THREE.MeshStandardMaterial({
+      new THREE.MeshBasicMaterial({
         color: ComponentVisualFactoryBase.DEFAULT_HOVER_COLOR,
         transparent: true,
         opacity: 0,
       })
     );
-    hitbox.userData = {...userInfos, type: 'enodeHitbox'};
+    hitbox.userData = { ...userInfos, type: 'enodeHitbox', componentType: this._componentType };
     hitbox.layers.set(HitboxLayers.ENODE);
     pinGroup.add(hitbox);
 
     // Visual sphere
     const visual = new THREE.Mesh(
       new THREE.SphereGeometry(visualRadius, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
-      new THREE.MeshStandardMaterial({
+      new THREE.MeshLambertMaterial({
         color: this.pinColorForSourceType(node.source || null),
         emissive: this.pinColorForSourceType(node.source || null),
         emissiveIntensity: 0,
@@ -461,7 +500,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
       ...userInfos,
       type: 'enode',
       sourceType: node.source || null,
-      radius: visualRadius
+      radius: visualRadius,
     };
     pinGroup.add(visual);
     if (!!visualRotation) {
@@ -479,34 +518,35 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
    * @protected
    */
   protected createPinCounterpart(
-      pinGroup: THREE.Group,
-      material: THREE.MeshStandardMaterial
-      ): THREE.Mesh | null {
-
+    pinGroup: THREE.Group,
+    material: THREE.MeshLambertMaterial
+  ): THREE.Mesh | null {
     const pinVisual = this.findPinVisualFromGroup(pinGroup);
-    if(!pinVisual){
+    if (!pinVisual) {
       return null;
     }
 
     const visual = new THREE.Mesh(
-        new THREE.SphereGeometry(pinVisual.userData.radius, 16, 8,
-            0, Math.PI * 2, 0, Math.PI / 2),
-        material
+      new THREE.SphereGeometry(pinVisual.userData.radius, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+      material
     );
     visual.userData = {
       type: 'component',
       componentId: pinVisual.userData.componentId,
-      part: 'pinCounterpart'
-    }
+      part: 'pinCounterpart',
+    };
     visual.position.copy(pinGroup.position);
 
     const pinVisualRotation = pinVisual.rotation.clone();
 
-    visual.rotation.copy(new THREE.Euler(
+    visual.rotation.copy(
+      new THREE.Euler(
         -pinGroup.rotation.x,
         -pinGroup.rotation.y,
         -pinGroup.rotation.z,
-        pinGroup.rotation.order));
+        pinGroup.rotation.order
+      )
+    );
     visual.rotateX(-pinVisualRotation.x);
     visual.rotateY(-pinVisualRotation.y);
     visual.rotateZ(pinVisualRotation.z);
@@ -561,8 +601,6 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     return this.findPinVisualFromGroup(pinGroup);
   }
 
-
-
   /**
    * Create component hitbox mesh
    *
@@ -611,14 +649,14 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
 
   protected pinColorForSourceType(sourceType: ENodeSourceType | null): number {
     if (!sourceType) {
-      return 0xD4894C; // Copper for no source
+      return 0xd4894c; // Copper for no source
     }
     if (sourceType === ENodeSourceType.Voltage) {
       return 0xff0000; // Red for voltage
     } else if (sourceType === ENodeSourceType.Current) {
       return 0x0000ff; // Blue for current
     }
-    return 0xD4894C; // Copper by default
+    return 0xd4894c; // Copper by default
   }
 
   protected pinColorForElectricalState(state: 'current' | 'voltage' | 'vc' | 'idle'): number {
@@ -660,13 +698,14 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
       | THREE.Mesh
       | undefined;
 
-    if (!visual || !(visual.material instanceof THREE.MeshStandardMaterial)) {
+    if (!visual) {
       return;
     }
     visual.userData.sourceType = sourceType;
     const color = this.pinColorForSourceType(sourceType);
-    visual.material.color.setHex(color);
-    visual.material.emissive.setHex(color);
+    const material = visual.material as THREE.MeshLambertMaterial;
+    material.color.setHex(color);
+    material.emissive.setHex(color);
   }
 
   /**
@@ -680,12 +719,11 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
 
     pinGroup.traverse((child) => {
       if (child instanceof THREE.Mesh) {
-        const material = child.material as THREE.MeshStandardMaterial;
+        const material = child.material as THREE.MeshLambertMaterial;
 
         if (child.userData.type === 'enodeHitbox') {
           material.opacity = 0.3;
-        }
-        else if (child.userData.type === 'enode') {
+        } else if (child.userData.type === 'enode') {
           material.color.setHex(0x00ff00);
           // Apply hover effect
           material.emissiveIntensity = 0.9;
@@ -703,12 +741,11 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     }
     pinGroup.userData.isHovered = false;
 
-    const source: ENodeSourceType | null =
-      pinGroup.userData.sourceType || null;
+    const source: ENodeSourceType | null = pinGroup.userData.sourceType || null;
 
     pinGroup.traverse((child) => {
       if (child instanceof THREE.Mesh) {
-        const material = child.material as THREE.MeshStandardMaterial;
+        const material = child.material as THREE.MeshLambertMaterial;
 
         if (child.userData.type === 'enodeHitbox') {
           material.opacity = 0;
@@ -767,6 +804,13 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
       config.set(key, String(value));
     }
     return config;
+  }
+
+  /**
+   * Set the shared animation context for simulation-aware factories.
+   */
+  setAnimationContext(ctx: AnimationContext | null): void {
+    this._animationContext = ctx;
   }
 }
 
@@ -833,4 +877,11 @@ export interface IFactoryRegistry {
    * @returns Array of ComponentType values that have registered factories
    */
   getRegisteredTypes(): ComponentType[];
+
+  /**
+   * Fan out animation context to all registered factories and the fallback.
+   *
+   * @param ctx - Animation context, or null when leaving simulation
+   */
+  setAnimationContext(ctx: AnimationContext | null): void;
 }

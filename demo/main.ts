@@ -2,7 +2,7 @@
  * Main entry point for the CircuitEngine demo (dev mode)
  * Uses ES modules directly with Vite HMR support
  */
-import { AxesHelper, WebGLRenderer } from 'three';
+import { AxesHelper, Clock, WebGLRenderer } from 'three';
 
 import {
   Circuit,
@@ -17,7 +17,7 @@ import {
   registerBasicComponentsFactories,
   registerGatesComponentsFactories,
 } from 'simple-circuit-engine/scene';
-import {CircuitOptions} from "../src";
+import { CircuitOptions } from '../src';
 
 // Create component factory registry with all visual factories
 const componentsFactoryRegistry = new GroupedFactoryRegistry(new DefaultVisualFactory());
@@ -45,8 +45,8 @@ engine.initialize(container, {
   initialMode: initialMode,
   controllerOptions: {
     mapControls: { zoomSpeed: 2 },
-    simulationAutoPlay: true,
-    simulationSpeed: 3,
+    simulationAutoPlay: false,
+    simulationSpeed: 1,
   },
 });
 
@@ -59,8 +59,11 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 container.appendChild(renderer.domElement);
 
 // Animation loop
+const clock = new Clock();
 function animate() {
   requestAnimationFrame(animate);
+  const delta = clock.getDelta();
+  engine.update(delta);
   engine.getControls().update();
   renderer.render(engine.getScene(), engine.getCamera());
 }

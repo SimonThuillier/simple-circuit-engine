@@ -1,8 +1,9 @@
 import { ComponentVisualFactoryBase } from '../ComponentVisualFactory';
-import {type Component, type ComponentState, type NandGateState} from 'simple-circuit-engine/core';
+import { ComponentType, type Component, type ComponentState } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
-import { AndGateGeometry } from '../../utils/GeometryUtils';
-import type {ConfigFormDefinition, VisualContext} from '../../types';
+import { AndGateGeometry, AndGateHoleGeometry } from '../../utils/GeometryUtils';
+import type { ConfigFormDefinition, VisualContext } from '../../types';
+import { CmpMatCategory, CmpMatType } from '../types';
 
 /**
  * Visual factory for NAND gates components
@@ -16,22 +17,12 @@ import type {ConfigFormDefinition, VisualContext} from '../../types';
  * - Emissive glow when Gate is high (based on simulation state)
  */
 export class NandGateVisualFactory extends ComponentVisualFactoryBase {
-  /** Gate high color */
-  protected static readonly HIGH_COLOR = 0xffffff;
-  /** Gate high emissive intensity */
-  protected static readonly HIGH_INTENSITY = 0.3;
-  /** Shared open envelope geometry */
-  protected readonly lowGeometry = AndGateGeometry(1.5, 1.6, 0.1, 0.4, 16);
-  /** Shared transient envelope geometry */
-  protected readonly transientGeometry = AndGateGeometry(1.5, 1.6, 0.45, 0.4, 16);
-  /** Shared transient envelope geometry */
-  protected readonly highGeometry = AndGateGeometry(1.5, 1.6, 0.799, 0.4, 16);
-  /** Shared material for negative marker **/
-  protected static readonly negativeMarkerMaterial = new THREE.MeshStandardMaterial({
-    color: 0xfafafa,
-  });
+  /** Shared envelope geometry */
+  protected readonly ENVELOPE_GEOM = AndGateGeometry(1.5, 1.6, 0.1, 0.4, 16);
+  /** Shared inner hole geometry */
+  protected readonly HOLE_GEOM = AndGateHoleGeometry(1.5, 1.6, 0.1, 0.4, 16)!;
   /** Shared geometry for negative marker **/
-  protected static readonly negativeMarkerGeometry = new THREE.CylinderGeometry(
+  protected readonly NEG_MARKER_GEOM = new THREE.CylinderGeometry(
     0.2,
     0.2,
     0.4,
@@ -42,11 +33,24 @@ export class NandGateVisualFactory extends ComponentVisualFactoryBase {
     Math.PI * 2
   );
 
+  protected readonly HOLE_COLOR_HIGH = new THREE.Color(0xff4444);
+  protected readonly HOLE_COLOR_LOW = new THREE.Color(0x4444ff);
+  protected readonly HOLE_EMISSIVE_HIGH_INTENSITY = 0.5;
+  protected readonly HOLE_EMISSIVE_LOW_INTENSITY = 0.2;
+
+  constructor() {
+    super();
+    this._componentType = ComponentType.NandGate;
+  }
+
   override defaultRotation() {
     return Math.PI;
   }
 
   createVisual(component: Component, context: VisualContext): THREE.Object3D {
+    if (component.type !== this._componentType) {
+      throw new Error(`Factory mismatch: expected "${this._componentType}", got "${component.type}"`);
+    }
     // Root group (not rendered, just organizational)
     const group = new THREE.Group();
     group.userData = {
@@ -60,23 +64,32 @@ export class NandGateVisualFactory extends ComponentVisualFactoryBase {
     group.add(hitbox);
 
     // Visual Gate
-    const envelopeMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
-    envelopeMaterial.emissive.setHex(NandGateVisualFactory.HIGH_COLOR);
-    envelopeMaterial.emissiveIntensity = 0;
-    const envelope = new THREE.Mesh(this.lowGeometry, envelopeMaterial);
+    const envelope = new THREE.Mesh(this.ENVELOPE_GEOM, this.getMat(CmpMatCategory.WHITE));
     envelope.userData = {
       type: 'component',
       componentId: component.id,
       part: 'envelope',
-      initialState: 'low',
     };
     envelope.rotateX(-Math.PI / 2);
     envelope.rotateY(Math.PI);
     envelope.position.set(0, 0.35, 0);
     group.add(envelope);
 
+    const hole = new THREE.Mesh(this.HOLE_GEOM, this.getMat(CmpMatCategory.DARK_GRAY));
+    hole.name = 'hole'; // required for AnimationMixer property binding
+    hole.userData = {
+      type: 'component',
+      componentId: component.id,
+      part: 'hole',
+      initialState: 'low',
+    };
+    hole.rotateX(-Math.PI / 2);
+    hole.rotateY(Math.PI);
+    hole.position.set(0, 0.35, 0);
+    group.add(hole);
+
     // pins (not called if preview - no pins)
-    if (component.pins.length > 0){
+    if (component.pins.length > 0) {
       this.createPinsVisual(component, context, group);
     }
 
@@ -84,8 +97,7 @@ export class NandGateVisualFactory extends ComponentVisualFactoryBase {
     return group;
   }
 
-  protected createPinsVisual(component: Component, context: VisualContext, group: THREE.Group){
-
+  protected createPinsVisual(component: Component, context: VisualContext, group: THREE.Group) {
     const vccNode = context.getENode(component.pins[0]!);
     if (vccNode) {
       const vccGroup = this.createPinGroup(vccNode, 'bottom');
@@ -94,7 +106,7 @@ export class NandGateVisualFactory extends ComponentVisualFactoryBase {
     }
 
     const gndNode = context.getENode(component.pins[4]!);
-    if (gndNode){
+    if (gndNode) {
       const gndGroup = this.createPinGroup(gndNode, 'top');
       gndGroup.position.set(0.15, 0, -0.79);
       group.add(gndGroup);
@@ -115,15 +127,14 @@ export class NandGateVisualFactory extends ComponentVisualFactoryBase {
     }
 
     const outputNode = context.getENode(component.pins[3]!);
-    if(outputNode){
+    if (outputNode) {
       const outputGroup = this.createPinGroup(outputNode, 'left');
       outputGroup.position.set(-0.7, 0, 0);
       group.add(outputGroup);
     }
   }
 
-
-    /**
+  /**
    * Get config form definition
    *
    * @param config - Optional current config to determine disabled state of transitionSpan
@@ -195,21 +206,21 @@ export class NandGateVisualFactory extends ComponentVisualFactoryBase {
   }
 
   override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>) {
-    const envelopeMesh = this.findEnvelopeMesh(object3D);
-    if (!envelopeMesh) return;
+    const holeMesh = this.findHoleMesh(object3D);
+    if (!holeMesh) return;
 
     let negativeMarkerMesh = this.findNegativeMarkerMesh(object3D);
 
     if (config.get('activationLogic') === 'negative') {
-      envelopeMesh.userData.initialState = 'high';
+      holeMesh.userData.initialState = 'high';
       if (!negativeMarkerMesh) {
         negativeMarkerMesh = new THREE.Mesh(
-          NandGateVisualFactory.negativeMarkerGeometry,
-          NandGateVisualFactory.negativeMarkerMaterial
+          this.NEG_MARKER_GEOM,
+          this.getMat(CmpMatCategory.WHITE)
         );
         negativeMarkerMesh.userData = {
           type: 'component',
-          componentId: envelopeMesh.userData.componentId,
+          componentId: holeMesh.userData.componentId,
           part: 'negativeMarker',
         };
 
@@ -217,12 +228,11 @@ export class NandGateVisualFactory extends ComponentVisualFactoryBase {
         object3D.add(negativeMarkerMesh);
       }
     } else {
-      envelopeMesh.userData.initialState = 'low';
+      holeMesh.userData.initialState = 'low';
       if (negativeMarkerMesh) {
         object3D.remove(negativeMarkerMesh);
       }
     }
-    this.updateAnimation(object3D, null);
   }
 
   /**
@@ -232,30 +242,148 @@ export class NandGateVisualFactory extends ComponentVisualFactoryBase {
    * @param state - The component current simulation state
    */
   override updateAnimation(object3D: THREE.Object3D, state: ComponentState | null): void {
-    const envelopeMesh = this.findEnvelopeMesh(object3D);
-    if (!envelopeMesh) return;
-    if (!state) {
-      if (envelopeMesh.userData.initialState === 'high') {
-        envelopeMesh.geometry = this.highGeometry;
-        envelopeMesh.material.emissiveIntensity = NandGateVisualFactory.HIGH_INTENSITY;
+    const holeMesh = this.findHoleMesh(object3D);
+    if (!holeMesh) return;
+
+    if (!state || !this._animationContext || state.state === 'indeterminate') {
+      this._cleanupMixer(object3D);
+      this._restoreSharedHoleMaterial(holeMesh);
+      return;
+    }
+
+    if (state.state === 'high') {
+      this._cleanupMixer(object3D);
+      this._setHoleColor(holeMesh, this.HOLE_COLOR_HIGH, this.HOLE_EMISSIVE_HIGH_INTENSITY);
+      return;
+    }
+
+    if (state.state === 'low') {
+      this._cleanupMixer(object3D);
+      this._setHoleColor(holeMesh, this.HOLE_COLOR_LOW, this.HOLE_EMISSIVE_LOW_INTENSITY);
+      return;
+    }
+
+    // Paused + transitional: snap to start color (before the transition began)
+    if (this._animationContext.simulationStatus !== 'playing') {
+      if (state.state === 'rising') {
+        this._setHoleColor(holeMesh, this.HOLE_COLOR_LOW, this.HOLE_EMISSIVE_LOW_INTENSITY);
       } else {
-        envelopeMesh.geometry = this.lowGeometry;
-        envelopeMesh.material.emissiveIntensity = 0;
+        // falling
+        this._setHoleColor(holeMesh, this.HOLE_COLOR_HIGH, this.HOLE_EMISSIVE_HIGH_INTENSITY);
       }
       return;
     }
 
-    const gateState = state as NandGateState;
-    if (gateState.isHigh) {
-      envelopeMesh.geometry = this.highGeometry;
-      envelopeMesh.material.emissiveIntensity = NandGateVisualFactory.HIGH_INTENSITY;
-    } else if (gateState.isInTransition) {
-      envelopeMesh.geometry = this.transientGeometry;
-      envelopeMesh.material.emissiveIntensity = 0.5 * NandGateVisualFactory.HIGH_INTENSITY;
-    } else {
-      envelopeMesh.geometry = this.lowGeometry;
-      envelopeMesh.material.emissiveIntensity = 0;
+    // Playing + transitional: animate
+    if (state.hasExpiration) {
+      this._animateHoleColor(object3D, holeMesh, state);
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Hole material helpers
+  // ---------------------------------------------------------------------------
+
+  private _setHoleColor(holeMesh: THREE.Mesh, color: THREE.Color, emissiveIntensity: number): void {
+    this._ensureClonedHoleMaterial(holeMesh);
+    const mat = holeMesh.material as THREE.MeshLambertMaterial;
+    mat.color.copy(color);
+    mat.emissive.copy(color);
+    mat.emissiveIntensity = emissiveIntensity;
+  }
+
+  private _ensureClonedHoleMaterial(holeMesh: THREE.Mesh): void {
+    const mat = holeMesh.material as THREE.MeshLambertMaterial;
+    if (mat.userData.matType === CmpMatType.ANIMATION_CLONE) return;
+    holeMesh.material = this.getMat(CmpMatCategory.DARK_GRAY).clone();
+    (holeMesh.material as THREE.MeshLambertMaterial).userData.matType = CmpMatType.ANIMATION_CLONE;
+  }
+
+  private _restoreSharedHoleMaterial(holeMesh: THREE.Mesh): void {
+    const mat = holeMesh.material as THREE.MeshLambertMaterial;
+    if (mat.userData.matType !== CmpMatType.ANIMATION_CLONE) return;
+    mat.dispose();
+    holeMesh.material = this.getMat(CmpMatCategory.DARK_GRAY);
+  }
+
+  private _cleanupMixer(object3D: THREE.Object3D): void {
+    const mixer = object3D.userData.mixer as THREE.AnimationMixer | undefined;
+    if (mixer) {
+      mixer.stopAllAction();
+      mixer.uncacheRoot(object3D);
+      delete object3D.userData.mixer;
+    }
+    delete object3D.userData.currentAction;
+    delete object3D.userData.currentClip;
+    delete object3D.userData.currentActionStart;
+  }
+
+  /**
+   * Animate the hole color between LOW and HIGH over the transition span.
+   * Reads current color for mid-transition support.
+   */
+  private _animateHoleColor(
+    object3D: THREE.Object3D,
+    holeMesh: THREE.Mesh,
+    state: ComponentState
+  ): void {
+    if (object3D.userData.currentActionStart === state.startTick) return;
+
+    const tps = this._animationContext!.ticksPerSecond;
+    const span = state.expirationTick - state.startTick;
+    const durationSeconds = span / tps;
+
+    this._ensureClonedHoleMaterial(holeMesh);
+    const mat = holeMesh.material as THREE.MeshLambertMaterial;
+
+    const toColor = state.state === 'rising' ? this.HOLE_COLOR_HIGH : this.HOLE_COLOR_LOW;
+    const toIntensity =
+      state.state === 'rising'
+        ? this.HOLE_EMISSIVE_HIGH_INTENSITY
+        : this.HOLE_EMISSIVE_LOW_INTENSITY;
+
+    const currentRGB = [mat.color.r, mat.color.g, mat.color.b];
+    const endRGB = [toColor.r, toColor.g, toColor.b];
+    const currentIntensity = mat.emissiveIntensity;
+
+    let mixer: THREE.AnimationMixer = object3D.userData.mixer;
+    if (!mixer) {
+      mixer = new THREE.AnimationMixer(object3D);
+      object3D.userData.mixer = mixer;
+    }
+
+    if (object3D.userData.currentAction) {
+      (object3D.userData.currentAction as THREE.AnimationAction).stop();
+    }
+    if (object3D.userData.currentClip) {
+      mixer.uncacheClip(object3D.userData.currentClip as THREE.AnimationClip);
+    }
+
+    const clip = new THREE.AnimationClip('holeColor', durationSeconds, [
+      new THREE.ColorKeyframeTrack(
+        'hole.material.color',
+        [0, durationSeconds],
+        [...currentRGB, ...endRGB]
+      ),
+      new THREE.ColorKeyframeTrack(
+        'hole.material.emissive',
+        [0, durationSeconds],
+        [...currentRGB, ...endRGB]
+      ),
+      new THREE.NumberKeyframeTrack(
+        'hole.material.emissiveIntensity',
+        [0, durationSeconds],
+        [currentIntensity, toIntensity]
+      ),
+    ]);
+    const action = mixer.clipAction(clip);
+    action.loop = THREE.LoopOnce;
+    action.clampWhenFinished = true;
+    action.play();
+
+    object3D.userData.currentActionStart = state.startTick;
+    object3D.userData.currentAction = action;
+    object3D.userData.currentClip = clip;
   }
 
   /**
@@ -267,19 +395,35 @@ export class NandGateVisualFactory extends ComponentVisualFactoryBase {
    * @remarks
    * Searches for a mesh with userData.part === 'envelope'
    */
-  protected findEnvelopeMesh(
-    object3D: THREE.Object3D
-  ): (THREE.Mesh & { material: THREE.MeshStandardMaterial }) | null {
-    let envelopeMesh: (THREE.Mesh & { material: THREE.MeshStandardMaterial }) | null = null;
+  protected findEnvelopeMesh(object3D: THREE.Object3D): THREE.Mesh | null {
+    let envelopeMesh: THREE.Mesh | null = null;
 
     object3D.traverse((child) => {
       if (child instanceof THREE.Mesh && child.userData.part === 'envelope') {
-        if (child.material instanceof THREE.MeshStandardMaterial) {
-          envelopeMesh = child as THREE.Mesh & { material: THREE.MeshStandardMaterial };
-        }
+        envelopeMesh = child as THREE.Mesh;
       }
     });
     return envelopeMesh;
+  }
+
+  /**
+   * Find the hole mesh within the component group
+   *
+   * @param object3D - The Object3D group created by createVisual()
+   * @returns The hole mesh if found, null otherwise
+   *
+   * @remarks
+   * Searches for a mesh with userData.part === 'hole'
+   */
+  protected findHoleMesh(object3D: THREE.Object3D): THREE.Mesh | null {
+    let holeMesh: THREE.Mesh | null = null;
+
+    object3D.traverse((child) => {
+      if (child instanceof THREE.Mesh && child.userData.part === 'hole') {
+        holeMesh = child as THREE.Mesh;
+      }
+    });
+    return holeMesh;
   }
 
   /**
@@ -291,16 +435,12 @@ export class NandGateVisualFactory extends ComponentVisualFactoryBase {
    * @remarks
    * Searches for a mesh with userData.part === 'negativeMarker'
    */
-  protected findNegativeMarkerMesh(
-    object3D: THREE.Object3D
-  ): (THREE.Mesh & { material: THREE.MeshStandardMaterial }) | null {
-    let negativeMarkerMesh: (THREE.Mesh & { material: THREE.MeshStandardMaterial }) | null = null;
+  protected findNegativeMarkerMesh(object3D: THREE.Object3D): THREE.Mesh | null {
+    let negativeMarkerMesh: THREE.Mesh | null = null;
 
     object3D.traverse((child) => {
       if (child instanceof THREE.Mesh && child.userData.part === 'negativeMarker') {
-        if (child.material instanceof THREE.MeshStandardMaterial) {
-          negativeMarkerMesh = child as THREE.Mesh & { material: THREE.MeshStandardMaterial };
-        }
+        negativeMarkerMesh = child as THREE.Mesh;
       }
     });
     return negativeMarkerMesh;

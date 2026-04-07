@@ -20,7 +20,7 @@ import {
 } from 'simple-circuit-engine/core';
 import { CircuitOptions } from '../../../../src/core/topology/CircuitOptions.js';
 import { CameraOptions } from '../../../../src/core/utils/CameraOptions.js';
-import {CIRCUIT_FILE_VERSION, CircuitMetadata} from "../../../../src";
+import { CIRCUIT_FILE_VERSION, CircuitMetadata } from '../../../../src';
 
 function createBehaviorRegistry(): BehaviorRegistry {
   const registry = new BehaviorRegistry();

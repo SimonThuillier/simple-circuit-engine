@@ -3,7 +3,7 @@
  * @module tests/scene/shared/GroupedFactoryRegistry.test
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   GroupedFactoryRegistry,
   DefaultVisualFactory,
@@ -16,7 +16,8 @@ import {
   LabelVisualFactory,
 } from '../../../src/scene/shared/components';
 import { registerBasicComponentsFactories } from '../../../src/scene/setup';
-import {ComponentType} from "../../../src";
+import { ComponentType } from '../../../src';
+import type { AnimationContext } from '../../../src/scene/shared/types';
 
 describe('GroupedFactoryRegistry', () => {
   let registry: GroupedFactoryRegistry;
@@ -444,6 +445,46 @@ describe('GroupedFactoryRegistry', () => {
       expect(typeof registry.unregister).toBe('function');
       expect(typeof registry.getRegisteredTypes).toBe('function');
       expect(typeof registry.register).toBe('function');
+    });
+  });
+
+  describe('setAnimationContext()', () => {
+    it('should propagate context to all registered factories and fallback', () => {
+      const fallback = new DefaultVisualFactory();
+      const spyFallback = vi.spyOn(fallback, 'setAnimationContext');
+      const battery = new BatteryVisualFactory();
+      const spyBattery = vi.spyOn(battery, 'setAnimationContext');
+      const sw = new SwitchVisualFactory();
+      const spySwitch = vi.spyOn(sw, 'setAnimationContext');
+
+      const reg = new GroupedFactoryRegistry(fallback);
+      reg.addGroup('basic', 'Basic', (group) => {
+        group.add(ComponentType.Battery, battery).add(ComponentType.Switch, sw);
+      });
+
+      const ctx: AnimationContext = { ticksPerSecond: 10, simulationStatus: 'initial' };
+      reg.setAnimationContext(ctx);
+
+      expect(spyBattery).toHaveBeenCalledWith(ctx);
+      expect(spySwitch).toHaveBeenCalledWith(ctx);
+      expect(spyFallback).toHaveBeenCalledWith(ctx);
+    });
+
+    it('should propagate null to clear context', () => {
+      const fallback = new DefaultVisualFactory();
+      const spyFallback = vi.spyOn(fallback, 'setAnimationContext');
+      const battery = new BatteryVisualFactory();
+      const spyBattery = vi.spyOn(battery, 'setAnimationContext');
+
+      const reg = new GroupedFactoryRegistry(fallback);
+      reg.addGroup('basic', 'Basic', (group) => {
+        group.add(ComponentType.Battery, battery);
+      });
+
+      reg.setAnimationContext(null);
+
+      expect(spyBattery).toHaveBeenCalledWith(null);
+      expect(spyFallback).toHaveBeenCalledWith(null);
     });
   });
 

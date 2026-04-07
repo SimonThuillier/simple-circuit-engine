@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.12] - 2026-04-07
+
+### Added
+
+- `clock` basic component that periodically switch from logic HIGH to logic LOW.
+- in edit mode added a pin/component toolTip when hovering a pin.
+
+### Changed
+
+- Used three.js animation system to produce smooth animations during components transitions.
+- Significant improvements on relays transitions animations.
+- Improvements on lightbulbs rendering and animations. 
+- Switches and DoubleThrowSwitches are now toggled top to bottom instead of laterally during simulation. 
+- update of dependencies (typescript, vite, three)
+- made three.js a perrDependency to prevent duplicate imports from consumers.
+- Various optimizations on the `core` event/behaviors engine. 
+
+### Removed
+
+- Script visualizer and its devDependencies.
+
+### Fixed
+
+- Fixed logic gates negative marker global material change when one hovered/selected.
+
 ## [0.0.11] - 2026-03-14
 
 ### Added
@@ -25,8 +50,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Logic **LOW** is now modeled as an input without voltage and with access to ground (appearing blue).
 - Logic gates now all have a special small `vcc` (voltage) and `gnd` (current) pin that reminds they must always be connected to those two to work.
 - inputs with both access to voltage and ground or none are considered **indeterminate** inputs for logic gates: receiving it on any input deactivate them (they output nothing).
-- A logic gate inactive but not indeterminate outputs at ground (blue) instead of nothing as before. 
-- various graphic improvements on components and scene rendering. 
+- A logic gate inactive but not indeterminate outputs at ground (blue) instead of nothing as before.
+- various graphic improvements on components and scene rendering.
 - Refactorization of `core` module.
 
 ### Removed

@@ -3,8 +3,8 @@
  * @module core/simulation/states
  */
 
-import {LogicGateState} from "./index";
-import type {UUID} from "../../../utils/types";
+import { LogicGateState } from './index';
+import type { UUID } from '../../../utils/types';
 
 /**
  * Simulation state for XOR8 Gate components (8 inputs).

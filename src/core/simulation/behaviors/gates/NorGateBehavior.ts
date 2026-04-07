@@ -6,11 +6,11 @@
 import type { Component } from '../../../topology/Component';
 import type { ComponentState } from '../../states/ComponentState';
 import { NorGateState } from '../../states/gates/NorGateState';
-import {LogicGateBehaviorMixin} from "./index";
-import type {IBehaviorResult, IComponentBehavior} from "../types";
-import type {INodeElectricalState} from "../../states/types";
-import type {UUID} from "../../../utils/types";
-import {ComponentType} from "../../../topology/types";
+import { LogicGateBehaviorMixin } from './index';
+import type { IBehaviorResult, IComponentBehavior } from '../types';
+import type { INodeElectricalState } from '../../states/types';
+import type { UUID } from '../../../utils/types';
+import { ComponentType } from '../../../topology/types';
 
 /**
  * Behavior implementation for NOR Gate components.
@@ -20,7 +20,6 @@ import {ComponentType} from "../../../topology/types";
  * @public
  */
 export class NorGateBehavior extends LogicGateBehaviorMixin implements IComponentBehavior {
-
   constructor() {
     super(ComponentType.NorGate);
   }
@@ -43,17 +42,24 @@ export class NorGateBehavior extends LogicGateBehaviorMixin implements IComponen
     nodeStates: ReadonlyMap<UUID, INodeElectricalState>,
     targetTick: number
   ): IBehaviorResult {
-    const pinStates = this.getPinStates(component, nodeStates);
-    const vccGuardBehavior = this.vccGuardBehavior(state, pinStates, targetTick);
-    if(vccGuardBehavior) {
+    const newPinStates = this.getPinStates(component, nodeStates);
+    state.pinStates = newPinStates;
+
+    const vccGuardBehavior = this.vccGuardBehavior(state, newPinStates, targetTick);
+    if (vccGuardBehavior) {
       return vccGuardBehavior;
     }
-    const nonLogicInputGuardBehavior = this.nonLogicInputGuardBehavior(state, pinStates, targetTick);
-    if(nonLogicInputGuardBehavior) {
+    const nonLogicInputGuardBehavior = this.nonLogicInputGuardBehavior(
+      state,
+      newPinStates,
+      targetTick
+    );
+    if (nonLogicInputGuardBehavior) {
       return nonLogicInputGuardBehavior;
     }
 
-    const anyInputHigh = pinStates.get('input1')!.hasVoltage || pinStates.get('input2')!.hasVoltage;
+    const anyInputHigh =
+      newPinStates.get('input1')!.hasVoltage || newPinStates.get('input2')!.hasVoltage;
 
     const activationCondition =
       component.config.get('activationLogic') === 'negative' ? !anyInputHigh : anyInputHigh;

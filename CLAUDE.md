@@ -8,15 +8,15 @@ Last updated: 2026-03-14
 
 ## Goals and principles
 
-To provide a vulgarization library that teaches the frontier between electronics and low level coding. 
+To provide a vulgarization library that teaches the frontier between electronics and low level coding.
 The electrical model is very simplified (no level of voltage/current, resistance, capacitance or inductance, type or frequency of current)
-and reduced to a logic state (has voltage/electrons sink true or false, has ground/electrons source true or false)/event engine. 
+and reduced to a logic state (has voltage/electrons sink true or false, has ground/electrons source true or false)/event engine.
 However, it aims to teach real-world electronic design principles so modeling of components propagation delay and logic families is emphasized.
 
 ## Active Technologies
 
-- TypeScript 5.9+ (strict mode), targeting ES2022
-- Three.js 0.181+ (scene, camera, controls, 3D objects, Line2)
+- TypeScript 6.0+ (strict mode), targeting ES2022
+- Three.js 0.183+ (scene, camera, controls, 3D objects, Line2)
 - lil-gui as helper for small interactive modal forms
 - in-memory circuit model, optional loading/saving from/to a JSON file
 
@@ -31,7 +31,6 @@ Simple Circuit Engine follows a **Model-Controller** architecture with clear sep
 
 The core module is **dependency-free** and contains all domain logic.
 Refer to its [CLAUDE.md](src/core/CLAUDE.md) for more details.
-
 
 ### Scene Module (`src/scene/`)
 
@@ -53,4 +52,3 @@ npm test && npm run lint
 ## Code Style
 
 TypeScript (strict mode), targeting ES2022: Follow standard conventions
-

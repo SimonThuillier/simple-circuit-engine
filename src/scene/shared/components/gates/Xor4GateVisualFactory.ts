@@ -1,8 +1,9 @@
-import {type Component} from 'simple-circuit-engine/core';
+import { ComponentType, type Component } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
-import {OrGateGeometry, XorGateTailGeometry} from '../../utils/GeometryUtils';
+import { OrGateGeometry, OrGateHoleGeometry, XorGateTailGeometry } from '../../utils/GeometryUtils';
 import { XorGateVisualFactory } from './XorGateVisualFactory';
 import type { VisualContext } from '../../types';
+import { CmpMatCategory } from '../types';
 
 /**
  * Visual factory for XOR gates components
@@ -17,15 +18,13 @@ import type { VisualContext } from '../../types';
  */
 export class Xor4GateVisualFactory extends XorGateVisualFactory {
   /** XOR tail geometry */
-  protected override readonly tailGeometry = XorGateTailGeometry(2, 3.6, 1.45, 0.13, 1.8, 0.4, 16);
+  protected override readonly TAIL_GEOM = XorGateTailGeometry(2, 3.6, 1.45, 0.13, 1.8, 0.4, 16);
   /** Shared open envelope geometry */
-  protected override readonly lowGeometry = OrGateGeometry(2, 3.6, 0.13, 0.4, 16);
-  /** Shared transient envelope geometry */
-  protected override readonly transientGeometry = OrGateGeometry(2, 3.6, 0.23, 0.4, 16);
-  /** Shared transient envelope geometry */
-  protected override readonly highGeometry = OrGateGeometry(2, 3.6, 1, 0.4, 16);
+  protected override readonly ENVELOPE_GEOM = OrGateGeometry(2, 3.6, 0.13, 0.4, 16);
+  /** Shared inner hole geometry */
+  protected override readonly HOLE_GEOM = OrGateHoleGeometry(2, 3.6, 0.13, 0.4, 16)!;
   /** Shared geometry for negative marker **/
-  protected override readonly negativeMarkerGeometry = new THREE.CylinderGeometry(
+  protected override readonly NEG_MARKER_GEOM = new THREE.CylinderGeometry(
     0.25,
     0.25,
     0.4,
@@ -36,8 +35,15 @@ export class Xor4GateVisualFactory extends XorGateVisualFactory {
     Math.PI * 2
   );
 
+  constructor() {
+    super();
+    this._componentType = ComponentType.Xor4Gate;
+  }
+
   override createVisual(component: Component, context: VisualContext): THREE.Object3D {
-    // Root group (not rendered, just organizational)
+    if (component.type !== this._componentType) {
+      throw new Error(`Factory mismatch: expected "${this._componentType}", got "${component.type}"`);
+    }
     const group = new THREE.Group();
     group.userData = {
       type: 'componentGroup',
@@ -50,22 +56,31 @@ export class Xor4GateVisualFactory extends XorGateVisualFactory {
     group.add(hitbox);
 
     // Visual Gate
-    const envelopeMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
-    envelopeMaterial.emissive.setHex(Xor4GateVisualFactory.HIGH_COLOR);
-    envelopeMaterial.emissiveIntensity = 0;
-    const envelope = new THREE.Mesh(this.lowGeometry, envelopeMaterial);
+    const envelope = new THREE.Mesh(this.ENVELOPE_GEOM, this.getMat(CmpMatCategory.WHITE));
     envelope.userData = {
       type: 'component',
       componentId: component.id,
       part: 'envelope',
-      initialState: 'low',
     };
     envelope.rotateX(-Math.PI / 2);
     envelope.rotateY(Math.PI);
     envelope.position.set(-0.25, 0.35, 0);
     group.add(envelope);
 
-    const tail = new THREE.Mesh(this.tailGeometry, envelopeMaterial);
+    const hole = new THREE.Mesh(this.HOLE_GEOM, this.getMat(CmpMatCategory.DARK_GRAY));
+    hole.name = 'hole'; // required for AnimationMixer property binding
+    hole.userData = {
+      type: 'component',
+      componentId: component.id,
+      part: 'hole',
+      initialState: 'low',
+    };
+    hole.rotateX(-Math.PI / 2);
+    hole.rotateY(Math.PI);
+    hole.position.set(-0.25, 0.35, 0);
+    group.add(hole);
+
+    const tail = new THREE.Mesh(this.TAIL_GEOM, this.getMat(CmpMatCategory.WHITE));
     tail.userData = {
       type: 'component',
       componentId: component.id,
@@ -85,7 +100,11 @@ export class Xor4GateVisualFactory extends XorGateVisualFactory {
     return group;
   }
 
-  protected override createPinsVisual(component: Component, context: VisualContext, group: THREE.Group) {
+  protected override createPinsVisual(
+    component: Component,
+    context: VisualContext,
+    group: THREE.Group
+  ) {
     const vccNode = context.getENode(component.pins[0]!);
     if (vccNode) {
       const vccGroup = this.createPinGroup(vccNode, 'bottom', new THREE.Euler(0, 0, 0.23));
@@ -95,7 +114,7 @@ export class Xor4GateVisualFactory extends XorGateVisualFactory {
 
     const gndNode = context.getENode(component.pins[6]!);
     if (gndNode) {
-      const gndGroup = this.createPinGroup(gndNode, 'top',new THREE.Euler(0, 0, 0.23));
+      const gndGroup = this.createPinGroup(gndNode, 'top', new THREE.Euler(0, 0, 0.23));
       gndGroup.position.set(0.15, 0, -1.73);
       group.add(gndGroup);
     }
@@ -137,21 +156,21 @@ export class Xor4GateVisualFactory extends XorGateVisualFactory {
   }
 
   override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>) {
-    const envelopeMesh = this.findEnvelopeMesh(object3D);
-    if (!envelopeMesh) return;
+    const holeMesh = this.findHoleMesh(object3D);
+    if (!holeMesh) return;
 
     let negativeMarkerMesh = this.findNegativeMarkerMesh(object3D);
 
     if (config.get('activationLogic') === 'negative') {
-      envelopeMesh.userData.initialState = 'high';
+      holeMesh.userData.initialState = 'high';
       if (!negativeMarkerMesh) {
         negativeMarkerMesh = new THREE.Mesh(
-          this.negativeMarkerGeometry,
-          this.negativeMarkerMaterial
+          this.NEG_MARKER_GEOM,
+          this.getMat(CmpMatCategory.WHITE)
         );
         negativeMarkerMesh.userData = {
           type: 'component',
-          componentId: envelopeMesh.userData.componentId,
+          componentId: holeMesh.userData.componentId,
           part: 'negativeMarker',
         };
 
@@ -159,11 +178,10 @@ export class Xor4GateVisualFactory extends XorGateVisualFactory {
         object3D.add(negativeMarkerMesh);
       }
     } else {
-      envelopeMesh.userData.initialState = 'low';
+      holeMesh.userData.initialState = 'low';
       if (negativeMarkerMesh) {
         object3D.remove(negativeMarkerMesh);
       }
     }
-    this.updateAnimation(object3D, null);
   }
 }

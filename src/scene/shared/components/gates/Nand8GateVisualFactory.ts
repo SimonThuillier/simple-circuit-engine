@@ -1,8 +1,9 @@
-import {type Component} from 'simple-circuit-engine/core';
+import { ComponentType, type Component } from 'simple-circuit-engine/core';
 import * as THREE from 'three';
-import { AndGateGeometry } from '../../utils/GeometryUtils';
+import { AndGateGeometry, AndGateHoleGeometry } from '../../utils/GeometryUtils';
 import { NandGateVisualFactory } from './NandGateVisualFactory';
 import type { VisualContext } from '../../types';
+import { CmpMatCategory } from '../types';
 
 /**
  * Visual factory for NAND gates components
@@ -17,13 +18,11 @@ import type { VisualContext } from '../../types';
  */
 export class Nand8GateVisualFactory extends NandGateVisualFactory {
   /** Shared open envelope geometry */
-  protected override readonly lowGeometry = AndGateGeometry(2.6, 7.5, 0.16, 0.4, 16);
-  /** Shared transient envelope geometry */
-  protected override readonly transientGeometry = AndGateGeometry(2.6, 7.5, 0.76, 0.4, 16);
-  /** Shared transient envelope geometry */
-  protected override readonly highGeometry = AndGateGeometry(2.6, 7.5, 1.3, 0.4, 16);
+  protected override readonly ENVELOPE_GEOM = AndGateGeometry(2.6, 7.5, 0.16, 0.4, 16);
+  /** Shared inner hole geometry */
+  protected override readonly HOLE_GEOM = AndGateHoleGeometry(2.6, 7.5, 0.16, 0.4, 16)!;
   /** Shared geometry for negative marker **/
-  protected static override readonly negativeMarkerGeometry = new THREE.CylinderGeometry(
+  protected override readonly NEG_MARKER_GEOM = new THREE.CylinderGeometry(
     0.35,
     0.35,
     0.4,
@@ -34,7 +33,15 @@ export class Nand8GateVisualFactory extends NandGateVisualFactory {
     Math.PI * 2
   );
 
+  constructor() {
+    super();
+    this._componentType = ComponentType.Nand8Gate;
+  }
+
   override createVisual(component: Component, context: VisualContext): THREE.Object3D {
+    if (component.type !== this._componentType) {
+      throw new Error(`Factory mismatch: expected "${this._componentType}", got "${component.type}"`);
+    }
     // Root group (not rendered, just organizational)
     const group = new THREE.Group();
     group.userData = {
@@ -48,20 +55,29 @@ export class Nand8GateVisualFactory extends NandGateVisualFactory {
     group.add(hitbox);
 
     // Visual Gate
-    const envelopeMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
-    envelopeMaterial.emissive.setHex(Nand8GateVisualFactory.HIGH_COLOR);
-    envelopeMaterial.emissiveIntensity = 0;
-    const envelope = new THREE.Mesh(this.lowGeometry, envelopeMaterial);
+    const envelope = new THREE.Mesh(this.ENVELOPE_GEOM, this.getMat(CmpMatCategory.WHITE));
     envelope.userData = {
       type: 'component',
       componentId: component.id,
       part: 'envelope',
-      initialState: 'low',
     };
     envelope.rotateX(-Math.PI / 2);
     envelope.rotateY(Math.PI);
     envelope.position.set(-0.1, 0.35, 0);
     group.add(envelope);
+
+    const hole = new THREE.Mesh(this.HOLE_GEOM, this.getMat(CmpMatCategory.DARK_GRAY));
+    hole.name = 'hole'; // required for AnimationMixer property binding
+    hole.userData = {
+      type: 'component',
+      componentId: component.id,
+      part: 'hole',
+      initialState: 'low',
+    };
+    hole.rotateX(-Math.PI / 2);
+    hole.rotateY(Math.PI);
+    hole.position.set(-0.1, 0.35, 0);
+    group.add(hole);
 
     // pins (not called if preview - no pins)
     if (component.pins.length > 0) {
@@ -72,7 +88,11 @@ export class Nand8GateVisualFactory extends NandGateVisualFactory {
     return group;
   }
 
-  protected override createPinsVisual(component: Component, context: VisualContext, group: THREE.Group) {
+  protected override createPinsVisual(
+    component: Component,
+    context: VisualContext,
+    group: THREE.Group
+  ) {
     const vccNode = context.getENode(component.pins[0]!);
     if (vccNode) {
       const vccGroup = this.createPinGroup(vccNode, 'bottom', new THREE.Euler(0, 0, 0.5));
@@ -152,21 +172,21 @@ export class Nand8GateVisualFactory extends NandGateVisualFactory {
   }
 
   override updateFromConfiguration(object3D: THREE.Object3D, config: Map<string, string>) {
-    const envelopeMesh = this.findEnvelopeMesh(object3D);
-    if (!envelopeMesh) return;
+    const holeMesh = this.findHoleMesh(object3D);
+    if (!holeMesh) return;
 
     let negativeMarkerMesh = this.findNegativeMarkerMesh(object3D);
 
     if (config.get('activationLogic') === 'negative') {
-      envelopeMesh.userData.initialState = 'high';
+      holeMesh.userData.initialState = 'high';
       if (!negativeMarkerMesh) {
         negativeMarkerMesh = new THREE.Mesh(
-          Nand8GateVisualFactory.negativeMarkerGeometry,
-          Nand8GateVisualFactory.negativeMarkerMaterial
+          this.NEG_MARKER_GEOM,
+          this.getMat(CmpMatCategory.WHITE)
         );
         negativeMarkerMesh.userData = {
           type: 'component',
-          componentId: envelopeMesh.userData.componentId,
+          componentId: holeMesh.userData.componentId,
           part: 'negativeMarker',
         };
 
@@ -174,11 +194,10 @@ export class Nand8GateVisualFactory extends NandGateVisualFactory {
         object3D.add(negativeMarkerMesh);
       }
     } else {
-      envelopeMesh.userData.initialState = 'low';
+      holeMesh.userData.initialState = 'low';
       if (negativeMarkerMesh) {
         object3D.remove(negativeMarkerMesh);
       }
     }
-    this.updateAnimation(object3D, null);
   }
 }

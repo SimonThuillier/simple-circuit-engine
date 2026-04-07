@@ -3,8 +3,8 @@
  * @module core/simulation
  */
 
-import type {IDirtyElements} from "./types";
-import type {UUID} from "../utils/types";
+import type { IDirtyElements } from './types';
+import type { UUID } from '../utils/types';
 
 /**
  * Tracks per-element changes for optimized state propagation.

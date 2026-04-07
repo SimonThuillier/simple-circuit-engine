@@ -203,7 +203,7 @@ describe('Component', () => {
       expect(json.position).toEqual({ x: 10, y: 20 });
       expect(json.rotation).toBe(90);
       expect(json.pins).toEqual(['pin-1', 'pin-2']);
-      expect(json.config).toEqual({ initialState: 'open', size: '1' });
+      expect(json.config).toEqual({ initialState: 'open', size: '1', "transitionSpan": "1" });
     });
 
     it('should deserialize from JSON', () => {

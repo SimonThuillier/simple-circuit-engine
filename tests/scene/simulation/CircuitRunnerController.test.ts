@@ -12,7 +12,7 @@ import { Circuit } from '../../../src/core/topology/Circuit';
 import { CircuitOptions } from '../../../src/core/topology/CircuitOptions';
 import type { IFactoryRegistry } from '../../../src/scene/shared/components/ComponentVisualFactory';
 
-import {ComponentType, SIMULATION_SPEED} from "../../../src";
+import { ComponentType, SIMULATION_SPEED } from '../../../src';
 
 /**
  * Create a simple test circuit with a battery and switch

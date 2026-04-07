@@ -20,6 +20,21 @@ import type { HoverManager } from './HoverManager';
 export type { Line2, LineGeometry, LineMaterial };
 
 /**
+ * Simulation status for animation-aware factories
+ */
+export type SimulationStatus = 'initial' | 'playing' | 'paused';
+
+/**
+ * Shared mutable context injected into visual factories during simulation.
+ * Controller mutates the same object reference; all factories see changes immediately.
+ * null represents "not in simulation".
+ */
+export interface AnimationContext {
+  ticksPerSecond: number;
+  simulationStatus: SimulationStatus;
+}
+
+/**
  * Lightweight context passed to visual factories so they can access
  * ENode data (subtype, source, wires…) when creating pin visuals.
  *
@@ -78,7 +93,8 @@ export type ControllerEvent =
   | 'simulationTick'
   | 'simulationUserCommand'
   | 'simulationStopped'
-  | 'simulationSpeedChanged';
+  | 'simulationSpeedChanged'
+  | 'componentHelpRequested';
 
 /**
  * Event payload map for type-safe event emission
@@ -139,6 +155,8 @@ export interface ControllerEventMap {
   simulationUserCommand: IUserCommand;
   simulationStopped: { tick: number };
   simulationSpeedChanged: { previousSpeed: number; newSpeed: number };
+  /** Emitted when user clicks a pin tooltip to request component help */
+  componentHelpRequested: { componentType: ComponentType };
 }
 
 /**
@@ -176,6 +194,7 @@ export interface EnodeHitboxUserData {
   enodeId: string;
   componentId: string | null;
   label: string | null;
+  componentType: ComponentType | null;
 }
 
 /**

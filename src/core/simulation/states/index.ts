@@ -3,10 +3,11 @@
  * @module core/simulation/states
  */
 
-export type {INodeElectricalState} from "./types";
+export type { INodeElectricalState } from './types';
+export { unionElectricalStates } from './types';
 
 // Global circuit simulation state
-export { SimulationState } from "./SimulationState.js";
+export { SimulationState } from './SimulationState.js';
 
 // Component states
 export { ComponentState } from './ComponentState.js';
@@ -18,6 +19,7 @@ export { RelayState } from './basic/RelayState';
 export { SmallLEDState } from './basic/SmallLEDState';
 export { SwitchState } from './basic/SwitchState';
 export { DoubleThrowSwitchState } from './basic/DoubleThrowSwitchState';
+export { ClockState } from './basic/ClockState';
 
 // gates
 export { InverterState } from './gates/InverterState';

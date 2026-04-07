@@ -18,7 +18,7 @@ import type { SharedResources } from '../../../src/scene/shared/types';
 import type { IFactoryRegistry } from '../../../src/scene/shared/components/ComponentVisualFactory';
 import type { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { disposeScene } from '../helpers';
-import {UUID} from "../../../src";
+import { UUID } from '../../../src';
 
 /**
  * Create mock shared resources for testing

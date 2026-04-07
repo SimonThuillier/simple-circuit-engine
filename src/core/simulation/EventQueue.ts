@@ -3,8 +3,7 @@
  * @module core/simulation
  */
 
-
-import type {IScheduledEvent} from "./types";
+import type { IScheduledEvent } from './types';
 
 /**
  * Min-heap priority queue for scheduling future component transitions.
@@ -35,7 +34,6 @@ export class EventQueue {
         `readyAtTick (${event.readyAtTick}) cannot be before scheduledAtTick (${event.scheduledAtTick})`
       );
     }
-
     this.heap.push(event);
     this.bubbleUp(this.heap.length - 1);
   }
@@ -83,6 +81,36 @@ export class EventQueue {
    */
   clear(): void {
     this.heap = [];
+  }
+
+  /**
+   * Schedule multiple events at once, optionally cancelling pending events for specific targets.
+   * More efficient than individual schedule() + removeEventsForTarget() calls:
+   * single filter pass for all cancellations, batch push, single heap rebuild.
+   *
+   * @param events - Events to schedule
+   * @param cancelTargets - Target IDs whose pending events should be removed before inserting
+   */
+  scheduleMany(events: ReadonlyArray<IScheduledEvent>, cancelTargets?: ReadonlySet<string>): void {
+    for (const event of events) {
+      if (event.readyAtTick < event.scheduledAtTick) {
+        throw new RangeError(
+          `readyAtTick (${event.readyAtTick}) cannot be before scheduledAtTick (${event.scheduledAtTick})`
+        );
+      }
+    }
+
+    if (cancelTargets && cancelTargets.size > 0) {
+      this.heap = this.heap.filter((e) => !cancelTargets.has(e.targetId));
+    }
+
+    for (const event of events) {
+      this.heap.push(event);
+    }
+
+    if (events.length > 0 || (cancelTargets && cancelTargets.size > 0)) {
+      this.rebuildHeap();
+    }
   }
 
   /**

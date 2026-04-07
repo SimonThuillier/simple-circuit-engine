@@ -13,7 +13,7 @@ import { Circuit } from '../../../src/core/topology/Circuit';
 import { CircuitOptions } from '../../../src/core/topology/CircuitOptions';
 import { Position } from '../../../src/core/utils/Position';
 import { disposeScene } from '../helpers';
-import {ComponentType, UUID} from "../../../src";
+import { ComponentType, UUID } from '../../../src';
 
 /**
  * Create a mock component group with pin visuals
