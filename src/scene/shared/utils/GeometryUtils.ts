@@ -960,6 +960,106 @@ export function CyclicTrapezoidGeometry(
 }
 
 /**
+ * Create an ExtrudeGeometry shaped like an empty rectangle (frame/border).
+ * Shape is centered at origin. The inner hole is a smaller rectangle inset
+ * by `thickness` on all four sides.
+ *
+ * @param width     - Total width of the outer rectangle
+ * @param height    - Total height of the outer rectangle
+ * @param thickness - Wall thickness of the frame (inset on each side)
+ * @param depth     - Extrusion depth
+ * @param steps     - Number of extrusion steps
+ * @constructor
+ */
+export function EmptyRectangleGeometry(
+  width: number,
+  height: number,
+  thickness: number,
+  depth: number,
+  steps: number = 1
+): ExtrudeGeometry {
+  const halfW = width / 2;
+  const halfH = height / 2;
+
+  // Outer shape (CCW): BL → BR → TR → TL
+  const shape = new THREE.Shape();
+  shape.moveTo(-halfW, -halfH);
+  shape.lineTo(halfW, -halfH);
+  shape.lineTo(halfW, halfH);
+  shape.lineTo(-halfW, halfH);
+  // Three.js auto-closes back to (-halfW, -halfH)
+
+  const innerHalfW = halfW - thickness;
+  const innerHalfH = halfH - thickness;
+
+  if (innerHalfW > 0 && innerHalfH > 0) {
+    // Inner hole (CW): TL → BL → BR → TR
+    const hole = new THREE.Path();
+    hole.moveTo(-innerHalfW, innerHalfH);
+    hole.lineTo(-innerHalfW, -innerHalfH);
+    hole.lineTo(innerHalfW, -innerHalfH);
+    hole.lineTo(innerHalfW, innerHalfH);
+    // auto-closes back to (-innerHalfW, innerHalfH)
+    shape.holes.push(hole);
+  }
+
+  return new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, steps });
+}
+
+/**
+ * Create an ExtrudeGeometry shaped like a rectangle with a rectangular "nail"
+ * (intrusion or protrusion)
+ * The main rectangle is centered at origin; the nail hangs inside or outside it.
+ *
+ * @param width      - Total width of the rectangle
+ * @param height     - Height of the main rectangle body
+ * @param nailWidth  - Width of the nail intrusion
+ * @param nailHeight - Height of the nail
+ * @param nailX      - Horizontal center of the nail, measured from the rectangle's left edge
+ * @param protusion  - if false nail will enter inside the rectangle (intrusion), else outside (protusion)
+ * @param depth      - Extrusion depth
+ * @param steps      - Number of extrusion steps
+ * @throws Error if nail dimensions or position are geometrically invalid
+ * @constructor
+ */
+export function RectangleWithNailGeometry(
+  width: number,
+  height: number,
+  nailWidth: number,
+  nailHeight: number,
+  nailX: number,
+  protusion: boolean,
+  depth: number,
+  steps: number = 1
+): ExtrudeGeometry {
+  if (!protusion && nailHeight >= height) throw new Error(`when intrusion nailHeight (${nailHeight}) must be < height (${height})`);
+  if (nailWidth >= width) throw new Error(`nailWidth (${nailWidth}) must be < width (${width})`);
+  if (nailX - nailWidth / 2 <= 0) throw new Error(`nailX - nailWidth/2 (${nailX - nailWidth / 2}) must be > 0`);
+  if (nailX + nailWidth / 2 >= width) throw new Error(`nailX + nailWidth/2 (${nailX + nailWidth / 2}) must be < width (${width})`);
+
+  const halfW = width / 2;
+  const halfH = height / 2;
+  const nailL = nailX - halfW - nailWidth / 2; // nail left x in centered coords
+  const nailR = nailX - halfW + nailWidth / 2; // nail right x in centered coords
+
+  const nailYPos = -halfH + (protusion ? -1 : 1) * nailHeight;
+
+  // Outer shape (CCW): BL → nail-slot-left → nail-BL → nail-BR → nail-slot-right → BR → TR → TL
+  const shape = new THREE.Shape();
+  shape.moveTo(-halfW, -halfH);
+  shape.lineTo(nailL, -halfH);
+  shape.lineTo(nailL, nailYPos);
+  shape.lineTo(nailR, nailYPos);
+  shape.lineTo(nailR, -halfH);
+  shape.lineTo(halfW, -halfH);
+  shape.lineTo(halfW, halfH);
+  shape.lineTo(-halfW, halfH);
+  // Three.js auto-closes back to (-halfW, -halfH)
+
+  return new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, steps });
+}
+
+/**
  * Create an ExtrudeGeometry for the inner hole of a cyclic trapezoid.
  * Returns null when the geometry should be solid (no hole).
  *
@@ -981,5 +1081,186 @@ export function CyclicTrapezoidHoleGeometry(
   const hole = _cyclicTrapezoidHolePath(width, tailHeight, headHeight, thickness);
   if (hole === null) return null;
   const shape = new THREE.Shape(hole.getPoints(64).reverse());
+  return new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, steps });
+}
+
+/**
+ * Returns the inner hole path for a drip (teardrop) shape.
+ * Returns null when thickness is large enough that the shape should be solid.
+ *
+ * @param width     - Total width
+ * @param height    - Total height (must be > width)
+ * @param thickness - Wall thickness
+ */
+function _dripHolePath(width: number, height: number, thickness: number): THREE.Path | null {
+  const halfW = width / 2;
+  const halfH = height / 2;
+  if (thickness > 0.9 * Math.min(halfW, halfH)) return null;
+
+  const yc = -halfH + halfW; // bottom circle center y
+  const d = height - halfW; // distance from tip to circle center
+  const sinA = halfW / d;
+  const cosA = Math.sqrt(1 - sinA * sinA);
+  const alpha = Math.asin(sinA);
+
+  const rInner = halfW - thickness;
+  const tipInsetY = halfH - thickness / sinA; // inner tip y (moved down from outer tip)
+  const innerTanY = yc - rInner * sinA; // y of inner tangent points
+
+  if (rInner <= 0) return null;
+  if (tipInsetY <= innerTanY) return null; // tip would fall below tangent points
+
+  // Hole path (CCW): inner tip → inner T_left → [CCW arc through bottom] → inner T_right → auto-close to tip
+  const hole = new THREE.Path();
+  hole.moveTo(0, tipInsetY); // inner tip
+  hole.lineTo(-rInner * cosA, innerTanY); // inner T_left
+  hole.absarc(0, yc, rInner, alpha - Math.PI, -alpha, false); // CCW arc through bottom
+  // Arc ends at inner T_right = (rInner * cosA, innerTanY)
+  // Three.js auto-closes back to inner tip
+  return hole;
+}
+
+/**
+ * Create an ExtrudeGeometry for a drip (teardrop) shape.
+ * The shape has a sharp pointed tip at the top and a rounded bottom.
+ * Shape is centered at origin.
+ *
+ * Construction: the rounded bottom is a circle of radius width/2 centered at
+ * y = -height/2 + width/2. Two straight tangent lines connect the circle to the
+ * tip at (0, +height/2). This requires height > width so the tip sits above the
+ * circle and the tangent lines exist.
+ *
+ * @param width     - Total width
+ * @param height    - Total height (must be > width)
+ * @param thickness - Wall thickness of the shell
+ * @param depth     - Extrusion depth
+ * @param steps     - Number of extrusion steps
+ * @throws Error if height <= width (tip too low for tangent construction)
+ * @constructor
+ */
+export function DripGeometry(
+  width: number,
+  height: number,
+  thickness: number,
+  depth: number,
+  steps: number = 1
+): ExtrudeGeometry {
+  if (height <= width) throw new Error(`DripGeometry: height (${height}) must be > width (${width})`);
+
+  const halfW = width / 2;
+  const halfH = height / 2;
+  const yc = -halfH + halfW; // bottom circle center y
+  const d = height - halfW; // distance from tip to circle center
+  const sinA = halfW / d;
+  const cosA = Math.sqrt(1 - sinA * sinA);
+  const alpha = Math.asin(sinA);
+  const theta_r = -alpha; // angle of right tangent point on circle
+  const theta_l = alpha - Math.PI; // angle of left tangent point on circle (= -(π − alpha))
+
+  // Outer shape: tip → T_right → [CW arc through bottom] → T_left → [auto-close to tip]
+  const shape = new THREE.Shape();
+  shape.moveTo(0, halfH); // tip
+  shape.lineTo(halfW * cosA, yc - halfW * sinA); // T_right
+  shape.absarc(0, yc, halfW, theta_r, theta_l, true); // CW arc through bottom
+  // Arc ends at T_left = (-halfW * cosA, yc - halfW * sinA)
+  // Three.js auto-closes back to tip (left side tangent line)
+
+  const hole = _dripHolePath(width, height, thickness);
+  if (hole !== null) shape.holes.push(hole);
+
+  return new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, steps });
+}
+
+/**
+ * Create an ExtrudeGeometry for the inner hole of a drip shape.
+ * Returns null when thickness is large enough that the drip has no hole.
+ *
+ * @param width     - Total width
+ * @param height    - Total height (must be > width)
+ * @param thickness - Wall thickness
+ * @param depth     - Extrusion depth
+ * @param steps     - Number of extrusion steps
+ * @throws Error if height <= width
+ */
+export function DripHoleGeometry(
+  width: number,
+  height: number,
+  thickness: number,
+  depth: number,
+  steps: number = 1
+): ExtrudeGeometry | null {
+  if (height <= width) throw new Error(`DripHoleGeometry: height (${height}) must be > width (${width})`);
+  const hole = _dripHolePath(width, height, thickness);
+  if (hole === null) return null;
+  const shape = new THREE.Shape(hole.getPoints(64).reverse());
+  return new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, steps });
+}
+
+/**
+ * Create an ExtrudeGeometry shaped like japanese hiragana Ku and katakana Ko (くコ)
+ * Shape is centered horizontally at the junction between the two and vertically at the middle height
+ * by `kuThickness` on all four sides.
+ *
+ * @param kuWidth     - width of the left ku part (outer)
+ * @param koWidth     - width of the right ko part (outer)
+ * @param height    - Total height of the outer geometry
+ * @param kuThickness - Wall kuThickness of the frame (inset on ku side)
+ * @param koThickness - Wall koThickness of the frame (inset on ko side)
+ * @param depth     - Extrusion depth
+ * @param steps     - Number of extrusion steps
+ * @constructor
+ */
+export function KuKoGeometry(
+    kuWidth: number,
+    koWidth: number,
+    height: number,
+    kuThickness: number,
+    koThickness: number,
+    depth: number,
+    steps: number = 1
+): ExtrudeGeometry {
+  const halfH = height / 2;
+
+  // Outer shape
+  const shape = new THREE.Shape();
+  shape.moveTo(0, -halfH);
+  shape.lineTo(-kuWidth, 0);
+  shape.lineTo(0, halfH);
+  shape.lineTo(koWidth, halfH);
+  shape.lineTo(koWidth, -halfH);
+  // Three.js auto-closes back to (0, -halfH)
+
+  let hasKuHole = kuThickness < 0.45*kuWidth && kuThickness < 0.45*height;
+  let hasKoHole = koThickness < 0.45*koWidth && koThickness < 0.45*height;
+
+  if(hasKuHole && hasKoHole){
+    const hole = new THREE.Path();
+    hole.moveTo(0, -halfH + koThickness);
+    hole.lineTo(-kuWidth + kuThickness, 0);
+    hole.lineTo(0, halfH - koThickness);
+    hole.lineTo(koWidth - koThickness, halfH - koThickness);
+    hole.lineTo(koWidth - koThickness, -halfH + koThickness);
+    // Three.js auto-closes back to (0, -halfH + kuThickness)
+    shape.holes.push(hole);
+  }
+  else if(!hasKuHole && hasKoHole){
+    const hole = new THREE.Path();
+    hole.moveTo(0, -halfH + koThickness);
+    hole.lineTo(0, halfH - koThickness);
+    hole.lineTo(koWidth - koThickness, halfH - koThickness);
+    hole.lineTo(koWidth - koThickness, -halfH + koThickness);
+    // Three.js auto-closes back to (0, -halfH + kuThickness)
+    shape.holes.push(hole);
+  }
+  else if(hasKuHole && !hasKoHole){
+    const hole = new THREE.Path();
+    hole.moveTo(0, -halfH + kuThickness);
+    hole.lineTo(-kuWidth + kuThickness, 0);
+    hole.lineTo(0, halfH - kuThickness);
+    // Three.js auto-closes back to (0, -halfH + kuThickness)
+    shape.holes.push(hole);
+  }
+  console.log(shape);
+  // both false : no hole -> whole form
   return new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, steps });
 }

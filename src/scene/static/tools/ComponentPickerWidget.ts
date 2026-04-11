@@ -8,7 +8,6 @@
  */
 
 import type { ComponentType } from 'simple-circuit-engine/core';
-import { COMPONENT_TYPE_METADATA } from 'simple-circuit-engine/core';
 import type { IGroupedFactoryRegistry } from '../../shared/components/GroupedFactoryRegistry';
 import { sceT } from '../../../i18n';
 
@@ -345,8 +344,7 @@ export class ComponentPickerWidget {
     }
 
     for (const type of types) {
-      const metadata = COMPONENT_TYPE_METADATA[type];
-      const label = sceT(`components.${type}.name`, { defaultValue: metadata?.name ?? type });
+      const label = sceT(`components.${type}.name`, { defaultValue: type });
       this.itemList.appendChild(this.createItemElement(label, type));
     }
   }

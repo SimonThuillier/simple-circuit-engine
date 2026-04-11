@@ -6,6 +6,9 @@
       },
       "gates": {
         "name": "Logic Gates"
+      },
+      "arithmetic": {
+        "name": "Arithmetic"
       }
     },
     "battery": {
@@ -199,6 +202,26 @@
         "fields": {
           "defaultLogicFamily": { "name": "Logic Family" },
           "activationLogic": { "name": "Activation Logic" },
+          "transitionSpan": { "name": "Propagation delay (ticks)" },
+          "initializationOrder": { "name": "Init Order" }
+        }
+      }
+    },
+    "halfAdder": {
+      "name": "Half Adder",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Logic Family" },
+          "transitionSpan": { "name": "Propagation delay (ticks)" },
+          "initializationOrder": { "name": "Init Order" }
+        }
+      }
+    },
+    "adder": {
+      "name": "Full Adder",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Logic Family" },
           "transitionSpan": { "name": "Propagation delay (ticks)" },
           "initializationOrder": { "name": "Init Order" }
         }

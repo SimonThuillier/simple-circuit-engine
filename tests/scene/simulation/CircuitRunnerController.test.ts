@@ -89,10 +89,10 @@ describe('CircuitRunnerController - Simulation Speed (017-simulation-speed)', ()
       expect(controller.simulationSpeed).toBe(SIMULATION_SPEED.MIN_TPS);
     });
 
-    it('should clamp speed to maximum (50 TPS)', () => {
-      controller.simulationSpeed = 50;
-      expect(controller.simulationSpeed).toBe(SIMULATION_SPEED.MAX_TPS);
+    it('should clamp speed to maximum (100 TPS)', () => {
       controller.simulationSpeed = 100;
+      expect(controller.simulationSpeed).toBe(SIMULATION_SPEED.MAX_TPS);
+      controller.simulationSpeed = 1000;
       expect(controller.simulationSpeed).toBe(SIMULATION_SPEED.MAX_TPS);
     });
 
@@ -172,7 +172,7 @@ describe('CircuitRunnerController - Simulation Speed (017-simulation-speed)', ()
       const handler = vi.fn();
       controller.on('simulationSpeedChanged', handler);
 
-      controller.simulationSpeed = 50; // Will be clamped to 20
+      controller.simulationSpeed = 100; // Will be clamped to 100
 
       expect(handler).toHaveBeenCalledWith({
         previousSpeed: SIMULATION_SPEED.DEFAULT_TPS,

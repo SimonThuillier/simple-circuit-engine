@@ -12,12 +12,19 @@ import type { IGroupedFactoryRegistry } from '../../../../src/scene/shared/compo
 import type { IComponentVisualFactory } from '../../../../src/scene/shared/components/ComponentVisualFactory';
 import { ComponentType } from '../../../../src/core/topology/types';
 
+// Mock i18next so sceT returns the defaultValue option when no translations are loaded
+vi.mock('i18next', () => ({
+  default: {
+    t: (_key: string, options?: { defaultValue?: string }) => options?.defaultValue ?? _key,
+  },
+}));
+
 // Mock COMPONENT_TYPE_METADATA
 vi.mock('simple-circuit-engine/core', () => ({
   COMPONENT_TYPE_METADATA: {
-    battery: { id: 'battery', name: 'Battery', pins: new Map(), config: new Map() },
-    switch: { id: 'switch', name: 'Switch', pins: new Map(), config: new Map() },
-    andGate: { id: 'andGate', name: 'AND Gate', pins: new Map(), config: new Map() },
+    battery: { id: 'battery', pins: new Map(), config: new Map() },
+    switch: { id: 'switch', pins: new Map(), config: new Map() },
+    andGate: { id: 'andGate', pins: new Map(), config: new Map() },
   } as Record<string, any>,
 }));
 
@@ -119,15 +126,15 @@ describe('ComponentPickerWidget', () => {
       expect(items[0]?.textContent).toBe('Branching Point');
     });
 
-    it('should show component names from metadata', () => {
+    it('should show component type IDs as fallback names when no i18n translations loaded', () => {
       widget.open({ x: 100, y: 200 });
       const containers = document.querySelectorAll('div[style*="z-index: 1000"]');
       const container = containers[containers.length - 1];
       const items = container.querySelectorAll('div[style*="cursor: pointer"]');
-      // Items: Branching Point, Battery, Switch
+      // Items: Branching Point (hardcoded fallback), battery, switch (type IDs as fallback)
       expect(items.length).toBe(3);
-      expect(items[1]?.textContent).toBe('Battery');
-      expect(items[2]?.textContent).toBe('Switch');
+      expect(items[1]?.textContent).toBe('battery');
+      expect(items[2]?.textContent).toBe('switch');
     });
   });
 

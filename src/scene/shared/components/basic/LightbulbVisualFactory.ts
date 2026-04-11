@@ -77,11 +77,13 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
     };
     bulb.position.set(0, 0.8, 0);
     group.add(bulb);
+    bulb.renderOrder = -1; // to prevent rendering collision issue with pins hover area
 
     // pins (not called if preview - no pins)
     if (component.pins.length > 0) {
       this.createPinsVisual(component, context, group);
     }
+
 
     this.updateFromConfiguration(group, component.config);
     return group;

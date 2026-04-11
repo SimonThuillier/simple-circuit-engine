@@ -59,4 +59,8 @@ export type { HitboxLayerValue } from './shared/utils/LayerConstants';
 export * from './shared/utils/Options';
 
 // setup helpers
-export { registerBasicComponentsFactories, registerGatesComponentsFactories } from './setup';
+export {
+  registerBasicComponentsFactories,
+  registerGatesComponentsFactories,
+  registerArithmeticComponentsFactories
+} from './setup';

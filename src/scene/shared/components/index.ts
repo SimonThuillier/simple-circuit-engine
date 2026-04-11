@@ -40,3 +40,9 @@ export { Nor8GateVisualFactory } from './gates/Nor8GateVisualFactory';
 export { XorGateVisualFactory } from './gates/XorGateVisualFactory';
 export { Xor4GateVisualFactory } from './gates/Xor4GateVisualFactory';
 export { Xor8GateVisualFactory } from './gates/Xor8GateVisualFactory';
+
+// arithmetic
+export { HalfAdderVisualFactory } from './arithmetic/HalfAdderVisualFactory';
+export { AdderVisualFactory } from './arithmetic/AdderVisualFactory';
+export { EightBitAdderVisualFactory } from './arithmetic/EightBitAdderVisualFactory';
+export { EightBitOnesComplementVisualFactory } from './arithmetic/EightBitOnesComplementVisualFactory';

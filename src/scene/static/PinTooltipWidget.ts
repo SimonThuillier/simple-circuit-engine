@@ -6,7 +6,7 @@
  * Content: "{pinLabel} ({componentName})" — clicking triggers a componentHelpRequested callback.
  */
 
-import { ComponentType, COMPONENT_TYPE_METADATA } from 'simple-circuit-engine/core';
+import { ComponentType } from 'simple-circuit-engine/core';
 import { sceT } from '../../i18n';
 
 /**
@@ -37,8 +37,7 @@ export class PinTooltipWidget {
     this.hide();
     this._currentComponentType = componentType;
 
-    const fallback = COMPONENT_TYPE_METADATA[componentType]?.name ?? componentType;
-    const componentName = sceT(`components.${componentType}.name`, { defaultValue: fallback });
+    const componentName = sceT(`components.${componentType}.name`, { defaultValue: componentType });
 
     this._element = document.createElement('div');
     this._element.textContent = `${pinLabel} (${componentName})`;

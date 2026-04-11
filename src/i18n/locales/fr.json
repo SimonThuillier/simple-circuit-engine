@@ -6,6 +6,9 @@
       },
       "gates": {
         "name": "Portes logiques"
+      },
+      "arithmetic": {
+        "name": "Arithmétique"
       }
     },
     "battery": {
@@ -199,6 +202,26 @@
         "fields": {
           "defaultLogicFamily": { "name": "Famille logique" },
           "activationLogic": { "name": "Logique d'activation" },
+          "transitionSpan": { "name": "Délai de propagation (ticks)" },
+          "initializationOrder": { "name": "Ordre d'initialisation" }
+        }
+      }
+    },
+    "halfAdder": {
+      "name": "Demi-additionneur",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Famille logique" },
+          "transitionSpan": { "name": "Délai de propagation (ticks)" },
+          "initializationOrder": { "name": "Ordre d'initialisation" }
+        }
+      }
+    },
+    "adder": {
+      "name": "Additionneur",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Famille logique" },
           "transitionSpan": { "name": "Délai de propagation (ticks)" },
           "initializationOrder": { "name": "Ordre d'initialisation" }
         }

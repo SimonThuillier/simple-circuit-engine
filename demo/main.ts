@@ -10,6 +10,7 @@ import {
   BehaviorRegistry,
   registerBasicComponentsBehaviors,
   registerGatesComponentsBehaviors,
+  registerArithmeticComponentsBehaviors,
 } from 'simple-circuit-engine/core';
 import {
   CircuitEngine,
@@ -17,6 +18,7 @@ import {
   DefaultVisualFactory,
   registerBasicComponentsFactories,
   registerGatesComponentsFactories,
+  registerArithmeticComponentsFactories,
 } from 'simple-circuit-engine/scene';
 import { registerSceTranslations } from '../src/i18n';
 import { CircuitOptions } from '../src';
@@ -29,11 +31,13 @@ registerSceTranslations(i18next);
 const componentsFactoryRegistry = new GroupedFactoryRegistry(new DefaultVisualFactory());
 registerBasicComponentsFactories(componentsFactoryRegistry);
 registerGatesComponentsFactories(componentsFactoryRegistry);
+registerArithmeticComponentsFactories(componentsFactoryRegistry);
 
 // Create behavior registry with all basic component behaviors
 const behaviorRegistry = new BehaviorRegistry();
 registerBasicComponentsBehaviors(behaviorRegistry);
 registerGatesComponentsBehaviors(behaviorRegistry);
+registerArithmeticComponentsBehaviors(behaviorRegistry);
 
 // Create WebGL renderer
 const renderer = new WebGLRenderer({ antialias: true, alpha: false });

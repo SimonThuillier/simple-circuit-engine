@@ -60,26 +60,37 @@ export enum ENodeType {
 }
 
 /**
+ * Metadata describing a logic pin's interface data.
+ *
+ * @property interface - name of the pin's interface (one interface combine several pins in the case of numeric inputs/outpus)
+ * @property index - index of the pin within the interface (starts at 0 by convention)
+ */
+export interface ILogicPinMetadata {
+  readonly interface: string;
+  readonly index: number;
+}
+
+/**
  * Metadata describing a component pin's source type and subtype.
  *
- * @property sourceType - Voltage/Current source or undefined for passive pins
  * @property subtype - Pin role classification: 'free', 'vcc', 'logicInput', 'logicOutput'
+ * @property logicPinData - only for pins of subtype 'logicInput' and 'logicOutput' (MANDATORY in these cases): their logic pin metadata (interface/index)
+ * @property sourceType - Voltage/Current source or undefined for passive pins
  */
 export interface IPinMetadata {
   readonly subtype: string;
-  readonly sourceType: ENodeSourceType | undefined;
+  readonly logicPinData?: ILogicPinMetadata;
+  readonly sourceType?: ENodeSourceType;
 }
 /**
  * Metadata for a component type.
  *
  * @property id - Unique string identifier matching the enum value
- * @property name - Human-readable display name
  * @property pins - Array of pin labels (order-significant)
  * @property config - Default configuration parameters (depends on the component, e.g., initialState, activationLogic, color...)
  */
 export interface IComponentTypeMetadata {
   readonly id: string;
-  readonly name: string;
   readonly pins: Map<string, IPinMetadata>;
   readonly config: Map<string, string>;
 }
@@ -179,6 +190,11 @@ export enum ComponentType {
   XorGate = 'xorGate',
   Xor4Gate = 'xor4Gate',
   Xor8Gate = 'xor8Gate',
+  // Arithmetic
+  HalfAdder = 'halfAdder',
+  Adder = 'adder',
+  EightBitAdder = 'eightBitAdder',
+  EightBitOnesComplement = 'eightBitOnesComplement'
 }
 
 /**
@@ -191,10 +207,9 @@ export enum ComponentType {
 export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentTypeMetadata>> = {
   [ComponentType.Switch]: {
     id: ComponentType.Switch,
-    name: 'Switch',
     pins: new Map([
-      ['input', { subtype: 'free', sourceType: undefined }],
-      ['output', { subtype: 'free', sourceType: undefined }],
+      ['input', { subtype: 'free' }],
+      ['output', { subtype: 'free' }],
     ]),
     config: new Map([
       ['initialState', 'open'],
@@ -204,11 +219,10 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
   },
   [ComponentType.DoubleThrowSwitch]: {
     id: ComponentType.DoubleThrowSwitch, // SPDT (Single-Pole Double-Throw) Switch
-    name: 'DoubleThrowSwitch',
     pins: new Map([
-      ['input1', { subtype: 'free', sourceType: undefined }],
-      ['input2', { subtype: 'free', sourceType: undefined }],
-      ['output', { subtype: 'free', sourceType: undefined }],
+      ['input1', { subtype: 'free' }],
+      ['input2', { subtype: 'free' }],
+      ['output', { subtype: 'free' }],
     ]),
     config: new Map([
       ['initialState', 'input1'],
@@ -218,7 +232,6 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
   },
   [ComponentType.Battery]: {
     id: ComponentType.Battery,
-    name: 'Battery',
     pins: new Map([
       ['cathode', { subtype: 'mainVcc', sourceType: ENodeSourceType.Voltage }],
       ['anode', { subtype: 'mainGnd', sourceType: ENodeSourceType.Current }],
@@ -227,10 +240,9 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
   },
   [ComponentType.Lightbulb]: {
     id: ComponentType.Lightbulb,
-    name: 'Lightbulb',
     pins: new Map([
-      ['pin1', { subtype: 'free', sourceType: undefined }],
-      ['pin2', { subtype: 'free', sourceType: undefined }],
+      ['pin1', { subtype: 'free' }],
+      ['pin2', { subtype: 'free' }],
     ]),
     config: new Map([
       ['transitionSpan', '1'],
@@ -239,12 +251,11 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
   },
   [ComponentType.Relay]: {
     id: ComponentType.Relay,
-    name: 'Relay',
     pins: new Map([
-      ['cmd_in', { subtype: 'free', sourceType: undefined }],
-      ['cmd_out', { subtype: 'free', sourceType: undefined }],
-      ['power_in', { subtype: 'free', sourceType: undefined }],
-      ['power_out', { subtype: 'free', sourceType: undefined }],
+      ['cmd_in', { subtype: 'free' }],
+      ['cmd_out', { subtype: 'free' }],
+      ['power_in', { subtype: 'free' }],
+      ['power_out', { subtype: 'free' }],
     ]),
     config: new Map([
       ['activationLogic', 'positive'],
@@ -254,10 +265,9 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
   },
   [ComponentType.SmallLED]: {
     id: ComponentType.SmallLED,
-    name: 'SmallLED',
     pins: new Map([
-      ['pin1', { subtype: 'free', sourceType: undefined }],
-      ['pin2', { subtype: 'free', sourceType: undefined }],
+      ['pin1', { subtype: 'free' }],
+      ['pin2', { subtype: 'free' }],
     ]),
     config: new Map([
       ['transitionSpan', '1'],
@@ -269,10 +279,9 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
   },
   [ComponentType.RectangleLED]: {
     id: ComponentType.RectangleLED,
-    name: 'RectangleLED',
     pins: new Map([
-      ['pin1', { subtype: 'free', sourceType: undefined }],
-      ['pin2', { subtype: 'free', sourceType: undefined }],
+      ['pin1', { subtype: 'free' }],
+      ['pin2', { subtype: 'free' }],
     ]),
     config: new Map([
       ['transitionSpan', '1'],
@@ -285,13 +294,11 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
   },
   [ComponentType.Cube]: {
     id: ComponentType.Cube,
-    name: 'Cube',
     pins: new Map([]),
     config: new Map([['color', 'red']]),
   },
   [ComponentType.Label]: {
     id: ComponentType.Label,
-    name: 'Label',
     pins: new Map([]),
     config: new Map([
       ['text', 'Label'],
@@ -300,10 +307,9 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
   },
   [ComponentType.Clock]: {
     id: ComponentType.Clock,
-    name: 'Clock',
     pins: new Map([
       ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
-      ['output', { subtype: 'logicOutput', sourceType: undefined }],
+      ['output', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 0 } }],
       ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
     ]),
     config: new Map([
@@ -313,11 +319,10 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
   },
   [ComponentType.Inverter]: {
     id: ComponentType.Inverter,
-    name: 'Inverter',
     pins: new Map([
       ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
-      ['input', { subtype: 'logicInput', sourceType: undefined }],
-      ['output', { subtype: 'logicOutput', sourceType: undefined }],
+      ['input', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 0 } }],
+      ['output', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 0 } }],
       ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
     ]),
     config: new Map([
@@ -329,12 +334,11 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
   },
   [ComponentType.NandGate]: {
     id: ComponentType.NandGate,
-    name: 'NAND Gate',
     pins: new Map([
       ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
-      ['input1', { subtype: 'logicInput', sourceType: undefined }],
-      ['input2', { subtype: 'logicInput', sourceType: undefined }],
-      ['output', { subtype: 'logicOutput', sourceType: undefined }],
+      ['input1', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 0 } }],
+      ['input2', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 1 } }],
+      ['output', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 0 } }],
       ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
     ]),
     config: new Map([
@@ -346,14 +350,13 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
   },
   [ComponentType.Nand4Gate]: {
     id: ComponentType.Nand4Gate,
-    name: 'NAND4 Gate',
     pins: new Map([
       ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
-      ['input1', { subtype: 'logicInput', sourceType: undefined }],
-      ['input2', { subtype: 'logicInput', sourceType: undefined }],
-      ['input3', { subtype: 'logicInput', sourceType: undefined }],
-      ['input4', { subtype: 'logicInput', sourceType: undefined }],
-      ['output', { subtype: 'logicOutput', sourceType: undefined }],
+      ['input1', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 0 } }],
+      ['input2', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 1 } }],
+      ['input3', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 2 } }],
+      ['input4', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 3 } }],
+      ['output', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 0 } }],
       ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
     ]),
     config: new Map([
@@ -365,18 +368,17 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
   },
   [ComponentType.Nand8Gate]: {
     id: ComponentType.Nand8Gate,
-    name: 'NAND8 Gate',
     pins: new Map([
       ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
-      ['input1', { subtype: 'logicInput', sourceType: undefined }],
-      ['input2', { subtype: 'logicInput', sourceType: undefined }],
-      ['input3', { subtype: 'logicInput', sourceType: undefined }],
-      ['input4', { subtype: 'logicInput', sourceType: undefined }],
-      ['input5', { subtype: 'logicInput', sourceType: undefined }],
-      ['input6', { subtype: 'logicInput', sourceType: undefined }],
-      ['input7', { subtype: 'logicInput', sourceType: undefined }],
-      ['input8', { subtype: 'logicInput', sourceType: undefined }],
-      ['output', { subtype: 'logicOutput', sourceType: undefined }],
+      ['input1', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 0 } }],
+      ['input2', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 1 } }],
+      ['input3', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 2 } }],
+      ['input4', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 3 } }],
+      ['input5', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 4 } }],
+      ['input6', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 5 } }],
+      ['input7', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 6 } }],
+      ['input8', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 7 } }],
+      ['output', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 0 } }],
       ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
     ]),
     config: new Map([
@@ -388,12 +390,11 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
   },
   [ComponentType.NorGate]: {
     id: ComponentType.NorGate,
-    name: 'NOR Gate',
     pins: new Map([
       ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
-      ['input1', { subtype: 'logicInput', sourceType: undefined }],
-      ['input2', { subtype: 'logicInput', sourceType: undefined }],
-      ['output', { subtype: 'logicOutput', sourceType: undefined }],
+      ['input1', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 0 } }],
+      ['input2', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 1 } }],
+      ['output', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 0 } }],
       ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
     ]),
     config: new Map([
@@ -405,14 +406,13 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
   },
   [ComponentType.Nor4Gate]: {
     id: ComponentType.Nor4Gate,
-    name: 'NOR4 Gate',
     pins: new Map([
       ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
-      ['input1', { subtype: 'logicInput', sourceType: undefined }],
-      ['input2', { subtype: 'logicInput', sourceType: undefined }],
-      ['input3', { subtype: 'logicInput', sourceType: undefined }],
-      ['input4', { subtype: 'logicInput', sourceType: undefined }],
-      ['output', { subtype: 'logicOutput', sourceType: undefined }],
+      ['input1', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 0 } }],
+      ['input2', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 1 } }],
+      ['input3', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 2 } }],
+      ['input4', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 3 } }],
+      ['output', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 0 } }],
       ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
     ]),
     config: new Map([
@@ -424,18 +424,17 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
   },
   [ComponentType.Nor8Gate]: {
     id: ComponentType.Nor8Gate,
-    name: 'NOR8 Gate',
     pins: new Map([
       ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
-      ['input1', { subtype: 'logicInput', sourceType: undefined }],
-      ['input2', { subtype: 'logicInput', sourceType: undefined }],
-      ['input3', { subtype: 'logicInput', sourceType: undefined }],
-      ['input4', { subtype: 'logicInput', sourceType: undefined }],
-      ['input5', { subtype: 'logicInput', sourceType: undefined }],
-      ['input6', { subtype: 'logicInput', sourceType: undefined }],
-      ['input7', { subtype: 'logicInput', sourceType: undefined }],
-      ['input8', { subtype: 'logicInput', sourceType: undefined }],
-      ['output', { subtype: 'logicOutput', sourceType: undefined }],
+      ['input1', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 0 } }],
+      ['input2', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 1 } }],
+      ['input3', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 2 } }],
+      ['input4', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 3 } }],
+      ['input5', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 4 } }],
+      ['input6', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 5 } }],
+      ['input7', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 6 } }],
+      ['input8', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 7 } }],
+      ['output', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 0 } }],
       ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
     ]),
     config: new Map([
@@ -447,12 +446,11 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
   },
   [ComponentType.XorGate]: {
     id: ComponentType.XorGate,
-    name: 'XOR Gate',
     pins: new Map([
       ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
-      ['input1', { subtype: 'logicInput', sourceType: undefined }],
-      ['input2', { subtype: 'logicInput', sourceType: undefined }],
-      ['output', { subtype: 'logicOutput', sourceType: undefined }],
+      ['input1', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 0 } }],
+      ['input2', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 1 } }],
+      ['output', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 0 } }],
       ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
     ]),
     config: new Map([
@@ -464,14 +462,13 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
   },
   [ComponentType.Xor4Gate]: {
     id: ComponentType.Xor4Gate,
-    name: 'XOR4 Gate',
     pins: new Map([
       ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
-      ['input1', { subtype: 'logicInput', sourceType: undefined }],
-      ['input2', { subtype: 'logicInput', sourceType: undefined }],
-      ['input3', { subtype: 'logicInput', sourceType: undefined }],
-      ['input4', { subtype: 'logicInput', sourceType: undefined }],
-      ['output', { subtype: 'logicOutput', sourceType: undefined }],
+      ['input1', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 0 } }],
+      ['input2', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 1 } }],
+      ['input3', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 2 } }],
+      ['input4', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 3 } }],
+      ['output', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 0 } }],
       ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
     ]),
     config: new Map([
@@ -483,24 +480,123 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
   },
   [ComponentType.Xor8Gate]: {
     id: ComponentType.Xor8Gate,
-    name: 'XOR8 Gate',
     pins: new Map([
       ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
-      ['input1', { subtype: 'logicInput', sourceType: undefined }],
-      ['input2', { subtype: 'logicInput', sourceType: undefined }],
-      ['input3', { subtype: 'logicInput', sourceType: undefined }],
-      ['input4', { subtype: 'logicInput', sourceType: undefined }],
-      ['input5', { subtype: 'logicInput', sourceType: undefined }],
-      ['input6', { subtype: 'logicInput', sourceType: undefined }],
-      ['input7', { subtype: 'logicInput', sourceType: undefined }],
-      ['input8', { subtype: 'logicInput', sourceType: undefined }],
-      ['output', { subtype: 'logicOutput', sourceType: undefined }],
+      ['input1', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 0 } }],
+      ['input2', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 1 } }],
+      ['input3', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 2 } }],
+      ['input4', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 3 } }],
+      ['input5', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 4 } }],
+      ['input6', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 5 } }],
+      ['input7', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 6 } }],
+      ['input8', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 7 } }],
+      ['output', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 0 } }],
       ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
     ]),
     config: new Map([
       ['defaultLogicFamily', 'CMOS1'],
       ['activationLogic', 'positive'],
       ['transitionSpan', '6'],
+      ['initializationOrder', ''],
+    ]),
+  },
+  [ComponentType.HalfAdder]: {
+    id: ComponentType.HalfAdder,
+    pins: new Map([
+      ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
+      ['inputA', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 0 } }],
+      ['inputB', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 1 } }],
+      ['sum', { subtype: 'logicOutput', logicPinData: { interface: 'sum', index: 0 } }],
+      ['carry', { subtype: 'logicOutput', logicPinData: { interface: 'carry', index: 0 } }],
+      ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
+    ]),
+    config: new Map([
+      ['defaultLogicFamily', 'CMOS1'],
+      ['transitionSpan', '2'],
+      ['initializationOrder', ''],
+    ]),
+  },
+  [ComponentType.Adder]: {
+    id: ComponentType.Adder,
+    pins: new Map([
+      ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
+      ['carryIn', { subtype: 'logicInput', logicPinData: { interface: 'carryIn', index: 0 } }],
+      ['inputA', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 0 } }],
+      ['inputB', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 1 } }],
+      ['sum', { subtype: 'logicOutput', logicPinData: { interface: 'sum', index: 0 } }],
+      ['carryOut', { subtype: 'logicOutput', logicPinData: { interface: 'carryOut', index: 0 } }],
+      ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
+    ]),
+    config: new Map([
+      ['defaultLogicFamily', 'CMOS1'],
+      ['transitionSpan', '4'],
+      ['initializationOrder', ''],
+    ]),
+  },
+  [ComponentType.EightBitAdder]: {
+    id: ComponentType.EightBitAdder,
+    pins: new Map([
+      ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
+      ['carryIn', { subtype: 'logicInput', logicPinData: { interface: 'carryIn', index: 0 } }],
+      ['inputA-0', { subtype: 'logicInput', logicPinData: { interface: 'inputA', index: 0 } }],
+      ['inputA-1', { subtype: 'logicInput', logicPinData: { interface: 'inputA', index: 1 } }],
+      ['inputA-2', { subtype: 'logicInput', logicPinData: { interface: 'inputA', index: 2 } }],
+      ['inputA-3', { subtype: 'logicInput', logicPinData: { interface: 'inputA', index: 3 } }],
+      ['inputA-4', { subtype: 'logicInput', logicPinData: { interface: 'inputA', index: 4 } }],
+      ['inputA-5', { subtype: 'logicInput', logicPinData: { interface: 'inputA', index: 5 } }],
+      ['inputA-6', { subtype: 'logicInput', logicPinData: { interface: 'inputA', index: 6 } }],
+      ['inputA-7', { subtype: 'logicInput', logicPinData: { interface: 'inputA', index: 7 } }],
+      ['inputB-0', { subtype: 'logicInput', logicPinData: { interface: 'inputB', index: 0 } }],
+      ['inputB-1', { subtype: 'logicInput', logicPinData: { interface: 'inputB', index: 1 } }],
+      ['inputB-2', { subtype: 'logicInput', logicPinData: { interface: 'inputB', index: 2 } }],
+      ['inputB-3', { subtype: 'logicInput', logicPinData: { interface: 'inputB', index: 3 } }],
+      ['inputB-4', { subtype: 'logicInput', logicPinData: { interface: 'inputB', index: 4 } }],
+      ['inputB-5', { subtype: 'logicInput', logicPinData: { interface: 'inputB', index: 5 } }],
+      ['inputB-6', { subtype: 'logicInput', logicPinData: { interface: 'inputB', index: 6 } }],
+      ['inputB-7', { subtype: 'logicInput', logicPinData: { interface: 'inputB', index: 7 } }],
+      ['sum-0', { subtype: 'logicOutput', logicPinData: { interface: 'sum', index: 0 } }],
+      ['sum-1', { subtype: 'logicOutput', logicPinData: { interface: 'sum', index: 1 } }],
+      ['sum-2', { subtype: 'logicOutput', logicPinData: { interface: 'sum', index: 2 } }],
+      ['sum-3', { subtype: 'logicOutput', logicPinData: { interface: 'sum', index: 3 } }],
+      ['sum-4', { subtype: 'logicOutput', logicPinData: { interface: 'sum', index: 4 } }],
+      ['sum-5', { subtype: 'logicOutput', logicPinData: { interface: 'sum', index: 5 } }],
+      ['sum-6', { subtype: 'logicOutput', logicPinData: { interface: 'sum', index: 6 } }],
+      ['sum-7', { subtype: 'logicOutput', logicPinData: { interface: 'sum', index: 7 } }],
+      ['carryOut', { subtype: 'logicOutput', logicPinData: { interface: 'carryOut', index: 0 } }],
+      ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
+    ]),
+    config: new Map([
+      ['defaultLogicFamily', 'CMOS1'],
+      ['transitionSpan', '4'],
+      ['initializationOrder', ''],
+    ]),
+  },
+  [ComponentType.EightBitOnesComplement]: {
+    id: ComponentType.EightBitOnesComplement,
+    pins: new Map([
+      ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
+      ['invert', { subtype: 'logicInput', logicPinData: { interface: 'invert', index: 0 } }],
+      ['input-0', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 0 } }],
+      ['input-1', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 1 } }],
+      ['input-2', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 2 } }],
+      ['input-3', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 3 } }],
+      ['input-4', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 4 } }],
+      ['input-5', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 5 } }],
+      ['input-6', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 6 } }],
+      ['input-7', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 7 } }],
+      ['output-0', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 0 } }],
+      ['output-1', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 1 } }],
+      ['output-2', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 2 } }],
+      ['output-3', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 3 } }],
+      ['output-4', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 4 } }],
+      ['output-5', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 5 } }],
+      ['output-6', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 6 } }],
+      ['output-7', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 7 } }],
+      ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
+    ]),
+    config: new Map([
+      ['defaultLogicFamily', 'CMOS1'],
+      ['transitionSpan', '3'],
       ['initializationOrder', ''],
     ]),
   },
