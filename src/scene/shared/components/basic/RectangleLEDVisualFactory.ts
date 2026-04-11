@@ -99,18 +99,12 @@ export class RectangleLEDVisualFactory extends ComponentVisualFactoryBase {
   override getConfigFormDefinition(): ConfigFormDefinition | null {
     return {
       fields: [
-        {
-          key: 'transitionSpan',
-          label: 'Lit delay (ticks)',
-          type: 'number',
-          min: 1,
-          step: 1,
-        },
-        { key: 'idleColor', label: 'Idle Color', type: 'color' },
-        { key: 'activeColor', label: 'Active Color', type: 'color' },
-        { key: 'size', label: 'Size', type: 'number', min: 1, max: 16, step: 1 },
-        { key: 'hwRatio', label: 'Ratio H/W', type: 'number' },
-        { key: 'ywRatio', label: 'Ratio Y/W', type: 'number' },
+        { key: 'transitionSpan', type: 'number', min: 1, step: 1 },
+        { key: 'idleColor', type: 'color' },
+        { key: 'activeColor', type: 'color' },
+        { key: 'size', type: 'number', min: 1, max: 16, step: 1 },
+        { key: 'hwRatio', type: 'number' },
+        { key: 'ywRatio', type: 'number' },
       ],
     };
   }

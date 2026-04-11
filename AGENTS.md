@@ -160,6 +160,7 @@ engine.on('simulationTick', (state) => { ... });
 
 ```json
 {
-  "three": "^0.183.2"
+  "three": "^0.183.2",
+  "i18next": ">=25.0.0 <27.0.0"
 }
 ```

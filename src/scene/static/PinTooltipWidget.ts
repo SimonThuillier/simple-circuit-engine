@@ -7,6 +7,7 @@
  */
 
 import { ComponentType, COMPONENT_TYPE_METADATA } from 'simple-circuit-engine/core';
+import { sceT } from '../../i18n';
 
 /**
  * Manages a transient HTML tooltip displayed when hovering a component pin.
@@ -36,7 +37,8 @@ export class PinTooltipWidget {
     this.hide();
     this._currentComponentType = componentType;
 
-    const componentName = COMPONENT_TYPE_METADATA[componentType]?.name ?? componentType;
+    const fallback = COMPONENT_TYPE_METADATA[componentType]?.name ?? componentType;
+    const componentName = sceT(`components.${componentType}.name`, { defaultValue: fallback });
 
     this._element = document.createElement('div');
     this._element.textContent = `${pinLabel} (${componentName})`;
@@ -90,6 +92,14 @@ export class PinTooltipWidget {
 
   get isVisible(): boolean {
     return this._element !== null;
+  }
+
+  /**
+   * Signal a language change — hides any open tooltip so the next hover
+   * recreates it with updated translations.
+   */
+  setLanguage(_lng: string): void {
+    this.hide();
   }
 
   dispose(): void {

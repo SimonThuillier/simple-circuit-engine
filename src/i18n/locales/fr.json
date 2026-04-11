@@ -1,0 +1,222 @@
+{
+  "components": {
+    "groups": {
+      "basic": {
+        "name": "Composants basiques"
+      },
+      "gates": {
+        "name": "Portes logiques"
+      }
+    },
+    "battery": {
+      "name": "Pile"
+    },
+    "clock": {
+      "name": "Horloge",
+      "config": {
+        "fields": {
+          "startHigh": { "name": "Démarrer haut ?" },
+          "halfPeriod": { "name": "Demi-période" }
+        }
+      }
+    },
+    "label": {
+      "name": "Libellé",
+      "config": {
+        "fields": {
+          "text": { "name": "Texte" },
+          "size": { "name": "Taille" }
+        }
+      }
+    },
+    "switch": {
+      "name": "Interrupteur",
+      "config": {
+        "fields": {
+          "initialState": { "name": "Ouvert au démarrage" },
+          "transitionSpan": { "name": "Délai (ticks)" },
+          "size": { "name": "Taille" }
+        }
+      }
+    },
+    "doubleThrowSwitch": {
+      "name": "Interrupteur 2-1",
+      "config": {
+        "fields": {
+          "initialState": { "name": "Entrée 1 au démarrage" },
+          "transitionSpan": { "name": "Délai (ticks)" },
+          "size": { "name": "Taille" }
+        }
+      }
+    },
+    "lightbulb": {
+      "name": "Ampoule",
+      "config": {
+        "fields": {
+          "transitionSpan": { "name": "Délai d'allumage (ticks)" },
+          "size": { "name": "Taille" }
+        }
+      }
+    },
+    "rectangleLED": {
+      "name": "LED rectangulaire",
+      "config": {
+        "fields": {
+          "transitionSpan": { "name": "Délai d'allumage (ticks)" },
+          "idleColor": { "name": "Couleur inactive" },
+          "activeColor": { "name": "Couleur active" },
+          "size": { "name": "Taille" },
+          "hwRatio": { "name": "Ratio H/L" },
+          "ywRatio": { "name": "Ratio Y/L" }
+        }
+      }
+    },
+    "relay": {
+      "name": "Relais",
+      "config": {
+        "fields": {
+          "activationLogic": { "name": "Logique d'activation" },
+          "transitionSpan": { "name": "Durée de transition (ticks)" },
+          "size": { "name": "Taille" },
+          "initializationOrder": { "name": "Ordre d'initialisation" }
+        }
+      }
+    },
+    "smallLED": {
+      "name": "Petite LED",
+      "config": {
+        "fields": {
+          "transitionSpan": { "name": "Délai d'allumage (ticks)" },
+          "idleColor": { "name": "Couleur inactive" },
+          "activeColor": { "name": "Couleur active" },
+          "size": { "name": "Taille" },
+          "ywRatio": { "name": "Ratio Y/L" }
+        }
+      }
+    },
+    "inverter": {
+      "name": "Inverseur",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Famille logique" },
+          "activationLogic": { "name": "Logique d'activation" },
+          "transitionSpan": { "name": "Délai de propagation (ticks)" },
+          "initializationOrder": { "name": "Ordre d'initialisation" }
+        }
+      }
+    },
+    "nandGate": {
+      "name": "Porte NAND",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Famille logique" },
+          "activationLogic": { "name": "Logique d'activation" },
+          "transitionSpan": { "name": "Délai de propagation (ticks)" },
+          "initializationOrder": { "name": "Ordre d'initialisation" }
+        }
+      }
+    },
+    "nand4Gate": {
+      "name": "Porte NAND 4 entrées",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Famille logique" },
+          "activationLogic": { "name": "Logique d'activation" },
+          "transitionSpan": { "name": "Délai de propagation (ticks)" },
+          "initializationOrder": { "name": "Ordre d'initialisation" }
+        }
+      }
+    },
+    "nand8Gate": {
+      "name": "Porte NAND 8 entrées",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Famille logique" },
+          "activationLogic": { "name": "Logique d'activation" },
+          "transitionSpan": { "name": "Délai de propagation (ticks)" },
+          "initializationOrder": { "name": "Ordre d'initialisation" }
+        }
+      }
+    },
+    "norGate": {
+      "name": "Porte NOR",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Famille logique" },
+          "activationLogic": { "name": "Logique d'activation" },
+          "transitionSpan": { "name": "Délai de propagation (ticks)" },
+          "initializationOrder": { "name": "Ordre d'initialisation" }
+        }
+      }
+    },
+    "nor4Gate": {
+      "name": "Porte NOR 4 entrées",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Famille logique" },
+          "activationLogic": { "name": "Logique d'activation" },
+          "transitionSpan": { "name": "Délai de propagation (ticks)" },
+          "initializationOrder": { "name": "Ordre d'initialisation" }
+        }
+      }
+    },
+    "nor8Gate": {
+      "name": "Porte NOR 8 entrées",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Famille logique" },
+          "activationLogic": { "name": "Logique d'activation" },
+          "transitionSpan": { "name": "Délai de propagation (ticks)" },
+          "initializationOrder": { "name": "Ordre d'initialisation" }
+        }
+      }
+    },
+    "xorGate": {
+      "name": "Porte XOR",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Famille logique" },
+          "activationLogic": { "name": "Logique d'activation" },
+          "transitionSpan": { "name": "Délai de propagation (ticks)" },
+          "initializationOrder": { "name": "Ordre d'initialisation" }
+        }
+      }
+    },
+    "xor4Gate": {
+      "name": "Porte XOR 4 entrées",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Famille logique" },
+          "activationLogic": { "name": "Logique d'activation" },
+          "transitionSpan": { "name": "Délai de propagation (ticks)" },
+          "initializationOrder": { "name": "Ordre d'initialisation" }
+        }
+      }
+    },
+    "xor8Gate": {
+      "name": "Porte XOR 8 entrées",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Famille logique" },
+          "activationLogic": { "name": "Logique d'activation" },
+          "transitionSpan": { "name": "Délai de propagation (ticks)" },
+          "initializationOrder": { "name": "Ordre d'initialisation" }
+        }
+      }
+    },
+    "default": {
+      "config": {
+        "fields": {
+          "color": { "name": "Couleur" }
+        }
+      }
+    }
+  },
+  "picker": {
+    "title": "Composants",
+    "branchingPoint": "Point de jonction"
+  },
+  "config": {
+    "title": "Configuration: {{name}}"
+  }
+}

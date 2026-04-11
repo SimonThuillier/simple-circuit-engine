@@ -127,14 +127,8 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
   override getConfigFormDefinition(): ConfigFormDefinition | null {
     return {
       fields: [
-        {
-          key: 'transitionSpan',
-          label: 'Lit delay (ticks)',
-          type: 'number',
-          min: 1,
-          step: 1,
-        },
-        { key: 'size', label: 'Size', type: 'number', min: 1, max: 16, step: 1 },
+        { key: 'transitionSpan', type: 'number', min: 1, step: 1 },
+        { key: 'size', type: 'number', min: 1, max: 16, step: 1 },
       ],
     };
   }

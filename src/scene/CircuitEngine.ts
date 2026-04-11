@@ -332,6 +332,25 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
   }
 
   /**
+   * Refresh all scene widgets to display strings in the given language.
+   *
+   * Does NOT change the consumer's i18next instance — the caller must have
+   * already called `i18next.changeLanguage(lng)` before invoking this. This
+   * method only signals the scene to re-read translations for currently-open
+   * widgets (pin tooltip, component picker, config panel).
+   *
+   * Safe to call at any point in the engine lifecycle after `initialize()`.
+   *
+   * @param lng - Target language code (e.g., 'en', 'fr')
+   */
+  setLanguage(lng: string): void {
+    console.log(lng);
+    this._checkInitialized();
+    this._editController?.setLanguage(lng);
+    this._simulationController?.setLanguage(lng);
+  }
+
+  /**
    * Switch between edit and simulation modes.
    *
    * @param mode - Target mode to switch to

@@ -10,6 +10,7 @@
 import type { ComponentType } from 'simple-circuit-engine/core';
 import { COMPONENT_TYPE_METADATA } from 'simple-circuit-engine/core';
 import type { IGroupedFactoryRegistry } from '../../shared/components/GroupedFactoryRegistry';
+import { sceT } from '../../../i18n';
 
 /**
  * Sentinel value representing the "Branching Point" pseudo-component entry.
@@ -57,6 +58,7 @@ const VIEWPORT_PADDING = 10;
 export class ComponentPickerWidget {
   // DOM elements
   private container: HTMLDivElement | null = null;
+  private titleEl: HTMLSpanElement | null = null;
   private groupDropdown: HTMLSelectElement | null = null;
   private itemList: HTMLDivElement | null = null;
 
@@ -141,6 +143,7 @@ export class ComponentPickerWidget {
     this.removeEventListeners();
     document.body.removeChild(this.container);
     this.container = null;
+    this.titleEl = null;
     this.groupDropdown = null;
     this.itemList = null;
   }
@@ -150,6 +153,31 @@ export class ComponentPickerWidget {
    */
   dispose(): void {
     this.close();
+  }
+
+  /**
+   * Refresh all user-visible text in place after a language change.
+   * No-op if the widget is not currently open.
+   * Preserves drag position, scroll, resize dimensions, and current selection.
+   */
+  setLanguage(_lng: string): void {
+    if (!this.isOpen) return;
+
+    if (this.titleEl) {
+      this.titleEl.textContent = sceT('picker.title', { defaultValue: 'Components' });
+    }
+
+    if (this.groupDropdown) {
+      const selectedValue = this.groupDropdown.value;
+      for (const option of Array.from(this.groupDropdown.options)) {
+        option.textContent = sceT(`components.groups.${option.value}.name`, {
+          defaultValue: option.textContent ?? option.value,
+        });
+      }
+      this.groupDropdown.value = selectedValue;
+    }
+
+    this.renderItemList();
   }
 
   // ========================================================================
@@ -194,11 +222,12 @@ export class ComponentPickerWidget {
     });
 
     const title = document.createElement('span');
-    title.textContent = 'Components';
+    title.textContent = sceT('picker.title', { defaultValue: 'Components' });
     Object.assign(title.style, {
       fontWeight: 'bold',
       fontSize: '13px',
     });
+    this.titleEl = title;
 
     const closeBtn = document.createElement('button');
     closeBtn.textContent = '\u00D7'; // multiplication sign (x)
@@ -249,13 +278,23 @@ export class ComponentPickerWidget {
     // Exception rule : if groups doesn't include a basic group
     // an empty one is created to get access to branching points
     if (groups.filter((g) => g.id === BRANCHING_POINT_GROUP).length < 1) {
-      groups = [{ id: BRANCHING_POINT_GROUP, label: BRANCHING_POINT_GROUP }, ...groups];
+      groups = [
+        {
+          id: BRANCHING_POINT_GROUP,
+          label: sceT(`components.groups.${BRANCHING_POINT_GROUP}.name`, {
+            defaultValue: BRANCHING_POINT_GROUP,
+          }),
+        },
+        ...groups,
+      ];
     }
 
     for (const group of groups) {
       const option = document.createElement('option');
       option.value = group.id;
-      option.textContent = group.label;
+      option.textContent = sceT(`components.groups.${group.id}.name`, {
+        defaultValue: group.label,
+      });
       this.groupDropdown.appendChild(option);
     }
     this.groupDropdown.value = this.state.selectedGroupId;
@@ -298,13 +337,16 @@ export class ComponentPickerWidget {
     // Prepend Branching Point entry in the basic group
     if (groupId === BRANCHING_POINT_GROUP) {
       this.itemList.appendChild(
-        this.createItemElement('Branching Point', BRANCHING_POINT_SENTINEL)
+        this.createItemElement(
+          sceT('picker.branchingPoint', { defaultValue: 'Branching Point' }),
+          BRANCHING_POINT_SENTINEL
+        )
       );
     }
 
     for (const type of types) {
       const metadata = COMPONENT_TYPE_METADATA[type];
-      const label = metadata ? metadata.name : type;
+      const label = sceT(`components.${type}.name`, { defaultValue: metadata?.name ?? type });
       this.itemList.appendChild(this.createItemElement(label, type));
     }
   }

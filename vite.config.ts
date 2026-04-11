@@ -15,7 +15,7 @@ export default defineConfig({
     },
     rolldownOptions: {
       // Externalize dependencies that shouldn't be bundled
-      external: ['three', /^three\/addons\/.*/, /^three\/examples\/.*/, 'lil-gui'],
+      external: ['three', /^three\/addons\/.*/, /^three\/examples\/.*/, 'lil-gui', 'i18next'],
       output: {
         // Provide global variables for externalized deps in UMD build
         globals: {

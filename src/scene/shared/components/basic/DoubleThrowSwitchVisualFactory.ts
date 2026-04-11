@@ -141,26 +141,9 @@ export class DoubleThrowSwitchVisualFactory extends ComponentVisualFactoryBase {
   override getConfigFormDefinition(): ConfigFormDefinition | null {
     return {
       fields: [
-        {
-          key: 'initialState',
-          label: 'Input1 at start',
-          type: 'boolean',
-        },
-        {
-          key: 'transitionSpan',
-          label: 'Delay (ticks)',
-          type: 'number',
-          min: 1,
-          step: 1,
-        },
-        {
-          key: 'size',
-          label: 'Size',
-          type: 'number',
-          min: 1,
-          max: 16,
-          step: 1,
-        },
+        { key: 'initialState', type: 'boolean' },
+        { key: 'transitionSpan', type: 'number', min: 1, step: 1 },
+        { key: 'size', type: 'number', min: 1, max: 16, step: 1 },
       ],
     };
   }

@@ -315,6 +315,13 @@ export class BuildTool implements IEditingTool {
   }
 
   /**
+   * Forward a language change to the component picker.
+   */
+  setLanguage(lng: string): void {
+    this.pickerWidget?.setLanguage(lng);
+  }
+
+  /**
    * Cancel current ongoing operation : can be called from outside if needed
    */
   cancelOperation(): void {

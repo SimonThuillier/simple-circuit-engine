@@ -146,27 +146,12 @@ export class NandGateVisualFactory extends ComponentVisualFactoryBase {
       fields: [
         {
           key: 'defaultLogicFamily',
-          label: 'Logic Family',
           type: 'dropdown',
           options: { CMOS: 'CMOS1', TTL: 'TTL1', Sandbox: 'Sandbox' },
         },
-        {
-          key: 'activationLogic',
-          label: 'Activation Logic',
-          type: 'boolean',
-        },
-        {
-          key: 'transitionSpan',
-          label: 'Propagation delay (ticks)',
-          type: 'number',
-          min: 1,
-          disabled: logicFamily !== 'Sandbox',
-        },
-        {
-          key: 'initializationOrder',
-          label: 'Init Order',
-          type: 'number',
-        },
+        { key: 'activationLogic', type: 'boolean' },
+        { key: 'transitionSpan', type: 'number', min: 1, disabled: logicFamily !== 'Sandbox' },
+        { key: 'initializationOrder', type: 'number' },
       ],
     };
   }

@@ -18,6 +18,7 @@ However, it aims to teach real-world electronic design principles so modeling of
 - TypeScript 6.0+ (strict mode), targeting ES2022
 - Three.js 0.183+ (scene, camera, controls, 3D objects, Line2)
 - lil-gui as helper for small interactive modal forms
+- i18next for internationalization (see `src/i18n/CLAUDE.md` for conventions)
 - in-memory circuit model, optional loading/saving from/to a JSON file
 
 ## Project Structure
@@ -26,6 +27,7 @@ Simple Circuit Engine follows a **Model-Controller** architecture with clear sep
 
 - **Core module** (`src/core/`): Pure TypeScript domain **Model** and simulation engine (no dependencies).
 - **Scene module** (`src/scene/`): Three.js visualization layer with editing **Controller** and its tools and the simulation animated **Controller**.
+- **i18next Internationalization** (`src/i18n/`) : localization setup and locales
 
 ### Core Module (`src/core/`)
 

@@ -258,10 +258,10 @@ export class RelayVisualFactory extends ComponentVisualFactoryBase {
   override getConfigFormDefinition(): ConfigFormDefinition | null {
     return {
       fields: [
-        { key: 'activationLogic', label: 'Activation Logic', type: 'boolean' },
-        { key: 'transitionSpan', label: 'Transition Span (ticks)', type: 'number' },
-        { key: 'size', label: 'Size', type: 'number', min: 1, max: 16, step: 1 },
-        { key: 'initializationOrder', label: 'Init Order', type: 'number' },
+        { key: 'activationLogic', type: 'boolean' },
+        { key: 'transitionSpan', type: 'number' },
+        { key: 'size', type: 'number', min: 1, max: 16, step: 1 },
+        { key: 'initializationOrder', type: 'number' },
       ],
     };
   }
