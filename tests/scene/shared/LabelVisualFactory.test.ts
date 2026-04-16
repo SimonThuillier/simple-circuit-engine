@@ -112,7 +112,7 @@ describe('LabelVisualFactory', () => {
       const textField = formDef!.fields.find((f) => f.key === 'text');
       expect(textField).toBeDefined();
       expect(textField!.type).toBe('text');
-      expect(textField!.label).toBe('Label Text');
+      expect(textField!.key).toBe('text');
     });
   });
 

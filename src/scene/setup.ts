@@ -1,25 +1,28 @@
-import { ComponentType } from 'simple-circuit-engine/core';
+import {ComponentType} from 'simple-circuit-engine/core';
 import {
-  type IGroupedFactoryRegistry,
+  AdderVisualFactory,
   BatteryVisualFactory,
   ClockVisualFactory,
+  DoubleThrowSwitchVisualFactory,
+  EightBitAdderVisualFactory, EightBitOnesComplementVisualFactory,
+  HalfAdderVisualFactory,
+  type IGroupedFactoryRegistry,
+  InverterVisualFactory,
   LabelVisualFactory,
   LightbulbVisualFactory,
+  Nand4GateVisualFactory,
+  Nand8GateVisualFactory,
+  NandGateVisualFactory,
+  Nor4GateVisualFactory,
+  Nor8GateVisualFactory,
+  NorGateVisualFactory,
   RectangleLEDVisualFactory,
   RelayVisualFactory,
   SmallLEDVisualFactory,
   SwitchVisualFactory,
-  DoubleThrowSwitchVisualFactory,
-  InverterVisualFactory,
-  NandGateVisualFactory,
-  Nand4GateVisualFactory,
-  Nand8GateVisualFactory,
-  NorGateVisualFactory,
-  Nor4GateVisualFactory,
-  Nor8GateVisualFactory,
-  XorGateVisualFactory,
   Xor4GateVisualFactory,
   Xor8GateVisualFactory,
+  XorGateVisualFactory,
 } from './shared/components';
 
 /**
@@ -69,5 +72,24 @@ export function registerGatesComponentsFactories(
       .add(ComponentType.XorGate, new XorGateVisualFactory())
       .add(ComponentType.Xor4Gate, new Xor4GateVisualFactory())
       .add(ComponentType.Xor8Gate, new Xor8GateVisualFactory())
+  );
+}
+
+/**
+ * Register all arithmetic components visual factories in the arithmetic group
+ * Arithmetic components are : HalfAdder
+ * @public
+ * @param registry - A grouped factory registry to populate
+ * @returns The input registry for chaining
+ */
+export function registerArithmeticComponentsFactories(
+  registry: IGroupedFactoryRegistry
+): IGroupedFactoryRegistry {
+  return registry.addGroup('arithmetic', 'Arithmetic', (group) =>
+    group
+        .add(ComponentType.HalfAdder, new HalfAdderVisualFactory())
+        .add(ComponentType.Adder, new AdderVisualFactory())
+        .add(ComponentType.EightBitAdder, new EightBitAdderVisualFactory())
+        .add(ComponentType.EightBitOnesComplement, new EightBitOnesComplementVisualFactory())
   );
 }

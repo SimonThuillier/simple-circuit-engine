@@ -1,0 +1,63 @@
+
+component_group : arithmetic
+component: halfAdder
+
+The classic Half Adder made of a XOR Gate and a AND gate.
+
+pins: new Map([
+      ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
+      ['inputA', { subtype: 'logicInput', sourceType: undefined }],
+      ['inputB', { subtype: 'logicInput', sourceType: undefined }],
+      ['sum', { subtype: 'logicOutput', sourceType: undefined }],
+      ['carry', { subtype: 'logicOutput', sourceType: undefined }],
+      ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
+    ])
+config: new Map([
+   ['defaultLogicFamily', 'CMOS1'],
+   ['transitionSpan', '2'], // read only when logicFamily set
+   ['initializationOrder', ''],
+]),
+
+state:
+Given that more and more upper level components with more than 1 output will be done after the convention of having
+state in [
+'00', // both outputs low
+'10', // sum (first output) high, carry low
+'01', // sum low, carry high
+] is proposed
+
+Guards:
+vcc guard: if pin vcc has not voltage a vcc guard clause like in LogicGateBehaviorMixin should bring the state to '00' immediately
+nonLogicInputGuard: if any logicInput pin is nonlogical a nonLogicInputGuard like in LogicGateBehaviorMixin should bring the state to 'indeterminate' immediately.
+
+Transitions :
+to handle transient state the formula beneath is proposed :
+`to${nextState}`
+
+the full list of states would then be :
+['00', '10', '01', 'to10', 'to01', 'to00', 'indeterminate']
+
+events:
+Following the convention proposed above and to avoid hardCoding all possible transitions events name will be computed with the formula :
+`to${nextState}`
+
+Note that the state and nextState in the behavior result will be the primary source of information for animations.
+
+behavior:
+using the convention above the onPinsChange should use a functional programmation style logic.
+Computing the final target state given pins state : then if it's the same of the current one or the one we're already heading at do nothing.
+else transition state = `to${nextState}`, event = `to${nextState}`. The span used can use the symmetrical simplification pattern :
+`
+const transitionSpan = getTransitionSpan(component.config);
+    const span =
+      state.expirationTick < 1 ? transitionSpan : Math.max(targetTick - state.startTick, 1);
+`
+
+
+Visual Factory:
+see joined drawing
+standard group with hitbox, an EmptyRectangle envelope, divided by a box separator. Upper area will be filled by a RectangleWithNail sumFiller and a box halfPlus. LowerArea will be filled by the Box carryFiller.
+Component hitbox dimension should be width 3, height 2, depth 3 with an envelope thickness of 0.1 and a separator/nail width of 0.3
+
+animations:
+Only sumFiller (sync with sum current/next state) and carryFiller (sync with carry current/next state) material will be animated going back and forth from blue to red.

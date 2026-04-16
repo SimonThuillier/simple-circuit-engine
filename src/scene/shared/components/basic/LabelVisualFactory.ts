@@ -284,19 +284,8 @@ export class LabelVisualFactory extends ComponentVisualFactoryBase {
   override getConfigFormDefinition(): ConfigFormDefinition {
     return {
       fields: [
-        {
-          key: 'text',
-          label: 'Label Text',
-          type: 'text',
-        },
-        {
-          key: 'size',
-          label: 'Size',
-          type: 'number',
-          min: 1,
-          max: 16,
-          step: 1,
-        },
+        { key: 'text', type: 'text' },
+        { key: 'size', type: 'number', min: 1, max: 16, step: 1 },
       ],
     };
   }

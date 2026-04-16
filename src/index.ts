@@ -12,3 +12,4 @@
 
 export * from './core/index.js';
 export * from './scene/index.js';
+export { registerSceTranslations, SCE_NS, type SceLocale } from './i18n/index.js';

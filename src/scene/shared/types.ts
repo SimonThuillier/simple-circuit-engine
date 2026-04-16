@@ -496,9 +496,6 @@ export interface ConfigFieldDefinition {
   /** Config map key (e.g., "activeColor", "initialState") */
   key: string;
 
-  /** Human-readable label for the form field */
-  label: string;
-
   /** Control type to render */
   type: ConfigControlType;
 

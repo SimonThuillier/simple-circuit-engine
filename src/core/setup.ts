@@ -23,6 +23,10 @@ import {
   Xor4GateBehavior,
   Xor8GateBehavior,
   ClockBehavior,
+  HalfAdderBehavior,
+  AdderBehavior,
+  EightBitAdderBehavior,
+  EightBitOnesComplementBehavior,
 } from './simulation';
 
 /**
@@ -64,5 +68,23 @@ export function registerGatesComponentsBehaviors(registry: BehaviorRegistry): Be
     .register(new XorGateBehavior())
     .register(new Xor4GateBehavior())
     .register(new Xor8GateBehavior());
+  return registry;
+}
+
+/**
+ * Register all arithmetic component behaviors in the given registry
+ * Arithmetic components are : HalfAdder, Adder, 8bit adder, 8bit one's complement
+ * @public
+ * @param registry
+ * @return the input behavior registry for chaining
+ */
+export function registerArithmeticComponentsBehaviors(
+  registry: BehaviorRegistry
+): BehaviorRegistry {
+  registry
+      .register(new HalfAdderBehavior())
+      .register(new AdderBehavior())
+      .register(new EightBitAdderBehavior())
+      .register(new EightBitOnesComplementBehavior());
   return registry;
 }

@@ -3,12 +3,14 @@
  * Uses ES modules directly with Vite HMR support
  */
 import { AxesHelper, Clock, WebGLRenderer } from 'three';
+import i18next from 'i18next';
 
 import {
   Circuit,
   BehaviorRegistry,
   registerBasicComponentsBehaviors,
   registerGatesComponentsBehaviors,
+  registerArithmeticComponentsBehaviors,
 } from 'simple-circuit-engine/core';
 import {
   CircuitEngine,
@@ -16,18 +18,26 @@ import {
   DefaultVisualFactory,
   registerBasicComponentsFactories,
   registerGatesComponentsFactories,
+  registerArithmeticComponentsFactories,
 } from 'simple-circuit-engine/scene';
+import { registerSceTranslations } from '../src/i18n';
 import { CircuitOptions } from '../src';
+
+// Initialize i18next and register library translations
+await i18next.init({ lng: 'en', fallbackLng: 'en', resources: {} });
+registerSceTranslations(i18next);
 
 // Create component factory registry with all visual factories
 const componentsFactoryRegistry = new GroupedFactoryRegistry(new DefaultVisualFactory());
 registerBasicComponentsFactories(componentsFactoryRegistry);
 registerGatesComponentsFactories(componentsFactoryRegistry);
+registerArithmeticComponentsFactories(componentsFactoryRegistry);
 
 // Create behavior registry with all basic component behaviors
 const behaviorRegistry = new BehaviorRegistry();
 registerBasicComponentsBehaviors(behaviorRegistry);
 registerGatesComponentsBehaviors(behaviorRegistry);
+registerArithmeticComponentsBehaviors(behaviorRegistry);
 
 // Create WebGL renderer
 const renderer = new WebGLRenderer({ antialias: true, alpha: false });
@@ -362,6 +372,14 @@ engine.on('simulationSpeedChanged', ({ newSpeed }) => {
   console.log('Simulation speed changed to:', newSpeed);
   speedSlider.value = String(newSpeed);
   speedDisplay.textContent = String(newSpeed);
+});
+
+// Language switcher
+const langSelect = document.getElementById('lang-select') as HTMLSelectElement;
+langSelect.addEventListener('change', async () => {
+  const lng = langSelect.value;
+  await i18next.changeLanguage(lng);
+  engine.setLanguage(lng);
 });
 
 // Initial UI state

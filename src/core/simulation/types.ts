@@ -16,7 +16,7 @@ export const SIMULATION_SPEED = {
   /**
    * Maximum simulation speed in ticks per second
    */
-  MAX_TPS: 50,
+  MAX_TPS: 100,
   /**
    * Default simulation speed in ticks per second
    */

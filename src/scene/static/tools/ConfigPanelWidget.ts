@@ -8,7 +8,9 @@
 import GUI from 'lil-gui';
 import type { UUID, Component } from 'simple-circuit-engine/core';
 import type { IFactoryRegistry } from '../../shared/components/ComponentVisualFactory';
-import type { ConfigFormDefinition } from '../../shared/types';
+import type { IComponentVisualFactory } from '../../shared/components/ComponentVisualFactory';
+import type { ConfigFormDefinition, ConfigFieldDefinition } from '../../shared/types';
+import { sceT } from '../../../i18n';
 
 /**
  * Manages lil-gui configuration panel for component config editing
@@ -28,6 +30,8 @@ export class ConfigPanelWidget {
   // Panel state
   private _isOpen: boolean = false;
   private _currentComponentId: UUID | null = null;
+  private _currentComponent: Component | null = null;
+  private _currentFactory: IComponentVisualFactory | null = null;
   private gui: GUI | null = null;
   private container: HTMLDivElement | null = null;
   private formDataObject: Record<string, any> = {};
@@ -97,6 +101,9 @@ export class ConfigPanelWidget {
     // Position container (will be implemented in T007)
     this.positionContainer(screenPosition);
 
+    this._currentComponent = component;
+    this._currentFactory = factory;
+
     // Create lil-gui (will be implemented in T008)
     this.buildGui(formDef, component, factory);
 
@@ -134,6 +141,8 @@ export class ConfigPanelWidget {
 
     this._isOpen = false;
     this._currentComponentId = null;
+    this._currentComponent = null;
+    this._currentFactory = null;
     this.formDataObject = {};
   }
 
@@ -191,7 +200,8 @@ export class ConfigPanelWidget {
 
     // Create lil-gui instance
     this.gui = new GUI({ container: this.container, width: 280 });
-    this.gui.title(`Config: ${component.type}`);
+    const typeName = sceT(`components.${component.type}.name`, { defaultValue: component.type });
+    this.gui.title(sceT('config.title', { name: typeName, defaultValue: `Config: ${typeName}` }));
 
     // Map core config to form data
     const formData = factory.mapCoreConfigToForm(component.config);
@@ -210,7 +220,7 @@ export class ConfigPanelWidget {
         case 'boolean':
           controller = this.gui
             .add(this.formDataObject, field.key)
-            .name(field.label)
+            .name(this._resolveFieldLabel(component.type, field))
             .onChange((value: any) => this.onValueChange(field.key, value, component, factory));
           break;
 
@@ -218,7 +228,7 @@ export class ConfigPanelWidget {
           if (field.options) {
             controller = this.gui
               .add(this.formDataObject, field.key, field.options)
-              .name(field.label)
+              .name(this._resolveFieldLabel(component.type, field))
               .onChange((value: any) => this.onValueChange(field.key, value, component, factory));
           }
           break;
@@ -226,7 +236,7 @@ export class ConfigPanelWidget {
         case 'number':
           controller = this.gui
             .add(this.formDataObject, field.key)
-            .name(field.label)
+            .name(this._resolveFieldLabel(component.type, field))
             .onChange((value: any) => this.onValueChange(field.key, value, component, factory));
           if (field.min !== undefined) controller.min(field.min);
           if (field.max !== undefined) controller.max(field.max);
@@ -236,14 +246,14 @@ export class ConfigPanelWidget {
         case 'text':
           controller = this.gui
             .add(this.formDataObject, field.key)
-            .name(field.label)
+            .name(this._resolveFieldLabel(component.type, field))
             .onChange((value: any) => this.onValueChange(field.key, value, component, factory));
           break;
 
         case 'color':
           controller = this.gui
             .addColor(this.formDataObject, field.key)
-            .name(field.label)
+            .name(this._resolveFieldLabel(component.type, field))
             .onChange((value: any) => this.onValueChange(field.key, value, component, factory));
           break;
       }
@@ -282,6 +292,31 @@ export class ConfigPanelWidget {
     if (changedKey === 'defaultLogicFamily' || changedKey === 'activationLogic') {
       this.rebuildGui(component, factory);
     }
+  }
+
+  /**
+   * Resolve a form field label via i18n, falling back to a humanised form
+   * of the field key when no translation is available (e.g. "transitionSpan" →
+   * "Transition Span"). The fallback covers two cases: (a) the consumer never
+   * called registerSceTranslations, (b) the key is not yet in the locale file.
+   */
+  private _resolveFieldLabel(componentType: string, field: ConfigFieldDefinition): string {
+    const fallback = field.key
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, (c) => c.toUpperCase())
+      .trim();
+    return sceT(`components.${componentType}.config.fields.${field.key}.name`, {
+      defaultValue: fallback,
+    });
+  }
+
+  /**
+   * Refresh the panel to display strings in the current language.
+   * No-op if the panel is not open.
+   */
+  setLanguage(_lng: string): void {
+    if (!this._isOpen || !this._currentComponent || !this._currentFactory) return;
+    this.rebuildGui(this._currentComponent, this._currentFactory);
   }
 
   /**

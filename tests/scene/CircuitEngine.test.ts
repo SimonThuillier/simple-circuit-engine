@@ -340,7 +340,7 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
       engine.initialize(container);
 
-      expect(engine.maxSimulationSpeed).toBe(50);
+      expect(engine.maxSimulationSpeed).toBe(100);
     });
   });
 

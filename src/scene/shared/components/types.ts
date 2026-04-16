@@ -125,7 +125,7 @@ export const CMP_MATERIALS: Readonly<
   },
   [CmpMatCategory.DARK_GRAY]: {
     [CmpMatVariant.NORMAL]: new THREE.MeshLambertMaterial({
-      color: 0x1a1a1a,
+      color: 0x2b2b2b,
       userData: { matType: CmpMatType.SHARED, matCat: CmpMatCategory.DARK_GRAY },
     }),
     [CmpMatVariant.HOVERED]: new THREE.MeshLambertMaterial({

@@ -1,0 +1,82 @@
+
+component_group : arithmetic
+component: eightBitAdder
+
+The classic 8-bit adder made of 8 full adders wired in serie with carryOut of one adder rippling upon carryIn of the next.
+
+pins: new Map([
+      ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
+      ['carryIn', { subtype: 'logicInput', logicPinData: { interface: 'carryIn', index: 0 } }],
+      ['inputA-0', { subtype: 'logicInput', logicPinData: { interface: 'inputA', index: 0 } }],
+      ['inputA-1', { subtype: 'logicInput', logicPinData: { interface: 'inputA', index: 1 } }],
+      ['inputA-2', { subtype: 'logicInput', logicPinData: { interface: 'inputA', index: 2 } }],
+      ['inputA-3', { subtype: 'logicInput', logicPinData: { interface: 'inputA', index: 3 } }],
+      ['inputA-4', { subtype: 'logicInput', logicPinData: { interface: 'inputA', index: 4 } }],
+      ['inputA-5', { subtype: 'logicInput', logicPinData: { interface: 'inputA', index: 5 } }],
+      ['inputA-6', { subtype: 'logicInput', logicPinData: { interface: 'inputA', index: 6 } }],
+      ['inputA-7', { subtype: 'logicInput', logicPinData: { interface: 'inputA', index: 7 } }],
+      ['inputB-0', { subtype: 'logicInput', logicPinData: { interface: 'inputB', index: 0 } }],
+      ['inputB-1', { subtype: 'logicInput', logicPinData: { interface: 'inputB', index: 1 } }],
+      ['inputB-2', { subtype: 'logicInput', logicPinData: { interface: 'inputB', index: 2 } }],
+      ['inputB-3', { subtype: 'logicInput', logicPinData: { interface: 'inputB', index: 3 } }],
+      ['inputB-4', { subtype: 'logicInput', logicPinData: { interface: 'inputB', index: 4 } }],
+      ['inputB-5', { subtype: 'logicInput', logicPinData: { interface: 'inputB', index: 5 } }],
+      ['inputB-6', { subtype: 'logicInput', logicPinData: { interface: 'inputB', index: 6 } }],
+      ['inputB-7', { subtype: 'logicInput', logicPinData: { interface: 'inputB', index: 7 } }],
+      ['sum-0', { subtype: 'logicOutput', logicPinData: { interface: 'sum', index: 0 } }],
+      ['sum-1', { subtype: 'logicOutput', logicPinData: { interface: 'sum', index: 1 } }],
+      ['sum-2', { subtype: 'logicOutput', logicPinData: { interface: 'sum', index: 2 } }],
+      ['sum-3', { subtype: 'logicOutput', logicPinData: { interface: 'sum', index: 3 } }],
+      ['sum-4', { subtype: 'logicOutput', logicPinData: { interface: 'sum', index: 4 } }],
+      ['sum-5', { subtype: 'logicOutput', logicPinData: { interface: 'sum', index: 5 } }],
+      ['sum-6', { subtype: 'logicOutput', logicPinData: { interface: 'sum', index: 6 } }],
+      ['sum-7', { subtype: 'logicOutput', logicPinData: { interface: 'sum', index: 7 } }],
+      ['carryOut', { subtype: 'logicOutput', logicPinData: { interface: 'carryOut', index: 0 } }],
+      ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
+    ])
+
+state:
+Following the validated convention for upper level components (more than one logic output) states correspond to the outputs expressed in hexadecimal.
+in the case of 8 bits adder it would be the 8 bits of the sum output + one extra bit for the carryOut
+However for animation and transitions need each individual carry state should also be stored in state.
+Hence is not 8 or 9 bits to store but 16.
+Using the binary representation (with Ci - Carry at index i and Si - Sum at index i) it would be C7S7C6S6C5S5C4S4C3S3C2S2C1S1C0S0
+Hence a 4 hexa characters representation: 0000 or 10A6.... ranging from 0000 to FFFF
+
+Guards:
+vcc guard: if pin vcc has not voltage a vcc guard clause like in LogicGateBehaviorMixin should bring the state to '0000' immediately
+nonLogicInputGuard: if any logicInput pin is nonlogical a nonLogicInputGuard like in LogicGateBehaviorMixin should bring the state to 'indeterminate' immediately.
+
+Transitions :
+to handle transient state the formula beneath is proposed :
+`to${nextState}`
+
+the full list of states would then be :
+['0000' ....'FFFF', 'indeterminate']
+
+events:
+Following the convention proposed above and to avoid hardCoding all possible transitions events name will be computed with the formula :
+`to${nextState}`
+
+the state and nextState in the behavior result will be the primary source of information for animations.
+For animations needs the state previous the currentOne can be saved as state parameter prevState (convention introduced for half-adder).
+
+behavior:
+Behavior and animation should represent accurately the circulation of the ripple and in the adder. When a CarryOut propagates should be done step by step.
+From example with a 2 bits adder (simplified example) :
+t=0 : inputA : 2 (10), inputB : 1 (01) : state 3 (0011) : all sums high all carry low
+t=1: inputA changes from 2 to 3 (11) : state don't go immediately to finalState : instead it goes to intermediate to0110
+t=1+span: no changes in inputs: event resolves and state arrives at 0110. The behavior check if 0110 is a stable state : it's not: it then triggers the new event : to1010
+t=1+2*span: no changes in inputs: event resolves and state arrives at 1010 : it's a stable state. behaviors returns ok final stable state and no new modifications on the component
+
+Handling concurrent events :
+that will be the salt of big components : handling multiple events happening concurrently.
+First behaviorResult should have shouldCancelPending: false (except for guards).
+Then to see : a "good point" is state is never copied, always mutated so each new method calls involving component state always have the single updated version.
+Also state can be kind of divided into independent part (two events affecting bits 2-3 for the first and 13-14 for the second wouldn't collide à priori.
+
+Visual Factory:
+Wille be done in a second stage.
+
+animations:
+8*2 cells (8 adders * sum/carry) materials to update in red-blue similarly to what's done in adder.

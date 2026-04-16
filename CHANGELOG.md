@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.13] - 2026-04-16
+
+### Added
+
+- Added i18n as peerDependency and translations for component names and config parameters in English and French. 
+- Added `arithmetic` components group with 4 new components : `half-adder`, `adder`, `8bit-adder` and `8bit-one's complement`.
+- Added a `pinTooltip` that displays pin/component name when hovering a pin on the scene. 
+
+### Changed
+
+- Big optimizations of core state/event system to speed up animations. 
+- Increased max simulation speed from 50 to 100 ticks per second. 
+
+### Fixed
+
+- Fixed `Lightbulb` bulb crop display issue.
+
 ## [0.0.12] - 2026-04-07
 
 ### Added
@@ -19,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improvements on lightbulbs rendering and animations. 
 - Switches and DoubleThrowSwitches are now toggled top to bottom instead of laterally during simulation. 
 - update of dependencies (typescript, vite, three)
-- made three.js a perrDependency to prevent duplicate imports from consumers.
+- made three.js a peerDependency to prevent duplicate imports from consumers.
 - Various optimizations on the `core` event/behaviors engine. 
 
 ### Removed

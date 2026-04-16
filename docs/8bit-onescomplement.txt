@@ -1,0 +1,87 @@
+
+component_group : arithmetic
+component: eightBitOnesComplement
+
+The classic 8-bit one's complement made of 8 XOR gates, with one invert input wired one the input 0 of each gate and 8 inputs wired on the input 1 of each respective gate. 
+
+pins: new Map([
+      ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
+      ['invert', { subtype: 'logicInput', logicPinData: { interface: 'invert', index: 0 } }],
+      ['input-0', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 0 } }],
+      ['input-1', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 1 } }],
+      ['input-2', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 2 } }],
+      ['input-3', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 3 } }],
+      ['input-4', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 4 } }],
+      ['input-5', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 5 } }],
+      ['input-6', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 6 } }],
+      ['input-7', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 7 } }],
+      ['output-0', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 0 } }],
+      ['output-1', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 1 } }],
+      ['output-2', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 2 } }],
+      ['output-3', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 3 } }],
+      ['output-4', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 4 } }],
+      ['output-5', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 5 } }],
+      ['output-6', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 6 } }],
+      ['output-7', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 7 } }],
+      ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
+    ])
+
+config: new Map([
+   ['defaultLogicFamily', 'CMOS1'],
+   ['transitionSpan', '3'], // read only when logicFamily set, correspond to XOR Gate transitionSpan
+   ['initializationOrder', ''],
+]),
+
+
+state:
+Following the validated convention for upper level components (more than one logic output) states correspond to the outputs expressed in hexadecimal.
+in the case of 8 bits one's complement it would be one extra bit for the invert flag input plus the 8 bits of the output
+Hence a 2 hexa characters representation ranging from 00 to 1F
+
+Guards:
+vcc guard: if pin vcc has not voltage a vcc guard clause like in LogicGateBehaviorMixin should bring the state to '0000' immediately
+nonLogicInputGuard: if any logicInput pin is nonlogical a nonLogicInputGuard like in LogicGateBehaviorMixin should bring the state to 'indeterminate' immediately.
+
+Transitions :
+to handle transient state the formula beneath is proposed :
+`to${nextState}`
+
+the full list of states would then be :
+['000' ....'1FF', 'indeterminate']
+
+events:
+Following the convention proposed above and to avoid hardCoding all possible transitions events name will be computed with the formula :
+`to${nextState}`
+
+the state and nextState in the behavior result will be the primary source of information for animations.
+For animations needs the state previous the currentOne can be saved as state parameter prevState (convention introduced for half-adder).
+
+behavior:
+Behavior will be quite straightforward.
+For behavior a change in one of the 8 inputs at invert constant will produce the natural xor transition at this position.
+Example
+- at t=0 invert/input 1/80, state 17F
+- at t=1 invert/input changes to 1/00, states goes to1FF and an event to1FF is emitted (optionally it can indicate in its name or a parameters that its due or not to a change of invert)
+- at t=4 event resolves and state is set at 1FF
+
+- at t=11 invert changes to 0 with input constant at 00 , state goes to000 and event to000 is emitted
+- at t=14 event resolves and state is set at 000
+
+The span used can use the symmetrical simplification pattern :
+`
+const transitionSpan = getTransitionSpan(component.config);
+    const span =
+      state.expirationTick < 1 ? transitionSpan : Math.max(targetTick - state.startTick, 1);
+`
+
+
+
+Handling concurrent events :
+the salt of big components : handling multiple events happening concurrently.
+Here the edge case is handling smoothly what happens when one or more inputs change just after invert has changed.
+
+Visual Factory:
+Wille be done in a second stage.
+
+animations:
+1 + 8 cells (one for the input and 8 for outputs) materials to update in red-blue similarly to what's done in adder.

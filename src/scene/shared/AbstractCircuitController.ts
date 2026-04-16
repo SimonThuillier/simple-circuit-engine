@@ -415,6 +415,14 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
     return this._circuit;
   }
 
+  /**
+   * Refresh any user-visible strings in owned widgets after the consumer has
+   * switched i18next to a new language. Default is a no-op for controllers
+   * that own no translated widgets.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  setLanguage(_lng: string): void {}
+
   protected abstract onSetCircuit(): void;
 
   /**

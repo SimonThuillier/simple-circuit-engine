@@ -158,17 +158,8 @@ export class ClockVisualFactory extends ComponentVisualFactoryBase {
   override getConfigFormDefinition(_config?: Map<string, string>): ConfigFormDefinition | null {
     return {
       fields: [
-        {
-          key: 'startHigh',
-          label: 'Start High ?',
-          type: 'boolean',
-        },
-        {
-          key: 'halfPeriod',
-          label: 'Half Period',
-          type: 'number',
-          min: 1,
-        },
+        { key: 'startHigh', type: 'boolean' },
+        { key: 'halfPeriod', type: 'number', min: 1 },
       ],
     };
   }

@@ -8,7 +8,12 @@
  */
 import type { UUID } from '../utils';
 import { generateUUID, Position, Rotation } from '../utils';
-import { COMPONENT_TYPE_METADATA, ComponentType, type IComponent } from './types';
+import {
+  COMPONENT_TYPE_METADATA,
+  ComponentType,
+  type IComponent,
+  type IPinMetadata
+} from './types';
 
 /**
  * Electrical component placed on the circuit grid.
@@ -142,9 +147,17 @@ export class Component {
     if (pinIndex === -1) {
       return undefined;
     }
+    //console.log(pinIndex);
     const pinLabels = COMPONENT_TYPE_METADATA[this.type].pins.keys();
+    //console.log(pinLabels);
     // convert to array to access by index
     return Array.from(pinLabels)[pinIndex] || undefined;
+  }
+
+  getPinMetadata(pinId: UUID): IPinMetadata | undefined {
+    const pinLabel = this.getPinLabel(pinId);
+    if (!pinLabel) return undefined;
+    return COMPONENT_TYPE_METADATA[this.type].pins.get(pinLabel);
   }
 
   setAllParameters(config: Map<string, string>): void {

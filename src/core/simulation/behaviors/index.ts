@@ -29,3 +29,9 @@ export { Nor8GateBehavior } from './gates/Nor8GateBehavior';
 export { XorGateBehavior } from './gates/XorGateBehavior';
 export { Xor4GateBehavior } from './gates/Xor4GateBehavior';
 export { Xor8GateBehavior } from './gates/Xor8GateBehavior';
+
+// arithmetic
+export { HalfAdderBehavior } from './arithmetic/HalfAdderBehavior';
+export { AdderBehavior } from './arithmetic/AdderBehavior';
+export { EightBitAdderBehavior } from './arithmetic/EightBitAdderBehavior';
+export { EightBitOnesComplementBehavior } from './arithmetic/EightBitOnesComplementBehavior';

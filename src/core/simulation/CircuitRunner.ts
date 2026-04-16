@@ -673,10 +673,23 @@ export class CircuitRunner {
           continue;
         }
 
+        // Engine-level guard: logic pins are one-way isolators. BFS may land
+        // on a `logicInput`/`logicOutput` pin via external wires, but must not
+        // propagate back through the component's internals. Otherwise a loaded
+        // high output leaks its ground path onto sibling outputs through the
+        // shared vcc pin (and conversely for a loaded low output). The forward
+        // direction (vcc/gnd → logicOutput) is still gated by the component's
+        // own allowConductivity rule.
+        const fromMeta = component.getPinMetadata(currentId);
+        if (fromMeta?.subtype === 'logicInput' || fromMeta?.subtype === 'logicOutput') {
+          continue;
+        }
+
         const state = componentStates.get(component.id)!;
 
         for (const otherPinId of component.pins) {
           if (otherPinId === currentId) continue;
+
           if (reachableNodes.has(otherPinId)) continue;
 
           // Check if component allows traversal

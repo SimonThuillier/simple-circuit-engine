@@ -77,11 +77,13 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
     };
     bulb.position.set(0, 0.8, 0);
     group.add(bulb);
+    bulb.renderOrder = -1; // to prevent rendering collision issue with pins hover area
 
     // pins (not called if preview - no pins)
     if (component.pins.length > 0) {
       this.createPinsVisual(component, context, group);
     }
+
 
     this.updateFromConfiguration(group, component.config);
     return group;
@@ -127,14 +129,8 @@ export class LightbulbVisualFactory extends ComponentVisualFactoryBase {
   override getConfigFormDefinition(): ConfigFormDefinition | null {
     return {
       fields: [
-        {
-          key: 'transitionSpan',
-          label: 'Lit delay (ticks)',
-          type: 'number',
-          min: 1,
-          step: 1,
-        },
-        { key: 'size', label: 'Size', type: 'number', min: 1, max: 16, step: 1 },
+        { key: 'transitionSpan', type: 'number', min: 1, step: 1 },
+        { key: 'size', type: 'number', min: 1, max: 16, step: 1 },
       ],
     };
   }

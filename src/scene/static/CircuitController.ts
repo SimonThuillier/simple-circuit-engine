@@ -84,6 +84,12 @@ export class CircuitController extends AbstractCircuitController {
     this.onContainerResize = this.onContainerResize.bind(this);
   }
 
+  override setLanguage(lng: string): void {
+    this._pinTooltipWidget?.setLanguage(lng);
+    this._configPanelManager?.setLanguage(lng);
+    (this._tools.get('build') as BuildTool | undefined)?.setLanguage(lng);
+  }
+
   /**
    * Specific Initialization logic, performed after AbstractCircuitController initialization
    * @private

@@ -32,3 +32,10 @@ export { Nor8GateState } from './gates/Nor8GateState';
 export { XorGateState } from './gates/XorGateState';
 export { Xor4GateState } from './gates/Xor4GateState';
 export { Xor8GateState } from './gates/Xor8GateState';
+
+// arithmetic
+export { ArithmeticState } from './arithmetic/ArithmeticState';
+export { HalfAdderState } from './arithmetic/HalfAdderState';
+export { AdderState } from './arithmetic/AdderState';
+export { EightBitAdderState } from './arithmetic/EightBitAdderState';
+export { EightBitOnesComplementState } from './arithmetic/EightBitOnesComplementState';

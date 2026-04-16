@@ -1,0 +1,265 @@
+{
+  "components": {
+    "groups": {
+      "basic": {
+        "name": "Basic Components"
+      },
+      "gates": {
+        "name": "Logic Gates"
+      },
+      "arithmetic": {
+        "name": "Arithmetic"
+      }
+    },
+    "battery": {
+      "name": "Battery"
+    },
+    "clock": {
+      "name": "Clock",
+      "config": {
+        "fields": {
+          "startHigh": { "name": "Start High ?" },
+          "halfPeriod": { "name": "Half Period" }
+        }
+      }
+    },
+    "label": {
+      "name": "Label",
+      "config": {
+        "fields": {
+          "text": { "name": "Text" },
+          "size": { "name": "Size" }
+        }
+      }
+    },
+    "switch": {
+      "name": "Switch",
+      "config": {
+        "fields": {
+          "initialState": { "name": "Open at start" },
+          "transitionSpan": { "name": "Delay (ticks)" },
+          "size": { "name": "Size" }
+        }
+      }
+    },
+    "doubleThrowSwitch": {
+      "name": "2-1 Switch",
+      "config": {
+        "fields": {
+          "initialState": { "name": "Input1 at start" },
+          "transitionSpan": { "name": "Delay (ticks)" },
+          "size": { "name": "Size" }
+        }
+      }
+    },
+    "lightbulb": {
+      "name": "Lightbulb",
+      "config": {
+        "fields": {
+          "transitionSpan": { "name": "Lit delay (ticks)" },
+          "size": { "name": "Size" }
+        }
+      }
+    },
+    "rectangleLED": {
+      "name": "Rectangle LED",
+      "config": {
+        "fields": {
+          "transitionSpan": { "name": "Lit delay (ticks)" },
+          "idleColor": { "name": "Idle Color" },
+          "activeColor": { "name": "Active Color" },
+          "size": { "name": "Size" },
+          "hwRatio": { "name": "Ratio H/W" },
+          "ywRatio": { "name": "Ratio Y/W" }
+        }
+      }
+    },
+    "relay": {
+      "name": "Relay",
+      "config": {
+        "fields": {
+          "activationLogic": { "name": "Activation Logic" },
+          "transitionSpan": { "name": "Transition Span (ticks)" },
+          "size": { "name": "Size" },
+          "initializationOrder": { "name": "Init Order" }
+        }
+      }
+    },
+    "smallLED": {
+      "name": "Small LED",
+      "config": {
+        "fields": {
+          "transitionSpan": { "name": "Lit delay (ticks)" },
+          "idleColor": { "name": "Idle Color" },
+          "activeColor": { "name": "Active Color" },
+          "size": { "name": "Size" },
+          "ywRatio": { "name": "Ratio Y/W" }
+        }
+      }
+    },
+    "inverter": {
+      "name": "Inverter",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Logic Family" },
+          "activationLogic": { "name": "Activation Logic" },
+          "transitionSpan": { "name": "Propagation delay (ticks)" },
+          "initializationOrder": { "name": "Init Order" }
+        }
+      }
+    },
+    "nandGate": {
+      "name": "NAND Gate",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Logic Family" },
+          "activationLogic": { "name": "Activation Logic" },
+          "transitionSpan": { "name": "Propagation delay (ticks)" },
+          "initializationOrder": { "name": "Init Order" }
+        }
+      }
+    },
+    "nand4Gate": {
+      "name": "4-input NAND Gate",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Logic Family" },
+          "activationLogic": { "name": "Activation Logic" },
+          "transitionSpan": { "name": "Propagation delay (ticks)" },
+          "initializationOrder": { "name": "Init Order" }
+        }
+      }
+    },
+    "nand8Gate": {
+      "name": "8-input NAND Gate",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Logic Family" },
+          "activationLogic": { "name": "Activation Logic" },
+          "transitionSpan": { "name": "Propagation delay (ticks)" },
+          "initializationOrder": { "name": "Init Order" }
+        }
+      }
+    },
+    "norGate": {
+      "name": "NOR Gate",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Logic Family" },
+          "activationLogic": { "name": "Activation Logic" },
+          "transitionSpan": { "name": "Propagation delay (ticks)" },
+          "initializationOrder": { "name": "Init Order" }
+        }
+      }
+    },
+    "nor4Gate": {
+      "name": "4-input NOR Gate",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Logic Family" },
+          "activationLogic": { "name": "Activation Logic" },
+          "transitionSpan": { "name": "Propagation delay (ticks)" },
+          "initializationOrder": { "name": "Init Order" }
+        }
+      }
+    },
+    "nor8Gate": {
+      "name": "8-input NOR Gate",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Logic Family" },
+          "activationLogic": { "name": "Activation Logic" },
+          "transitionSpan": { "name": "Propagation delay (ticks)" },
+          "initializationOrder": { "name": "Init Order" }
+        }
+      }
+    },
+    "xorGate": {
+      "name": "XOR Gate",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Logic Family" },
+          "activationLogic": { "name": "Activation Logic" },
+          "transitionSpan": { "name": "Propagation delay (ticks)" },
+          "initializationOrder": { "name": "Init Order" }
+        }
+      }
+    },
+    "xor4Gate": {
+      "name": "4-input XOR Gate",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Logic Family" },
+          "activationLogic": { "name": "Activation Logic" },
+          "transitionSpan": { "name": "Propagation delay (ticks)" },
+          "initializationOrder": { "name": "Init Order" }
+        }
+      }
+    },
+    "xor8Gate": {
+      "name": "8-input XOR Gate",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Logic Family" },
+          "activationLogic": { "name": "Activation Logic" },
+          "transitionSpan": { "name": "Propagation delay (ticks)" },
+          "initializationOrder": { "name": "Init Order" }
+        }
+      }
+    },
+    "halfAdder": {
+      "name": "Half Adder",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Logic Family" },
+          "transitionSpan": { "name": "Propagation delay (ticks)" },
+          "initializationOrder": { "name": "Init Order" }
+        }
+      }
+    },
+    "adder": {
+      "name": "Full Adder",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Logic Family" },
+          "transitionSpan": { "name": "Propagation delay (ticks)" },
+          "initializationOrder": { "name": "Init Order" }
+        }
+      }
+    },
+    "eightBitAdder": {
+      "name": "8-Bit Adder",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Logic Family" },
+          "transitionSpan": { "name": "Propagation delay (ticks)" },
+          "initializationOrder": { "name": "Init Order" }
+        }
+      }
+    },
+    "eightBitOnesComplement": {
+      "name": "8-Bit Ones Complement",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Logic Family" },
+          "transitionSpan": { "name": "Propagation delay (ticks)" },
+          "initializationOrder": { "name": "Init Order" }
+        }
+      }
+    },
+    "default": {
+      "config": {
+        "fields": {
+          "color": { "name": "Color" }
+        }
+      }
+    }
+  },
+  "picker": {
+    "title": "Components",
+    "branchingPoint": "Branching Point"
+  },
+  "config": {
+    "title": "Configuration: {{name}}"
+  }
+}
