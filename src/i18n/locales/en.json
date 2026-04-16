@@ -227,6 +227,26 @@
         }
       }
     },
+    "eightBitAdder": {
+      "name": "8-Bit Adder",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Logic Family" },
+          "transitionSpan": { "name": "Propagation delay (ticks)" },
+          "initializationOrder": { "name": "Init Order" }
+        }
+      }
+    },
+    "eightBitOnesComplement": {
+      "name": "8-Bit Ones Complement",
+      "config": {
+        "fields": {
+          "defaultLogicFamily": { "name": "Logic Family" },
+          "transitionSpan": { "name": "Propagation delay (ticks)" },
+          "initializationOrder": { "name": "Init Order" }
+        }
+      }
+    },
     "default": {
       "config": {
         "fields": {

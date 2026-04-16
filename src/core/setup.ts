@@ -73,7 +73,7 @@ export function registerGatesComponentsBehaviors(registry: BehaviorRegistry): Be
 
 /**
  * Register all arithmetic component behaviors in the given registry
- * Arithmetic components are : HalfAdder, Adder
+ * Arithmetic components are : HalfAdder, Adder, 8bit adder, 8bit one's complement
  * @public
  * @param registry
  * @return the input behavior registry for chaining
@@ -81,6 +81,10 @@ export function registerGatesComponentsBehaviors(registry: BehaviorRegistry): Be
 export function registerArithmeticComponentsBehaviors(
   registry: BehaviorRegistry
 ): BehaviorRegistry {
-  registry.register(new HalfAdderBehavior()).register(new AdderBehavior()).register(new EightBitAdderBehavior()).register(new EightBitOnesComplementBehavior());
+  registry
+      .register(new HalfAdderBehavior())
+      .register(new AdderBehavior())
+      .register(new EightBitAdderBehavior())
+      .register(new EightBitOnesComplementBehavior());
   return registry;
 }
