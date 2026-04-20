@@ -532,6 +532,7 @@ export class BuildTool implements IEditingTool {
    * Completes current operation based on mode
    */
   private handlePointerUp(event: MouseEvent): void {
+    console.log("handlePointerUp");
     if (event.button !== 0) return; // Only handle left click
 
     // add_component mode manages its own gridPositionMove listener lifecycle

@@ -25,6 +25,10 @@ export { CircuitController } from './static/CircuitController';
 export { CircuitRunnerController } from './simulation/CircuitRunnerController';
 export type { AbstractCircuitController } from './shared/AbstractCircuitController';
 
+// Integrated overlay widgets
+export { WidgetsManager } from './widgets';
+export type { IEngineForWidgets } from './widgets';
+
 // Editing Tools
 export { BuildTool } from './static/tools/BuildTool';
 export { MultiSelectTool } from './static/tools/MultiSelectTool';

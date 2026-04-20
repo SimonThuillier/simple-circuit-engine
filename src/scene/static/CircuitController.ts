@@ -63,6 +63,8 @@ export class CircuitController extends AbstractCircuitController {
   // Circuit RepositoryTool system
   private _tools: Map<ToolType, IEditingTool> = new Map();
   private _activeTool: ToolType | null = null;
+  // Multi-wiring flag (semantics handled by tools in a future change)
+  private _multiWiring: boolean = false;
 
   /**
    * Constructor and initialization
@@ -94,7 +96,7 @@ export class CircuitController extends AbstractCircuitController {
    * Specific Initialization logic, performed after AbstractCircuitController initialization
    * @private
    */
-  protected onInitialize(_options?: ControllerOptions) {
+  protected onInitialize(options?: ControllerOptions) {
     // Initialize tools
     this._initializeTools();
     // Initialize Selection Manager
@@ -103,6 +105,8 @@ export class CircuitController extends AbstractCircuitController {
     this._initializeConfigPanelManager();
     // Initialize Pin Tooltip
     this._initializePinTooltip();
+
+    this._multiWiring = options?.multiWiring ?? false;
 
     this._initialized = true; // flag must be set before calling setActiveTool
     // standalone mode -> Controller active
@@ -209,6 +213,8 @@ export class CircuitController extends AbstractCircuitController {
       return;
     }
 
+    console.log('pointerdown',event);
+
     // common behavior regardless of the tool: select on pointer down
     if (this._hoverManager?.getHoveredElement()) {
       // always: emit position event when hovered element
@@ -227,6 +233,7 @@ export class CircuitController extends AbstractCircuitController {
         this.emit('deselect', selection);
       }
     }
+    console.log('leaving',event);
   }
 
   private _applySelectionVisual(selection: SelectionData, selected: boolean): void {
@@ -461,6 +468,24 @@ export class CircuitController extends AbstractCircuitController {
    */
   getActiveTool(): ToolType | null {
     return this._activeTool;
+  }
+
+  /**
+   * Whether the multi-wiring flag is currently enabled.
+   * Wiring tools may use it to create several wires per pull (semantics handled
+   * elsewhere; this controller only owns the flag and emits its changes).
+   */
+  get multiWiring(): boolean {
+    return this._multiWiring;
+  }
+
+  /**
+   * Toggle the multi-wiring flag and emit `multiWiringChanged` on transition.
+   */
+  setMultiWiring(value: boolean): void {
+    if (this._multiWiring === value) return;
+    this._multiWiring = value;
+    this.emit('multiWiringChanged', { multiWiring: value });
   }
 
   /**

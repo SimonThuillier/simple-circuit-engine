@@ -94,6 +94,7 @@ export type ControllerEvent =
   | 'simulationUserCommand'
   | 'simulationStopped'
   | 'simulationSpeedChanged'
+  | 'multiWiringChanged'
   | 'componentHelpRequested';
 
 /**
@@ -155,6 +156,8 @@ export interface ControllerEventMap {
   simulationUserCommand: IUserCommand;
   simulationStopped: { tick: number };
   simulationSpeedChanged: { previousSpeed: number; newSpeed: number };
+  /** Emitted when the multi-wiring flag toggles (engine + edit-controller scope) */
+  multiWiringChanged: { multiWiring: boolean };
   /** Emitted when user clicks a pin tooltip to request component help */
   componentHelpRequested: { componentType: ComponentType };
 }
@@ -460,6 +463,16 @@ export interface ControllerOptions {
   simulationSpeed?: number;
   /** If CircuitRunnerController plays automatically at activation */
   simulationAutoPlay?: boolean;
+  /** Initial multi-wiring flag (default: false) */
+  multiWiring?: boolean;
+}
+
+/**
+ * Configuration options for the integrated widgets overlay
+ */
+export interface WidgetsOptions {
+  /** Disable the bundled overlay widgets (default: true = enabled) */
+  enabled?: boolean;
 }
 
 /**
@@ -482,6 +495,12 @@ export interface EngineOptions {
    * @default { enableHistory: false }
    */
   runnerOptions?: IRunnerOptions;
+
+  /**
+   * Integrated widgets overlay configuration
+   * @default { enabled: true }
+   */
+  widgets?: WidgetsOptions;
 }
 
 /**

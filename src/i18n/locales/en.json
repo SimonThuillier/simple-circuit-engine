@@ -261,5 +261,20 @@
   },
   "config": {
     "title": "Configuration: {{name}}"
+  },
+  "widgets": {
+    "mode": {
+      "edit": "Edition",
+      "simulation": "Simulation"
+    },
+    "tools": {
+      "build": "Build",
+      "multiSelect": "Multi-select"
+    },
+    "multiWiring": "Multi-wiring",
+    "simulation": {
+      "stop": "Stop",
+      "speed": "{{tps}} TPS"
+    }
   }
 }

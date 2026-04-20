@@ -31,6 +31,7 @@ import type {
 import { createGridHelper } from './shared/utils/GeometryUtils';
 import { engineOptions } from './shared/utils/Options';
 import { createMapControls } from './shared/utils/ControlsUtils';
+import { WidgetsManager } from './widgets';
 
 /**
  * CircuitEngine - Unified Facade for Circuit Editing and Simulation
@@ -75,6 +76,7 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
 
   // State
   private _mode: EngineMode = 'edit';
+  private _multiWiring: boolean = false;
   private _initialized: boolean = false;
   private _options: EngineOptions | null = null;
   private _disposed: boolean = false;
@@ -82,6 +84,9 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
   // Event forwarding cleanup functions
   private _editControllerCleanup: (() => void) | null = null;
   private _simulationControllerCleanup: (() => void) | null = null;
+
+  // Integrated overlay widgets
+  private _widgetsManager: WidgetsManager | null = null;
 
   /**
    * Create a new CircuitEngine instance.
@@ -172,7 +177,16 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
       this._simulationController.setActive(true);
     }
 
+    // Sync initial multi-wiring flag from options
+    this._multiWiring = options.controllerOptions?.multiWiring ?? false;
+    this._editController.setMultiWiring(this._multiWiring);
+
     this._initialized = true;
+
+    // Mount integrated widgets unless explicitly disabled
+    if (options.widgets?.enabled !== false) {
+      this._widgetsManager = new WidgetsManager(this, container);
+    }
 
     // Emit ready event
     this.emit('ready', { controllerType: 'engine' });
@@ -283,6 +297,12 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
       this._simulationController.pause();
     }
 
+    // Dispose widgets first so any pending callbacks are silenced
+    if (this._widgetsManager) {
+      this._widgetsManager.dispose();
+      this._widgetsManager = null;
+    }
+
     // Teardown event forwarding
     this._teardownEventForwarding();
 
@@ -344,10 +364,10 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
    * @param lng - Target language code (e.g., 'en', 'fr')
    */
   setLanguage(lng: string): void {
-    console.log(lng);
     this._checkInitialized();
     this._editController?.setLanguage(lng);
     this._simulationController?.setLanguage(lng);
+    this._widgetsManager?.setLanguage(lng);
   }
 
   /**
@@ -527,6 +547,27 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
   setEditModeEnabled(enabled: boolean): void {
     this._checkEditMode();
     this._editController!.setEditMode(enabled);
+  }
+
+  /**
+   * Whether the multi-wiring flag is currently enabled.
+   * Wiring tools may use it to create several wires per pull (semantics handled
+   * by the tools; the engine only owns the flag and forwards changes).
+   */
+  get multiWiring(): boolean {
+    return this._multiWiring;
+  }
+
+  /**
+   * Toggle the multi-wiring flag and forward to the edit controller.
+   * Emits `multiWiringChanged` once on transition.
+   */
+  setMultiWiring(value: boolean): void {
+    this._checkInitialized();
+    if (this._multiWiring === value) return;
+    this._multiWiring = value;
+    this._editController!.setMultiWiring(value);
+    // Note: edit controller emits the event, which is forwarded by _setupEventForwarding.
   }
 
   // ============================================================================
