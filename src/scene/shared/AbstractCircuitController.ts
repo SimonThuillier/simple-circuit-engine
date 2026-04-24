@@ -51,6 +51,7 @@ import { createMapControls } from './utils/ControlsUtils';
 export abstract class AbstractCircuitController extends EventEmitter<ControllerEventMap> {
   // Container and Three.js core objects
   protected _container: HTMLElement | null = null;
+  protected _renderer: THREE.WebGLRenderer | null = null;
   protected _scene: THREE.Scene | null = null;
   protected _grid: THREE.GridHelper | null = null;
   protected _camera: THREE.PerspectiveCamera | null = null;
@@ -161,18 +162,19 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
   // ==========================================
 
   /**
-   * Initialize the controller with a DOM container.
+   * Initialize the controller with a DOM container and a WebGLRenderer.
    * Creates scene, camera, lights, MapControls, and HoverManager.
    *
    * When sharedResources were provided in constructor, uses those instead
    * of creating new resources. This enables the CircuitEngine facade pattern.
    *
-   * @param container - HTMLElement to attach scene to
+   * @param container - HTMLElement to attach scene to (bounds, hover, mouse tracking)
+   * @param renderer - WebGLRenderer owned by the consumer; `renderer.domElement` is what MapControls binds to
    * @param options - Optional configuration
    * @throws {TypeError} If container is not a valid HTMLElement
    * @throws {Error} If already initialized
    */
-  initialize(container: HTMLElement, options?: ControllerOptions): void {
+  initialize(container: HTMLElement, renderer: THREE.WebGLRenderer, options?: ControllerOptions): void {
     if (this._initialized) {
       return; // Already initialized
     }
@@ -187,6 +189,7 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
 
     try {
       this._container = container;
+      this._renderer = renderer;
 
       if (this._useSharedResources && this._sharedResources) {
         // Use injected shared resources
@@ -229,8 +232,13 @@ export abstract class AbstractCircuitController extends EventEmitter<ControllerE
         this._camera.layers.set(0); // main visual layer
         this._camera.layers.enable(1); // enode hover layer
         this._camera.layers.enable(2); // component hover layer
-        // Initialize MapControls
-        this._mapControls = createMapControls(this._camera, this._container, options.mapControls!);
+        // Initialize MapControls — bind to the canvas so DOM overlays inside the
+        // container (e.g. widgets) don't get their pointer events captured.
+        this._mapControls = createMapControls(
+          this._camera,
+          renderer.domElement,
+          options.mapControls!
+        );
 
         // Initialize WireVisualManager
         this.wireVisualManager.setContainer(this._container!);

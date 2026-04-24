@@ -415,17 +415,18 @@
       // Create controller with registries
       const controller = new window.CircuitController(window.componentsFactoryRegistry);
 
+      // Setup WebGL renderer
+      const renderer = window.renderer;
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
       // Initialize controller
-      controller.initialize(container, { initialMode: 'edit' });
+      controller.initialize(container, renderer, { initialMode: 'edit' });
       controller.setEditMode(true); // activate edition mode
 
       // Add axes helper
       controller.getScene().add(window.axesHelper);
 
-      // Setup WebGL renderer
-      const renderer = window.renderer;
-      renderer.setSize(container.clientWidth, container.clientHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       container.appendChild(renderer.domElement);
 
       // Animation loop

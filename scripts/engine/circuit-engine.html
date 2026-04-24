@@ -558,8 +558,13 @@
         window.behaviorRegistry
       );
 
+      // Setup WebGL renderer
+      const renderer = window.renderer;
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
       // Initialize engine
-      engine.initialize(container, {
+      engine.initialize(container, renderer, {
         initialMode: 'edit',
         controllerOptions: { mapControls: { zoomSpeed: 2 } },
       });
@@ -567,10 +572,6 @@
       // Add axes helper
       engine.getScene().add(window.axesHelper);
 
-      // Setup WebGL renderer
-      const renderer = window.renderer;
-      renderer.setSize(container.clientWidth, container.clientHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       container.appendChild(renderer.domElement);
 
       // Animation loop

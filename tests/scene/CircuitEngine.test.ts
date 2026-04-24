@@ -14,6 +14,7 @@ import { Circuit } from '../../src/core/topology/Circuit';
 import type { IFactoryRegistry } from '../../src/scene/shared/components/ComponentVisualFactory';
 import { CircuitOptions } from '../../src/core/topology/CircuitOptions';
 import { ComponentType, SIMULATION_SPEED } from '../../src';
+import { createMockRenderer } from './helpers';
 
 /**
  * Create a simple test circuit with two batteries wired together
@@ -60,14 +61,14 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
   describe('T011: setMode("simulation") transitions correctly', () => {
     it('should start in edit mode by default', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       expect(engine.mode).toBe('edit');
     });
 
     it('should transition to simulation mode when setMode("simulation") is called', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -79,7 +80,7 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
 
     it('should emit modeChanged event when transitioning to simulation mode', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -97,14 +98,14 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
 
     it('should throw if no circuit is loaded when switching to simulation', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       expect(() => engine.setMode('simulation')).toThrow();
     });
 
     it('should not emit modeChanged if already in simulation mode', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -123,7 +124,7 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
   describe('T012: Active tool is cancelled when switching to simulation', () => {
     it('should deactivate active tool when switching to simulation mode', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -143,7 +144,7 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
 
     it('should emit toolDeactivated event when switching to simulation', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -164,7 +165,7 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
   describe('T013: CircuitRunner is created from current circuit', () => {
     it('should create CircuitRunner when switching to simulation mode', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -177,7 +178,7 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
 
     it('should allow play/pause/step after switching to simulation mode', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -191,7 +192,7 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
 
     it('should preserve visuals when switching to simulation mode', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -212,7 +213,7 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
   describe('T014: Edit-only operations throw in simulation mode', () => {
     it('should throw when calling setActiveTool in simulation mode', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -224,7 +225,7 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
 
     it('should throw when calling getActiveTool in simulation mode', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -236,7 +237,7 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
 
     it('should throw when calling setEditModeEnabled in simulation mode', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -269,7 +270,7 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
 
     it('should be initialized after calling initialize()', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
       expect(engine.isInitialized).toBe(true);
     });
 
@@ -278,7 +279,7 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
       const readyHandler = vi.fn();
       engine.on('ready', readyHandler);
 
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       expect(readyHandler).toHaveBeenCalled();
     });
@@ -288,7 +289,7 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
   describe('T004: simulationSpeed facade property', () => {
     it('should delegate simulationSpeed getter to controller', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       // Default should be 3q TPS (from SIMULATION_SPEED.DEFAULT_TPS)
       expect(engine.simulationSpeed).toBe(SIMULATION_SPEED.DEFAULT_TPS);
@@ -296,7 +297,7 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
 
     it('should delegate simulationSpeed setter to controller', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       engine.simulationSpeed = 10;
 
@@ -307,7 +308,7 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
 
     it('should work in edit mode', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       // Edit mode (default)
       expect(engine.mode).toBe('edit');
@@ -319,7 +320,7 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
 
     it('should work in simulation mode', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -331,14 +332,14 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
 
     it('should expose minSimulationSpeed from controller', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       expect(engine.minSimulationSpeed).toBe(1);
     });
 
     it('should expose maxSimulationSpeed from controller', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       expect(engine.maxSimulationSpeed).toBe(100);
     });
@@ -347,7 +348,7 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
   describe('Simulation playback delegates', () => {
     it('should delegate play() to simulation controller', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -359,7 +360,7 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
 
     it('should delegate pause() to simulation controller', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -373,7 +374,7 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
 
     it('should delegate step() to simulation controller', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -386,7 +387,7 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
 
     it('should delegate stop() to simulation controller', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -402,28 +403,28 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
 
     it('should throw when calling play() in edit mode', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       expect(() => engine.play()).toThrow(/not in simulation mode/i);
     });
 
     it('should throw when calling pause() in edit mode', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       expect(() => engine.pause()).toThrow(/not in simulation mode/i);
     });
 
     it('should throw when calling step() in edit mode', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       expect(() => engine.step()).toThrow(/not in simulation mode/i);
     });
 
     it('should throw when calling stop() in edit mode', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       expect(() => engine.stop()).toThrow(/not in simulation mode/i);
     });
@@ -462,7 +463,7 @@ describe('CircuitEngine - Phase 4: User Story 2 (Simulation to Edit Mode Switch)
   describe('T022: setMode("edit") stops simulation automatically', () => {
     it('should stop simulation when switching to edit mode', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -479,7 +480,7 @@ describe('CircuitEngine - Phase 4: User Story 2 (Simulation to Edit Mode Switch)
 
     it('should emit modeChanged event when switching to edit mode', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -501,7 +502,7 @@ describe('CircuitEngine - Phase 4: User Story 2 (Simulation to Edit Mode Switch)
   describe('T023: circuit reverts to design state', () => {
     it('should preserve circuit when switching back to edit mode', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -518,7 +519,7 @@ describe('CircuitEngine - Phase 4: User Story 2 (Simulation to Edit Mode Switch)
 
     it('should allow editing after switching back from simulation', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -538,7 +539,7 @@ describe('CircuitEngine - Phase 4: User Story 2 (Simulation to Edit Mode Switch)
   describe('T024: simulation-only operations throw in edit mode', () => {
     it('should throw when calling play() in edit mode after switching from simulation', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -551,7 +552,7 @@ describe('CircuitEngine - Phase 4: User Story 2 (Simulation to Edit Mode Switch)
 
     it('should throw when calling pause() in edit mode after switching from simulation', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -564,7 +565,7 @@ describe('CircuitEngine - Phase 4: User Story 2 (Simulation to Edit Mode Switch)
 
     it('should throw when calling step() in edit mode after switching from simulation', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -577,7 +578,7 @@ describe('CircuitEngine - Phase 4: User Story 2 (Simulation to Edit Mode Switch)
 
     it('should throw when calling stop() in edit mode after switching from simulation', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -593,7 +594,7 @@ describe('CircuitEngine - Phase 4: User Story 2 (Simulation to Edit Mode Switch)
   describe('T025: same-mode switch is no-op', () => {
     it('should not emit modeChanged if already in edit mode', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const modeChangedHandler = vi.fn();
       engine.on('modeChanged', modeChangedHandler);
@@ -605,7 +606,7 @@ describe('CircuitEngine - Phase 4: User Story 2 (Simulation to Edit Mode Switch)
 
     it('should not emit modeChanged if already in simulation mode', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -621,7 +622,7 @@ describe('CircuitEngine - Phase 4: User Story 2 (Simulation to Edit Mode Switch)
 
     it('should be safe to call setMode with current mode multiple times', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       expect(() => {
         engine.setMode('edit');
@@ -635,7 +636,7 @@ describe('CircuitEngine - Phase 4: User Story 2 (Simulation to Edit Mode Switch)
   describe('Bidirectional mode switching', () => {
     it('should support multiple round trips between modes', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -694,7 +695,7 @@ describe('CircuitEngine - Phase 5: User Story 3 (Unified Initialization)', () =>
   describe('T030: initialize() creates scene, camera, MapControls', () => {
     it('should create scene during initialization', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const scene = engine.getScene();
       expect(scene).toBeDefined();
@@ -703,7 +704,7 @@ describe('CircuitEngine - Phase 5: User Story 3 (Unified Initialization)', () =>
 
     it('should create camera during initialization', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const camera = engine.getCamera();
       expect(camera).toBeDefined();
@@ -712,7 +713,7 @@ describe('CircuitEngine - Phase 5: User Story 3 (Unified Initialization)', () =>
 
     it('should create MapControls during initialization', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const controls = engine.getControls();
       expect(controls).toBeDefined();
@@ -727,9 +728,9 @@ describe('CircuitEngine - Phase 5: User Story 3 (Unified Initialization)', () =>
 
     it('should throw if already initialized', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
-      expect(() => engine.initialize(container)).toThrow(/already initialized/i);
+      expect(() => engine.initialize(container, createMockRenderer())).toThrow(/already initialized/i);
     });
   });
 
@@ -740,7 +741,7 @@ describe('CircuitEngine - Phase 5: User Story 3 (Unified Initialization)', () =>
       const readyHandler = vi.fn();
       engine.on('ready', readyHandler);
 
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       expect(readyHandler).toHaveBeenCalledWith({ controllerType: 'engine' });
     });
@@ -750,7 +751,7 @@ describe('CircuitEngine - Phase 5: User Story 3 (Unified Initialization)', () =>
   describe('T032: setCircuit() loads circuit and emits circuitLoaded', () => {
     it('should load circuit when setCircuit is called', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -760,7 +761,7 @@ describe('CircuitEngine - Phase 5: User Story 3 (Unified Initialization)', () =>
 
     it('should emit circuitLoaded event when circuit is set', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuitLoadedHandler = vi.fn();
       engine.on('circuitLoaded', circuitLoadedHandler);
@@ -776,7 +777,7 @@ describe('CircuitEngine - Phase 5: User Story 3 (Unified Initialization)', () =>
   describe('T033: setCircuit(null) clears circuit and emits circuitCleared', () => {
     it('should clear circuit when setCircuit(null) is called', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -789,7 +790,7 @@ describe('CircuitEngine - Phase 5: User Story 3 (Unified Initialization)', () =>
 
     it('should emit circuitCleared event when circuit is cleared', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -807,7 +808,7 @@ describe('CircuitEngine - Phase 5: User Story 3 (Unified Initialization)', () =>
   describe('Three.js access methods', () => {
     it('should provide access to scene via getScene()', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const scene = engine.getScene();
       expect(scene).toBeDefined();
@@ -816,7 +817,7 @@ describe('CircuitEngine - Phase 5: User Story 3 (Unified Initialization)', () =>
 
     it('should provide access to camera via getCamera()', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const camera = engine.getCamera();
       expect(camera).toBeDefined();
@@ -825,7 +826,7 @@ describe('CircuitEngine - Phase 5: User Story 3 (Unified Initialization)', () =>
 
     it('should provide access to controls via getControls()', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const controls = engine.getControls();
       expect(controls).toBeDefined();
@@ -853,14 +854,14 @@ describe('CircuitEngine - Phase 5: User Story 3 (Unified Initialization)', () =>
   describe('Container resize handling', () => {
     it('should handle container resize via onContainerResize()', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       expect(() => engine.onContainerResize(1024, 768)).not.toThrow();
     });
 
     it('should update camera aspect ratio on resize', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const camera = engine.getCamera();
       const originalAspect = camera.aspect;
@@ -875,7 +876,7 @@ describe('CircuitEngine - Phase 5: User Story 3 (Unified Initialization)', () =>
   describe('Controller access for advanced operations', () => {
     it('should provide edit controller via getEditController()', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const editController = engine.getEditController();
       expect(editController).toBeDefined();
@@ -883,7 +884,7 @@ describe('CircuitEngine - Phase 5: User Story 3 (Unified Initialization)', () =>
 
     it('should provide simulation controller via getSimulationController()', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const simController = engine.getSimulationController();
       expect(simController).toBeDefined();
@@ -941,7 +942,7 @@ describe('CircuitEngine - Phase 6: User Story 4 (Unified Event System)', () => {
       const readyHandler = vi.fn();
       engine.on('ready', readyHandler);
 
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       expect(readyHandler).toHaveBeenCalled();
     });
@@ -955,7 +956,7 @@ describe('CircuitEngine - Phase 6: User Story 4 (Unified Event System)', () => {
       engine.on('ready', handler1);
       engine.on('ready', handler2);
 
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       expect(handler1).toHaveBeenCalled();
       expect(handler2).toHaveBeenCalled();
@@ -966,7 +967,7 @@ describe('CircuitEngine - Phase 6: User Story 4 (Unified Event System)', () => {
   describe('T040: events from active controller are forwarded', () => {
     it('should forward circuitLoaded event from edit controller', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuitLoadedHandler = vi.fn();
       engine.on('circuitLoaded', circuitLoadedHandler);
@@ -979,7 +980,7 @@ describe('CircuitEngine - Phase 6: User Story 4 (Unified Event System)', () => {
 
     it('should forward simulation events from simulation controller', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -995,7 +996,7 @@ describe('CircuitEngine - Phase 6: User Story 4 (Unified Event System)', () => {
 
     it('should forward toolActivated event from edit controller', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container, { controllerOptions: { defaultTool: null } });
+      engine.initialize(container, createMockRenderer(), { controllerOptions: { defaultTool: null } });
 
       const toolActivatedHandler = vi.fn();
       engine.on('toolActivated', toolActivatedHandler);
@@ -1011,7 +1012,7 @@ describe('CircuitEngine - Phase 6: User Story 4 (Unified Event System)', () => {
   describe('T041: modeChanged event is emitted on mode switch', () => {
     it('should emit modeChanged when switching to simulation', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -1029,7 +1030,7 @@ describe('CircuitEngine - Phase 6: User Story 4 (Unified Event System)', () => {
 
     it('should emit modeChanged when switching to edit', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -1048,7 +1049,7 @@ describe('CircuitEngine - Phase 6: User Story 4 (Unified Event System)', () => {
 
     it('should not emit modeChanged for same mode', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const modeChangedHandler = vi.fn();
       engine.on('modeChanged', modeChangedHandler);
@@ -1068,7 +1069,7 @@ describe('CircuitEngine - Phase 6: User Story 4 (Unified Event System)', () => {
       engine.on('ready', handler);
       engine.off('ready', handler);
 
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       expect(handler).not.toHaveBeenCalled();
     });
@@ -1083,7 +1084,7 @@ describe('CircuitEngine - Phase 6: User Story 4 (Unified Event System)', () => {
       engine.on('ready', handler2);
       engine.off('ready', handler1);
 
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       expect(handler1).not.toHaveBeenCalled();
       expect(handler2).toHaveBeenCalled();
@@ -1133,7 +1134,7 @@ describe('CircuitEngine - Phase 7: User Story 5 (Resource Cleanup and Disposal)'
   describe('T047: dispose() stops simulation if running', () => {
     it('should stop simulation when dispose is called while playing', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -1149,7 +1150,7 @@ describe('CircuitEngine - Phase 7: User Story 5 (Resource Cleanup and Disposal)'
 
     it('should not throw when disposing while simulation is paused', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -1165,7 +1166,7 @@ describe('CircuitEngine - Phase 7: User Story 5 (Resource Cleanup and Disposal)'
   describe('T048: dispose() clears all event subscriptions', () => {
     it('should not call event handlers after dispose', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const modeChangedHandler = vi.fn();
       engine.on('modeChanged', modeChangedHandler);
@@ -1178,7 +1179,7 @@ describe('CircuitEngine - Phase 7: User Story 5 (Resource Cleanup and Disposal)'
 
     it('should clear all internal event listener references', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       // Register multiple handlers
       engine.on('ready', vi.fn());
@@ -1197,7 +1198,7 @@ describe('CircuitEngine - Phase 7: User Story 5 (Resource Cleanup and Disposal)'
   describe('T049: dispose() releases Three.js resources', () => {
     it('should dispose MapControls', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const controls = engine.getControls();
       const disposeSpy = vi.spyOn(controls, 'dispose');
@@ -1209,7 +1210,7 @@ describe('CircuitEngine - Phase 7: User Story 5 (Resource Cleanup and Disposal)'
 
     it('should clear visual object maps', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       const circuit = createTestCircuit();
       engine.setCircuit(circuit);
@@ -1228,7 +1229,7 @@ describe('CircuitEngine - Phase 7: User Story 5 (Resource Cleanup and Disposal)'
   describe('T050: operations throw after dispose', () => {
     it('should throw when calling setMode after dispose', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
       engine.dispose();
 
       expect(() => engine.setMode('simulation')).toThrow(/disposed/i);
@@ -1236,7 +1237,7 @@ describe('CircuitEngine - Phase 7: User Story 5 (Resource Cleanup and Disposal)'
 
     it('should throw when calling setCircuit after dispose', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
       engine.dispose();
 
       expect(() => engine.setCircuit(createTestCircuit())).toThrow(/disposed/i);
@@ -1244,7 +1245,7 @@ describe('CircuitEngine - Phase 7: User Story 5 (Resource Cleanup and Disposal)'
 
     it('should throw when calling getScene after dispose', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
       engine.dispose();
 
       expect(() => engine.getScene()).toThrow(/disposed/i);
@@ -1252,7 +1253,7 @@ describe('CircuitEngine - Phase 7: User Story 5 (Resource Cleanup and Disposal)'
 
     it('should throw when calling getCamera after dispose', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
       engine.dispose();
 
       expect(() => engine.getCamera()).toThrow(/disposed/i);
@@ -1260,7 +1261,7 @@ describe('CircuitEngine - Phase 7: User Story 5 (Resource Cleanup and Disposal)'
 
     it('should throw when calling getControls after dispose', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
       engine.dispose();
 
       expect(() => engine.getControls()).toThrow(/disposed/i);
@@ -1268,7 +1269,7 @@ describe('CircuitEngine - Phase 7: User Story 5 (Resource Cleanup and Disposal)'
 
     it('should throw when calling getCircuit after dispose', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
       engine.dispose();
 
       expect(() => engine.getCircuit()).toThrow(/disposed/i);
@@ -1276,7 +1277,7 @@ describe('CircuitEngine - Phase 7: User Story 5 (Resource Cleanup and Disposal)'
 
     it('should throw when calling onContainerResize after dispose', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
       engine.dispose();
 
       expect(() => engine.onContainerResize(800, 600)).toThrow(/disposed/i);
@@ -1287,7 +1288,7 @@ describe('CircuitEngine - Phase 7: User Story 5 (Resource Cleanup and Disposal)'
   describe('Dispose lifecycle', () => {
     it('should set isDisposed to true after dispose', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       expect(engine.isDisposed).toBe(false);
 
@@ -1298,7 +1299,7 @@ describe('CircuitEngine - Phase 7: User Story 5 (Resource Cleanup and Disposal)'
 
     it('should set isInitialized to false after dispose', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
 
       expect(engine.isInitialized).toBe(true);
 
@@ -1315,7 +1316,7 @@ describe('CircuitEngine - Phase 7: User Story 5 (Resource Cleanup and Disposal)'
 
     it('should throw when calling dispose twice', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
       engine.dispose();
 
       expect(() => engine.dispose()).toThrow();
@@ -1323,10 +1324,10 @@ describe('CircuitEngine - Phase 7: User Story 5 (Resource Cleanup and Disposal)'
 
     it('should throw when trying to initialize after dispose', () => {
       engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-      engine.initialize(container);
+      engine.initialize(container, createMockRenderer());
       engine.dispose();
 
-      expect(() => engine.initialize(container)).toThrow(/disposed/i);
+      expect(() => engine.initialize(container, createMockRenderer())).toThrow(/disposed/i);
     });
   });
 });

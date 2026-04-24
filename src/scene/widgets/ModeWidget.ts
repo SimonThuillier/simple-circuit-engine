@@ -52,10 +52,6 @@ export class ModeWidget {
       this._button.style.transform = 'scale(1.05)';
     });
 
-    this._button.addEventListener('pointerup', () => {
-      //alert("pointerup");
-    });
-
     this._button.addEventListener('click', () => this._onToggle());
 
     this._render();

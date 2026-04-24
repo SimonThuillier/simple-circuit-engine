@@ -33,6 +33,7 @@ export class ToolsWidget {
 
     this._root = document.createElement('div');
     Object.assign(this._root.style, {
+      order: '0',
       display: 'flex',
       flexDirection: 'column',
       gap: '6px',

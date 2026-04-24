@@ -23,11 +23,32 @@ export const barsArrowDownIcon = `
 </svg>
 `.trim();
 
+export const playIcon = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+  <path fill-rule="evenodd" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" clip-rule="evenodd"/>
+</svg>
+`.trim();
+
+export const pauseIcon = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor">
+  <path fill-rule="evenodd" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" clip-rule="evenodd"/>
+</svg>
+`.trim();
+
+export const stepIcon = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor">
+  <path fill-rule="evenodd" stroke-linejoin="round" d="M21 7.5V18M15 7.5V18M3 16.811V8.69c0-.864.933-1.406 1.683-.977l7.108 4.061a1.125 1.125 0 0 1 0 1.954Z" clip-rule="evenodd"/>
+</svg>
+`.trim();
+
 export const stopIcon = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
   <path fill-rule="evenodd" d="M4.5 7.5a3 3 0 0 1 3-3h9a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3h-9a3 3 0 0 1-3-3v-9Z" clip-rule="evenodd"/>
 </svg>
 `.trim();
+
+
+
 
 /**
  * Wrap an inline SVG string into a `<span>` so it can be appended to any

@@ -25,9 +25,10 @@ export class MultiWiringWidget {
     this._onToggle = onToggle;
 
     this._button = document.createElement('button');
+    this._button.style.order =  '1';
     this._button.type = 'button';
     applyIconButtonBase(this._button);
-    applyWidgetRoot(this._button, LAYOUT.MULTI_WIRING_TOP, LAYOUT.LEFT);
+    applyWidgetRoot(this._button, LAYOUT.MULTI_WIRING_TOP, LAYOUT.MULTI_WIRING_LEFT);
     this._button.appendChild(iconElement(barsArrowDownIcon, 20));
     this._button.addEventListener('click', () => this._onToggle());
 

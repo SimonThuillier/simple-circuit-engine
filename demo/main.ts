@@ -51,7 +51,7 @@ const container = document.getElementById('canvas-container')!;
 const engine = new CircuitEngine(componentsFactoryRegistry, behaviorRegistry);
 
 const initialMode = 'edit';
-engine.initialize(container, {
+engine.initialize(container, renderer, {
   initialMode: initialMode,
   controllerOptions: {
     mapControls: { zoomSpeed: 2 },

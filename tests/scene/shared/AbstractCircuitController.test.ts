@@ -17,7 +17,7 @@ import { BehaviorRegistry } from '../../../src/core/simulation/behaviors/Behavio
 import type { SharedResources } from '../../../src/scene/shared/types';
 import type { IFactoryRegistry } from '../../../src/scene/shared/components/ComponentVisualFactory';
 import type { Line2 } from 'three/examples/jsm/lines/Line2.js';
-import { disposeScene } from '../helpers';
+import { disposeScene, createMockRenderer } from '../helpers';
 import { UUID } from '../../../src';
 
 /**
@@ -48,6 +48,7 @@ function createMockSharedResources(factoryRegistry: IFactoryRegistry): SharedRes
   return {
     scene,
     camera,
+    renderer: createMockRenderer(),
     mapControls,
     grid: null,
     factoryRegistry,
@@ -96,21 +97,21 @@ describe('AbstractCircuitController - Shared Resources Injection', () => {
 
     it('should use shared scene when initialized with sharedResources', () => {
       const controller = new CircuitController(factoryRegistry, sharedResources);
-      controller.initialize(container);
+      controller.initialize(container, createMockRenderer());
 
       expect(controller.getScene()).toBe(sharedResources.scene);
     });
 
     it('should use shared camera when initialized with sharedResources', () => {
       const controller = new CircuitController(factoryRegistry, sharedResources);
-      controller.initialize(container);
+      controller.initialize(container, createMockRenderer());
 
       expect(controller.getCamera()).toBe(sharedResources.camera);
     });
 
     it('should use shared MapControls when initialized with sharedResources', () => {
       const controller = new CircuitController(factoryRegistry, sharedResources);
-      controller.initialize(container);
+      controller.initialize(container, createMockRenderer());
 
       expect(controller.getControls()).toBe(sharedResources.mapControls);
     });
@@ -121,7 +122,7 @@ describe('AbstractCircuitController - Shared Resources Injection', () => {
       const originalControls = sharedResources.mapControls;
 
       const controller = new CircuitController(factoryRegistry, sharedResources);
-      controller.initialize(container);
+      controller.initialize(container, createMockRenderer());
 
       // Verify no new objects were created
       expect(controller.getScene()).toBe(originalScene);
@@ -134,14 +135,14 @@ describe('AbstractCircuitController - Shared Resources Injection', () => {
       const readyHandler = vi.fn();
       controller.on('ready', readyHandler);
 
-      controller.initialize(container);
+      controller.initialize(container, createMockRenderer());
 
       expect(readyHandler).toHaveBeenCalledWith({ controllerType: 'static' });
     });
 
     it('should not dispose shared resources when controller is disposed', () => {
       const controller = new CircuitController(factoryRegistry, sharedResources);
-      controller.initialize(container);
+      controller.initialize(container, createMockRenderer());
 
       // Store references before dispose
       const scene = sharedResources.scene;
@@ -173,7 +174,7 @@ describe('AbstractCircuitController - Shared Resources Injection', () => {
         behaviorRegistry,
         sharedResources
       );
-      controller.initialize(container);
+      controller.initialize(container, createMockRenderer());
 
       expect(controller.getScene()).toBe(sharedResources.scene);
     });
@@ -184,7 +185,7 @@ describe('AbstractCircuitController - Shared Resources Injection', () => {
         behaviorRegistry,
         sharedResources
       );
-      controller.initialize(container);
+      controller.initialize(container, createMockRenderer());
 
       expect(controller.getCamera()).toBe(sharedResources.camera);
     });
@@ -198,7 +199,7 @@ describe('AbstractCircuitController - Shared Resources Injection', () => {
       const readyHandler = vi.fn();
       controller.on('ready', readyHandler);
 
-      controller.initialize(container);
+      controller.initialize(container, createMockRenderer());
 
       expect(readyHandler).toHaveBeenCalledWith({ controllerType: 'simulation' });
     });
@@ -209,7 +210,7 @@ describe('AbstractCircuitController - Shared Resources Injection', () => {
         behaviorRegistry,
         sharedResources
       );
-      controller.initialize(container);
+      controller.initialize(container, createMockRenderer());
 
       // Store references before dispose
       const scene = sharedResources.scene;
@@ -224,7 +225,7 @@ describe('AbstractCircuitController - Shared Resources Injection', () => {
   describe('Standalone mode (no shared resources)', () => {
     it('should create own scene when no sharedResources provided', () => {
       const controller = new CircuitController(factoryRegistry);
-      controller.initialize(container);
+      controller.initialize(container, createMockRenderer());
 
       const scene = controller.getScene();
       expect(scene).toBeInstanceOf(THREE.Scene);
@@ -235,7 +236,7 @@ describe('AbstractCircuitController - Shared Resources Injection', () => {
 
     it('should create own camera when no sharedResources provided', () => {
       const controller = new CircuitController(factoryRegistry);
-      controller.initialize(container);
+      controller.initialize(container, createMockRenderer());
 
       const camera = controller.getCamera();
       expect(camera).toBeInstanceOf(THREE.PerspectiveCamera);
@@ -246,7 +247,7 @@ describe('AbstractCircuitController - Shared Resources Injection', () => {
 
     it('should create own MapControls when no sharedResources provided', () => {
       const controller = new CircuitController(factoryRegistry);
-      controller.initialize(container);
+      controller.initialize(container, createMockRenderer());
 
       const controls = controller.getControls();
       expect(controls).toBeInstanceOf(MapControls);
@@ -257,7 +258,7 @@ describe('AbstractCircuitController - Shared Resources Injection', () => {
 
     it('should dispose own resources when controller is disposed in standalone mode', () => {
       const controller = new CircuitController(factoryRegistry);
-      controller.initialize(container);
+      controller.initialize(container, createMockRenderer());
 
       controller.dispose();
 
@@ -281,7 +282,7 @@ describe('EventEmitter.onAny()', () => {
       forwardedEvents.push({ event: event as string, payload });
     });
 
-    controller.initialize(testContainer);
+    controller.initialize(testContainer, createMockRenderer());
 
     // Should have captured the 'ready' event
     expect(forwardedEvents.some((e) => e.event === 'ready')).toBe(true);
@@ -306,7 +307,7 @@ describe('EventEmitter.onAny()', () => {
     // Call cleanup before initialize
     cleanup();
 
-    controller.initialize(testContainer);
+    controller.initialize(testContainer, createMockRenderer());
 
     // Should NOT have captured the 'ready' event after cleanup
     expect(forwardedEvents.some((e) => e.event === 'ready')).toBe(false);

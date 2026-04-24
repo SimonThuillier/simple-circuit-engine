@@ -354,6 +354,9 @@ export interface SharedResources {
   /** Perspective camera for rendering */
   camera: THREE.PerspectiveCamera;
 
+  /** WebGL renderer owned by the consumer and passed in at `initialize()`. Exposed here so factories/managers can access `renderer.domElement`, `getPixelRatio()`, and `capabilities` without another bump. */
+  renderer: THREE.WebGLRenderer;
+
   /** MapControls for pan/zoom/rotate interaction */
   mapControls: MapControls;
 
@@ -412,7 +415,7 @@ export interface CircuitEngineEventMap extends ControllerEventMap {
  *
  * @example
  * ```typescript
- * controllerType.initialize(container, {
+ * controllerType.initialize(container, renderer, {
  *   mapControls: {
  *     enableRotate: false,  // Disable rotation for 2D-only view
  *     maxDistance: 50,      // Limit zoom out

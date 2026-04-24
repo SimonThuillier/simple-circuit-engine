@@ -11,9 +11,11 @@
  * ```typescript
  * import { CircuitController, FactoryRegistry } from 'simple-circuit-controller/scene';
  *
+ * const renderer = new THREE.WebGLRenderer({ antialias: true });
  * const registry = new FactoryRegistry(defaultFactory);
  * const controller = new CircuitController(registry);
- * controller.initialize(container);
+ * controller.initialize(container, renderer);
+ * container.appendChild(renderer.domElement);
  * controller.setCircuit(circuit);
  * ```
  */

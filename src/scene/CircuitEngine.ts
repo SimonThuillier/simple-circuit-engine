@@ -45,8 +45,10 @@ import { WidgetsManager } from './widgets';
  *
  * @example
  * ```typescript
+ * const renderer = new THREE.WebGLRenderer({ antialias: true });
  * const engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
- * engine.initialize(container);
+ * engine.initialize(container, renderer);
+ * container.appendChild(renderer.domElement);
  * engine.setCircuit(circuit);
  *
  * // Edit mode (default)
@@ -128,15 +130,20 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
   }
 
   /**
-   * Initialize the engine with a DOM container.
+   * Initialize the engine with a DOM container and a WebGLRenderer.
    * Creates shared Three.js resources and both controllers.
    *
-   * @param container - HTMLElement to mount the scene
+   * The caller owns the renderer and its canvas; the engine binds MapControls
+   * to `renderer.domElement` (not the container) so DOM overlays such as the
+   * integrated widgets can receive pointer events normally.
+   *
+   * @param container - HTMLElement to mount the scene (used for bounds, mouse tracking, widget overlay)
+   * @param renderer - WebGLRenderer owned by the consumer. Its canvas (`renderer.domElement`) is used for pointer input.
    * @param options - Configuration options
    * @throws {TypeError} If container is not a valid HTMLElement
    * @throws {Error} If already initialized
    */
-  initialize(container: HTMLElement, options?: EngineOptions): void {
+  initialize(container: HTMLElement, renderer: THREE.WebGLRenderer, options?: EngineOptions): void {
     if (this._initialized) {
       throw new Error('CircuitEngine is already initialized');
     }
@@ -153,7 +160,7 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
     this._container = container;
 
     // Create shared resources
-    this._sharedResources = this._createSharedResources(container, options);
+    this._sharedResources = this._createSharedResources(container, renderer, options);
 
     // Create controllers with shared resources
     this._editController = new CircuitController(this._factoryRegistry, this._sharedResources);
@@ -163,8 +170,8 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
       this._sharedResources
     );
     // Initialize both controllers
-    this._editController.initialize(container, options.controllerOptions);
-    this._simulationController.initialize(container, options.controllerOptions);
+    this._editController.initialize(container, renderer, options.controllerOptions);
+    this._simulationController.initialize(container, renderer, options.controllerOptions);
 
     // Setup event forwarding from both controllers
     this._setupEventForwarding();
@@ -197,7 +204,11 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
   /**
    * Create shared resources for both controllers.
    */
-  private _createSharedResources(container: HTMLElement, options: EngineOptions): SharedResources {
+  private _createSharedResources(
+    container: HTMLElement,
+    renderer: THREE.WebGLRenderer,
+    options: EngineOptions
+  ): SharedResources {
     const controllerOptions = options.controllerOptions!;
     // Create scene
     const scene = new THREE.Scene();
@@ -219,8 +230,13 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
     camera.layers.enable(1); // enode hover layer
     camera.layers.enable(2); // component hover layer
 
-    // Create MapControls
-    const mapControls = createMapControls(camera, container, controllerOptions.mapControls!);
+    // Create MapControls bound to the canvas (not the container) so DOM
+    // overlays inside the container don't get their pointer events captured.
+    const mapControls = createMapControls(
+      camera,
+      renderer.domElement,
+      controllerOptions.mapControls!
+    );
 
     // Create managers
     const hoverManager = new HoverManager(scene, camera);
@@ -239,6 +255,7 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
     return {
       scene,
       camera,
+      renderer,
       mapControls,
       grid: grid,
       factoryRegistry: this._factoryRegistry,

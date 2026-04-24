@@ -273,8 +273,11 @@
     },
     "multiWiring": "Multi-wiring",
     "simulation": {
-      "stop": "Stop",
-      "speed": "{{tps}} TPS"
+      "stop": "Stop & Reset",
+      "play": "Play",
+      "pause": "Pause",
+      "speed": "{{tps}} TPS",
+      "step": "Step by step"
     }
   }
 }

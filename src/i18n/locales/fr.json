@@ -273,8 +273,11 @@
     },
     "multiWiring": "Câblage multiple",
     "simulation": {
-      "stop": "Arrêter",
-      "speed": "{{tps}} TPS"
+      "stop": "Stop - Redémarrage",
+      "play": "Lecture",
+      "pause": "Pause",
+      "speed": "{{tps}} TPS",
+      "step": "Pas à pas"
     }
   }
 }

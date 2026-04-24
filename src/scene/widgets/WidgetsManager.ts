@@ -70,17 +70,8 @@ export class WidgetsManager {
     Object.assign(this._root.style, {
       position: 'absolute',
       inset: '0',
-      pointerEvents: 'none',
+      pointerEvents: 'none'
     } satisfies Partial<CSSStyleDeclaration>);
-    // Widget buttons are DOM overlays — they must never feed the scene's
-    // pointer pipeline. MapControls is bound on `container` and calls
-    // setPointerCapture on pointerdown, which would hijack pointerup/click
-    // from the buttons via event bubbling. Stopping propagation at the root
-    // keeps children's own handlers intact while shielding the container.
-    const stopPointer = (e: Event) => e.stopPropagation();
-    for (const type of ['pointerdown', 'pointerup', 'click', 'dblclick'] as const) {
-      this._root.addEventListener(type, stopPointer);
-    }
     container.appendChild(this._root);
 
     this._modeWidget = new ModeWidget(engine.mode, () => this._handleModeToggle());
@@ -97,7 +88,7 @@ export class WidgetsManager {
       engine.simulationSpeed,
       engine.mode === 'simulation' ? engine.isPlaying : false,
       {
-        onStop: () => this._safeCall(() => this._engine.stop()),
+        onStopReset: () => this._safeCall(() => this._engine.stop()),
         onSpeedChange: (tps) => {
           (this._engine as { simulationSpeed: number }).simulationSpeed = tps;
         },
@@ -203,7 +194,6 @@ export class WidgetsManager {
   }
 
   private _handleModeToggle(): void {
-    console.log("called onToggle", this);
     this._safeCall(() => {
       this._engine.setMode(this._engine.mode === 'edit' ? 'simulation' : 'edit');
     });

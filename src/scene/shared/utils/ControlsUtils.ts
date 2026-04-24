@@ -10,10 +10,10 @@ import { mapControlsOptions } from './Options';
 
 export function createMapControls(
   camera: THREE.PerspectiveCamera,
-  container: HTMLElement,
+  canvas: HTMLCanvasElement,
   options: MapControlsOptions
 ): MapControls {
-  const controls = new MapControls(camera, container);
+  const controls = new MapControls(camera, canvas);
   options = mapControlsOptions(options);
 
   controls.enablePan = options.enablePan!;

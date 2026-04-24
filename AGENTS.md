@@ -35,15 +35,15 @@ registerGatesComponentsFactories(componentsFactoryRegistry); //... other groups 
 const behaviorRegistry = registerBasicComponentsBehaviors(new BehaviorRegistry());
 registerGatesComponentsBehaviors(behaviorRegistry); //... other groupsof components  if needed
 
+// Rendering (must exist before engine.initialize — it binds MapControls to the canvas)
+const renderer = new WebGLRenderer();
+
 // Instanciate and Initialize CircuitEngine (it creates and uses a new Circuit by default)
 const engine = new CircuitEngine(componentsFactoryRegistry, behaviorRegistry);
 const container = document.getElementById('canvas-container')!;
-engine.initialize(container, engineOptions());
+engine.initialize(container, renderer, engineOptions());
 // set engine circuit to a new empty circuit
 engine.setCircuit(new Circuit(new CircuitOptions()));
-
-// Rendering
-const renderer = new WebGLRenderer();
 const width = window.innerWidth,
   height = window.innerHeight;
 renderer.setSize(container.clientWidth, container.clientHeight);
@@ -121,8 +121,10 @@ animate();
 ### Initialize Engine
 
 ```typescript
+const renderer = new WebGLRenderer();
 const engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-engine.initialize(container, engineOptions());
+engine.initialize(container, renderer, engineOptions());
+container.appendChild(renderer.domElement);
 engine.setCircuit(new Circuit());
 
 // Add Component Programmatically

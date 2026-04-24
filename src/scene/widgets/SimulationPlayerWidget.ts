@@ -2,34 +2,34 @@
  * Simulation Player Widget
  * @module scene/widgets/SimulationPlayerWidget
  *
- * Horizontal control: stop button + speed slider + TPS indicator.
- * - Single click on slider while paused -> step
- * - Double click on slider -> toggle play / pause
- * - Drag/input on slider -> set simulationSpeed
- * Visible only in simulation mode.
+ * Horizontal control strip: stop | (spacer) | play/pause | speed slider |
+ * TPS indicator | step. Visible only in simulation mode.
+ *
+ * Play/pause button icon reflects current state: `pauseIcon` while playing,
+ * `playIcon` while paused. The step button relies on the engine pausing
+ * automatically when stepping while playing.
  */
 
 import { sceT } from '../../i18n';
-import { iconElement, stopIcon } from './assets/icons';
+import { iconElement, pauseIcon, playIcon, stepIcon, stopIcon } from './assets/icons';
 import { applyIconButtonBase, applyWidgetRoot, LAYOUT } from './styles';
 
-const SINGLE_CLICK_DEBOUNCE_MS = 250;
-
 export interface SimulationPlayerCallbacks {
-  onStop: () => void;
-  onSpeedChange: (tps: number) => void;
   onTogglePlay: () => void;
+  onSpeedChange: (tps: number) => void;
   onStep: () => void;
+  onStopReset: () => void;
 }
 
 export class SimulationPlayerWidget {
   private readonly _root: HTMLDivElement;
   private readonly _stopBtn: HTMLButtonElement;
+  private readonly _playPauseBtn: HTMLButtonElement;
+  private readonly _stepBtn: HTMLButtonElement;
   private readonly _slider: HTMLInputElement;
   private readonly _speedLabel: HTMLSpanElement;
   private readonly _callbacks: SimulationPlayerCallbacks;
   private _isPlaying: boolean;
-  private _clickTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     minSpeed: number,
@@ -45,23 +45,35 @@ export class SimulationPlayerWidget {
     Object.assign(this._root.style, {
       display: 'flex',
       alignItems: 'center',
-      gap: '8px',
+      gap: '6px',
       padding: '6px 10px',
       borderRadius: '8px',
       background: 'rgba(30, 30, 38, 0.85)',
       boxShadow: '0 2px 6px rgba(0, 0, 0, 0.4)',
     } satisfies Partial<CSSStyleDeclaration>);
-    applyWidgetRoot(this._root, LAYOUT.PLAYER_TOP, LAYOUT.LEFT);
+    applyWidgetRoot(this._root, LAYOUT.PLAYER_TOP, LAYOUT.PLAYER_LEFT);
 
     this._stopBtn = this._makeStopButton();
+    this._playPauseBtn = this._makePlayPauseButton();
+    this._stepBtn = this._makeStepButton();
     this._slider = this._makeSlider(minSpeed, maxSpeed, initialSpeed);
     this._speedLabel = this._makeSpeedLabel();
 
+    const spacer = document.createElement('span');
+    Object.assign(spacer.style, {
+      display: 'inline-block',
+      width: '15px',
+    } satisfies Partial<CSSStyleDeclaration>);
+
     this._root.appendChild(this._stopBtn);
+    this._root.appendChild(spacer);
+    this._root.appendChild(this._playPauseBtn);
     this._root.appendChild(this._slider);
     this._root.appendChild(this._speedLabel);
+    this._root.appendChild(this._stepBtn);
 
     this._renderSpeedLabel(initialSpeed);
+    this._renderPlayPauseIcon();
     this._renderThumbColor();
     this._injectThumbStyles();
   }
@@ -84,19 +96,18 @@ export class SimulationPlayerWidget {
   setPlaying(playing: boolean): void {
     if (this._isPlaying === playing) return;
     this._isPlaying = playing;
+    this._renderPlayPauseIcon();
     this._renderThumbColor();
   }
 
   setLanguage(_lng: string): void {
     this._stopBtn.title = sceT('widgets.simulation.stop', { defaultValue: 'Stop' });
+    this._playPauseBtn.title = this._playPauseTitle();
+    this._stepBtn.title = sceT('widgets.simulation.step', { defaultValue: 'Step' });
     this._renderSpeedLabel(Number(this._slider.value));
   }
 
   dispose(): void {
-    if (this._clickTimer !== null) {
-      clearTimeout(this._clickTimer);
-      this._clickTimer = null;
-    }
     this._root.remove();
   }
 
@@ -110,6 +121,21 @@ export class SimulationPlayerWidget {
     return this._slider;
   }
 
+  /** Test/debug accessor. */
+  get stopButton(): HTMLButtonElement {
+    return this._stopBtn;
+  }
+
+  /** Test/debug accessor. */
+  get playPauseButton(): HTMLButtonElement {
+    return this._playPauseBtn;
+  }
+
+  /** Test/debug accessor. */
+  get stepButton(): HTMLButtonElement {
+    return this._stepBtn;
+  }
+
   private _makeStopButton(): HTMLButtonElement {
     const button = document.createElement('button');
     button.type = 'button';
@@ -120,9 +146,49 @@ export class SimulationPlayerWidget {
       borderRadius: '50%',
       color: '#ff6b6b',
     } satisfies Partial<CSSStyleDeclaration>);
-    button.title = sceT('widgets.simulation.stop', { defaultValue: 'Stop' });
+    button.title = sceT('widgets.simulation.stop');
     button.appendChild(iconElement(stopIcon, 14));
-    button.addEventListener('click', () => this._callbacks.onStop());
+    button.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this._callbacks.onStopReset();
+    });
+    return button;
+  }
+
+  private _makePlayPauseButton(): HTMLButtonElement {
+    const button = document.createElement('button');
+    button.type = 'button';
+    applyIconButtonBase(button);
+    Object.assign(button.style, {
+      width: '28px',
+      height: '28px',
+      borderRadius: '50%',
+      color: '#e8e8ec',
+    } satisfies Partial<CSSStyleDeclaration>);
+    button.title = this._playPauseTitle();
+    button.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this._callbacks.onTogglePlay();
+    });
+    return button;
+  }
+
+  private _makeStepButton(): HTMLButtonElement {
+    const button = document.createElement('button');
+    button.type = 'button';
+    applyIconButtonBase(button);
+    Object.assign(button.style, {
+      width: '28px',
+      height: '28px',
+      borderRadius: '50%',
+      color: '#e8e8ec',
+    } satisfies Partial<CSSStyleDeclaration>);
+    button.title = sceT('widgets.simulation.step');
+    button.appendChild(iconElement(stepIcon, 14));
+    button.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this._callbacks.onStep();
+    });
     return button;
   }
 
@@ -135,7 +201,7 @@ export class SimulationPlayerWidget {
     slider.value = String(value);
     slider.classList.add('sce-player-slider');
     Object.assign(slider.style, {
-      width: '140px',
+      width: '120px',
       height: '6px',
       cursor: 'pointer',
       accentColor: '#ff7a3d',
@@ -145,30 +211,6 @@ export class SimulationPlayerWidget {
       const tps = Number(slider.value);
       this._renderSpeedLabel(tps);
       this._callbacks.onSpeedChange(tps);
-    });
-
-    slider.addEventListener('click', (e) => {
-      // Distinguish click from drag-end: only act if not currently focused-via-drag.
-      // We always (re)schedule a single-click handler; dblclick will cancel it.
-      e.stopPropagation();
-      if (this._clickTimer !== null) {
-        clearTimeout(this._clickTimer);
-      }
-      this._clickTimer = setTimeout(() => {
-        this._clickTimer = null;
-        if (!this._isPlaying) {
-          this._callbacks.onStep();
-        }
-      }, SINGLE_CLICK_DEBOUNCE_MS);
-    });
-
-    slider.addEventListener('dblclick', (e) => {
-      e.stopPropagation();
-      if (this._clickTimer !== null) {
-        clearTimeout(this._clickTimer);
-        this._clickTimer = null;
-      }
-      this._callbacks.onTogglePlay();
     });
 
     return slider;
@@ -192,6 +234,19 @@ export class SimulationPlayerWidget {
       defaultValue: '{{tps}} TPS',
       tps,
     });
+  }
+
+  private _renderPlayPauseIcon(): void {
+    this._playPauseBtn.replaceChildren(
+      iconElement(this._isPlaying ? pauseIcon : playIcon, 14),
+    );
+    this._playPauseBtn.title = this._playPauseTitle();
+  }
+
+  private _playPauseTitle(): string {
+    return this._isPlaying
+      ? sceT('widgets.simulation.pause')
+      : sceT('widgets.simulation.play');
   }
 
   private _renderThumbColor(): void {

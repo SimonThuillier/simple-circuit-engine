@@ -19,7 +19,7 @@ vi.mock('i18next', () => ({
 describe('SimulationPlayerWidget', () => {
   let parent: HTMLDivElement;
   let callbacks: {
-    onStop: ReturnType<typeof vi.fn>;
+    onStopReset: ReturnType<typeof vi.fn>;
     onSpeedChange: ReturnType<typeof vi.fn>;
     onTogglePlay: ReturnType<typeof vi.fn>;
     onStep: ReturnType<typeof vi.fn>;
@@ -27,11 +27,10 @@ describe('SimulationPlayerWidget', () => {
   let widget: SimulationPlayerWidget;
 
   beforeEach(() => {
-    vi.useFakeTimers();
     parent = document.createElement('div');
     document.body.appendChild(parent);
     callbacks = {
-      onStop: vi.fn(),
+      onStopReset: vi.fn(),
       onSpeedChange: vi.fn(),
       onTogglePlay: vi.fn(),
       onStep: vi.fn(),
@@ -43,7 +42,6 @@ describe('SimulationPlayerWidget', () => {
   afterEach(() => {
     widget.dispose();
     parent.remove();
-    vi.useRealTimers();
   });
 
   it('initialises slider with the given speed', () => {
@@ -56,10 +54,27 @@ describe('SimulationPlayerWidget', () => {
     expect(widget.element.textContent).toContain('5 TPS');
   });
 
-  it('fires onStop when the stop button is clicked', () => {
-    const stopBtn = widget.element.querySelector('button')!;
-    stopBtn.click();
-    expect(callbacks.onStop).toHaveBeenCalledTimes(1);
+  it('lays out stop, play/pause and step buttons in order', () => {
+    const buttons = Array.from(widget.element.querySelectorAll('button'));
+    expect(buttons).toHaveLength(3);
+    expect(buttons[0]).toBe(widget.stopButton);
+    expect(buttons[1]).toBe(widget.playPauseButton);
+    expect(buttons[2]).toBe(widget.stepButton);
+  });
+
+  it('fires onStopReset when the stop button is clicked', () => {
+    widget.stopButton.click();
+    expect(callbacks.onStopReset).toHaveBeenCalledTimes(1);
+  });
+
+  it('fires onTogglePlay when the play/pause button is clicked', () => {
+    widget.playPauseButton.click();
+    expect(callbacks.onTogglePlay).toHaveBeenCalledTimes(1);
+  });
+
+  it('fires onStep when the step button is clicked', () => {
+    widget.stepButton.click();
+    expect(callbacks.onStep).toHaveBeenCalledTimes(1);
   });
 
   it('fires onSpeedChange and updates label on slider input', () => {
@@ -69,26 +84,19 @@ describe('SimulationPlayerWidget', () => {
     expect(widget.element.textContent).toContain('10 TPS');
   });
 
-  it('fires onStep on a single click while paused (after debounce)', () => {
+  it('does not step when the slider is clicked', () => {
     widget.sliderElement.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(callbacks.onStep).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(260);
-    expect(callbacks.onStep).toHaveBeenCalledTimes(1);
+    expect(callbacks.onTogglePlay).not.toHaveBeenCalled();
   });
 
-  it('does NOT step on a single click while playing', () => {
+  it('shows the play icon while paused and the pause icon while playing', () => {
+    const paused = widget.playPauseButton.innerHTML;
+    expect(paused).toContain('<svg');
     widget.setPlaying(true);
-    widget.sliderElement.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    vi.advanceTimersByTime(260);
-    expect(callbacks.onStep).not.toHaveBeenCalled();
-  });
-
-  it('fires onTogglePlay on dblclick and cancels pending step', () => {
-    widget.sliderElement.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    widget.sliderElement.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
-    vi.advanceTimersByTime(260);
-    expect(callbacks.onTogglePlay).toHaveBeenCalledTimes(1);
-    expect(callbacks.onStep).not.toHaveBeenCalled();
+    const playing = widget.playPauseButton.innerHTML;
+    expect(playing).toContain('<svg');
+    expect(playing).not.toBe(paused);
   });
 
   it('updates slider from setSpeed', () => {

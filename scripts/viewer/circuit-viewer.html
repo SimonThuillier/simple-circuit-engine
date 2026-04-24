@@ -414,7 +414,7 @@
       const viewerContainer = document.getElementById('viewer-container');
 
       const circuitController = new window.CircuitController(window.componentsFactoryRegistry);
-      circuitController.initialize(viewerContainer);
+      circuitController.initialize(viewerContainer, window.renderer);
       circuitController.getScene().add(window.axesHelper);
       circuitController.getCamera().layers.enable(1); // enode hover layer
       circuitController.getCamera().layers.enable(2); // component hover layer
