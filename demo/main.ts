@@ -110,11 +110,6 @@ function updateModeUI(mode: 'edit' | 'simulation') {
   document.getElementById('mode-edit')!.classList.toggle('active', mode === 'edit');
   document.getElementById('mode-simulation')!.classList.toggle('active', mode === 'simulation');
 
-  // Update mode indicator
-  const indicator = document.getElementById('mode-indicator')!;
-  indicator.className = 'mode-indicator ' + mode;
-  indicator.textContent = mode === 'edit' ? 'EDIT MODE' : 'SIMULATION MODE';
-
   // Update status
   document.getElementById('status-mode')!.textContent = mode === 'edit' ? 'Edit' : 'Simulation';
 
