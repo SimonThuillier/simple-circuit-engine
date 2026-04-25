@@ -823,6 +823,7 @@ export class BuildTool implements IEditingTool {
 
       // Create definitive wire visual
       const wire = this._controller.addWire(sourceEnodeId, targetEnodeId);
+      const followUpIds = this.createMultiWiringFollowUpWires(sourceEnodeId, targetEnodeId);
       // select the new wire if nothing was selected before
       if (!hasSelected) {
         this._controller.getSelectionManager().selectOne('wire', wire.id);
@@ -833,7 +834,7 @@ export class BuildTool implements IEditingTool {
         toolType: this.type,
         mode: this.mode,
         operationData: { wireId: wire.id, sourceEnodeId, targetEnodeId },
-        changedData: { addedWires: [wire.id] },
+        changedData: { addedWires: [wire.id, ...followUpIds] },
       });
       // Reset state (end preview)
       this.lastOperationCompletedTs = Date.now();
@@ -851,6 +852,47 @@ export class BuildTool implements IEditingTool {
     this.mode = 'idle';
     this.wireCreationState = null;
     return;
+  }
+
+  /**
+   * If multi-wiring is enabled and both endpoints are logic pins on distinct
+   * interfaces, fan out follow-up wires at matching offsets. Best-effort: any
+   * per-index failure is logged and skipped.
+   */
+  private createMultiWiringFollowUpWires(sourceEnodeId: UUID, targetEnodeId: UUID): UUID[] {
+    if (!this._controller.multiWiring) return [];
+    const circuit = this._controller.getCircuit();
+    if (!circuit) return [];
+    const src = circuit.getENode(sourceEnodeId);
+    const tgt = circuit.getENode(targetEnodeId);
+    if (!src?.logicMetadata || !tgt?.logicMetadata) return [];
+    if (!src.component || !tgt.component) return [];
+    const srcMeta = src.logicMetadata;
+    const tgtMeta = tgt.logicMetadata;
+    if (src.component === tgt.component && srcMeta.interface === tgtMeta.interface) return [];
+    const srcComp = circuit.getComponent(src.component);
+    const tgtComp = circuit.getComponent(tgt.component);
+    if (!srcComp || !tgtComp) return [];
+    const count = Math.min(
+      srcComp.getInterfaceMaxIndex(srcMeta.interface) - srcMeta.index,
+      tgtComp.getInterfaceMaxIndex(tgtMeta.interface) - tgtMeta.index
+    );
+    if (count <= 0) return [];
+    const added: UUID[] = [];
+    for (let k = 1; k <= count; k++) {
+      const s = srcComp.getPinIdByInterface(srcMeta.interface, srcMeta.index + k);
+      const t = tgtComp.getPinIdByInterface(tgtMeta.interface, tgtMeta.index + k);
+      if (!s || !t) continue;
+      try {
+        added.push(this._controller.addWire(s, t).id);
+      } catch (err) {
+        console.warn(
+          'multi-wiring follow-up wire failed:',
+          err instanceof Error ? err.message : err
+        );
+      }
+    }
+    return added;
   }
 
   /**

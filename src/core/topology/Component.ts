@@ -160,6 +160,31 @@ export class Component {
     return COMPONENT_TYPE_METADATA[this.type].pins.get(pinLabel);
   }
 
+  /** Resolve the ENode UUID of the logic pin at `index` within `interfaceName`, or undefined. */
+  getPinIdByInterface(interfaceName: string, index: number): UUID | undefined {
+    let position = 0;
+    for (const pinMeta of COMPONENT_TYPE_METADATA[this.type].pins.values()) {
+      const logicData = pinMeta.logicPinData;
+      if (logicData && logicData.interface === interfaceName && logicData.index === index) {
+        return this.pins[position];
+      }
+      position++;
+    }
+    return undefined;
+  }
+
+  /** Largest index found across pins of the given logic interface, or -1 if none. */
+  getInterfaceMaxIndex(interfaceName: string): number {
+    let max = -1;
+    for (const pinMeta of COMPONENT_TYPE_METADATA[this.type].pins.values()) {
+      const logicData = pinMeta.logicPinData;
+      if (logicData?.interface === interfaceName && logicData.index > max) {
+        max = logicData.index;
+      }
+    }
+    return max;
+  }
+
   setAllParameters(config: Map<string, string>): void {
     this.config = new Map<string, string>(config);
   }

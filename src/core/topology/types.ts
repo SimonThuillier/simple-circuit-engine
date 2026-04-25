@@ -119,6 +119,7 @@ export interface IENode {
   position?: IPosition | null;
   source?: ENodeSourceType | null;
   subtype: string;
+  logicMetadata: ILogicPinMetadata | null;
 }
 /** Interface defining a Wire (link between 2 ENodes supporting intermediate position to tune its path) **/
 export interface IWire {

@@ -36,7 +36,7 @@ import { SelectionManager } from '../shared/SelectionManager';
 import { CircuitWriter } from './CircuitWriter';
 import { AbstractCircuitController } from '../shared/AbstractCircuitController';
 import { ConfigPanelWidget } from './tools/ConfigPanelWidget';
-import { PinTooltipWidget } from './PinTooltipWidget';
+import { PinTooltipWidget } from '../widgets/PinTooltipWidget';
 import { controllerOptions } from '../shared/utils/Options';
 
 /**
@@ -375,9 +375,9 @@ export class CircuitController extends AbstractCircuitController {
         payload.userData?.type === 'enodeHitbox' &&
         payload.userData.componentId !== null
       ) {
-        const { label, componentType } = payload.userData;
+        const { label, componentType, logicMetadata } = payload.userData;
         if (label && componentType) {
-          this._pinTooltipWidget?.show(label, componentType, this._lastClientX, this._lastClientY);
+          this._pinTooltipWidget?.show(label, componentType, logicMetadata, this._lastClientX, this._lastClientY);
           return;
         }
       }

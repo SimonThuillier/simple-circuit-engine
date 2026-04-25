@@ -15,6 +15,7 @@ import type { IFactoryRegistry } from './components/ComponentVisualFactory';
 import type { BranchingPointVisualFactory } from './BranchingPointVisualFactory';
 import type { WireVisualManager } from './WireVisualManager';
 import type { HoverManager } from './HoverManager';
+import type {ILogicPinMetadata} from "../../core/topology/types";
 
 // Re-export Line2 types for convenience
 export type { Line2, LineGeometry, LineMaterial };
@@ -198,6 +199,7 @@ export interface EnodeHitboxUserData {
   componentId: string | null;
   label: string | null;
   componentType: ComponentType | null;
+  logicMetadata: ILogicPinMetadata | null;
 }
 
 /**

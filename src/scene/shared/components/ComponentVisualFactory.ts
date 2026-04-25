@@ -452,6 +452,7 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
       label: node.pinLabel,
       subtype: node.subtype,
       lockedSourceType: lockedSubtypes.includes(node.subtype),
+      logicMetadata: node.logicMetadata,
     };
 
     const pinGroup = new THREE.Group();
