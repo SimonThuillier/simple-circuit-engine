@@ -173,8 +173,17 @@ export class WidgetsManager {
     });
 
     this._listen('simulationPlayed', () => this._playerWidget.setPlaying(true));
-    this._listen('simulationPaused', () => this._playerWidget.setPlaying(false));
-    this._listen('simulationStopped', () => this._playerWidget.setPlaying(false));
+    this._listen('simulationPaused', (payload: { tick: number }) => {
+      this._playerWidget.setPlaying(false);
+      this._playerWidget.setTick(payload.tick);
+    });
+    this._listen('simulationStopped', () => {
+      this._playerWidget.setPlaying(false);
+      this._playerWidget.setTick(0);
+    });
+    this._listen('simulationStepped', (payload: { tick: number }) => {
+      this._playerWidget.setTick(payload.tick);
+    });
 
     this._listen('simulationSpeedChanged', (payload: { newSpeed: number }) => {
       this._playerWidget.setSpeed(payload.newSpeed);

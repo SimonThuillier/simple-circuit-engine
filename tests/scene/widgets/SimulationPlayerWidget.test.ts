@@ -11,6 +11,9 @@ vi.mock('i18next', () => ({
       if (options && typeof options.tps === 'number') {
         return `${options.tps} TPS`;
       }
+      if (options && typeof options.tick === 'number') {
+        return `Step ${options.tick}`;
+      }
       return options?.defaultValue ?? _key;
     },
   },
@@ -50,8 +53,32 @@ describe('SimulationPlayerWidget', () => {
     expect(widget.sliderElement.max).toBe('20');
   });
 
-  it('renders the current speed in the label', () => {
+  it('renders the current tick in the label while paused', () => {
+    expect(widget.element.textContent).toContain('Step 0');
+  });
+
+  it('renders the speed in the label while playing', () => {
+    widget.setPlaying(true);
     expect(widget.element.textContent).toContain('5 TPS');
+  });
+
+  it('updates the tick label as steps occur while paused', () => {
+    widget.setTick(7);
+    expect(widget.element.textContent).toContain('Step 7');
+  });
+
+  it('does not show the tick label while playing', () => {
+    widget.setPlaying(true);
+    widget.setTick(7);
+    expect(widget.element.textContent).not.toContain('Step 7');
+    expect(widget.element.textContent).toContain('5 TPS');
+  });
+
+  it('reverts to the tick label when paused', () => {
+    widget.setPlaying(true);
+    widget.setTick(3);
+    widget.setPlaying(false);
+    expect(widget.element.textContent).toContain('Step 3');
   });
 
   it('lays out stop, play/pause and step buttons in order', () => {
@@ -77,7 +104,8 @@ describe('SimulationPlayerWidget', () => {
     expect(callbacks.onStep).toHaveBeenCalledTimes(1);
   });
 
-  it('fires onSpeedChange and updates label on slider input', () => {
+  it('fires onSpeedChange on slider input and reflects new speed in playing label', () => {
+    widget.setPlaying(true);
     widget.sliderElement.value = '10';
     widget.sliderElement.dispatchEvent(new Event('input'));
     expect(callbacks.onSpeedChange).toHaveBeenCalledWith(10);
@@ -100,6 +128,7 @@ describe('SimulationPlayerWidget', () => {
   });
 
   it('updates slider from setSpeed', () => {
+    widget.setPlaying(true);
     widget.setSpeed(12);
     expect(widget.sliderElement.value).toBe('12');
     expect(widget.element.textContent).toContain('12 TPS');

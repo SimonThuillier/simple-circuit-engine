@@ -5,6 +5,8 @@ import {
   ClockVisualFactory,
   DoubleThrowSwitchVisualFactory,
   EightBitAdderVisualFactory, EightBitOnesComplementVisualFactory,
+  EightInputVisualFactory,
+  FourInputVisualFactory,
   HalfAdderVisualFactory,
   type IGroupedFactoryRegistry,
   InverterVisualFactory,
@@ -16,10 +18,12 @@ import {
   Nor4GateVisualFactory,
   Nor8GateVisualFactory,
   NorGateVisualFactory,
+  OneInputVisualFactory,
   RectangleLEDVisualFactory,
   RelayVisualFactory,
   SmallLEDVisualFactory,
   SwitchVisualFactory,
+  TwoInputVisualFactory,
   Xor4GateVisualFactory,
   Xor8GateVisualFactory,
   XorGateVisualFactory,
@@ -91,5 +95,24 @@ export function registerArithmeticComponentsFactories(
         .add(ComponentType.Adder, new AdderVisualFactory())
         .add(ComponentType.EightBitAdder, new EightBitAdderVisualFactory())
         .add(ComponentType.EightBitOnesComplement, new EightBitOnesComplementVisualFactory())
+  );
+}
+
+/**
+ * Register all interface input components visual factories in the interface group.
+ * Interface input components are: OneInput, TwoInput, FourInput, EightInput.
+ * @public
+ * @param registry - A grouped factory registry to populate
+ * @returns The input registry for chaining
+ */
+export function registerInterfaceComponentsFactories(
+  registry: IGroupedFactoryRegistry
+): IGroupedFactoryRegistry {
+  return registry.addGroup('interface', 'Interface', (group) =>
+    group
+        .add(ComponentType.OneInput, new OneInputVisualFactory())
+        .add(ComponentType.TwoInput, new TwoInputVisualFactory())
+        .add(ComponentType.FourInput, new FourInputVisualFactory())
+        .add(ComponentType.EightInput, new EightInputVisualFactory())
   );
 }

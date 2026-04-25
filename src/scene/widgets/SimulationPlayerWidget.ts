@@ -30,6 +30,7 @@ export class SimulationPlayerWidget {
   private readonly _speedLabel: HTMLSpanElement;
   private readonly _callbacks: SimulationPlayerCallbacks;
   private _isPlaying: boolean;
+  private _currentTick: number = 0;
 
   constructor(
     minSpeed: number,
@@ -72,7 +73,7 @@ export class SimulationPlayerWidget {
     this._root.appendChild(this._speedLabel);
     this._root.appendChild(this._stepBtn);
 
-    this._renderSpeedLabel(initialSpeed);
+    this._renderLabel();
     this._renderPlayPauseIcon();
     this._renderThumbColor();
     this._injectThumbStyles();
@@ -90,7 +91,12 @@ export class SimulationPlayerWidget {
     if (Number(this._slider.value) !== tps) {
       this._slider.value = String(tps);
     }
-    this._renderSpeedLabel(tps);
+    this._renderLabel();
+  }
+
+  setTick(tick: number): void {
+    this._currentTick = tick;
+    if (!this._isPlaying) this._renderLabel();
   }
 
   setPlaying(playing: boolean): void {
@@ -98,13 +104,14 @@ export class SimulationPlayerWidget {
     this._isPlaying = playing;
     this._renderPlayPauseIcon();
     this._renderThumbColor();
+    this._renderLabel();
   }
 
   setLanguage(_lng: string): void {
     this._stopBtn.title = sceT('widgets.simulation.stop', { defaultValue: 'Stop' });
     this._playPauseBtn.title = this._playPauseTitle();
     this._stepBtn.title = sceT('widgets.simulation.step', { defaultValue: 'Step' });
-    this._renderSpeedLabel(Number(this._slider.value));
+    this._renderLabel();
   }
 
   dispose(): void {
@@ -209,7 +216,7 @@ export class SimulationPlayerWidget {
 
     slider.addEventListener('input', () => {
       const tps = Number(slider.value);
-      this._renderSpeedLabel(tps);
+      this._renderLabel();
       this._callbacks.onSpeedChange(tps);
     });
 
@@ -229,10 +236,17 @@ export class SimulationPlayerWidget {
     return span;
   }
 
-  private _renderSpeedLabel(tps: number): void {
-    this._speedLabel.textContent = sceT('widgets.simulation.speed', {
-      defaultValue: '{{tps}} TPS',
-      tps,
+  private _renderLabel(): void {
+    if (this._isPlaying) {
+      this._speedLabel.textContent = sceT('widgets.simulation.speed', {
+        defaultValue: '{{tps}} TPS',
+        tps: Number(this._slider.value),
+      });
+      return;
+    }
+    this._speedLabel.textContent = sceT('widgets.simulation.staticStep', {
+      defaultValue: 'Step {{tick}}',
+      tick: this._currentTick,
     });
   }
 

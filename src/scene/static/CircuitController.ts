@@ -213,8 +213,6 @@ export class CircuitController extends AbstractCircuitController {
       return;
     }
 
-    console.log('pointerdown',event);
-
     // common behavior regardless of the tool: select on pointer down
     if (this._hoverManager?.getHoveredElement()) {
       // always: emit position event when hovered element
@@ -233,7 +231,6 @@ export class CircuitController extends AbstractCircuitController {
         this.emit('deselect', selection);
       }
     }
-    console.log('leaving',event);
   }
 
   private _applySelectionVisual(selection: SelectionData, selected: boolean): void {

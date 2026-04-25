@@ -51,8 +51,13 @@ export const TRANSITION_DEFAULTS = {
 export interface IUserCommand {
   /**
    * Type of command.
+   *
+   * - `toggle_switch`: flip a (double-throw) switch component.
+   * - `toggle_input`: flip one switch of a multi-switch input component
+   *   (OneInput, TwoInput, FourInput, EightInput); `parameters` MUST carry
+   *   `index` identifying which switch was toggled.
    */
-  readonly type: 'toggle_switch';
+  readonly type: 'toggle_switch' | 'toggle_input';
   /**
    * UUID of target component.
    */
@@ -68,6 +73,9 @@ export interface IUserCommand {
    * - `tickCount`: Number of ticks for the switch transition. Computed at toggle time
    *   using the formula: `ceil(transitionUserSpan × simulationSpeed / 1000)` with minimum of 1.
    *   If not provided, behavior uses default transition timing.
+   *
+   * For `toggle_input` commands:
+   * - `index`: index of the toggled switch within the multi-switch component.
    */
   readonly parameters?: Map<string, string> | null;
 }

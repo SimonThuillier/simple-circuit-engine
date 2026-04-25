@@ -277,7 +277,8 @@
       "play": "Lecture",
       "pause": "Pause",
       "speed": "{{tps}} TPS",
-      "step": "Pas à pas"
+      "step": "Pas à pas",
+      "staticStep": "Pas {{tick}}"
     }
   }
 }

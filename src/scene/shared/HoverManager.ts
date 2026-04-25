@@ -129,6 +129,37 @@ export class HoverManager {
   }
 
   /**
+   * Raycast against the descendants of the given component object3D at the
+   * last known mouse position and return all `userData.part` strings that
+   * are currently hit.
+   *
+   * Useful when a click on a component hitbox needs to be refined to a
+   * specific sub-part (e.g. one switch among many in a multi-input
+   * component). Unlike priority hover detection this method ignores hitbox
+   * layers and walks the full sub-tree.
+   *
+   * @param componentObject3D - Root object of the component to introspect
+   * @returns De-duplicated `part` strings hit, in raycast order. Empty if
+   *          no annotated mesh is under the cursor.
+   */
+  getHoveredComponentParts(componentObject3D: THREE.Object3D): string[] {
+    this.raycaster.setFromCamera(
+      new THREE.Vector2(this.lastMouseX, this.lastMouseY),
+      this.camera
+    );
+    this.raycaster.layers.enableAll();
+    const intersections = this.raycaster.intersectObject(componentObject3D, true);
+    const parts: string[] = [];
+    for (const intersection of intersections) {
+      const part = intersection.object.userData?.part as string | undefined;
+      if (part && !parts.includes(part)) {
+        parts.push(part);
+      }
+    }
+    return parts;
+  }
+
+  /**
    * Force update hover state at current mouse position
    *
    * Useful after camera changes or scene updates to refresh hover state

@@ -674,6 +674,7 @@ export class CircuitRunnerController extends AbstractCircuitController {
     const componentId = componentGroup.userData.componentId;
     switch (componentType) {
       case ComponentType.DoubleThrowSwitch:
+      case ComponentType.OneInput:
       case ComponentType.Switch: {
         // Get component to read its config
         const component = this._circuit?.getComponent(componentId);
@@ -687,9 +688,43 @@ export class CircuitRunnerController extends AbstractCircuitController {
           type: 'toggle_switch',
           targetId: componentId,
           scheduledAtTick: this._runner.getCurrentTick(),
-          parameters: new Map<string, string>([['tickCount', String(tickCount)]]),
+          parameters: new Map<string, string>([
+              ['tickCount', String(tickCount)],
+              ['index', '0']
+          ]),
         };
         // Submit command to runner and emit event
+        this._runner.submitCommand(command);
+        this.emit('simulationUserCommand', command);
+        return;
+      }
+      case ComponentType.TwoInput:
+      case ComponentType.FourInput:
+      case ComponentType.EightInput: {
+        const component = this._circuit?.getComponent(componentId);
+        if (!component) return;
+        if (!this._hoverManager) return;
+
+        // Refine the component-level click to a specific switch via a sub-tree raycast.
+        const parts = this._hoverManager.getHoveredComponentParts(componentGroup);
+        const switchParts = parts.filter((p) => p.startsWith('input_switch-'));
+        if (switchParts.length !== 1) return;
+        const indexMatch = switchParts[0]!.match(/^input_switch-(\d+)$/);
+        if (!indexMatch) return;
+        const index = indexMatch[1]!;
+
+        const transitionUserSpan = this._getTransitionUserSpan(component.config);
+        const tickCount = this.computeTickCount(transitionUserSpan);
+
+        const command: IUserCommand = {
+          type: 'toggle_switch',
+          targetId: componentId,
+          scheduledAtTick: this._runner.getCurrentTick(),
+          parameters: new Map<string, string>([
+            ['tickCount', String(tickCount)],
+            ['index', index],
+          ]),
+        };
         this._runner.submitCommand(command);
         this.emit('simulationUserCommand', command);
         return;

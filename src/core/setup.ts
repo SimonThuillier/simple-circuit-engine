@@ -27,6 +27,10 @@ import {
   AdderBehavior,
   EightBitAdderBehavior,
   EightBitOnesComplementBehavior,
+  OneInputBehavior,
+  TwoInputBehavior,
+  FourInputBehavior,
+  EightInputBehavior,
 } from './simulation';
 
 /**
@@ -86,5 +90,23 @@ export function registerArithmeticComponentsBehaviors(
       .register(new AdderBehavior())
       .register(new EightBitAdderBehavior())
       .register(new EightBitOnesComplementBehavior());
+  return registry;
+}
+
+/**
+ * Register all interface input component behaviors in the given registry.
+ * Interface input components are: OneInput, TwoInput, FourInput, EightInput.
+ * @public
+ * @param registry
+ * @return the input behavior registry for chaining
+ */
+export function registerInterfaceComponentsBehaviors(
+  registry: BehaviorRegistry
+): BehaviorRegistry {
+  registry
+    .register(new OneInputBehavior())
+    .register(new TwoInputBehavior())
+    .register(new FourInputBehavior())
+    .register(new EightInputBehavior());
   return registry;
 }

@@ -39,3 +39,10 @@ export { HalfAdderState } from './arithmetic/HalfAdderState';
 export { AdderState } from './arithmetic/AdderState';
 export { EightBitAdderState } from './arithmetic/EightBitAdderState';
 export { EightBitOnesComplementState } from './arithmetic/EightBitOnesComplementState';
+
+// interface
+export { InputState } from './interface/InputState';
+export { OneInputState } from './interface/OneInputState';
+export { TwoInputState } from './interface/TwoInputState';
+export { FourInputState } from './interface/FourInputState';
+export { EightInputState } from './interface/EightInputState';

@@ -68,5 +68,6 @@ export * from './shared/utils/Options';
 export {
   registerBasicComponentsFactories,
   registerGatesComponentsFactories,
-  registerArithmeticComponentsFactories
+  registerArithmeticComponentsFactories,
+    registerInterfaceComponentsFactories
 } from './setup';

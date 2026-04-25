@@ -46,3 +46,10 @@ export { HalfAdderVisualFactory } from './arithmetic/HalfAdderVisualFactory';
 export { AdderVisualFactory } from './arithmetic/AdderVisualFactory';
 export { EightBitAdderVisualFactory } from './arithmetic/EightBitAdderVisualFactory';
 export { EightBitOnesComplementVisualFactory } from './arithmetic/EightBitOnesComplementVisualFactory';
+
+// interface
+export { InputVisualFactoryBase } from './interface/InputVisualFactoryBase';
+export { OneInputVisualFactory } from './interface/OneInputVisualFactory';
+export { TwoInputVisualFactory } from './interface/TwoInputVisualFactory';
+export { FourInputVisualFactory } from './interface/FourInputVisualFactory';
+export { EightInputVisualFactory } from './interface/EightInputVisualFactory';
