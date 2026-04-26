@@ -11,7 +11,7 @@ This data is now wired in ENodes and pins userData : from there it can be used b
 This features should only be active when engine/controller multi-wiring flag is true. 
 Planning and implementation of the various features of this specification will be done incrementally one feature at a time because they'll need some manual human testing between each stage.  
 
-### 1 - wiring two logic interfaces together
+### 1 - wiring two logic interfaces together [DONE]
 
 If activated it will trigger the following rules : 
 When a user ends wiring from a component's start pin 
@@ -27,4 +27,55 @@ example :
 user wire from output-0 of a 8 bit one's complement to inputB-0 of a eight bits adder -> 8 wires a creates output-0:inputB-0 .... output-7:inputB-7
 user wire from output-0 from an eight-bit adder to input-0 of a 7 segment display (4 inputs for displaying an hexa 4 bits number) -> 4 wires are created output-0:input-0 ... output-3:input-3
 user wire from output-4 from an eight-bit adder to input-4 of a 7 segment display (4 inputs for displaying an hexa 4 bits number) -> 4 wires are created output-4:input-0 ... output-7:input-3
+
+### 2 - direct injection wiring from a logic interface to a branching point [DONE]
+
+Given multi-wiring activated
+When a user ends wiring from a component's start pin
+and this pin is a logic one (input or output) and this pin has a non null logicMetadata
+and is pin i of interface A
+and the target is a new branching point created at the end of this wiring
+then a wire is created between start pin and the new target branching point (current behavior)
+and i+1...max interface A index new branching points target are created and positioned according to the followUps branching points placement algorithm below
+and i+1...max interface A index new wires are created between the pins i+1 of the interface and the new i+1 followUps branching points
+
+#### followUps branching point placement algorithm
+
+1 - from the position of the new branching point the user placed you can compute followUps branching points i + j with j in [1...interface A length -1] positions 
+First ake it so that all wires between pins i+j and branching points i + j would be parallel to the first wire and same length. 
+The visual distance between first branching point (i) and the next is now the same as the visual distance between pin i and pin i+1 and so on. let call it Di
+
+2 - adjustment
+According to the interface is a logicInput or logicOutput : 
+
+if logicInput length of wire must grow slightly with the index : 
+prolongate the followUp wires length (in fact moving the target followUp branching point) so that distance BPi - BPi+1 is multiplied by square(2)
+
+if logicOutput length of wire must shrink slightly with the index :
+Shrink the followUp wires length (in fact moving the target followUp branching point) so that distance BPi - BPi+1 is multiplied by square(2) but the branching point get in fact closer to pin i+1.
+Iterate the operation until last wire.
+
+### 3A - indirect injection wiring from to a branching point to a new branching point [TODO]
+
+Given multi-wiring activated
+When a user ends wiring from a branching point (start BP)
+and the target is a new branching point (target BP) created at the end of this wiring
+then a wire is created between start BP and the new target BP (current behavior)
+then the networking exploration algorithm below analyzes the source of start BP
+if it returns a single logic interface A and a single logic index i (one single pin connected) and the logic distance Dl between start BP and the interface's pin (0 being direct wire, 1 one branching point away, etc...) is >0
+then the forward exploration algorithm below explores the network of branching points linked to the followUp pins of the interface A
+it returns all siblings candidate branching points (no pins in this case) having the logic distance Dl and their index of connection
+Then iteratively starting from i+1 : 
+It looks at siblings candidates of this index
+if it finds one within a reasonable distance xz ( reasonable being 3*the distance between the two pins of origin i-i+1) it serves as basis for a new wire/followUp branching point which will be positioned relatively to the first target branching point
+else is breaks and stop treatment
+it iterates until either reaching the max index or at a break in the process. 
+
+#### networking exploration algorithm
+
+The goal is given a branching point or pin to find the pins and logicalInput/Output interfaces that are connected to it. 
+It involves traversing the wiring from this branching point/pin. Only branching points are passing along the way : Each time a pin is reached this explorated branch stops here. 
+After fast thinking it seems there's no real difference between exploration backward and forward in this scenario. It seems to be a symmetrical ops.
+To design further.
+
 

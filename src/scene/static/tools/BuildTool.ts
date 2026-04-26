@@ -47,6 +47,7 @@ import {
   BRANCHING_POINT_SENTINEL,
   type PickerSelection,
 } from './ComponentPickerWidget';
+import { computeRule2BpPositions, nudgeIfSameGridCell } from './MultiWiringPlacement';
 
 /**
  * Build tool operating modes
@@ -798,11 +799,13 @@ export class BuildTool implements IEditingTool {
     try {
       let targetEnodeId = null;
       let hasSelected = false;
+      let standaloneBpWorldPosition: THREE.Vector3 | null = null;
       if (!hoveredElement) {
         // finishing on empty space : create end branching point
         const worldPosition = this._controller.cursorGroundPlanePosition();
         targetEnodeId = this.createStandaloneBranchingPoint(worldPosition);
         if (targetEnodeId) {
+          standaloneBpWorldPosition = worldPosition;
           this._controller
             .getSelectionManager()
             .selectOne('enode', targetEnodeId, { componentId: null });
@@ -824,6 +827,9 @@ export class BuildTool implements IEditingTool {
       // Create definitive wire visual
       const wire = this._controller.addWire(sourceEnodeId, targetEnodeId);
       const followUpIds = this.createMultiWiringFollowUpWires(sourceEnodeId, targetEnodeId);
+      const rule2 = standaloneBpWorldPosition
+        ? this.createMultiWiringRule2Followups(sourceEnodeId, standaloneBpWorldPosition)
+        : { addedWires: [], addedEnodes: [] };
       // select the new wire if nothing was selected before
       if (!hasSelected) {
         this._controller.getSelectionManager().selectOne('wire', wire.id);
@@ -834,7 +840,10 @@ export class BuildTool implements IEditingTool {
         toolType: this.type,
         mode: this.mode,
         operationData: { wireId: wire.id, sourceEnodeId, targetEnodeId },
-        changedData: { addedWires: [wire.id, ...followUpIds] },
+        changedData: {
+          addedWires: [wire.id, ...followUpIds, ...rule2.addedWires],
+          addedEnodes: rule2.addedEnodes,
+        },
       });
       // Reset state (end preview)
       this.lastOperationCompletedTs = Date.now();
@@ -893,6 +902,84 @@ export class BuildTool implements IEditingTool {
       }
     }
     return added;
+  }
+
+  /**
+   * If multi-wiring is enabled and the wire ended on empty space (i.e. created
+   * a fresh standalone branching point) from a logic pin, fan out follow-up
+   * branching points and follow-up wires for the remaining indices of the
+   * source interface. Best-effort: any per-step failure is logged and skipped.
+   */
+  private createMultiWiringRule2Followups(
+    sourceEnodeId: UUID,
+    bpWorldPosition: THREE.Vector3
+  ): { addedWires: UUID[]; addedEnodes: UUID[] } {
+    const empty = { addedWires: [], addedEnodes: [] };
+    if (!this._controller.multiWiring) return empty;
+    const circuit = this._controller.getCircuit();
+    if (!circuit) return empty;
+    const src = circuit.getENode(sourceEnodeId);
+    if (!src?.logicMetadata || !src.component) return empty;
+    const srcComp = circuit.getComponent(src.component);
+    if (!srcComp) return empty;
+    const pinMeta = srcComp.getPinMetadata(sourceEnodeId);
+    const sign: 1 | -1 | null =
+      pinMeta?.subtype === 'logicInput' ? -1 : pinMeta?.subtype === 'logicOutput' ? 1 : null;
+    if (sign === null) return empty;
+    const interfaceName = src.logicMetadata.interface;
+    const i = src.logicMetadata.index;
+    const count = srcComp.getInterfaceMaxIndex(interfaceName) - i;
+    if (count <= 0) return empty;
+    const componentGroup = this._controller.componentObject3Ds.get(src.component);
+    if (!componentGroup) return empty;
+
+    // Collect pin world XZ positions for k = 0..count.
+    const pinPositions: { x: number; z: number }[] = [];
+    for (let k = 0; k <= count; k++) {
+      const pinId = srcComp.getPinIdByInterface(interfaceName, i + k);
+      if (!pinId) return empty;
+      const pos = this._controller.wireVisualManager.getPinWorldPositionFromGroup(
+        pinId,
+        componentGroup
+      );
+      if (!pos) return empty;
+      pinPositions.push({ x: pos.x, z: pos.z });
+    }
+
+    const bp0 = { x: bpWorldPosition.x, z: bpWorldPosition.z };
+    const followUps = computeRule2BpPositions(pinPositions, bp0, sign);
+    if (followUps.length === 0) return empty;
+
+    const Wx = bp0.x - pinPositions[0]!.x;
+    const Wz = bp0.z - pinPositions[0]!.z;
+    const wireLength = Math.hypot(Wx, Wz);
+    const u = wireLength > 0 ? { x: Wx / wireLength, z: Wz / wireLength } : { x: 0, z: 0 };
+
+    const addedWires: UUID[] = [];
+    const addedEnodes: UUID[] = [];
+    for (let j = 1; j <= count; j++) {
+      const raw = followUps[j - 1]!;
+      const parallelBp = {
+        x: pinPositions[j]!.x + Wx,
+        z: pinPositions[j]!.z + Wz,
+      };
+      const nudged = nudgeIfSameGridCell(raw, parallelBp, u);
+      try {
+        const bpEnode = this._controller.addBranchingPoint(
+          new THREE.Vector3(nudged.x, 0, nudged.z)
+        );
+        addedEnodes.push(bpEnode.id);
+        const followUpSrcPinId = srcComp.getPinIdByInterface(interfaceName, i + j);
+        if (!followUpSrcPinId) continue;
+        addedWires.push(this._controller.addWire(followUpSrcPinId, bpEnode.id).id);
+      } catch (err) {
+        console.warn(
+          'multi-wiring rule 2 follow-up failed:',
+          err instanceof Error ? err.message : err
+        );
+      }
+    }
+    return { addedWires, addedEnodes };
   }
 
   /**
@@ -1501,7 +1588,7 @@ export class BuildTool implements IEditingTool {
     const endpoint1 = node1.getPosition(circuit);
     const endpoint2 = node2.getPosition(circuit);
 
-    const threshold = 0.5; // Grid units
+    const threshold = 0.4; // Grid units
 
     // Check if close to endpoint1
     const distToEndpoint1 = Math.sqrt(
