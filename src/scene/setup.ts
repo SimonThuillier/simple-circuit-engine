@@ -19,6 +19,10 @@ import {
   Nor8GateVisualFactory,
   NorGateVisualFactory,
   OneInputVisualFactory,
+  OneLightVisualFactory,
+  TwoLightVisualFactory,
+  FourLightVisualFactory,
+  EightLightVisualFactory,
   RectangleLEDVisualFactory,
   RelayVisualFactory,
   SmallLEDVisualFactory,
@@ -99,8 +103,10 @@ export function registerArithmeticComponentsFactories(
 }
 
 /**
- * Register all interface input components visual factories in the interface group.
- * Interface input components are: OneInput, TwoInput, FourInput, EightInput.
+ * Register all interface components visual factories in the interface group.
+ * Interface components are:
+ *  - inputs: OneInput, TwoInput, FourInput, EightInput
+ *  - lights: OneLight, TwoLight, FourLight, EightLight
  * @public
  * @param registry - A grouped factory registry to populate
  * @returns The input registry for chaining
@@ -114,5 +120,9 @@ export function registerInterfaceComponentsFactories(
         .add(ComponentType.TwoInput, new TwoInputVisualFactory())
         .add(ComponentType.FourInput, new FourInputVisualFactory())
         .add(ComponentType.EightInput, new EightInputVisualFactory())
+        .add(ComponentType.OneLight, new OneLightVisualFactory())
+        .add(ComponentType.TwoLight, new TwoLightVisualFactory())
+        .add(ComponentType.FourLight, new FourLightVisualFactory())
+        .add(ComponentType.EightLight, new EightLightVisualFactory())
   );
 }

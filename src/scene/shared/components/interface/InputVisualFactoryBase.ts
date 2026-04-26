@@ -123,6 +123,7 @@ export abstract class InputVisualFactoryBase extends ComponentVisualFactoryBase 
       this.createPinsVisual(component, context, group);
     }
 
+    this.updateFromConfiguration(group, component.config);
     return group;
   }
 
@@ -207,14 +208,11 @@ export abstract class InputVisualFactoryBase extends ComponentVisualFactoryBase 
     const switches = this._findSwitches(object3D);
     if (switches.length === 0) return;
 
-    const numState = parseInt(config.get('initialState') ?? this.getDefaultInitialState(), 16);
-    console.log(numState);
-    const maxBinLength = (2**this.bitCount -1).toString(2).length ;
-    const binState = numState.toString(2).padStart(maxBinLength, '0');
-    console.log(binState);
-    for(let i=0; i<switches.length; i++ ) {
-      // @ts-ignore
-      switches[i].group.position.y = binState.charAt(maxBinLength - i - 1) === '1' ? SWITCH_Y_ON : SWITCH_Y_OFF;
+    const initialValue = parseInt(config.get('initialState') ?? this.getDefaultInitialState(), 16);
+    object3D.userData.initialStateValue = initialValue;
+    for (const sw of switches) {
+      const high = ((initialValue >> sw.index) & 1) !== 0;
+      sw.group.position.y = high ? SWITCH_Y_ON : SWITCH_Y_OFF;
     }
   }
 
@@ -228,9 +226,11 @@ export abstract class InputVisualFactoryBase extends ComponentVisualFactoryBase 
 
     if (!state || !this._animationContext) {
       this._cleanupMixer(object3D);
+      const initialValue = (object3D.userData.initialStateValue as number | undefined) ?? 0;
       for (const sw of switches) {
         this._restoreSharedMaterial(sw.mesh);
-        sw.group.position.y = SWITCH_Y_OFF;
+        const high = ((initialValue >> sw.index) & 1) !== 0;
+        sw.group.position.y = high ? SWITCH_Y_ON : SWITCH_Y_OFF;
       }
       return;
     }

@@ -46,3 +46,8 @@ export { OneInputState } from './interface/OneInputState';
 export { TwoInputState } from './interface/TwoInputState';
 export { FourInputState } from './interface/FourInputState';
 export { EightInputState } from './interface/EightInputState';
+export { LightState } from './interface/LightState';
+export { OneLightState } from './interface/OneLightState';
+export { TwoLightState } from './interface/TwoLightState';
+export { FourLightState } from './interface/FourLightState';
+export { EightLightState } from './interface/EightLightState';

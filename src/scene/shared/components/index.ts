@@ -53,3 +53,8 @@ export { OneInputVisualFactory } from './interface/OneInputVisualFactory';
 export { TwoInputVisualFactory } from './interface/TwoInputVisualFactory';
 export { FourInputVisualFactory } from './interface/FourInputVisualFactory';
 export { EightInputVisualFactory } from './interface/EightInputVisualFactory';
+export { LightVisualFactoryBase } from './interface/LightVisualFactoryBase';
+export { OneLightVisualFactory } from './interface/OneLightVisualFactory';
+export { TwoLightVisualFactory } from './interface/TwoLightVisualFactory';
+export { FourLightVisualFactory } from './interface/FourLightVisualFactory';
+export { EightLightVisualFactory } from './interface/EightLightVisualFactory';

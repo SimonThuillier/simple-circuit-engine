@@ -60,7 +60,7 @@ function buildNodeStates(
 
 function toggleCommand(targetId: string, index: number, scheduledAtTick: number): IUserCommand {
   return {
-    type: 'toggle_input',
+    type: 'toggle_switch',
     targetId: targetId as any,
     scheduledAtTick,
     parameters: new Map([['index', String(index)]]),
@@ -126,7 +126,7 @@ describe('Input behaviors — createInitialState', () => {
 
 // ── onUserCommand ─────────────────────────────────────────────────────
 
-describe('FourInputBehavior — onUserCommand toggle_input', () => {
+describe('FourInputBehavior — onUserCommand toggle_switch', () => {
   let behavior: FourInputBehavior;
   let component: Component;
   let state: FourInputState;

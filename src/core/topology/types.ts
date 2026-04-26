@@ -678,6 +678,7 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
     pins: new Map([
       ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
       ['input-0', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 0 } }],
+      ['output-0', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 0 } }],
       ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
     ]),
     config: new Map([
@@ -691,6 +692,8 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
       ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
       ['input-0', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 0 } }],
       ['input-1', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 1 } }],
+      ['output-0', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 0 } }],
+      ['output-1', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 1 } }],
       ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
     ]),
     config: new Map([
@@ -706,6 +709,10 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
       ['input-1', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 1 } }],
       ['input-2', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 2 } }],
       ['input-3', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 3 } }],
+      ['output-0', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 0 } }],
+      ['output-1', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 1 } }],
+      ['output-2', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 2 } }],
+      ['output-3', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 3 } }],
       ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
     ]),
     config: new Map([
@@ -725,6 +732,14 @@ export const COMPONENT_TYPE_METADATA: Readonly<Record<ComponentType, IComponentT
       ['input-5', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 5 } }],
       ['input-6', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 6 } }],
       ['input-7', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 7 } }],
+      ['output-0', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 0 } }],
+      ['output-1', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 1 } }],
+      ['output-2', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 2 } }],
+      ['output-3', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 3 } }],
+      ['output-4', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 4 } }],
+      ['output-5', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 5 } }],
+      ['output-6', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 6 } }],
+      ['output-7', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 7 } }],
       ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
     ]),
     config: new Map([

@@ -31,6 +31,10 @@ import {
   TwoInputBehavior,
   FourInputBehavior,
   EightInputBehavior,
+  OneLightBehavior,
+  TwoLightBehavior,
+  FourLightBehavior,
+  EightLightBehavior,
 } from './simulation';
 
 /**
@@ -94,8 +98,10 @@ export function registerArithmeticComponentsBehaviors(
 }
 
 /**
- * Register all interface input component behaviors in the given registry.
- * Interface input components are: OneInput, TwoInput, FourInput, EightInput.
+ * Register all interface component behaviors in the given registry.
+ * Interface components are:
+ *  - inputs: OneInput, TwoInput, FourInput, EightInput
+ *  - lights: OneLight, TwoLight, FourLight, EightLight
  * @public
  * @param registry
  * @return the input behavior registry for chaining
@@ -107,6 +113,10 @@ export function registerInterfaceComponentsBehaviors(
     .register(new OneInputBehavior())
     .register(new TwoInputBehavior())
     .register(new FourInputBehavior())
-    .register(new EightInputBehavior());
+    .register(new EightInputBehavior())
+    .register(new OneLightBehavior())
+    .register(new TwoLightBehavior())
+    .register(new FourLightBehavior())
+    .register(new EightLightBehavior());
   return registry;
 }
