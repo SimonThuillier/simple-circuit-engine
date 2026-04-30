@@ -43,7 +43,7 @@ describe('findPinsReachableFromBp', () => {
     );
   });
 
-  it('returns Dl = 0 for a BP wired directly to a pin', () => {
+  it('returns Dl = 1 for a BP wired directly to a pin', () => {
     const pin = pinId(adder, 'inputA-0');
     const bp = circuit.addBranchingPoint(new Position(5, 5));
     addWireOrThrow(circuit, bp.id, pin);
@@ -51,10 +51,10 @@ describe('findPinsReachableFromBp', () => {
     const reached = findPinsReachableFromBp(circuit, bp.id);
 
     expect(reached.size).toBe(1);
-    expect(reached.get(pin)).toBe(0);
+    expect(reached.get(pin)).toBe(1);
   });
 
-  it('returns Dl = 1 for a single intermediate BP between start BP and pin', () => {
+  it('returns Dl = 2 for a single intermediate BP between start BP and pin', () => {
     const pin = pinId(adder, 'inputA-0');
     const bpMid = circuit.addBranchingPoint(new Position(3, 3));
     const bpStart = circuit.addBranchingPoint(new Position(6, 6));
@@ -64,7 +64,7 @@ describe('findPinsReachableFromBp', () => {
     const reached = findPinsReachableFromBp(circuit, bpStart.id);
 
     expect(reached.size).toBe(1);
-    expect(reached.get(pin)).toBe(1);
+    expect(reached.get(pin)).toBe(2);
   });
 
   it('keeps the minimum Dl when the same pin is reachable via multiple paths', () => {
@@ -72,9 +72,9 @@ describe('findPinsReachableFromBp', () => {
     const bpA = circuit.addBranchingPoint(new Position(2, 2));
     const bpB = circuit.addBranchingPoint(new Position(2, 4));
     const bpStart = circuit.addBranchingPoint(new Position(5, 3));
-    // Direct: bpStart - pin (Dl=0)
+    // Direct: bpStart - pin (Dl=1)
     addWireOrThrow(circuit, bpStart.id, pin);
-    // Indirect: bpStart - bpA - bpB - pin (Dl=2) — should be ignored.
+    // Indirect: bpStart - bpA - bpB - pin (Dl=3) — should be ignored.
     addWireOrThrow(circuit, bpStart.id, bpA.id);
     addWireOrThrow(circuit, bpA.id, bpB.id);
     addWireOrThrow(circuit, bpB.id, pin);
@@ -82,7 +82,7 @@ describe('findPinsReachableFromBp', () => {
     const reached = findPinsReachableFromBp(circuit, bpStart.id);
 
     expect(reached.size).toBe(1);
-    expect(reached.get(pin)).toBe(0);
+    expect(reached.get(pin)).toBe(1);
   });
 
   it('returns an empty map for an isolated BP cluster', () => {
@@ -99,14 +99,14 @@ describe('findPinsReachableFromBp', () => {
     const pinB = pinId(adder, 'inputB-0');
     const bpStart = circuit.addBranchingPoint(new Position(5, 5));
     const bpMid = circuit.addBranchingPoint(new Position(3, 3));
-    addWireOrThrow(circuit, bpStart.id, pinA); // direct, Dl=0
+    addWireOrThrow(circuit, bpStart.id, pinA); // direct, Dl=1
     addWireOrThrow(circuit, bpStart.id, bpMid.id);
-    addWireOrThrow(circuit, bpMid.id, pinB); // via bpMid, Dl=1
+    addWireOrThrow(circuit, bpMid.id, pinB); // via bpMid, Dl=2
 
     const reached = findPinsReachableFromBp(circuit, bpStart.id);
     expect(reached.size).toBe(2);
-    expect(reached.get(pinA)).toBe(0);
-    expect(reached.get(pinB)).toBe(1);
+    expect(reached.get(pinA)).toBe(1);
+    expect(reached.get(pinB)).toBe(2);
   });
 
   it('does not traverse through pins (pins are terminal)', () => {
@@ -142,24 +142,24 @@ describe('findBpsAtLogicDistance', () => {
     );
   });
 
-  it('returns the directly-wired BP for Dl = 0', () => {
+  it('returns the directly-wired BP for Dl = 1', () => {
     const pin = pinId(adder, 'inputA-0');
     const bp = circuit.addBranchingPoint(new Position(5, 5));
     addWireOrThrow(circuit, bp.id, pin);
 
-    expect(findBpsAtLogicDistance(circuit, pin, 0)).toEqual([bp.id]);
+    expect(findBpsAtLogicDistance(circuit, pin, 1)).toEqual([bp.id]);
   });
 
-  it('returns BPs at exactly Dl = 1 (one intermediate BP) and not at Dl = 0', () => {
+  it('returns BPs at exactly Dl = 1 / Dl = 2 (one intermediate BP) and empty beyond', () => {
     const pin = pinId(adder, 'inputA-0');
     const bpA = circuit.addBranchingPoint(new Position(3, 3));
     const bpB = circuit.addBranchingPoint(new Position(6, 6));
     addWireOrThrow(circuit, pin, bpA.id);
     addWireOrThrow(circuit, bpA.id, bpB.id);
 
-    expect(findBpsAtLogicDistance(circuit, pin, 0)).toEqual([bpA.id]);
-    expect(findBpsAtLogicDistance(circuit, pin, 1)).toEqual([bpB.id]);
-    expect(findBpsAtLogicDistance(circuit, pin, 2)).toEqual([]);
+    expect(findBpsAtLogicDistance(circuit, pin, 1)).toEqual([bpA.id]);
+    expect(findBpsAtLogicDistance(circuit, pin, 2)).toEqual([bpB.id]);
+    expect(findBpsAtLogicDistance(circuit, pin, 3)).toEqual([]);
   });
 
   it('returns all sibling BPs when multiple branches share the same logic distance', () => {
@@ -171,7 +171,7 @@ describe('findBpsAtLogicDistance', () => {
     addWireOrThrow(circuit, root.id, sibA.id);
     addWireOrThrow(circuit, root.id, sibB.id);
 
-    const out = findBpsAtLogicDistance(circuit, pin, 1);
+    const out = findBpsAtLogicDistance(circuit, pin, 2);
     expect(out.length).toBe(2);
     expect(new Set(out)).toEqual(new Set([sibA.id, sibB.id]));
   });
@@ -186,10 +186,10 @@ describe('findBpsAtLogicDistance', () => {
     addWireOrThrow(circuit, pinMid, bpFar.id); // bpFar is on the far side of pinMid
 
     // pinMid is a pin and must not be traversed; bpFar must NOT appear.
-    const out = findBpsAtLogicDistance(circuit, pinSrc, 2);
+    const out = findBpsAtLogicDistance(circuit, pinSrc, 3);
     expect(out).toEqual([]);
-    // sanity: Dl=0 returns bpA
-    expect(findBpsAtLogicDistance(circuit, pinSrc, 0)).toEqual([bpA.id]);
+    // sanity: Dl=1 returns bpA (direct wire)
+    expect(findBpsAtLogicDistance(circuit, pinSrc, 1)).toEqual([bpA.id]);
   });
 
   it('returns empty for a non-pin start ENode', () => {
@@ -197,8 +197,9 @@ describe('findBpsAtLogicDistance', () => {
     expect(findBpsAtLogicDistance(circuit, bp.id, 0)).toEqual([]);
   });
 
-  it('returns empty when Dl is negative', () => {
+  it('returns empty when Dl is non-positive', () => {
     const pin = pinId(adder, 'inputA-0');
     expect(findBpsAtLogicDistance(circuit, pin, -1)).toEqual([]);
+    expect(findBpsAtLogicDistance(circuit, pin, 0)).toEqual([]);
   });
 });

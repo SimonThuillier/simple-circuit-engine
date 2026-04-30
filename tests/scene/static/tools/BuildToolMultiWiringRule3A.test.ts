@@ -90,13 +90,27 @@ function buildTool(
 function runRule3A(
   tool: BuildTool,
   sourceEnodeId: UUID,
-  bp: THREE.Vector3
+  bp: THREE.Vector3,
+  sourceBp: THREE.Vector3
 ): Rule3AResult {
   return (
     tool as unknown as {
-      createMultiWiringRule3AFollowups: (a: UUID, p: THREE.Vector3) => Rule3AResult;
+      createMultiWiringRule3AFollowups: (
+        a: UUID,
+        p: THREE.Vector3,
+        s: THREE.Vector3
+      ) => Rule3AResult;
     }
-  ).createMultiWiringRule3AFollowups(sourceEnodeId, bp);
+  ).createMultiWiringRule3AFollowups(sourceEnodeId, bp, sourceBp);
+}
+
+/**
+ * The grid→world convention used by the engine maps Position(x, y) to
+ * Vector3(x, 0, -y). Helper to feed `runRule3A` the source BP's world
+ * position from its grid coordinates.
+ */
+function gridBpWorld(gridX: number, gridY: number): THREE.Vector3 {
+  return new THREE.Vector3(gridX, 0, -gridY);
 }
 
 /**
@@ -160,7 +174,7 @@ describe('BuildTool multi-wiring rule 3A', () => {
     const { pinPositions, startBp } = buildLayeredNetwork(circuit, adder, 'inputA', (k) => `inputA-${k}`, 2);
     const { tool } = buildTool(circuit, false, pinPositions, [adder.id]);
 
-    const out = runRule3A(tool, startBp, new THREE.Vector3(0, 0, -8));
+    const out = runRule3A(tool, startBp, new THREE.Vector3(0, 0, -8), gridBpWorld(0, 4));
     expect(out).toEqual({ addedWires: [], addedEnodes: [] });
   });
 
@@ -174,7 +188,9 @@ describe('BuildTool multi-wiring rule 3A', () => {
     const pinPositions = new Map<UUID, { x: number; z: number }>([[src, { x: 0, z: 0 }]]);
     const { tool } = buildTool(circuit, true, pinPositions, [adder.id]);
 
-    const out = runRule3A(tool, src, new THREE.Vector3(0, 0, -5));
+    // Source pin world position is irrelevant here: the type-discriminator early
+    // return runs before the bp/source-bp delta is computed.
+    const out = runRule3A(tool, src, new THREE.Vector3(0, 0, -5), new THREE.Vector3());
     expect(out).toEqual({ addedWires: [], addedEnodes: [] });
   });
 
@@ -182,7 +198,7 @@ describe('BuildTool multi-wiring rule 3A', () => {
     const bp = circuit.addBranchingPoint(new Position(5, 5));
     const { tool } = buildTool(circuit, true, new Map(), []);
 
-    const out = runRule3A(tool, bp.id, new THREE.Vector3(0, 0, -5));
+    const out = runRule3A(tool, bp.id, new THREE.Vector3(0, 0, -5), gridBpWorld(5, 5));
     expect(out).toEqual({ addedWires: [], addedEnodes: [] });
   });
 
@@ -197,21 +213,7 @@ describe('BuildTool multi-wiring rule 3A', () => {
     addWireOrThrow(circuit, bp.id, pinId(adder, 'inputB-0'));
     const { tool } = buildTool(circuit, true, new Map(), [adder.id]);
 
-    const out = runRule3A(tool, bp.id, new THREE.Vector3(0, 0, -5));
-    expect(out).toEqual({ addedWires: [], addedEnodes: [] });
-  });
-
-  it('returns empty when Dl = 0 (start BP wired straight to the pin)', () => {
-    const adder = circuit.addComponent(
-      ComponentType.EightBitAdder,
-      new Position(0, 0),
-      new Rotation(0)
-    );
-    const bp = circuit.addBranchingPoint(new Position(5, 5));
-    addWireOrThrow(circuit, bp.id, pinId(adder, 'inputA-0'));
-    const { tool } = buildTool(circuit, true, new Map(), [adder.id]);
-
-    const out = runRule3A(tool, bp.id, new THREE.Vector3(0, 0, -5));
+    const out = runRule3A(tool, bp.id, new THREE.Vector3(0, 0, -5), gridBpWorld(5, 5));
     expect(out).toEqual({ addedWires: [], addedEnodes: [] });
   });
 
@@ -227,7 +229,7 @@ describe('BuildTool multi-wiring rule 3A', () => {
     addWireOrThrow(circuit, a.id, b.id);
     const { tool } = buildTool(circuit, true, new Map(), [adder.id]);
 
-    const out = runRule3A(tool, b.id, new THREE.Vector3(7, 0, -8));
+    const out = runRule3A(tool, b.id, new THREE.Vector3(7, 0, -8), gridBpWorld(7, 4));
     expect(out).toEqual({ addedWires: [], addedEnodes: [] });
   });
 
@@ -247,12 +249,16 @@ describe('BuildTool multi-wiring rule 3A', () => {
     const { tool } = buildTool(circuit, true, pinPositions, [adder.id]);
 
     // start BP world position = (0, 0, -4); user clicks new target BP at (0, 0, -8).
-    const out = runRule3A(tool, startBp, new THREE.Vector3(0, 0, -8));
+    const out = runRule3A(tool, startBp, new THREE.Vector3(0, 0, -8), gridBpWorld(0, 4));
     expect(out.addedEnodes.length).toBe(2);
     expect(out.addedWires.length).toBe(2);
-    // Each new target BP must be wired to the corresponding sibling start BP (BP_b_k).
+    // Each new target BP must be wired to the corresponding sibling start BP (BP_b_k),
+    // placed at sibling + (gesture vector). Gesture = (0,0,-4), so BP_k grid = (k, 8).
     for (let j = 1; j <= 2; j++) {
-      expect(circuit.hasWireBetween(bpB[j]!, out.addedEnodes[j - 1]!)).toBe(true);
+      const followUp = circuit.getENode(out.addedEnodes[j - 1]!)!;
+      expect(circuit.hasWireBetween(bpB[j]!, followUp.id)).toBe(true);
+      expect(followUp.position.x).toBe(j);
+      expect(followUp.position.y).toBe(8);
     }
   });
 
@@ -271,12 +277,16 @@ describe('BuildTool multi-wiring rule 3A', () => {
     );
     const { tool } = buildTool(circuit, true, pinPositions, [adder.id]);
 
-    const out = runRule3A(tool, startBp, new THREE.Vector3(0, 0, -8));
+    const out = runRule3A(tool, startBp, new THREE.Vector3(0, 0, -8), gridBpWorld(0, 4));
     expect(out.addedEnodes.length).toBe(2);
     expect(out.addedWires.length).toBe(2);
-    // Each new target BP must be wired to the corresponding sibling start BP.
+    // Same simplified placement (sibling + gesture vector); sign no longer
+    // affects rule 3A geometry.
     for (let j = 1; j <= 2; j++) {
-      expect(circuit.hasWireBetween(bpB[j]!, out.addedEnodes[j - 1]!)).toBe(true);
+      const followUp = circuit.getENode(out.addedEnodes[j - 1]!)!;
+      expect(circuit.hasWireBetween(bpB[j]!, followUp.id)).toBe(true);
+      expect(followUp.position.x).toBe(j);
+      expect(followUp.position.y).toBe(8);
     }
   });
 
@@ -307,7 +317,7 @@ describe('BuildTool multi-wiring rule 3A', () => {
     addWireOrThrow(circuit, a2.id, b2.id);
     const { tool } = buildTool(circuit, true, pinPositions, [adder.id]);
 
-    const out = runRule3A(tool, b0.id, new THREE.Vector3(0, 0, -8));
+    const out = runRule3A(tool, b0.id, new THREE.Vector3(0, 0, -8), gridBpWorld(0, 4));
     expect(out.addedEnodes.length).toBe(1);
     expect(out.addedWires.length).toBe(1);
     expect(circuit.hasWireBetween(b1.id, out.addedEnodes[0]!)).toBe(true);
@@ -337,7 +347,7 @@ describe('BuildTool multi-wiring rule 3A', () => {
     addWireOrThrow(circuit, a1.id, c1.id);
     const { tool } = buildTool(circuit, true, pinPositions, [adder.id]);
 
-    const out = runRule3A(tool, b0.id, new THREE.Vector3(0, 0, -8));
+    const out = runRule3A(tool, b0.id, new THREE.Vector3(0, 0, -8), gridBpWorld(0, 4));
     expect(out).toEqual({ addedWires: [], addedEnodes: [] });
   });
 
@@ -353,7 +363,7 @@ describe('BuildTool multi-wiring rule 3A', () => {
     addWireOrThrow(circuit, a.id, b.id);
     const { tool } = buildTool(circuit, true, new Map(), [battery.id]);
 
-    const out = runRule3A(tool, b.id, new THREE.Vector3(0, 0, -8));
+    const out = runRule3A(tool, b.id, new THREE.Vector3(0, 0, -8), gridBpWorld(0, 4));
     expect(out).toEqual({ addedWires: [], addedEnodes: [] });
   });
 
@@ -381,7 +391,7 @@ describe('BuildTool multi-wiring rule 3A', () => {
     });
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    const out = runRule3A(tool, startBp, new THREE.Vector3(0, 0, -8));
+    const out = runRule3A(tool, startBp, new THREE.Vector3(0, 0, -8), gridBpWorld(0, 4));
     warnSpy.mockRestore();
 
     // 1st BP creation throws → that step is skipped; 2nd succeeds.

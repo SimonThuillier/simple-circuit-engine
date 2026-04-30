@@ -80,6 +80,50 @@ It involves traversing the wiring from this branching point/pin. Only branching 
 After fast thinking it seems there's no real difference between exploration backward and forward in this scenario. It seems to be a symmetrical ops.
 To design further.
 
-### 4 - indirect injection linking from a branching point to an interface [TODO]
+### 3B - indirect injection linking from a branching point to an interface's pin [TODO]
 
+Given multi-wiring activated
+When a user ends wiring from a branching point (start BP)
+and the target is an existing component's pin
+then a wire is created between start BP and the target component's pin (current behavior)
+and this pin is a logic one (input or output) and this pin has a non null logicMetadata
+and is pin i of interface component A - interface AA
+and there are existing followUp pins i+1...max interface AA index on interface AA
+Then the networking exploration algorithm designed for 3A is run to find other interfaces linked to the start BP
+Only interfaces of the other type of interface AA are searched (eg if interface AA is logicInput we search only for logicOutput, if interface AA is logicOutput we search only for logicInput)
+During the exploration if such an interface is found , exploration stops and this interface BB of component B is used (note B can be the same as A only the type of interface must differ)
+Using the networking exploration algorithm of rule 3A in forward mode siblings of start BP are found
+And new wires are created between those siblings and the followUp pins of interface AA
+During this operation no new branching points are created : if we run short of siblings BP while pins of AA are stil remaining op stops
+On the contrary if there are more siblings than pins of AA we stop when all pins of AA following i+1 have been wired just once.
 
+### 3C - indirect injection linking from an interface's pin to an existing branching point [TODO]
+
+It is the symmetrical counterpart of 5A but when the user does the operation the other way.
+
+Given multi-wiring activated
+When a user ends wiring from an existing component's pin to an existing branching point (start pin)
+and the target is an existing branching point (target BP)
+then a wire is created between start pin and the target branching point (current behavior)
+and start pin is a logic one (input or output) and start pin has a non null logicMetadata
+and is pin i of interface component A - interface AA
+and there are existing followUp pins i+1...max interface AA index on interface AA
+Then the same logic as 5A is used from the target branching point
+
+### 4 - followUp branching points during wire split [TODO]
+
+Given multi-wiring activated
+When a user splits an existing wire w at a given position
+Then it creates a new branching point newBP at the given position, and the existing wire is split in two (current behavior)
+then the networking exploration algorithm of 3A analyzes the sources of newBP
+During the exploration as soon as a a component's logic interface is found , exploration stops
+Given the pin on which newBP is linked is pin i of interface A (going from 0 to maxA with i<=maxA) at distance DL
+Then for all pins of A between i+1 and maxA the networking exploration find all siblings at distance DL
+Then knowing that newBP enforceably is linked to two wires, one that links him to interfaceA at distance DL, the other that goes beyond DL
+taking the wire that goes beyond DL and its beyondEnode (enode other than newBP)
+The position of beyondEnode is retrieved (both cases if beyondEnode is a pin or BP are handled)
+and the vector3 delta (v3Delta) between beyondEnode and newBP is computed 
+
+Finally for each siblings at distanceDL we compute the positions sibling - v3Delta. Among those position we select the one closer to newBP.
+If the distance between this closePosition and newBP is small enough (< 3 * interface A pin i - i+j distance) then a new branching point is created at this position and the correspondent wire is split in two.
+And we iterate until maxA

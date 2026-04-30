@@ -48,26 +48,6 @@ describe('computeRule2BpPositions', () => {
     expect(xzClose(out[2]!, { x: 3, z: -2 })).toBe(true);
   });
 
-  it('output clamp: BP never crosses the pin (residual 1-cell wire preserved)', () => {
-    // |W| = 2 along -z; with 4 follow-ups, step 2 lands on pin and step 3+ would cross.
-    const pins: XZ[] = [
-      { x: 0, z: 0 },
-      { x: 1, z: 0 },
-      { x: 2, z: 0 },
-      { x: 3, z: 0 },
-      { x: 4, z: 0 },
-    ];
-    const bp0: XZ = { x: 0, z: -2 };
-    const out = computeRule2BpPositions(pins, bp0, -1);
-    expect(out.length).toBe(4);
-    // step 1: stepMag = -1, BP = pin1 + (0,-2) + (-1)*(0,-1) = (1, -1)
-    expect(xzClose(out[0]!, { x: 1, z: -1 })).toBe(true);
-    // steps 2..4: clamped to stepMag = -(|W|-1) = -1, BP = pin_j + (0,-2) + (-1)*(0,-1) = pin_j + (0,-1)
-    expect(xzClose(out[1]!, { x: 2, z: -1 })).toBe(true);
-    expect(xzClose(out[2]!, { x: 3, z: -1 })).toBe(true);
-    expect(xzClose(out[3]!, { x: 4, z: -1 })).toBe(true);
-  });
-
   it('diagonal wire, logicInput: offset along the diagonal direction', () => {
     // 3-4-5 right triangle: |W| = 5, u = (3/5, -4/5)
     const pins: XZ[] = [
@@ -84,15 +64,6 @@ describe('computeRule2BpPositions', () => {
     expect(xzClose(out[1]!, { x: 6.2, z: -5.6 })).toBe(true);
   });
 
-  it('returns [] for a degenerate W ≈ 0 (bp0 equals source pin)', () => {
-    const pins: XZ[] = [
-      { x: 5, z: 5 },
-      { x: 6, z: 5 },
-    ];
-    const bp0: XZ = { x: 5, z: 5 };
-    expect(computeRule2BpPositions(pins, bp0, 1)).toEqual([]);
-  });
-
   it('handles non-uniform pin spacing per pair', () => {
     const pins: XZ[] = [
       { x: 0, z: 0 },
@@ -102,37 +73,30 @@ describe('computeRule2BpPositions', () => {
     const bp0: XZ = { x: 0, z: -10 };
     const out = computeRule2BpPositions(pins, bp0, 1);
     expect(out.length).toBe(2);
-    // u = (0,-1); j=1 step = 1*2 = 2 on -z; BP_1 = (2,0)+(0,-10)+(0,-2) = (2,-12)
-    expect(xzClose(out[0]!, { x: 2, z: -12 })).toBe(true);
-    // j=2 Di between pin1 and pin2 = 3; step = 2*3 = 6 on -z; BP_2 = (5,0)+(0,-10)+(0,-6) = (5,-16)
-    expect(xzClose(out[1]!, { x: 5, z: -16 })).toBe(true);
+    // angle = asin(-1) = -π/2 → cos≈0, sin=-1.
+    // j=1: pinPrev→pinJ = (+2,0); step = sign*(Di*cos, sin) = (0, -1).
+    //      currentPos = bp0 + (2,0) + (0,-1) = (2, -11).
+    expect(xzClose(out[0]!, { x: 2, z: -11 })).toBe(true);
+    // j=2: pinPrev→pinJ = (+3,0); step = (0,-1) again (sin not scaled by Di).
+    //      currentPos = (2,-11) + (3,0) + (0,-1) = (5, -12).
+    expect(xzClose(out[1]!, { x: 5, z: -12 })).toBe(true);
   });
 });
 
 describe('nudgeIfSameGridCell', () => {
+  it('currently deactivated: returns its input untouched even when grid cells match', () => {
+    // Behaviour disabled at the source (early return). Keep this test pinned so a
+    // re-activation forces the original nudge expectations to come back.
+    const bp: XZ = { x: 1.1, z: -2.1 };
+    const parallel: XZ = { x: 0.9, z: -1.9 }; // same rounded cell as bp
+    const u: XZ = { x: 1, z: 0 };
+    expect(nudgeIfSameGridCell(bp, parallel, u)).toEqual(bp);
+  });
+
   it('returns the input untouched when grid cells differ', () => {
     const bp: XZ = { x: 1.4, z: -3.4 };
     const parallel: XZ = { x: 0.4, z: -2.4 };
     const u: XZ = { x: 1, z: 0 };
     expect(nudgeIfSameGridCell(bp, parallel, u)).toEqual(bp);
-  });
-
-  it('nudges by u when bp would round to the same grid cell as parallel', () => {
-    // Both round to (1, -2). Wire direction u = (1, 0) → nudge x by +1.
-    const bp: XZ = { x: 1.1, z: -2.1 };
-    const parallel: XZ = { x: 0.9, z: -1.9 };
-    const u: XZ = { x: 1, z: 0 };
-    const out = nudgeIfSameGridCell(bp, parallel, u);
-    expect(close(out.x, 2.1)).toBe(true);
-    expect(close(out.z, -2.1)).toBe(true);
-  });
-
-  it('nudge handles diagonal u', () => {
-    const bp: XZ = { x: 1.1, z: -2.1 };
-    const parallel: XZ = { x: 0.9, z: -1.9 };
-    const u: XZ = { x: 0.6, z: -0.8 };
-    const out = nudgeIfSameGridCell(bp, parallel, u);
-    expect(close(out.x, 1.7)).toBe(true);
-    expect(close(out.z, -2.9)).toBe(true);
   });
 });

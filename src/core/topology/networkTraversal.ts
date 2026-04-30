@@ -4,8 +4,8 @@
  * Used by multi-wiring rule 3A to discover the logical root of a branching
  * point and to find sibling BPs at a given logic distance.
  *
- * "Logic distance" Dl is the count of intermediate branching points strictly
- * between two endpoints (a pin and a BP). 0 ⇒ direct wire.
+ * "Logic distance" Dl is the count of edges between two endpoints (a pin and
+ * a BP). 1 ⇒ direct wire (BP wired straight to the pin).
  *
  * @module core/topology/networkTraversal
  */

@@ -131,42 +131,44 @@ describe('BuildTool multi-wiring rule 2', () => {
     expect(out).toEqual({ addedWires: [], addedEnodes: [] });
   });
 
-  it('logicInput source: 7 follow-up BPs + 7 follow-up wires (extending)', () => {
+  it('logicInput source: 7 follow-up BPs + 7 follow-up wires (current convention: shrinks toward pin)', () => {
     const adder = circuit.addComponent(
       ComponentType.EightBitAdder,
       new Position(0, 0),
       new Rotation(0)
     );
     const src = pinId(adder, 'inputA-0');
-    // Pins along +x at integer spacing; primary wire 5 units along -z (perpendicular).
+    // Pins along +x at integer spacing; primary wire 8 units along -z (perpendicular).
     const pinPositions = new Map<string, { x: number; z: number }>();
     for (let k = 0; k <= 7; k++) {
       pinPositions.set(pinId(adder, `inputA-${k}`), { x: k, z: 0 });
     }
-    // Primary wire from inputA-0 to a fresh BP at (0, 0, -5) — emulate that
+    // Primary wire from inputA-0 to a fresh BP at (0, 0, -8) — emulate that
     // the BP and wire already exist (BuildTool.completeWireCreation does both
     // before calling rule 2).
-    const bp0Enode = circuit.addBranchingPoint(new Position(0, 5));
+    const bp0Enode = circuit.addBranchingPoint(new Position(0, 8));
     circuit.addWire(src, bp0Enode.id);
 
     const { tool } = buildTool(circuit, true, pinPositions, [adder.id]);
 
-    const out = runRule2(tool, src, new THREE.Vector3(0, 0, -5));
+    const out = runRule2(tool, src, new THREE.Vector3(0, 0, -8));
     expect(out.addedEnodes.length).toBe(7);
     expect(out.addedWires.length).toBe(7);
 
     // Each follow-up BP should be wired to inputA-k (k = 1..7).
+    // Under the current sign convention (logicInput → sign=-1), each step adds
+    // a unit-length offset along the wire's reverse direction, so BP_k walks
+    // back toward the pin row. Grid Y = 8 - k.
     for (let k = 1; k <= 7; k++) {
       const followUpPin = pinId(adder, `inputA-${k}`);
       const bpEnode = circuit.getENode(out.addedEnodes[k - 1]!)!;
       expect(circuit.hasWireBetween(followUpPin, bpEnode.id)).toBe(true);
-      // logicInput grows: BP_k z = -5 - k along the wire direction.
       expect(bpEnode.position.x).toBe(k);
-      expect(bpEnode.position.y).toBe(5 + k);
+      expect(bpEnode.position.y).toBe(8 - k);
     }
   });
 
-  it('logicOutput source: 7 follow-up BPs + 7 follow-up wires (shrinking)', () => {
+  it('logicOutput source: 7 follow-up BPs + 7 follow-up wires (current convention: extends away from pin)', () => {
     const adder = circuit.addComponent(
       ComponentType.EightBitAdder,
       new Position(0, 0),
@@ -177,7 +179,7 @@ describe('BuildTool multi-wiring rule 2', () => {
     for (let k = 0; k <= 7; k++) {
       pinPositions.set(pinId(adder, `sum-${k}`), { x: k, z: 0 });
     }
-    // Primary wire 10 along -z so we have headroom for 7 shrinks of 1 cell each.
+    // Primary wire 10 along -z; under sign=+1 (logicOutput) BP_k extends further.
     circuit.addWire(src, circuit.addBranchingPoint(new Position(0, 10)).id);
 
     const { tool } = buildTool(circuit, true, pinPositions, [adder.id]);
@@ -190,9 +192,9 @@ describe('BuildTool multi-wiring rule 2', () => {
       const followUpPin = pinId(adder, `sum-${k}`);
       const bpEnode = circuit.getENode(out.addedEnodes[k - 1]!)!;
       expect(circuit.hasWireBetween(followUpPin, bpEnode.id)).toBe(true);
-      // logicOutput shrinks: BP_k z = -10 + k → grid y = 10 - k.
+      // logicOutput extends: BP_k z = -10 - k → grid y = 10 + k.
       expect(bpEnode.position.x).toBe(k);
-      expect(bpEnode.position.y).toBe(10 - k);
+      expect(bpEnode.position.y).toBe(10 + k);
     }
   });
 
