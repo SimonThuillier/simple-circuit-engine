@@ -15,6 +15,8 @@ import {
 import {
   findPinsReachableFromBp,
   findBpsAtLogicDistance,
+  findPinsReachableFromBpWithPath,
+  findBpsAtLogicDistanceWithPath,
 } from '../../src/core/topology/networkTraversal';
 
 function pinId(component: Component, label: string): UUID {
@@ -201,5 +203,127 @@ describe('findBpsAtLogicDistance', () => {
     const pin = pinId(adder, 'inputA-0');
     expect(findBpsAtLogicDistance(circuit, pin, -1)).toEqual([]);
     expect(findBpsAtLogicDistance(circuit, pin, 0)).toEqual([]);
+  });
+});
+
+describe('findPinsReachableFromBpWithPath', () => {
+  let circuit: Circuit;
+  let adder: Component;
+
+  beforeEach(() => {
+    circuit = new Circuit(new CircuitOptions('test'));
+    adder = circuit.addComponent(
+      ComponentType.EightBitAdder,
+      new Position(0, 0),
+      new Rotation(0)
+    );
+  });
+
+  it('direct wire (Dl=1): predecessor is the start BP itself', () => {
+    const pin = pinId(adder, 'inputA-0');
+    const bp = circuit.addBranchingPoint(new Position(5, 5));
+    addWireOrThrow(circuit, bp.id, pin);
+
+    const reached = findPinsReachableFromBpWithPath(circuit, bp.id);
+    expect(reached.size).toBe(1);
+    const info = reached.get(pin);
+    expect(info?.Dl).toBe(1);
+    expect(info?.predecessor).toBe(bp.id);
+  });
+
+  it('one intermediate BP (Dl=2): predecessor is the intermediate BP', () => {
+    const pin = pinId(adder, 'inputA-0');
+    const bpMid = circuit.addBranchingPoint(new Position(3, 3));
+    const bpStart = circuit.addBranchingPoint(new Position(6, 6));
+    addWireOrThrow(circuit, pin, bpMid.id);
+    addWireOrThrow(circuit, bpMid.id, bpStart.id);
+
+    const reached = findPinsReachableFromBpWithPath(circuit, bpStart.id);
+    expect(reached.size).toBe(1);
+    const info = reached.get(pin);
+    expect(info?.Dl).toBe(2);
+    expect(info?.predecessor).toBe(bpMid.id);
+  });
+
+  it('multi-pin reach: each pin gets its own predecessor on the shortest path', () => {
+    const pinA = pinId(adder, 'inputA-0');
+    const pinB = pinId(adder, 'inputB-0');
+    const bpStart = circuit.addBranchingPoint(new Position(5, 5));
+    const bpMid = circuit.addBranchingPoint(new Position(3, 3));
+    addWireOrThrow(circuit, bpStart.id, pinA); // direct → predecessor=bpStart
+    addWireOrThrow(circuit, bpStart.id, bpMid.id);
+    addWireOrThrow(circuit, bpMid.id, pinB); // via bpMid → predecessor=bpMid
+
+    const reached = findPinsReachableFromBpWithPath(circuit, bpStart.id);
+    expect(reached.size).toBe(2);
+    expect(reached.get(pinA)?.predecessor).toBe(bpStart.id);
+    expect(reached.get(pinA)?.Dl).toBe(1);
+    expect(reached.get(pinB)?.predecessor).toBe(bpMid.id);
+    expect(reached.get(pinB)?.Dl).toBe(2);
+  });
+
+  it('returns empty for a non-BP start ENode', () => {
+    const pin = pinId(adder, 'inputA-0');
+    const reached = findPinsReachableFromBpWithPath(circuit, pin);
+    expect(reached.size).toBe(0);
+  });
+});
+
+describe('findBpsAtLogicDistanceWithPath', () => {
+  let circuit: Circuit;
+  let adder: Component;
+
+  beforeEach(() => {
+    circuit = new Circuit(new CircuitOptions('test'));
+    adder = circuit.addComponent(
+      ComponentType.EightBitAdder,
+      new Position(0, 0),
+      new Rotation(0)
+    );
+  });
+
+  it('Dl=1: predecessor is the start pin', () => {
+    const pin = pinId(adder, 'inputA-0');
+    const bp = circuit.addBranchingPoint(new Position(5, 5));
+    addWireOrThrow(circuit, bp.id, pin);
+
+    const out = findBpsAtLogicDistanceWithPath(circuit, pin, 1);
+    expect(out).toEqual([{ id: bp.id, predecessor: pin }]);
+  });
+
+  it('Dl=2: predecessor is the intermediate BP', () => {
+    const pin = pinId(adder, 'inputA-0');
+    const bpA = circuit.addBranchingPoint(new Position(3, 3));
+    const bpB = circuit.addBranchingPoint(new Position(6, 6));
+    addWireOrThrow(circuit, pin, bpA.id);
+    addWireOrThrow(circuit, bpA.id, bpB.id);
+
+    const out = findBpsAtLogicDistanceWithPath(circuit, pin, 2);
+    expect(out).toEqual([{ id: bpB.id, predecessor: bpA.id }]);
+  });
+
+  it('multiple siblings at Dl=2: predecessors recorded per-sibling', () => {
+    const pin = pinId(adder, 'inputA-0');
+    const root = circuit.addBranchingPoint(new Position(1, 1));
+    const sibA = circuit.addBranchingPoint(new Position(2, 2));
+    const sibB = circuit.addBranchingPoint(new Position(3, 3));
+    addWireOrThrow(circuit, pin, root.id);
+    addWireOrThrow(circuit, root.id, sibA.id);
+    addWireOrThrow(circuit, root.id, sibB.id);
+
+    const out = findBpsAtLogicDistanceWithPath(circuit, pin, 2);
+    expect(out.length).toBe(2);
+    for (const entry of out) {
+      expect(entry.predecessor).toBe(root.id);
+      expect([sibA.id, sibB.id]).toContain(entry.id);
+    }
+  });
+
+  it('returns empty for non-pin start or non-positive Dl', () => {
+    const bp = circuit.addBranchingPoint(new Position(0, 0));
+    expect(findBpsAtLogicDistanceWithPath(circuit, bp.id, 1)).toEqual([]);
+    const pin = pinId(adder, 'inputA-0');
+    expect(findBpsAtLogicDistanceWithPath(circuit, pin, 0)).toEqual([]);
+    expect(findBpsAtLogicDistanceWithPath(circuit, pin, -1)).toEqual([]);
   });
 });
