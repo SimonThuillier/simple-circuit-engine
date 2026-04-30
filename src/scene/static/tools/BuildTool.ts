@@ -25,6 +25,8 @@ import {
   Position,
   Rotation,
   Component,
+  findPinsReachableFromBp,
+  findBpsAtLogicDistance,
 } from 'simple-circuit-engine/core';
 
 import type {
@@ -38,6 +40,7 @@ import type {
 import type { IGroupedFactoryRegistry } from '../../shared/components/GroupedFactoryRegistry';
 import type { CircuitController } from '../CircuitController';
 import {
+  gridToWorldPosition,
   gridToWorldRotation,
   nearestWorldSnapPosition,
   worldToGridPosition,
@@ -533,7 +536,6 @@ export class BuildTool implements IEditingTool {
    * Completes current operation based on mode
    */
   private handlePointerUp(event: MouseEvent): void {
-    console.log("handlePointerUp");
     if (event.button !== 0) return; // Only handle left click
 
     // add_component mode manages its own gridPositionMove listener lifecycle
@@ -826,10 +828,35 @@ export class BuildTool implements IEditingTool {
 
       // Create definitive wire visual
       const wire = this._controller.addWire(sourceEnodeId, targetEnodeId);
-      const followUpIds = this.createMultiWiringFollowUpWires(sourceEnodeId, targetEnodeId);
-      const rule2 = standaloneBpWorldPosition
-        ? this.createMultiWiringRule2Followups(sourceEnodeId, standaloneBpWorldPosition)
-        : { addedWires: [], addedEnodes: [] };
+      // followUps if multi-wiring enabled
+      if(this._controller.multiWiring){
+        let ruleActivated=null;
+        // rule 1
+        const followUpIds = this.createMultiWiringFollowUpWires(sourceEnodeId, targetEnodeId);
+        if(followUpIds.length > 0){
+          ruleActivated='1';
+        }
+        // rule 2
+        if(!ruleActivated){
+          const rule2 = standaloneBpWorldPosition
+              ? this.createMultiWiringRule2Followups(sourceEnodeId, standaloneBpWorldPosition)
+              : { addedWires: [], addedEnodes: [] };
+          if (rule2.addedWires.length > 0){
+            ruleActivated='rule2';
+          }
+        }
+        // rule 3A
+        if(!ruleActivated){
+          const sourceBP = this._controller.getObject3D('enode', sourceEnodeId);
+          if(standaloneBpWorldPosition && sourceBP instanceof THREE.Object3D){
+            const rule3A = this.createMultiWiringRule3AFollowups(sourceEnodeId, standaloneBpWorldPosition, sourceBP.position);
+            if (rule3A.addedWires.length > 0){
+              ruleActivated='rule3A';
+            }
+          }
+        }
+      }
+
       // select the new wire if nothing was selected before
       if (!hasSelected) {
         this._controller.getSelectionManager().selectOne('wire', wire.id);
@@ -841,8 +868,8 @@ export class BuildTool implements IEditingTool {
         mode: this.mode,
         operationData: { wireId: wire.id, sourceEnodeId, targetEnodeId },
         changedData: {
-          addedWires: [wire.id, ...followUpIds, ...rule2.addedWires],
-          addedEnodes: rule2.addedEnodes,
+          addedWires: [wire.id, ...followUpIds, ...rule2.addedWires, ...rule3A.addedWires],
+          addedEnodes: [...rule2.addedEnodes, ...rule3A.addedEnodes],
         },
       });
       // Reset state (end preview)
@@ -975,6 +1002,122 @@ export class BuildTool implements IEditingTool {
       } catch (err) {
         console.warn(
           'multi-wiring rule 2 follow-up failed:',
+          err instanceof Error ? err.message : err
+        );
+      }
+    }
+    return { addedWires, addedEnodes };
+  }
+
+  /**
+   * If multi-wiring is enabled, the source is a branching point logically
+   * rooted on a single logic pin at distance Dl > 0, and the target is a
+   * fresh standalone branching point, fan out follow-up BPs through the
+   * existing BP-network: for each interface index `i + j` find a sibling
+   * BP at the same logic distance Dl and place a new target BP near it
+   * (rule-2-style growth/shrink). Stops at the first index whose sibling
+   * candidate count within the proximity threshold is not exactly 1.
+   */
+  private createMultiWiringRule3AFollowups(
+    sourceEnodeId: UUID,
+    bpWorldPosition: THREE.Vector3,
+    sourceBpWorldPosition: THREE.Vector3
+  ): { addedWires: UUID[]; addedEnodes: UUID[] } {
+    const empty = { addedWires: [], addedEnodes: [] };
+    if (!this._controller.multiWiring) return empty;
+    const circuit = this._controller.getCircuit();
+    if (!circuit) return empty;
+    const src = circuit.getENode(sourceEnodeId);
+    if (!src || src.type !== ENodeType.BranchingPoint) return empty;
+    if (!src.position) return empty;
+
+    const deltaVector = bpWorldPosition.sub(sourceBpWorldPosition);
+
+    // 1. Backward exploration: must reach exactly one logic pin at Dl > 0.
+    const reachedPins = findPinsReachableFromBp(circuit, sourceEnodeId);
+    if (reachedPins.size !== 1) return empty;
+    const [pinId, Dl] = [...reachedPins.entries()][0]!;
+    if (Dl <= 0) return empty;
+    const pinEnode = circuit.getENode(pinId);
+    console.log(pinEnode);
+    if (!pinEnode?.logicMetadata || !pinEnode.component) return empty;
+    const pinComp = circuit.getComponent(pinEnode.component);
+    console.log(pinComp);
+    if (!pinComp) return empty;
+    const pinMeta = pinComp.getPinMetadata(pinId);
+    const sign: 1 | -1 | null =
+      pinMeta?.subtype === 'logicInput' ? -1 : pinMeta?.subtype === 'logicOutput' ? 1 : null;
+    console.log(sign);
+    if (sign === null) return empty;
+    const interfaceName = pinEnode.logicMetadata.interface;
+    const i = pinEnode.logicMetadata.index;
+    const maxIdx = pinComp.getInterfaceMaxIndex(interfaceName);
+    const count = maxIdx - i;
+    console.log(i, maxIdx, count);
+    if (count <= 0) return empty;
+
+    // 2. Pin-spacing threshold (uses pin world positions on the source pin's component).
+    const componentGroup = this._controller.componentObject3Ds.get(pinEnode.component);
+    if (!componentGroup) return empty;
+    const pinPos_i = this._controller.wireVisualManager.getPinWorldPositionFromGroup(
+      pinId,
+      componentGroup
+    );
+    const pinId_i1 = pinComp.getPinIdByInterface(interfaceName, i + 1);
+    if (!pinPos_i || !pinId_i1) return empty;
+    const pinPos_i1 = this._controller.wireVisualManager.getPinWorldPositionFromGroup(
+      pinId_i1,
+      componentGroup
+    );
+    if (!pinPos_i1) return empty;
+    const pinSpacing = Math.hypot(pinPos_i1.x - pinPos_i.x, pinPos_i1.z - pinPos_i.z);
+    if (pinSpacing <= 0) return empty;
+    const threshold = 3 * pinSpacing;
+
+    // 3. Iterative sibling selection (interleave forward exploration with proximity check).
+    const startBpWorld = gridToWorldPosition(src.position);
+    const startBpXZ = { x: startBpWorld.x, z: startBpWorld.z };
+    const chosenSiblingPositions: { x: number; z: number }[] = [startBpXZ];
+    const chosenSiblingIds: UUID[] = [sourceEnodeId];
+    let prevSiblingPos = startBpXZ;
+    for (let j = 1; j <= count; j++) {
+      const followUpPinId = pinComp.getPinIdByInterface(interfaceName, i + j);
+      if (!followUpPinId) break;
+      const candidates = findBpsAtLogicDistance(circuit, followUpPinId, Dl);
+      console.log(candidates);
+      const withinThreshold: { id: UUID; pos: { x: number; z: number } }[] = [];
+      for (const cId of candidates) {
+        const c = circuit.getENode(cId);
+        if (!c?.position) continue;
+        const cWorld = gridToWorldPosition(c.position);
+        const cXZ = { x: cWorld.x, z: cWorld.z };
+        const dist = Math.hypot(cXZ.x - prevSiblingPos.x, cXZ.z - prevSiblingPos.z);
+        if (dist <= threshold) withinThreshold.push({ id: cId, pos: cXZ });
+      }
+      if (withinThreshold.length !== 1) break; // 0 = none found, 2+ = ambiguous
+      const chosen = withinThreshold[0]!;
+      chosenSiblingPositions.push(chosen.pos);
+      chosenSiblingIds.push(chosen.id);
+      prevSiblingPos = chosen.pos;
+    }
+
+    if (chosenSiblingPositions.length <= 1) return empty;
+
+    // 4. Compute follow-up target BP positions (add exactly same vector as initially placed BP, but from the various ancestors)
+    const addedWires: UUID[] = [];
+    const addedEnodes: UUID[] = [];
+    for (let j = 1; j < chosenSiblingPositions.length; j++) {
+      const thisOrigin = chosenSiblingPositions[j]!;
+      const parallelBp = { x: thisOrigin.x + deltaVector.x, z: thisOrigin.z + deltaVector.z };
+      try {
+        const bpEnode = this._controller.addBranchingPoint(
+          new THREE.Vector3(parallelBp.x, 0, parallelBp.z)
+        );
+        addedEnodes.push(bpEnode.id);
+        addedWires.push(this._controller.addWire(chosenSiblingIds[j]!, bpEnode.id).id);
+      } catch (err) {
+        console.warn(
+          'multi-wiring rule 3A follow-up failed:',
           err instanceof Error ? err.message : err
         );
       }

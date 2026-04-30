@@ -56,9 +56,6 @@ export function computeRule2BpPositions(
 
     const Di = Math.hypot(sx, sz);
 
-
-    console.log(angle);
-
     currentPos = {x: currentPos.x + sx + sign * Di*Math.cos(angle), z: currentPos.z + sz + sign * Math.sin(angle)};
 
     result.push({

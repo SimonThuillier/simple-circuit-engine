@@ -55,7 +55,7 @@ if logicOutput length of wire must shrink slightly with the index :
 Shrink the followUp wires length (in fact moving the target followUp branching point) so that distance BPi - BPi+1 is multiplied by square(2) but the branching point get in fact closer to pin i+1.
 Iterate the operation until last wire.
 
-### 3A - indirect injection wiring from to a branching point to a new branching point [TODO]
+### 3A - indirect injection wiring from to a branching point to a new branching point [DONE]
 
 Given multi-wiring activated
 When a user ends wiring from a branching point (start BP)
@@ -67,7 +67,9 @@ then the forward exploration algorithm below explores the network of branching p
 it returns all siblings candidate branching points (no pins in this case) having the logic distance Dl and their index of connection
 Then iteratively starting from i+1 : 
 It looks at siblings candidates of this index
-if it finds one within a reasonable distance xz ( reasonable being 3*the distance between the two pins of origin i-i+1) it serves as basis for a new wire/followUp branching point which will be positioned relatively to the first target branching point
+if it finds one within a reasonable distance xz ( reasonable being 3*the distance between the two pins of origin i-i+1) 
+it serves as basis for a new wire/followUp branching point which will be positioned relatively to the first target branching point
+In this case positionning the followUps is simple : we simply add the constant delta vector between the BP the user placed minus the last previous point in it's path to the interface to each followUps BP
 else is breaks and stop treatment
 it iterates until either reaching the max index or at a break in the process. 
 
@@ -77,5 +79,7 @@ The goal is given a branching point or pin to find the pins and logicalInput/Out
 It involves traversing the wiring from this branching point/pin. Only branching points are passing along the way : Each time a pin is reached this explorated branch stops here. 
 After fast thinking it seems there's no real difference between exploration backward and forward in this scenario. It seems to be a symmetrical ops.
 To design further.
+
+### 4 - indirect injection linking from a branching point to an interface [TODO]
 
 
