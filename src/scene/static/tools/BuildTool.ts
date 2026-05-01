@@ -1097,11 +1097,14 @@ export class BuildTool implements IEditingTool {
 
     const deltaVector = bpWorldPosition.sub(sourceBpWorldPosition);
 
-    // 1. Backward exploration: must reach exactly one logic pin at Dl > 0.
+    // 1. Backward exploration: must reach at least one logic pin at Dl > 0.
     const reachedPins = findPinsReachableFromBp(circuit, sourceEnodeId);
-    if (reachedPins.size !== 1) return empty;
-    const [pinId, Dl] = [...reachedPins.entries()][0]!;
-    if (Dl <= 0) return empty;
+    if (reachedPins.size < 1) return empty;
+    const anchor = this.findBestAnchor(sourceEnodeId);
+    if(!anchor) return empty;
+    const pinId = anchor.pinId;
+    const Dl = anchor.Dl;
+
     const pinEnode = circuit.getENode(pinId);
     if (!pinEnode?.logicMetadata || !pinEnode.component) return empty;
     const pinComp = circuit.getComponent(pinEnode.component);
@@ -1163,7 +1166,7 @@ export class BuildTool implements IEditingTool {
   // ==========================================================================
 
   /**
-   * Compute `3 × |pin_(i+1) − pin_i|` in XZ for a logic interface, used as the
+   * Compute `4 × |pin_(i+1) − pin_i|` in XZ for a logic interface, used as the
    * proximity threshold by rules 3A/3B/3C/4. Returns null if any look-up fails
    * or the spacing is degenerate.
    */
@@ -1189,7 +1192,7 @@ export class BuildTool implements IEditingTool {
     if (!pinPos_i1) return null;
     const pinSpacing = Math.hypot(pinPos_i1.x - pinPos_i.x, pinPos_i1.z - pinPos_i.z);
     if (pinSpacing <= 0) return null;
-    return 3 * pinSpacing;
+    return 4 * pinSpacing;
   }
 
   /** Internal: index of a pin within its logic interface. Throws on missing
@@ -1231,27 +1234,28 @@ export class BuildTool implements IEditingTool {
   }
 
   /**
-   * Backward-explore the BP-network from `bpId` and return the closest pin
-   * whose subtype equals `oppositeOf` (with non-null logicMetadata).
+   * Backward-explore the BP-network from `bpId` and return the closest pin of biggest interface  (with non-null logicMetadata) by size
+   * Optionally if wantedLogicType is specified it filters out interfaces whose subtype differs from `wantedLogicType`
    * Tie on `Dl` → first BFS encounter (Map insertion order).
    */
-  private findOppositeTypeAnchor(
+  private findBestAnchor(
     bpId: UUID,
-    oppositeOf: 'logicInput' | 'logicOutput'
-  ): { pinId: UUID; Dl: number; pinComp: Component; pinEnode: ENode } | null {
+    wantedLogicType: 'logicInput' | 'logicOutput' | undefined | null = undefined
+  ): { pinId: UUID; Dl: number; pinComp: Component; pinEnode: ENode; size: number } | null {
     const circuit = this._controller.getCircuit();
     if (!circuit) return null;
     const reached = findPinsReachableFromBp(circuit, bpId);
-    let best: { pinId: UUID; Dl: number; pinComp: Component; pinEnode: ENode } | null = null;
+    let best: { pinId: UUID; Dl: number; pinComp: Component; pinEnode: ENode; size: number } | null = null;
     for (const [pinId, Dl] of reached) {
       const pinEnode = circuit.getENode(pinId);
       if (!pinEnode?.logicMetadata || !pinEnode.component) continue;
       const pinComp = circuit.getComponent(pinEnode.component);
       if (!pinComp) continue;
       const meta = pinComp.getPinMetadata(pinId);
-      if (meta?.subtype !== oppositeOf) continue;
-      if (!best || Dl < best.Dl) {
-        best = { pinId, Dl, pinComp, pinEnode };
+      if (!meta || !meta.logicPinData) continue;
+      if (!!wantedLogicType && meta.subtype !== wantedLogicType) continue;
+      if (!best || meta.logicPinData.size < best.size || Dl < best.Dl) {
+        best = { pinId, Dl, pinComp, pinEnode, size: meta.logicPinData.size };
       }
       // Map iteration is BFS-order, so on Dl tie the first hit wins.
     }
@@ -1316,7 +1320,7 @@ export class BuildTool implements IEditingTool {
     const count_AA = maxAA - iAA;
     if (count_AA <= 0) return empty;
 
-    const anchor = this.findOppositeTypeAnchor(sourceEnodeId, opposite);
+    const anchor = this.findBestAnchor(sourceEnodeId, opposite);
     if (!anchor) return empty;
     const { Dl, pinComp: BBComp, pinEnode: BBpin } = anchor;
     if (!BBpin.logicMetadata) return empty;
@@ -1391,7 +1395,7 @@ export class BuildTool implements IEditingTool {
     const count_AA = maxAA - iAA;
     if (count_AA <= 0) return empty;
 
-    const anchor = this.findOppositeTypeAnchor(targetEnodeId, opposite);
+    const anchor = this.findBestAnchor(targetEnodeId, opposite);
     if (!anchor) return empty;
     const { Dl, pinComp: BBComp, pinEnode: BBpin } = anchor;
     if (!BBpin.logicMetadata) return empty;
@@ -2426,7 +2430,10 @@ export class BuildTool implements IEditingTool {
           ENodeType.BranchingPoint,
           undefined,
           undefined,
-          new Position(0, 0)
+          new Position(0, 0),
+            undefined,
+            'free',
+            undefined
         );
         visual = this._controller.branchingPointVisualFactory.createVisual(tempEnode);
       } else {

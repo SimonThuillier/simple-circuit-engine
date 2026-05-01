@@ -55,10 +55,10 @@ export class Xor4GateBehavior extends LogicGateBehaviorMixin implements ICompone
     }
 
     const highCount =
-      (newPinStates.get('input1')!.hasVoltage ? 1 : 0) +
-      (newPinStates.get('input2')!.hasVoltage ? 1 : 0) +
-      (newPinStates.get('input3')!.hasVoltage ? 1 : 0) +
-      (newPinStates.get('input4')!.hasVoltage ? 1 : 0);
+      (newPinStates.get('input-0')!.hasVoltage ? 1 : 0) +
+      (newPinStates.get('input-1')!.hasVoltage ? 1 : 0) +
+      (newPinStates.get('input-2')!.hasVoltage ? 1 : 0) +
+      (newPinStates.get('input-3')!.hasVoltage ? 1 : 0);
 
     const oddParity = highCount % 2 === 1;
 

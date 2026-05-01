@@ -55,10 +55,10 @@ export class Nand4GateBehavior extends LogicGateBehaviorMixin implements ICompon
     }
 
     const allInputsHigh =
-      newPinStates.get('input1')!.hasVoltage &&
-      newPinStates.get('input2')!.hasVoltage &&
-      newPinStates.get('input3')!.hasVoltage &&
-      newPinStates.get('input4')!.hasVoltage;
+      newPinStates.get('input-0')!.hasVoltage &&
+      newPinStates.get('input-1')!.hasVoltage &&
+      newPinStates.get('input-2')!.hasVoltage &&
+      newPinStates.get('input-3')!.hasVoltage;
 
     const activationCondition =
       component.config.get('activationLogic') === 'negative' ? !allInputsHigh : allInputsHigh;
