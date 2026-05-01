@@ -1,0 +1,115 @@
+
+component_group : interface
+component: {{x}}Light with x 1,2,4,8
+
+Integrated rows of x lights to provide users with a way of dynamically setting multiple logical output at once, instead of relying only of separated individual lightbulbs or LEDs.
+
+OneLight
+pins: new Map([
+      ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
+      ['input-0', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 0 } }],
+      ['output-0', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 0 } }],
+      ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
+    ])
+
+TwoLight
+pins: new Map([
+      ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
+      ['input-0', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 0 } }],
+      ['input-1', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 1 } }],
+      ['output-0', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 0 } }],
+      ['output-1', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 1 } }],
+      ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
+    ])
+
+FourLight
+pins: new Map([
+      ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
+      ['input-0', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 0 } }],
+      ['input-1', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 1 } }],
+      ['input-2', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 2 } }],
+      ['input-3', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 3 } }],
+      ['output-0', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 0 } }],
+      ['output-1', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 1 } }],
+      ['output-2', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 2 } }],
+      ['output-3', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 3 } }],
+      ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
+    ])
+
+EightLight
+pins: new Map([
+      ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
+      ['input-0', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 0 } }],
+      ['input-1', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 1 } }],
+      ['input-2', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 2 } }],
+      ['input-3', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 3 } }],
+      ['input-4', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 4 } }],
+      ['input-5', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 5 } }],
+      ['input-6', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 6 } }],
+      ['input-7', { subtype: 'logicInput', logicPinData: { interface: 'input', index: 7 } }],
+      ['output-0', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 0 } }],
+      ['output-1', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 1 } }],
+      ['output-2', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 2 } }],
+      ['output-3', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 3 } }],
+      ['output-4', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 4 } }],
+      ['output-5', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 5 } }],
+      ['output-6', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 6 } }],
+      ['output-7', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 7 } }],
+      ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
+    ])
+
+
+
+state:
+For convenience the inputs received by these components will also be outputed with a delay so that they can be used in serie according to user's desire.
+However the main upropose stay to light on/off.
+Following the validated convention for upper level components (more than one logic input/output) states correspond to the outputs expressed in hexadecimal.
+State range will vary according to input/light :
+OneLight : 0-1
+TwoLight : 0-3
+FourLight : 0-F
+EightLight : 00 - FF
+
+Also this state parameters map will be used to record ongoing transitions at any time.
+
+Guards:
+vcc guard: if pin vcc has not voltage a vcc guard clause like in LogicGateBehaviorMixin should bring the state to '0000' immediately
+nonLogicInputGuard: nonLogicInputGuard: if any logicInput pin is nonlogical a nonLogicInputGuard like in LightBehaviorMixin should bring the state to 'indeterminate' immediately.
+
+Transitions :
+They will be handled separately input/light by input/light : the only exception is if the nonLogicInputGuard activates : all lights go off and output pins output nothing immediately.
+
+events:
+To simplify handling concurrent input changes in this case when component has any input moving and is transitioning its state will be simply `moving`.
+when all pending changes have resolved it will return to the output hexadecimal value.
+State parameter map will be used to keep track of ongoing changes.
+
+the state and nextState in the behavior result will be the primary source of information for animations.
+For animations needs the state previous the currentOne can be saved as state parameter prevState.
+
+behavior:
+Behavior will be straightforward.
+From example with a 4 light (simplified example) :
+t=0 : state = 8
+t=47: inputs 1 go HIGH 1 : state don't go immediately to C : instead it goes to `moving`, its parameters map is updated with a new key '1' (index of the moving light): '1-47-49' (respectively target state of this light, start and end tick for animation) and an event lightChanged is emitted with as parameter the index of the concerned light and its target state (0 off or 1 lit).
+t=47+span(2) = 49: no new event: event lightChanged resolves : output 1 pinState is changed, the state parameter key '1' is deleted and state goes to `C`, light visual reach its stable state (off or lit).
+
+Handling concurrent events :
+Cases when one input changes while another light is already moving should be well handled.
+Hence the design proposed above aims to give flexibility : keeping tracks of each light ongoing changes in parameter map allow to use it as source of information for behavior and animation.
+behaviorResult should have shouldCancelPending: false (except for guards).
+If a single input vary swiftly while the target light is already moving the symmetrical transition pattern can be used
+`
+const transitionSpan = getTransitionSpan(component.config);
+    const lightXSpan =
+      state.expirationTick < 1 ? transitionSpan : Math.max(light x end tick - light x start tick, 1);
+`
+
+Visual Factory:
+
+Visual representation envelope will be a RoundIceBoxGeometry from src/scene/shared/utils/GeometryUtils.ts ( with as much holes as lights needed per component).
+Let's start with a constant width of 2.4, and an height of 1.4 for the 1 input, 2.4 for the two input, 4.4 for the 4 input and 8.4 for the 8 input
+vcc and gnd pin will be centered respectively at the top and bottom and output pins will be on the right evenly spaced (you can take inspiration from what was done for input components : src/scene/shared/components/interface/InputVisualFactoryBase.ts and for example src/scene/shared/components/interface/TwoInputVisualFactory.ts
+
+animations:
+each light hole should have a radius of 0.8 : it will be filled by a cylinder and on top of it a half sphere, both of GLASS MATERIAL and changing material and emissivity at animation time like for lightbulbs.

@@ -5,7 +5,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { Component, ComponentType, Position, Rotation } from 'simple-circuit-engine/core';
+import { Circuit, Component, ComponentType, Position, Rotation } from 'simple-circuit-engine/core';
+import { CircuitOptions } from '../../src/core/topology/CircuitOptions.js';
 
 describe('Component', () => {
   describe('constructor', () => {
@@ -243,6 +244,62 @@ describe('Component', () => {
       expect(restored.position.equals(original.position)).toBe(true);
       expect(restored.rotation.equals(original.rotation)).toBe(true);
       expect(restored.pins).toEqual(original.pins);
+    });
+  });
+
+  describe('logic interface helpers', () => {
+    const newCircuit = () => new Circuit(new CircuitOptions());
+
+    it('getInterfaceMaxIndex returns largest index for EightBitAdder interfaces', () => {
+      const circuit = newCircuit();
+      const adder = circuit.addComponent(
+        ComponentType.EightBitAdder,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      expect(adder.getInterfaceMaxIndex('inputA')).toBe(7);
+      expect(adder.getInterfaceMaxIndex('inputB')).toBe(7);
+      expect(adder.getInterfaceMaxIndex('sum')).toBe(7);
+      expect(adder.getInterfaceMaxIndex('carryIn')).toBe(0);
+      expect(adder.getInterfaceMaxIndex('carryOut')).toBe(0);
+      expect(adder.getInterfaceMaxIndex('bogus')).toBe(-1);
+    });
+
+    it('getInterfaceMaxIndex on Nand4Gate: 3 for input, 0 for output', () => {
+      const circuit = newCircuit();
+      const nand = circuit.addComponent(
+        ComponentType.Nand4Gate,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      expect(nand.getInterfaceMaxIndex('input')).toBe(3);
+      expect(nand.getInterfaceMaxIndex('output')).toBe(0);
+    });
+
+    it('getPinIdByInterface returns the ENode UUID round-tripping to its label', () => {
+      const circuit = newCircuit();
+      const adder = circuit.addComponent(
+        ComponentType.EightBitAdder,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      const pinId = adder.getPinIdByInterface('inputB', 3);
+      expect(pinId).toBeDefined();
+      expect(adder.getPinLabel(pinId!)).toBe('inputB-3');
+
+      const sumPin = adder.getPinIdByInterface('sum', 0);
+      expect(adder.getPinLabel(sumPin!)).toBe('sum-0');
+    });
+
+    it('getPinIdByInterface returns undefined for out-of-range or unknown interface', () => {
+      const circuit = newCircuit();
+      const adder = circuit.addComponent(
+        ComponentType.EightBitAdder,
+        new Position(0, 0),
+        new Rotation(0)
+      );
+      expect(adder.getPinIdByInterface('inputA', 8)).toBeUndefined();
+      expect(adder.getPinIdByInterface('bogus', 0)).toBeUndefined();
     });
   });
 });

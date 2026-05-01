@@ -1,6 +1,6 @@
 /**
  * Pin Tooltip Widget
- * @module scene/static/PinTooltipWidget
+ * @module scene/widgets/PinTooltipWidget
  *
  * Shows a clickable HTML tooltip near the cursor when hovering a component pin in edit mode.
  * Content: "{pinLabel} ({componentName})" — clicking triggers a componentHelpRequested callback.
@@ -8,6 +8,7 @@
 
 import { ComponentType } from 'simple-circuit-engine/core';
 import { sceT } from '../../i18n';
+import type {ILogicPinMetadata} from "../../core/topology/types";
 
 /**
  * Manages a transient HTML tooltip displayed when hovering a component pin.
@@ -29,7 +30,7 @@ export class PinTooltipWidget {
    * Show tooltip at the given client coordinates for the specified pin.
    * If already showing for the same component type, only repositions.
    */
-  show(pinLabel: string, componentType: ComponentType, clientX: number, clientY: number): void {
+  show(pinLabel: string, componentType: ComponentType, logicMetadata: ILogicPinMetadata | null, clientX: number, clientY: number): void {
     if (this._element && this._currentComponentType === componentType) {
       this._position(clientX, clientY);
       return;
@@ -40,7 +41,11 @@ export class PinTooltipWidget {
     const componentName = sceT(`components.${componentType}.name`, { defaultValue: componentType });
 
     this._element = document.createElement('div');
-    this._element.textContent = `${pinLabel} (${componentName})`;
+
+    const interfaceText = !!logicMetadata ? `:${logicMetadata.interface}:${logicMetadata.index}`:'';
+
+
+    this._element.textContent = `${pinLabel} (${componentName})${interfaceText}`;
     Object.assign(this._element.style, {
       position: 'fixed',
       zIndex: '2000',

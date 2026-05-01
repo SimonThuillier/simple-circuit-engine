@@ -13,6 +13,7 @@ import { CircuitOptions } from '../../../src/core/topology/CircuitOptions';
 import type { IFactoryRegistry } from '../../../src/scene/shared/components/ComponentVisualFactory';
 
 import { ComponentType, SIMULATION_SPEED } from '../../../src';
+import { createMockRenderer } from '../helpers';
 
 /**
  * Create a simple test circuit with a battery and switch
@@ -47,7 +48,7 @@ describe('CircuitRunnerController - Simulation Speed (017-simulation-speed)', ()
     document.body.appendChild(container);
 
     controller = new CircuitRunnerController(factoryRegistry, behaviorRegistry);
-    controller.initialize(container);
+    controller.initialize(container, createMockRenderer());
   });
 
   afterEach(() => {

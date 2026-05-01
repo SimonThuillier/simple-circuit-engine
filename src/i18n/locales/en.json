@@ -247,6 +247,82 @@
         }
       }
     },
+    "oneInput": {
+      "name": "1*input",
+      "config": {
+        "fields": {
+          "initialState": { "name": "Initial State (Hex)" },
+          "transitionSpan": { "name": "Delay (ticks)" },
+          "size": { "name": "Size" }
+        }
+      }
+    },
+    "twoInput": {
+      "name": "2*inputs",
+      "config": {
+        "fields": {
+          "initialState": { "name": "Initial State (Hex)" },
+          "transitionSpan": { "name": "Delay (ticks)" },
+          "size": { "name": "Size" }
+        }
+      }
+    },
+    "fourInput": {
+      "name": "4*inputs",
+      "config": {
+        "fields": {
+          "initialState": { "name": "Initial State (Hex)" },
+          "transitionSpan": { "name": "Delay (ticks)" },
+          "size": { "name": "Size" }
+        }
+      }
+    },
+    "eightInput": {
+      "name": "8*inputs",
+      "config": {
+        "fields": {
+          "initialState": { "name": "Initial State (Hex)" },
+          "transitionSpan": { "name": "Delay (ticks)" },
+          "size": { "name": "Size" }
+        }
+      }
+    },
+    "oneLight": {
+      "name": "1*light",
+      "config": {
+        "fields": {
+          "transitionSpan": { "name": "Lit delay (ticks)" },
+          "size": { "name": "Size" }
+        }
+      }
+    },
+    "twoLight": {
+      "name": "2*lights",
+      "config": {
+        "fields": {
+          "transitionSpan": { "name": "Lit delay (ticks)" },
+          "size": { "name": "Size" }
+        }
+      }
+    },
+    "fourLight": {
+      "name": "4*lights",
+      "config": {
+        "fields": {
+          "transitionSpan": { "name": "Lit delay (ticks)" },
+          "size": { "name": "Size" }
+        }
+      }
+    },
+    "eightLight": {
+      "name": "8*lights",
+      "config": {
+        "fields": {
+          "transitionSpan": { "name": "Lit delay (ticks)" },
+          "size": { "name": "Size" }
+        }
+      }
+    },
     "default": {
       "config": {
         "fields": {
@@ -261,5 +337,27 @@
   },
   "config": {
     "title": "Configuration: {{name}}"
+  },
+  "widgets": {
+    "mode": {
+      "edit": "Edition",
+      "simulation": "Simulation"
+    },
+    "tools": {
+      "build": "Build",
+      "multiSelect": "Multi-select"
+    },
+    "multiWiring": "Multi-wiring",
+    "simulation": {
+      "stop": "Stop & Reset",
+      "play": "Play",
+      "pause": "Pause",
+      "speed": "{{tps}} TPS",
+      "step": "Step by step",
+      "staticStep": "Step {{tick}}"
+    },
+    "help": {
+      "title": "Help"
+    }
   }
 }

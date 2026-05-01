@@ -8,6 +8,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CircuitController } from '../../../../src/scene/static/CircuitController';
 import type { ToolType } from '../../../../src/scene/shared/types';
 import { FactoryRegistry, DefaultVisualFactory } from '../../../../src/scene/shared/components';
+import { createMockRenderer } from '../../helpers';
 
 // Mock Three.js - use importOriginal to get real THREE classes
 // This avoids having to mock everything, we just use the real THREE.js
@@ -31,7 +32,7 @@ describe('Tool System Architecture (T060-T063)', () => {
     containerElement.style.height = '600px';
     document.body.appendChild(containerElement);
 
-    controller.initialize(containerElement, { defaultTool: null });
+    controller.initialize(containerElement, createMockRenderer(), { defaultTool: null });
   });
 
   describe('T060: Basic tool system methods', () => {

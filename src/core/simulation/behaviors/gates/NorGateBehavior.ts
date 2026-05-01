@@ -59,7 +59,7 @@ export class NorGateBehavior extends LogicGateBehaviorMixin implements IComponen
     }
 
     const anyInputHigh =
-      newPinStates.get('input1')!.hasVoltage || newPinStates.get('input2')!.hasVoltage;
+      newPinStates.get('input-0')!.hasVoltage || newPinStates.get('input-1')!.hasVoltage;
 
     const activationCondition =
       component.config.get('activationLogic') === 'negative' ? !anyInputHigh : anyInputHigh;

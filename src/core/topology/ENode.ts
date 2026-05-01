@@ -7,7 +7,7 @@
  * @module core/topology
  */
 import { type UUID, Position, generateUUID } from '../utils';
-import { ENodeSourceType, ENodeType, type IENode } from './types';
+import {ENodeSourceType, ENodeType, type IENode, type ILogicPinMetadata} from './types';
 import type { Circuit } from './Circuit';
 
 /**
@@ -94,6 +94,11 @@ export class ENode {
   public readonly subtype: string;
 
   /**
+   * logic pin metadata for logicInput / logicOutput pins
+   */
+  public readonly logicMetadata: ILogicPinMetadata | undefined
+
+  /**
    * Create a new electrical node.
    *
    * **Note**: Typically ENodes are created automatically by Circuit.
@@ -106,6 +111,7 @@ export class ENode {
    * @param source - Source type (Voltage/Current) or undefined
    *
    * @param subtype
+   * @param logicMetadata
    * @example
    * ```typescript
    * // Pin node (internal to Circuit)
@@ -133,7 +139,8 @@ export class ENode {
     pinLabel: string | undefined,
     position: Position | undefined,
     source: ENodeSourceType | undefined = undefined,
-    subtype: string = 'free'
+    subtype: string = 'free',
+    logicMetadata: ILogicPinMetadata | undefined
   ) {
     this.id = generateUUID();
     this.type = type;
@@ -143,6 +150,7 @@ export class ENode {
     this.wires = new Set();
     this.source = source;
     this.subtype = subtype;
+    this.logicMetadata = logicMetadata;
   }
 
   /**
@@ -257,6 +265,7 @@ export class ENode {
       type: this.type,
       source: this.source || null,
       subtype: this.subtype,
+      logicMetadata: this.logicMetadata || null,
     };
 
     if (this.type === ENodeType.Pin) {
@@ -296,7 +305,8 @@ export class ENode {
       json.pinLabel || undefined,
       position,
       json.source || undefined,
-      json.subtype ?? 'free'
+      json.subtype ?? 'free',
+      json.logicMetadata || undefined
     );
 
     // Override generated ID with the one from JSON

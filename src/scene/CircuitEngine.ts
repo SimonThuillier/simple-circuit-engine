@@ -31,6 +31,7 @@ import type {
 import { createGridHelper } from './shared/utils/GeometryUtils';
 import { engineOptions } from './shared/utils/Options';
 import { createMapControls } from './shared/utils/ControlsUtils';
+import { WidgetsManager } from './widgets';
 
 /**
  * CircuitEngine - Unified Facade for Circuit Editing and Simulation
@@ -44,8 +45,10 @@ import { createMapControls } from './shared/utils/ControlsUtils';
  *
  * @example
  * ```typescript
+ * const renderer = new THREE.WebGLRenderer({ antialias: true });
  * const engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
- * engine.initialize(container);
+ * engine.initialize(container, renderer);
+ * container.appendChild(renderer.domElement);
  * engine.setCircuit(circuit);
  *
  * // Edit mode (default)
@@ -75,6 +78,7 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
 
   // State
   private _mode: EngineMode = 'edit';
+  private _multiWiring: boolean = false;
   private _initialized: boolean = false;
   private _options: EngineOptions | null = null;
   private _disposed: boolean = false;
@@ -82,6 +86,9 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
   // Event forwarding cleanup functions
   private _editControllerCleanup: (() => void) | null = null;
   private _simulationControllerCleanup: (() => void) | null = null;
+
+  // Integrated overlay widgets
+  private _widgetsManager: WidgetsManager | null = null;
 
   /**
    * Create a new CircuitEngine instance.
@@ -123,15 +130,20 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
   }
 
   /**
-   * Initialize the engine with a DOM container.
+   * Initialize the engine with a DOM container and a WebGLRenderer.
    * Creates shared Three.js resources and both controllers.
    *
-   * @param container - HTMLElement to mount the scene
+   * The caller owns the renderer and its canvas; the engine binds MapControls
+   * to `renderer.domElement` (not the container) so DOM overlays such as the
+   * integrated widgets can receive pointer events normally.
+   *
+   * @param container - HTMLElement to mount the scene (used for bounds, mouse tracking, widget overlay)
+   * @param renderer - WebGLRenderer owned by the consumer. Its canvas (`renderer.domElement`) is used for pointer input.
    * @param options - Configuration options
    * @throws {TypeError} If container is not a valid HTMLElement
    * @throws {Error} If already initialized
    */
-  initialize(container: HTMLElement, options?: EngineOptions): void {
+  initialize(container: HTMLElement, renderer: THREE.WebGLRenderer, options?: EngineOptions): void {
     if (this._initialized) {
       throw new Error('CircuitEngine is already initialized');
     }
@@ -148,7 +160,7 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
     this._container = container;
 
     // Create shared resources
-    this._sharedResources = this._createSharedResources(container, options);
+    this._sharedResources = this._createSharedResources(container, renderer, options);
 
     // Create controllers with shared resources
     this._editController = new CircuitController(this._factoryRegistry, this._sharedResources);
@@ -158,8 +170,8 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
       this._sharedResources
     );
     // Initialize both controllers
-    this._editController.initialize(container, options.controllerOptions);
-    this._simulationController.initialize(container, options.controllerOptions);
+    this._editController.initialize(container, renderer, options.controllerOptions);
+    this._simulationController.initialize(container, renderer, options.controllerOptions);
 
     // Setup event forwarding from both controllers
     this._setupEventForwarding();
@@ -172,7 +184,16 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
       this._simulationController.setActive(true);
     }
 
+    // Sync initial multi-wiring flag from options
+    this._multiWiring = options.controllerOptions?.multiWiring ?? false;
+    this._editController.setMultiWiring(this._multiWiring);
+
     this._initialized = true;
+
+    // Mount integrated widgets unless explicitly disabled
+    if (options.widgets?.enabled !== false) {
+      this._widgetsManager = new WidgetsManager(this, container);
+    }
 
     // Emit ready event
     this.emit('ready', { controllerType: 'engine' });
@@ -183,7 +204,11 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
   /**
    * Create shared resources for both controllers.
    */
-  private _createSharedResources(container: HTMLElement, options: EngineOptions): SharedResources {
+  private _createSharedResources(
+    container: HTMLElement,
+    renderer: THREE.WebGLRenderer,
+    options: EngineOptions
+  ): SharedResources {
     const controllerOptions = options.controllerOptions!;
     // Create scene
     const scene = new THREE.Scene();
@@ -205,8 +230,13 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
     camera.layers.enable(1); // enode hover layer
     camera.layers.enable(2); // component hover layer
 
-    // Create MapControls
-    const mapControls = createMapControls(camera, container, controllerOptions.mapControls!);
+    // Create MapControls bound to the canvas (not the container) so DOM
+    // overlays inside the container don't get their pointer events captured.
+    const mapControls = createMapControls(
+      camera,
+      renderer.domElement,
+      controllerOptions.mapControls!
+    );
 
     // Create managers
     const hoverManager = new HoverManager(scene, camera);
@@ -225,6 +255,7 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
     return {
       scene,
       camera,
+      renderer,
       mapControls,
       grid: grid,
       factoryRegistry: this._factoryRegistry,
@@ -281,6 +312,12 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
     // Stop simulation if running
     if (this._mode === 'simulation' && this._simulationController?.isPlaying) {
       this._simulationController.pause();
+    }
+
+    // Dispose widgets first so any pending callbacks are silenced
+    if (this._widgetsManager) {
+      this._widgetsManager.dispose();
+      this._widgetsManager = null;
     }
 
     // Teardown event forwarding
@@ -344,10 +381,10 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
    * @param lng - Target language code (e.g., 'en', 'fr')
    */
   setLanguage(lng: string): void {
-    console.log(lng);
     this._checkInitialized();
     this._editController?.setLanguage(lng);
     this._simulationController?.setLanguage(lng);
+    this._widgetsManager?.setLanguage(lng);
   }
 
   /**
@@ -529,6 +566,27 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
     this._editController!.setEditMode(enabled);
   }
 
+  /**
+   * Whether the multi-wiring flag is currently enabled.
+   * Wiring tools may use it to create several wires per pull (semantics handled
+   * by the tools; the engine only owns the flag and forwards changes).
+   */
+  get multiWiring(): boolean {
+    return this._multiWiring;
+  }
+
+  /**
+   * Toggle the multi-wiring flag and forward to the edit controller.
+   * Emits `multiWiringChanged` once on transition.
+   */
+  setMultiWiring(value: boolean): void {
+    this._checkInitialized();
+    if (this._multiWiring === value) return;
+    this._multiWiring = value;
+    this._editController!.setMultiWiring(value);
+    // Note: edit controller emits the event, which is forwarded by _setupEventForwarding.
+  }
+
   // ============================================================================
   // Simulation Mode Operations
   // ============================================================================
@@ -571,6 +629,21 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
   stop(): void {
     this._checkSimulationMode();
     this._simulationController!.stop();
+  }
+
+  /**
+   * Request help for the current mode. Emits `helpRequested` with the active
+   * mode as payload; consumers decide how to render help (modal, sidebar, etc.).
+   *
+   * @example
+   * ```typescript
+   * engine.on('helpRequested', ({ mode }) => {
+   *   openHelpDialog(mode);
+   * });
+   * ```
+   */
+  requestHelp(): void {
+    this.emit('helpRequested', { mode: this._mode });
   }
 
   /**

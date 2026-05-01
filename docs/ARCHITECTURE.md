@@ -189,8 +189,10 @@ class Controller extends EventEmitter<ControllerEventMap> {
 `CircuitEngine` provides a unified interface for mode switching:
 
 ```typescript
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 const engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
-engine.initialize(container);
+engine.initialize(container, renderer);
+container.appendChild(renderer.domElement);
 engine.setCircuit(circuit);
 
 // Switch modes

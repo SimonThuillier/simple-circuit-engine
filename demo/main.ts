@@ -11,6 +11,7 @@ import {
   registerBasicComponentsBehaviors,
   registerGatesComponentsBehaviors,
   registerArithmeticComponentsBehaviors,
+    registerInterfaceComponentsBehaviors,
 } from 'simple-circuit-engine/core';
 import {
   CircuitEngine,
@@ -19,6 +20,7 @@ import {
   registerBasicComponentsFactories,
   registerGatesComponentsFactories,
   registerArithmeticComponentsFactories,
+  registerInterfaceComponentsFactories,
 } from 'simple-circuit-engine/scene';
 import { registerSceTranslations } from '../src/i18n';
 import { CircuitOptions } from '../src';
@@ -32,12 +34,14 @@ const componentsFactoryRegistry = new GroupedFactoryRegistry(new DefaultVisualFa
 registerBasicComponentsFactories(componentsFactoryRegistry);
 registerGatesComponentsFactories(componentsFactoryRegistry);
 registerArithmeticComponentsFactories(componentsFactoryRegistry);
+registerInterfaceComponentsFactories(componentsFactoryRegistry);
 
 // Create behavior registry with all basic component behaviors
 const behaviorRegistry = new BehaviorRegistry();
 registerBasicComponentsBehaviors(behaviorRegistry);
 registerGatesComponentsBehaviors(behaviorRegistry);
 registerArithmeticComponentsBehaviors(behaviorRegistry);
+registerInterfaceComponentsBehaviors(behaviorRegistry);
 
 // Create WebGL renderer
 const renderer = new WebGLRenderer({ antialias: true, alpha: false });
@@ -51,7 +55,7 @@ const container = document.getElementById('canvas-container')!;
 const engine = new CircuitEngine(componentsFactoryRegistry, behaviorRegistry);
 
 const initialMode = 'edit';
-engine.initialize(container, {
+engine.initialize(container, renderer, {
   initialMode: initialMode,
   controllerOptions: {
     mapControls: { zoomSpeed: 2 },
@@ -109,11 +113,6 @@ function updateModeUI(mode: 'edit' | 'simulation') {
   // Update mode buttons
   document.getElementById('mode-edit')!.classList.toggle('active', mode === 'edit');
   document.getElementById('mode-simulation')!.classList.toggle('active', mode === 'simulation');
-
-  // Update mode indicator
-  const indicator = document.getElementById('mode-indicator')!;
-  indicator.className = 'mode-indicator ' + mode;
-  indicator.textContent = mode === 'edit' ? 'EDIT MODE' : 'SIMULATION MODE';
 
   // Update status
   document.getElementById('status-mode')!.textContent = mode === 'edit' ? 'Edit' : 'Simulation';

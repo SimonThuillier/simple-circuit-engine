@@ -70,9 +70,9 @@ registerSceTranslations(i18next);
 The library exposes three subpath exports:
 
 ```
-simple-circuit-engine       → dist/index.js     (re-exports core + scene + i18n)
-simple-circuit-engine/core  → dist/core/index.js
-simple-circuit-engine/scene → dist/scene/index.js
+simple-circuit-engine       → dist/index.ts     (re-exports core + scene + i18n)
+simple-circuit-engine/core  → dist/core/index.ts
+simple-circuit-engine/scene → dist/scene/index.ts
 ```
 
 When Vite pre-bundles these subpaths, it can create independent copies of

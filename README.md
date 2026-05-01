@@ -44,21 +44,21 @@ const componentsFactoryRegistry = registerBasicComponentsFactories(new GroupedFa
 // Create behavior registry with basic components behaviors (for simulation)
 const behaviorRegistry = registerBasicComponentsBehaviors(new BehaviorRegistry());
 
+// Create and setup WebGL renderer (must exist before engine.initialize — it binds MapControls to the canvas)
+const renderer = new WebGLRenderer({ antialias: true, alpha: false });
+renderer.setClearColor(0x1a1a2e);
+const container = document.getElementById('canva-container')!;
+renderer.setSize(container.clientWidth, container.clientHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
 // Initialize CircuitEngine
 // It creates THREE.js scene, camera, controls, lights, etc
 // and the interactive controllers (edit and simulation) of simple-circuit-engine
-const container = document.getElementById('canva-container')!;
 const engine = new CircuitEngine(componentsFactoryRegistry, behaviorRegistry);
-engine.initialize(container, engineOptions());
+engine.initialize(container, renderer, engineOptions());
 // set engine circuit to a new empty circuit
 engine.setCircuit(new Circuit(new CircuitOptions()));
 
-// Create and setup WebGL renderer
-const renderer = new WebGLRenderer({ antialias: true, alpha: false });
-renderer.setClearColor(0x1a1a2e);
-const width = window.innerWidth, height = window.innerHeight;
-renderer.setSize(container.clientWidth, container.clientHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 // Append renderer to DOM
 container.appendChild(renderer.domElement);
 

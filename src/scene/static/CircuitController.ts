@@ -36,7 +36,7 @@ import { SelectionManager } from '../shared/SelectionManager';
 import { CircuitWriter } from './CircuitWriter';
 import { AbstractCircuitController } from '../shared/AbstractCircuitController';
 import { ConfigPanelWidget } from './tools/ConfigPanelWidget';
-import { PinTooltipWidget } from './PinTooltipWidget';
+import { PinTooltipWidget } from '../widgets/PinTooltipWidget';
 import { controllerOptions } from '../shared/utils/Options';
 
 /**
@@ -63,6 +63,8 @@ export class CircuitController extends AbstractCircuitController {
   // Circuit RepositoryTool system
   private _tools: Map<ToolType, IEditingTool> = new Map();
   private _activeTool: ToolType | null = null;
+  // Multi-wiring flag (semantics handled by tools in a future change)
+  private _multiWiring: boolean = false;
 
   /**
    * Constructor and initialization
@@ -94,7 +96,7 @@ export class CircuitController extends AbstractCircuitController {
    * Specific Initialization logic, performed after AbstractCircuitController initialization
    * @private
    */
-  protected onInitialize(_options?: ControllerOptions) {
+  protected onInitialize(options?: ControllerOptions) {
     // Initialize tools
     this._initializeTools();
     // Initialize Selection Manager
@@ -103,6 +105,8 @@ export class CircuitController extends AbstractCircuitController {
     this._initializeConfigPanelManager();
     // Initialize Pin Tooltip
     this._initializePinTooltip();
+
+    this._multiWiring = options?.multiWiring ?? false;
 
     this._initialized = true; // flag must be set before calling setActiveTool
     // standalone mode -> Controller active
@@ -368,9 +372,9 @@ export class CircuitController extends AbstractCircuitController {
         payload.userData?.type === 'enodeHitbox' &&
         payload.userData.componentId !== null
       ) {
-        const { label, componentType } = payload.userData;
+        const { label, componentType, logicMetadata } = payload.userData;
         if (label && componentType) {
-          this._pinTooltipWidget?.show(label, componentType, this._lastClientX, this._lastClientY);
+          this._pinTooltipWidget?.show(label, componentType, logicMetadata, this._lastClientX, this._lastClientY);
           return;
         }
       }
@@ -461,6 +465,24 @@ export class CircuitController extends AbstractCircuitController {
    */
   getActiveTool(): ToolType | null {
     return this._activeTool;
+  }
+
+  /**
+   * Whether the multi-wiring flag is currently enabled.
+   * Wiring tools may use it to create several wires per pull (semantics handled
+   * elsewhere; this controller only owns the flag and emits its changes).
+   */
+  get multiWiring(): boolean {
+    return this._multiWiring;
+  }
+
+  /**
+   * Toggle the multi-wiring flag and emit `multiWiringChanged` on transition.
+   */
+  setMultiWiring(value: boolean): void {
+    if (this._multiWiring === value) return;
+    this._multiWiring = value;
+    this.emit('multiWiringChanged', { multiWiring: value });
   }
 
   /**

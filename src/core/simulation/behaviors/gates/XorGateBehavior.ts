@@ -58,8 +58,8 @@ export class XorGateBehavior extends LogicGateBehaviorMixin implements IComponen
       return nonLogicInputGuardBehavior;
     }
 
-    const input1High = newPinStates.get('input1')!.hasVoltage;
-    const input2High = newPinStates.get('input2')!.hasVoltage;
+    const input1High = newPinStates.get('input-0')!.hasVoltage;
+    const input2High = newPinStates.get('input-1')!.hasVoltage;
     const oddParity = input1High !== input2High;
 
     const activationCondition =

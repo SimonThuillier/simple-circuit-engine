@@ -15,6 +15,7 @@ import type { IFactoryRegistry } from './components/ComponentVisualFactory';
 import type { BranchingPointVisualFactory } from './BranchingPointVisualFactory';
 import type { WireVisualManager } from './WireVisualManager';
 import type { HoverManager } from './HoverManager';
+import type {ILogicPinMetadata} from "../../core/topology/types";
 
 // Re-export Line2 types for convenience
 export type { Line2, LineGeometry, LineMaterial };
@@ -94,6 +95,7 @@ export type ControllerEvent =
   | 'simulationUserCommand'
   | 'simulationStopped'
   | 'simulationSpeedChanged'
+  | 'multiWiringChanged'
   | 'componentHelpRequested';
 
 /**
@@ -155,6 +157,8 @@ export interface ControllerEventMap {
   simulationUserCommand: IUserCommand;
   simulationStopped: { tick: number };
   simulationSpeedChanged: { previousSpeed: number; newSpeed: number };
+  /** Emitted when the multi-wiring flag toggles (engine + edit-controller scope) */
+  multiWiringChanged: { multiWiring: boolean };
   /** Emitted when user clicks a pin tooltip to request component help */
   componentHelpRequested: { componentType: ComponentType };
 }
@@ -195,6 +199,7 @@ export interface EnodeHitboxUserData {
   componentId: string | null;
   label: string | null;
   componentType: ComponentType | null;
+  logicMetadata: ILogicPinMetadata | null;
 }
 
 /**
@@ -351,6 +356,9 @@ export interface SharedResources {
   /** Perspective camera for rendering */
   camera: THREE.PerspectiveCamera;
 
+  /** WebGL renderer owned by the consumer and passed in at `initialize()`. Exposed here so factories/managers can access `renderer.domElement`, `getPixelRatio()`, and `capabilities` without another bump. */
+  renderer: THREE.WebGLRenderer;
+
   /** MapControls for pan/zoom/rotate interaction */
   mapControls: MapControls;
 
@@ -390,12 +398,23 @@ export interface ModeChangedEvent {
 }
 
 /**
+ * Event emitted when the user requests help via the in-scene HelpWidget.
+ * Library-neutral: consumers decide how to render help (modal, sidebar, etc.).
+ */
+export interface HelpRequestedEvent {
+  /** Mode the engine was in when help was requested */
+  mode: EngineMode;
+}
+
+/**
  * Combined event map for CircuitEngine.
  * Includes all controller events plus controller-specific events.
  */
 export interface CircuitEngineEventMap extends ControllerEventMap {
   /** Emitted after mode transition completes */
   modeChanged: ModeChangedEvent;
+  /** Emitted when the user clicks the help button in the integrated HelpWidget */
+  helpRequested: HelpRequestedEvent;
 }
 
 /**
@@ -409,7 +428,7 @@ export interface CircuitEngineEventMap extends ControllerEventMap {
  *
  * @example
  * ```typescript
- * controllerType.initialize(container, {
+ * controllerType.initialize(container, renderer, {
  *   mapControls: {
  *     enableRotate: false,  // Disable rotation for 2D-only view
  *     maxDistance: 50,      // Limit zoom out
@@ -460,6 +479,16 @@ export interface ControllerOptions {
   simulationSpeed?: number;
   /** If CircuitRunnerController plays automatically at activation */
   simulationAutoPlay?: boolean;
+  /** Initial multi-wiring flag (default: false) */
+  multiWiring?: boolean;
+}
+
+/**
+ * Configuration options for the integrated widgets overlay
+ */
+export interface WidgetsOptions {
+  /** Disable the bundled overlay widgets (default: true = enabled) */
+  enabled?: boolean;
 }
 
 /**
@@ -482,6 +511,12 @@ export interface EngineOptions {
    * @default { enableHistory: false }
    */
   runnerOptions?: IRunnerOptions;
+
+  /**
+   * Integrated widgets overlay configuration
+   * @default { enabled: true }
+   */
+  widgets?: WidgetsOptions;
 }
 
 /**

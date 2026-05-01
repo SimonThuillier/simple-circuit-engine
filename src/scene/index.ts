@@ -11,9 +11,11 @@
  * ```typescript
  * import { CircuitController, FactoryRegistry } from 'simple-circuit-controller/scene';
  *
+ * const renderer = new THREE.WebGLRenderer({ antialias: true });
  * const registry = new FactoryRegistry(defaultFactory);
  * const controller = new CircuitController(registry);
- * controller.initialize(container);
+ * controller.initialize(container, renderer);
+ * container.appendChild(renderer.domElement);
  * controller.setCircuit(circuit);
  * ```
  */
@@ -24,6 +26,10 @@ export { CircuitEngine } from './CircuitEngine';
 export { CircuitController } from './static/CircuitController';
 export { CircuitRunnerController } from './simulation/CircuitRunnerController';
 export type { AbstractCircuitController } from './shared/AbstractCircuitController';
+
+// Integrated overlay widgets
+export { WidgetsManager } from './widgets';
+export type { IEngineForWidgets } from './widgets';
 
 // Editing Tools
 export { BuildTool } from './static/tools/BuildTool';
@@ -62,5 +68,6 @@ export * from './shared/utils/Options';
 export {
   registerBasicComponentsFactories,
   registerGatesComponentsFactories,
-  registerArithmeticComponentsFactories
+  registerArithmeticComponentsFactories,
+    registerInterfaceComponentsFactories
 } from './setup';

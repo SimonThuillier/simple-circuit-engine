@@ -15,6 +15,15 @@ import type { ComponentVisualFactory } from '../../src/scene/shared/components/C
 import { ComponentType } from '../../src';
 
 /**
+ * Minimal WebGLRenderer stub for jsdom tests. The library only touches
+ * `renderer.domElement` — real WebGL context isn't needed here.
+ */
+export function createMockRenderer(): THREE.WebGLRenderer {
+  const canvas = document.createElement('canvas');
+  return { domElement: canvas } as unknown as THREE.WebGLRenderer;
+}
+
+/**
  * Create a simple mock circuit for testing
  *
  * @param options - Options for circuit creation

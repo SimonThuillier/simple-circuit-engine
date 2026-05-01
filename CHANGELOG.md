@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.14] - 2026-05-01
+
+### Added
+
+- Integrated On scene widgets for mode (edit/simulation) change, help, build tools and simulation controls.
+- Added multi-wiring feature creating several wires/branching points at once for fast wiring between multi bits interfaces.
+- Added `interface` components group with blocks of 1,2,4,8 inputs (switches) and lights.
+
 ## [0.0.13] - 2026-04-16
 
 ### Added

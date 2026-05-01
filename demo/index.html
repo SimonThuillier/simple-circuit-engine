@@ -349,28 +349,6 @@
         width: 100%;
         height: 100%;
       }
-
-      /* Mode indicator overlay */
-      .mode-indicator {
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        padding: 6px 12px;
-        border-radius: 4px;
-        font-size: 12px;
-        font-weight: 500;
-        pointer-events: none;
-      }
-
-      .mode-indicator.edit {
-        background: rgba(76, 175, 80, 0.9);
-        color: white;
-      }
-
-      .mode-indicator.simulation {
-        background: rgba(33, 150, 243, 0.9);
-        color: white;
-      }
     </style>
   </head>
   <body>
@@ -407,27 +385,687 @@
       "name": "Untitled Circuit",
       "defaultLogicFamily": "CMOS1"
     },
-    "size": 10,
-    "divisions": 10,
+    "size": 39,
+    "divisions": 22,
     "cameraOptions": {
       "position": {
-        "x": 0,
-        "y": 15,
-        "z": 15.000000000000002
+        "x": 8.36001026924892,
+        "y": 62.85517355359626,
+        "z": -2.3432003863583244
       },
       "lookAtPosition": {
-        "x": 0,
-        "y": 0,
-        "z": 0
+        "x": 8.360010269248924,
+        "y": -1.3805148353399632,
+        "z": -2.3432646220467133
       },
       "fov": 75,
       "near": 0.1,
       "far": 1000
     }
   },
-  "components": [],
-  "enodes": [],
-  "wires": []
+  "components": [
+    {
+      "id": "231115af-99b1-4449-98aa-2220b3403ae0",
+      "type": "eightLight",
+      "position": {
+        "x": 0,
+        "y": 12
+      },
+      "rotation": 0,
+      "pins": [
+        "21e9a9ff-333f-4115-8f55-15a0c15bee97",
+        "bb66bc29-ee6b-4bf9-870d-51b4fd2f02ee",
+        "802f2429-5158-4a61-90fa-85ff5726af2d",
+        "35650b44-5395-47b4-82b9-ceb03eff4947",
+        "abd94dd2-0eb2-4ef4-af11-8a4128687394",
+        "d6f4f84d-6393-47bf-94e4-7612b3ce814a",
+        "3ffc1d82-2d08-4db9-aa27-b9baa1324389",
+        "74aea179-c4c0-4d3f-86a3-755023ed5fe4",
+        "3eb7cf76-5ebc-4159-90a5-58df25260d1f",
+        "4571f9bb-96a7-4c6c-8abc-99c03969fd7a",
+        "964765eb-ddb6-4c33-837f-206c66c483d3",
+        "4826fba6-1b8c-4dff-8e6c-c27287308ea2",
+        "3b6513ac-878c-4ed1-9866-7c02bc84a085",
+        "4984082d-b898-44c3-8c66-f8918a90f259",
+        "09dcdf3b-2ba0-40bd-8313-84f898c5500a",
+        "d4225cc8-6dd3-4abc-991d-ba47af7eb4cb",
+        "38bdb8c6-eb00-4ff7-bde8-8d0544c2d62d",
+        "fabe97bf-a973-41b0-9259-1b44ce50aaf0"
+      ],
+      "config": {
+        "transitionSpan": "2",
+        "size": "1"
+      },
+      "editable": true
+    },
+    {
+      "id": "6c16d981-bd07-4b35-aabb-d1834b9fab6c",
+      "type": "eightInput",
+      "position": {
+        "x": -19,
+        "y": 12
+      },
+      "rotation": 0,
+      "pins": [
+        "2f7cf4ec-3d62-4aa7-b965-dc23bef8aa5c",
+        "fb3460d8-eeb9-4f6c-aba5-fda68ac6052a",
+        "9c5e3145-f1aa-42c4-ad5f-744c224964c7",
+        "8868e6ea-6140-4f17-b5ad-88ee1f352620",
+        "a9f04c7f-5b8a-410e-87b8-69dd8083c4a1",
+        "52b4ef84-f373-469e-b33d-5d86daad5cc4",
+        "e897c1b1-96de-43fb-8af6-78e594842cd0",
+        "3bb39e19-e039-4aa6-aae4-c59085b2f68e",
+        "54612cc3-19f8-45aa-a6a2-18ca78613258",
+        "31037e7f-67b7-4f8a-a0af-ae342d6cc507"
+      ],
+      "config": {
+        "initialState": "00",
+        "transitionSpan": "1",
+        "size": "1"
+      },
+      "editable": true
+    }
+  ],
+  "enodes": [
+    {
+      "id": "21e9a9ff-333f-4115-8f55-15a0c15bee97",
+      "type": "Pin",
+      "source": "Voltage",
+      "subtype": "vcc",
+      "logicMetadata": null,
+      "component": "231115af-99b1-4449-98aa-2220b3403ae0",
+      "pinLabel": "vcc"
+    },
+    {
+      "id": "bb66bc29-ee6b-4bf9-870d-51b4fd2f02ee",
+      "type": "Pin",
+      "source": null,
+      "subtype": "logicInput",
+      "logicMetadata": {
+        "interface": "input",
+        "index": 0
+      },
+      "component": "231115af-99b1-4449-98aa-2220b3403ae0",
+      "pinLabel": "input-0"
+    },
+    {
+      "id": "802f2429-5158-4a61-90fa-85ff5726af2d",
+      "type": "Pin",
+      "source": null,
+      "subtype": "logicInput",
+      "logicMetadata": {
+        "interface": "input",
+        "index": 1
+      },
+      "component": "231115af-99b1-4449-98aa-2220b3403ae0",
+      "pinLabel": "input-1"
+    },
+    {
+      "id": "35650b44-5395-47b4-82b9-ceb03eff4947",
+      "type": "Pin",
+      "source": null,
+      "subtype": "logicInput",
+      "logicMetadata": {
+        "interface": "input",
+        "index": 2
+      },
+      "component": "231115af-99b1-4449-98aa-2220b3403ae0",
+      "pinLabel": "input-2"
+    },
+    {
+      "id": "abd94dd2-0eb2-4ef4-af11-8a4128687394",
+      "type": "Pin",
+      "source": null,
+      "subtype": "logicInput",
+      "logicMetadata": {
+        "interface": "input",
+        "index": 3
+      },
+      "component": "231115af-99b1-4449-98aa-2220b3403ae0",
+      "pinLabel": "input-3"
+    },
+    {
+      "id": "d6f4f84d-6393-47bf-94e4-7612b3ce814a",
+      "type": "Pin",
+      "source": null,
+      "subtype": "logicInput",
+      "logicMetadata": {
+        "interface": "input",
+        "index": 4
+      },
+      "component": "231115af-99b1-4449-98aa-2220b3403ae0",
+      "pinLabel": "input-4"
+    },
+    {
+      "id": "3ffc1d82-2d08-4db9-aa27-b9baa1324389",
+      "type": "Pin",
+      "source": null,
+      "subtype": "logicInput",
+      "logicMetadata": {
+        "interface": "input",
+        "index": 5
+      },
+      "component": "231115af-99b1-4449-98aa-2220b3403ae0",
+      "pinLabel": "input-5"
+    },
+    {
+      "id": "74aea179-c4c0-4d3f-86a3-755023ed5fe4",
+      "type": "Pin",
+      "source": null,
+      "subtype": "logicInput",
+      "logicMetadata": {
+        "interface": "input",
+        "index": 6
+      },
+      "component": "231115af-99b1-4449-98aa-2220b3403ae0",
+      "pinLabel": "input-6"
+    },
+    {
+      "id": "3eb7cf76-5ebc-4159-90a5-58df25260d1f",
+      "type": "Pin",
+      "source": null,
+      "subtype": "logicInput",
+      "logicMetadata": {
+        "interface": "input",
+        "index": 7
+      },
+      "component": "231115af-99b1-4449-98aa-2220b3403ae0",
+      "pinLabel": "input-7"
+    },
+    {
+      "id": "4571f9bb-96a7-4c6c-8abc-99c03969fd7a",
+      "type": "Pin",
+      "source": null,
+      "subtype": "logicOutput",
+      "logicMetadata": {
+        "interface": "output",
+        "index": 0
+      },
+      "component": "231115af-99b1-4449-98aa-2220b3403ae0",
+      "pinLabel": "output-0"
+    },
+    {
+      "id": "964765eb-ddb6-4c33-837f-206c66c483d3",
+      "type": "Pin",
+      "source": null,
+      "subtype": "logicOutput",
+      "logicMetadata": {
+        "interface": "output",
+        "index": 1
+      },
+      "component": "231115af-99b1-4449-98aa-2220b3403ae0",
+      "pinLabel": "output-1"
+    },
+    {
+      "id": "4826fba6-1b8c-4dff-8e6c-c27287308ea2",
+      "type": "Pin",
+      "source": null,
+      "subtype": "logicOutput",
+      "logicMetadata": {
+        "interface": "output",
+        "index": 2
+      },
+      "component": "231115af-99b1-4449-98aa-2220b3403ae0",
+      "pinLabel": "output-2"
+    },
+    {
+      "id": "3b6513ac-878c-4ed1-9866-7c02bc84a085",
+      "type": "Pin",
+      "source": null,
+      "subtype": "logicOutput",
+      "logicMetadata": {
+        "interface": "output",
+        "index": 3
+      },
+      "component": "231115af-99b1-4449-98aa-2220b3403ae0",
+      "pinLabel": "output-3"
+    },
+    {
+      "id": "4984082d-b898-44c3-8c66-f8918a90f259",
+      "type": "Pin",
+      "source": null,
+      "subtype": "logicOutput",
+      "logicMetadata": {
+        "interface": "output",
+        "index": 4
+      },
+      "component": "231115af-99b1-4449-98aa-2220b3403ae0",
+      "pinLabel": "output-4"
+    },
+    {
+      "id": "09dcdf3b-2ba0-40bd-8313-84f898c5500a",
+      "type": "Pin",
+      "source": null,
+      "subtype": "logicOutput",
+      "logicMetadata": {
+        "interface": "output",
+        "index": 5
+      },
+      "component": "231115af-99b1-4449-98aa-2220b3403ae0",
+      "pinLabel": "output-5"
+    },
+    {
+      "id": "d4225cc8-6dd3-4abc-991d-ba47af7eb4cb",
+      "type": "Pin",
+      "source": null,
+      "subtype": "logicOutput",
+      "logicMetadata": {
+        "interface": "output",
+        "index": 6
+      },
+      "component": "231115af-99b1-4449-98aa-2220b3403ae0",
+      "pinLabel": "output-6"
+    },
+    {
+      "id": "38bdb8c6-eb00-4ff7-bde8-8d0544c2d62d",
+      "type": "Pin",
+      "source": null,
+      "subtype": "logicOutput",
+      "logicMetadata": {
+        "interface": "output",
+        "index": 7
+      },
+      "component": "231115af-99b1-4449-98aa-2220b3403ae0",
+      "pinLabel": "output-7"
+    },
+    {
+      "id": "fabe97bf-a973-41b0-9259-1b44ce50aaf0",
+      "type": "Pin",
+      "source": "Current",
+      "subtype": "gnd",
+      "logicMetadata": null,
+      "component": "231115af-99b1-4449-98aa-2220b3403ae0",
+      "pinLabel": "gnd"
+    },
+    {
+      "id": "2f7cf4ec-3d62-4aa7-b965-dc23bef8aa5c",
+      "type": "Pin",
+      "source": "Voltage",
+      "subtype": "vcc",
+      "logicMetadata": null,
+      "component": "6c16d981-bd07-4b35-aabb-d1834b9fab6c",
+      "pinLabel": "vcc"
+    },
+    {
+      "id": "fb3460d8-eeb9-4f6c-aba5-fda68ac6052a",
+      "type": "Pin",
+      "source": null,
+      "subtype": "logicOutput",
+      "logicMetadata": {
+        "interface": "output",
+        "index": 0
+      },
+      "component": "6c16d981-bd07-4b35-aabb-d1834b9fab6c",
+      "pinLabel": "output-0"
+    },
+    {
+      "id": "9c5e3145-f1aa-42c4-ad5f-744c224964c7",
+      "type": "Pin",
+      "source": null,
+      "subtype": "logicOutput",
+      "logicMetadata": {
+        "interface": "output",
+        "index": 1
+      },
+      "component": "6c16d981-bd07-4b35-aabb-d1834b9fab6c",
+      "pinLabel": "output-1"
+    },
+    {
+      "id": "8868e6ea-6140-4f17-b5ad-88ee1f352620",
+      "type": "Pin",
+      "source": null,
+      "subtype": "logicOutput",
+      "logicMetadata": {
+        "interface": "output",
+        "index": 2
+      },
+      "component": "6c16d981-bd07-4b35-aabb-d1834b9fab6c",
+      "pinLabel": "output-2"
+    },
+    {
+      "id": "a9f04c7f-5b8a-410e-87b8-69dd8083c4a1",
+      "type": "Pin",
+      "source": null,
+      "subtype": "logicOutput",
+      "logicMetadata": {
+        "interface": "output",
+        "index": 3
+      },
+      "component": "6c16d981-bd07-4b35-aabb-d1834b9fab6c",
+      "pinLabel": "output-3"
+    },
+    {
+      "id": "52b4ef84-f373-469e-b33d-5d86daad5cc4",
+      "type": "Pin",
+      "source": null,
+      "subtype": "logicOutput",
+      "logicMetadata": {
+        "interface": "output",
+        "index": 4
+      },
+      "component": "6c16d981-bd07-4b35-aabb-d1834b9fab6c",
+      "pinLabel": "output-4"
+    },
+    {
+      "id": "e897c1b1-96de-43fb-8af6-78e594842cd0",
+      "type": "Pin",
+      "source": null,
+      "subtype": "logicOutput",
+      "logicMetadata": {
+        "interface": "output",
+        "index": 5
+      },
+      "component": "6c16d981-bd07-4b35-aabb-d1834b9fab6c",
+      "pinLabel": "output-5"
+    },
+    {
+      "id": "3bb39e19-e039-4aa6-aae4-c59085b2f68e",
+      "type": "Pin",
+      "source": null,
+      "subtype": "logicOutput",
+      "logicMetadata": {
+        "interface": "output",
+        "index": 6
+      },
+      "component": "6c16d981-bd07-4b35-aabb-d1834b9fab6c",
+      "pinLabel": "output-6"
+    },
+    {
+      "id": "54612cc3-19f8-45aa-a6a2-18ca78613258",
+      "type": "Pin",
+      "source": null,
+      "subtype": "logicOutput",
+      "logicMetadata": {
+        "interface": "output",
+        "index": 7
+      },
+      "component": "6c16d981-bd07-4b35-aabb-d1834b9fab6c",
+      "pinLabel": "output-7"
+    },
+    {
+      "id": "31037e7f-67b7-4f8a-a0af-ae342d6cc507",
+      "type": "Pin",
+      "source": "Current",
+      "subtype": "gnd",
+      "logicMetadata": null,
+      "component": "6c16d981-bd07-4b35-aabb-d1834b9fab6c",
+      "pinLabel": "gnd"
+    },
+    {
+      "id": "4d9f4f10-07f5-4bb0-ba07-1803c625719f",
+      "type": "BranchingPoint",
+      "source": null,
+      "subtype": "free",
+      "logicMetadata": null,
+      "position": {
+        "x": -14,
+        "y": 16
+      }
+    },
+    {
+      "id": "ae1ca049-e5dc-4461-858e-7a968c4c4b27",
+      "type": "BranchingPoint",
+      "source": null,
+      "subtype": "free",
+      "logicMetadata": null,
+      "position": {
+        "x": -13,
+        "y": 15
+      }
+    },
+    {
+      "id": "75ed499c-4d1c-401d-99bc-6db0d0835425",
+      "type": "BranchingPoint",
+      "source": null,
+      "subtype": "free",
+      "logicMetadata": null,
+      "position": {
+        "x": -12,
+        "y": 14
+      }
+    },
+    {
+      "id": "8581ed56-cdb3-445a-aee1-fdfa53c23d6a",
+      "type": "BranchingPoint",
+      "source": null,
+      "subtype": "free",
+      "logicMetadata": null,
+      "position": {
+        "x": -11,
+        "y": 13
+      }
+    },
+    {
+      "id": "aa165cca-52ab-4ea8-bee7-720e397dd66b",
+      "type": "BranchingPoint",
+      "source": null,
+      "subtype": "free",
+      "logicMetadata": null,
+      "position": {
+        "x": -10,
+        "y": 11
+      }
+    },
+    {
+      "id": "87c305a2-1da3-4e34-9053-12cbb215d85d",
+      "type": "BranchingPoint",
+      "source": null,
+      "subtype": "free",
+      "logicMetadata": null,
+      "position": {
+        "x": -9,
+        "y": 10
+      }
+    },
+    {
+      "id": "54d6bc60-e288-4bd1-aa1e-a0f678c0a1b8",
+      "type": "BranchingPoint",
+      "source": null,
+      "subtype": "free",
+      "logicMetadata": null,
+      "position": {
+        "x": -8,
+        "y": 9
+      }
+    },
+    {
+      "id": "e7906dbe-844c-46f7-bdaa-9e6e6f4fc252",
+      "type": "BranchingPoint",
+      "source": null,
+      "subtype": "free",
+      "logicMetadata": null,
+      "position": {
+        "x": -7,
+        "y": 8
+      }
+    },
+    {
+      "id": "cde6ee6d-3707-41e3-ab95-82f8ea7f7b8a",
+      "type": "BranchingPoint",
+      "source": null,
+      "subtype": "free",
+      "logicMetadata": null,
+      "position": {
+        "x": 12,
+        "y": 16
+      }
+    },
+    {
+      "id": "c2bf6944-f0fc-4eae-ad15-7766303d33c4",
+      "type": "BranchingPoint",
+      "source": null,
+      "subtype": "free",
+      "logicMetadata": null,
+      "position": {
+        "x": 13,
+        "y": 15
+      }
+    },
+    {
+      "id": "55b9d9a6-cf53-495f-a9b7-91e2daca5811",
+      "type": "BranchingPoint",
+      "source": null,
+      "subtype": "free",
+      "logicMetadata": null,
+      "position": {
+        "x": 14,
+        "y": 14
+      }
+    },
+    {
+      "id": "fcab852d-91a8-439c-8107-64dd8da8d33f",
+      "type": "BranchingPoint",
+      "source": null,
+      "subtype": "free",
+      "logicMetadata": null,
+      "position": {
+        "x": 15,
+        "y": 13
+      }
+    },
+    {
+      "id": "4ea04758-ea27-4b2e-b2b9-bb4d2a57e279",
+      "type": "BranchingPoint",
+      "source": null,
+      "subtype": "free",
+      "logicMetadata": null,
+      "position": {
+        "x": 16,
+        "y": 11
+      }
+    },
+    {
+      "id": "b2d8f478-6bad-4760-8d1e-3e91d5e0fe02",
+      "type": "BranchingPoint",
+      "source": null,
+      "subtype": "free",
+      "logicMetadata": null,
+      "position": {
+        "x": 17,
+        "y": 10
+      }
+    },
+    {
+      "id": "c03c98b0-ce90-4c48-a6f0-644880247bb7",
+      "type": "BranchingPoint",
+      "source": null,
+      "subtype": "free",
+      "logicMetadata": null,
+      "position": {
+        "x": 18,
+        "y": 9
+      }
+    },
+    {
+      "id": "e991209a-249d-446e-bac3-131a5be78bd4",
+      "type": "BranchingPoint",
+      "source": null,
+      "subtype": "free",
+      "logicMetadata": null,
+      "position": {
+        "x": 19,
+        "y": 8
+      }
+    }
+  ],
+  "wires": [
+    {
+      "id": "8175b2c4-3e0a-4f1c-817a-aa8cb10931bd",
+      "node1": "fb3460d8-eeb9-4f6c-aba5-fda68ac6052a",
+      "node2": "4d9f4f10-07f5-4bb0-ba07-1803c625719f",
+      "intermediatePositions": []
+    },
+    {
+      "id": "9a4c9488-867e-444f-9d15-01892a914771",
+      "node1": "9c5e3145-f1aa-42c4-ad5f-744c224964c7",
+      "node2": "ae1ca049-e5dc-4461-858e-7a968c4c4b27",
+      "intermediatePositions": []
+    },
+    {
+      "id": "73d41e1f-7d17-43ef-abf3-faa39e383212",
+      "node1": "8868e6ea-6140-4f17-b5ad-88ee1f352620",
+      "node2": "75ed499c-4d1c-401d-99bc-6db0d0835425",
+      "intermediatePositions": []
+    },
+    {
+      "id": "bcb03b55-f6a3-4949-a1f6-57763c69e2c5",
+      "node1": "a9f04c7f-5b8a-410e-87b8-69dd8083c4a1",
+      "node2": "8581ed56-cdb3-445a-aee1-fdfa53c23d6a",
+      "intermediatePositions": []
+    },
+    {
+      "id": "48916605-c362-434b-bd55-31eb7e74de6b",
+      "node1": "52b4ef84-f373-469e-b33d-5d86daad5cc4",
+      "node2": "aa165cca-52ab-4ea8-bee7-720e397dd66b",
+      "intermediatePositions": []
+    },
+    {
+      "id": "3f09474d-2b89-4700-9708-e8d8d4e438e3",
+      "node1": "e897c1b1-96de-43fb-8af6-78e594842cd0",
+      "node2": "87c305a2-1da3-4e34-9053-12cbb215d85d",
+      "intermediatePositions": []
+    },
+    {
+      "id": "f28e5add-6016-4338-9a77-16765fe7c9be",
+      "node1": "3bb39e19-e039-4aa6-aae4-c59085b2f68e",
+      "node2": "54d6bc60-e288-4bd1-aa1e-a0f678c0a1b8",
+      "intermediatePositions": []
+    },
+    {
+      "id": "049fd96f-2f49-44d9-a605-85a1fc205f44",
+      "node1": "54612cc3-19f8-45aa-a6a2-18ca78613258",
+      "node2": "e7906dbe-844c-46f7-bdaa-9e6e6f4fc252",
+      "intermediatePositions": []
+    },
+    {
+      "id": "cd290073-6573-4edd-a519-03e02af40bd6",
+      "node1": "4571f9bb-96a7-4c6c-8abc-99c03969fd7a",
+      "node2": "cde6ee6d-3707-41e3-ab95-82f8ea7f7b8a",
+      "intermediatePositions": []
+    },
+    {
+      "id": "e08a1696-60ef-4c13-8150-935f3ddc97c7",
+      "node1": "964765eb-ddb6-4c33-837f-206c66c483d3",
+      "node2": "c2bf6944-f0fc-4eae-ad15-7766303d33c4",
+      "intermediatePositions": []
+    },
+    {
+      "id": "6de80e7e-0087-447d-87b2-a36e56edda9a",
+      "node1": "4826fba6-1b8c-4dff-8e6c-c27287308ea2",
+      "node2": "55b9d9a6-cf53-495f-a9b7-91e2daca5811",
+      "intermediatePositions": []
+    },
+    {
+      "id": "d078260b-e369-4228-91db-ad79c0bfdf9f",
+      "node1": "3b6513ac-878c-4ed1-9866-7c02bc84a085",
+      "node2": "fcab852d-91a8-439c-8107-64dd8da8d33f",
+      "intermediatePositions": []
+    },
+    {
+      "id": "483ba73d-d88f-4d6b-a16a-e976a61ae40e",
+      "node1": "4984082d-b898-44c3-8c66-f8918a90f259",
+      "node2": "4ea04758-ea27-4b2e-b2b9-bb4d2a57e279",
+      "intermediatePositions": []
+    },
+    {
+      "id": "5b535910-9872-4d39-b52d-b8ae929d0d77",
+      "node1": "09dcdf3b-2ba0-40bd-8313-84f898c5500a",
+      "node2": "b2d8f478-6bad-4760-8d1e-3e91d5e0fe02",
+      "intermediatePositions": []
+    },
+    {
+      "id": "68aa1e7c-4745-4275-977e-08987c23cca0",
+      "node1": "d4225cc8-6dd3-4abc-991d-ba47af7eb4cb",
+      "node2": "c03c98b0-ce90-4c48-a6f0-644880247bb7",
+      "intermediatePositions": []
+    },
+    {
+      "id": "b788e1d8-4435-4af9-a771-bef1899fb0a7",
+      "node1": "38bdb8c6-eb00-4ff7-bde8-8d0544c2d62d",
+      "node2": "e991209a-249d-446e-bac3-131a5be78bd4",
+      "intermediatePositions": []
+    }
+  ]
 }</textarea
             >
             <div class="json-buttons">
@@ -510,7 +1148,6 @@
       <!-- Viewer -->
       <div class="viewer-container">
         <div id="canvas-container"></div>
-        <div class="mode-indicator edit" id="mode-indicator">EDIT MODE</div>
       </div>
     </div>
 

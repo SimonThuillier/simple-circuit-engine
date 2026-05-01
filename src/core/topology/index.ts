@@ -33,3 +33,10 @@ export { CircuitOptions } from './CircuitOptions.js';
 export { CircuitMetadata } from './CircuitMetadata.js';
 export { Circuit } from './Circuit.js';
 export { computeTransitionSpan, classifyGate, computeGateDelay } from './delays.js';
+export {
+  findPinsReachableFromBp,
+  findBpsAtLogicDistance,
+  findPinsReachableFromBpWithPath,
+  findBpsAtLogicDistanceWithPath,
+} from './networkTraversal.js';
+export type { IPinReach, IBpAtDistance } from './networkTraversal.js';

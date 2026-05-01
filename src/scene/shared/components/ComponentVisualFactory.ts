@@ -449,9 +449,11 @@ export abstract class ComponentVisualFactoryBase implements IComponentVisualFact
     const userInfos = {
       componentId: node.component,
       enodeId: node.id,
+      pointsTo: pointsTo,
       label: node.pinLabel,
       subtype: node.subtype,
       lockedSourceType: lockedSubtypes.includes(node.subtype),
+      logicMetadata: node.logicMetadata,
     };
 
     const pinGroup = new THREE.Group();

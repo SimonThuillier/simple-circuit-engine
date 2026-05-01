@@ -1264,3 +1264,95 @@ export function KuKoGeometry(
   // both false : no hole -> whole form
   return new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, steps });
 }
+
+/**
+ * Create an ExtrudeGeometry shaped like a rectangle (frame/border) with rectangular holes in it
+ * Shape is centered at origin.
+ * by `thickness` on all four sides.
+ *
+ * @param width     - Total width of the outer rectangle
+ * @param height    - Total height of the outer rectangle
+ * @param holeWidth - width of a rectangular hole
+ * @param holeHeight - height of a rectangular hole
+ * @param holePositions - array of xy positions of the center of holes
+ * @param depth     - Extrusion depth
+ * @param steps     - Number of extrusion steps
+ * @constructor
+ */
+export function IceBoxGeometry(
+    width: number,
+    height: number,
+    holeWidth: number,
+    holeHeight: number,
+    holePositions: Array<{x: number, y: number}>,
+    depth: number,
+    steps: number = 1
+): ExtrudeGeometry {
+  const halfW = width / 2;
+  const halfH = height / 2;
+
+  // Outer shape (CCW): BL → BR → TR → TL
+  const shape = new THREE.Shape();
+  shape.moveTo(-halfW, -halfH);
+  shape.lineTo(halfW, -halfH);
+  shape.lineTo(halfW, halfH);
+  shape.lineTo(-halfW, halfH);
+  // Three.js auto-closes back to (-halfW, -halfH)
+
+  const holeHalfW = holeWidth / 2;
+  const holeHalfH = holeHeight / 2;
+  for(const holePos of holePositions){
+    const hole = new THREE.Path();
+    hole.moveTo(holePos.x -holeHalfW, holePos.y + holeHalfH);
+    hole.lineTo(holePos.x -holeHalfW, holePos.y - holeHalfH);
+    hole.lineTo(holePos.x +holeHalfW, holePos.y - holeHalfH);
+    hole.lineTo(holePos.x +holeHalfW, holePos.y + holeHalfH);
+    // auto-closes
+    shape.holes.push(hole);
+  }
+
+  return new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, steps });
+}
+
+
+/**
+ * Create an ExtrudeGeometry shaped like a rectangle (frame/border) with circular holes in it
+ * Shape is centered at origin.
+ * by `thickness` on all four sides.
+ *
+ * @param width     - Total width of the outer rectangle
+ * @param height    - Total height of the outer rectangle
+ * @param holeRadius - radius of a hole
+ * @param holePositions - array of xy positions of the center of holes
+ * @param depth     - Extrusion depth
+ * @param steps     - Number of extrusion steps
+ * @constructor
+ */
+export function RoundIceBoxGeometry(
+    width: number,
+    height: number,
+    holeRadius: number,
+    holePositions: Array<{x: number, y: number}>,
+    depth: number,
+    steps: number = 1
+): ExtrudeGeometry {
+  const halfW = width / 2;
+  const halfH = height / 2;
+
+  // Outer shape (CCW): BL → BR → TR → TL
+  const shape = new THREE.Shape();
+  shape.moveTo(-halfW, -halfH);
+  shape.lineTo(halfW, -halfH);
+  shape.lineTo(halfW, halfH);
+  shape.lineTo(-halfW, halfH);
+  // Three.js auto-closes back to (-halfW, -halfH)
+
+  for(const holePos of holePositions){
+    const hole = new THREE.Path();
+    hole.absarc(holePos.x, holePos.y, holeRadius, 0, Math.PI * 2, true);
+    // auto-closes
+    shape.holes.push(hole);
+  }
+
+  return new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, steps });
+}

@@ -1,6 +1,6 @@
 {
   "name": "simple-circuit-engine",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "description": "Educational electronic circuits Build & Simulation engine with THREE.js 3D visualization",
   "type": "module",
   "main": "./dist/index.js",
@@ -67,7 +67,7 @@
     "lil-gui": "^0.21.0"
   },
   "peerDependencies": {
-    "three": "^0.183.2",
+    "three": "^0.184.0",
     "i18next": ">=25.0.0 <27.0.0"
   },
   "peerDependenciesMeta": {

@@ -247,6 +247,82 @@
         }
       }
     },
+    "oneInput": {
+      "name": "1*entrée",
+      "config": {
+        "fields": {
+          "initialState": { "name": "État initial (Hex)" },
+          "transitionSpan": { "name": "Délai (ticks)" },
+          "size": { "name": "Taille" }
+        }
+      }
+    },
+    "twoInput": {
+      "name": "2*entrées",
+      "config": {
+        "fields": {
+          "initialState": { "name": "État initial (Hex)" },
+          "transitionSpan": { "name": "Délai (ticks)" },
+          "size": { "name": "Taille" }
+        }
+      }
+    },
+    "fourInput": {
+      "name": "4*entrées",
+      "config": {
+        "fields": {
+          "initialState": { "name": "État initial (Hex)" },
+          "transitionSpan": { "name": "Délai (ticks)" },
+          "size": { "name": "Taille" }
+        }
+      }
+    },
+    "eightInput": {
+      "name": "8*entrées",
+      "config": {
+        "fields": {
+          "initialState": { "name": "État initial (Hex)" },
+          "transitionSpan": { "name": "Délai (ticks)" },
+          "size": { "name": "Taille" }
+        }
+      }
+    },
+    "oneLight": {
+      "name": "1*lumière",
+      "config": {
+        "fields": {
+          "transitionSpan": { "name": "Délai d'allumage (ticks)" },
+          "size": { "name": "Taille" }
+        }
+      }
+    },
+    "twoLight": {
+      "name": "2*lumières",
+      "config": {
+        "fields": {
+          "transitionSpan": { "name": "Délai d'allumage (ticks)" },
+          "size": { "name": "Taille" }
+        }
+      }
+    },
+    "fourLight": {
+      "name": "4*lumières",
+      "config": {
+        "fields": {
+          "transitionSpan": { "name": "Délai d'allumage (ticks)" },
+          "size": { "name": "Taille" }
+        }
+      }
+    },
+    "eightLight": {
+      "name": "8*lumières",
+      "config": {
+        "fields": {
+          "transitionSpan": { "name": "Délai d'allumage (ticks)" },
+          "size": { "name": "Taille" }
+        }
+      }
+    },
     "default": {
       "config": {
         "fields": {
@@ -261,5 +337,27 @@
   },
   "config": {
     "title": "Configuration: {{name}}"
+  },
+  "widgets": {
+    "mode": {
+      "edit": "Édition",
+      "simulation": "Simulation"
+    },
+    "tools": {
+      "build": "Construire",
+      "multiSelect": "Sélection multiple"
+    },
+    "multiWiring": "Câblage multiple",
+    "simulation": {
+      "stop": "Stop - Redémarrage",
+      "play": "Lecture",
+      "pause": "Pause",
+      "speed": "{{tps}} TPS",
+      "step": "Pas à pas",
+      "staticStep": "Pas {{tick}}"
+    },
+    "help": {
+      "title": "Aide"
+    }
   }
 }

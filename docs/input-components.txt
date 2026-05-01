@@ -1,0 +1,99 @@
+
+component_group : interface
+component: {{x}}Input with x 1,2,4,8
+
+Integrated rows of x switches to provide users with a way of dynamically setting multiple logical inputs at once, instead of relying only of separated individual double-throw switches.
+
+OneInput
+pins: new Map([
+      ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
+      ['output-0', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 0 } }],
+      ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
+    ])
+
+TwoInput
+pins: new Map([
+      ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
+      ['output-0', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 0 } }],
+      ['output-1', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 1 } }],
+      ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
+    ])
+
+FourInput
+pins: new Map([
+      ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
+      ['output-0', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 0 } }],
+      ['output-1', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 1 } }],
+      ['output-2', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 2 } }],
+      ['output-3', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 3 } }],
+      ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
+    ])
+
+EightInput
+pins: new Map([
+      ['vcc', { subtype: 'vcc', sourceType: ENodeSourceType.Voltage }],
+      ['output-0', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 0 } }],
+      ['output-1', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 1 } }],
+      ['output-2', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 2 } }],
+      ['output-3', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 3 } }],
+      ['output-4', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 4 } }],
+      ['output-5', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 5 } }],
+      ['output-6', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 6 } }],
+      ['output-7', { subtype: 'logicOutput', logicPinData: { interface: 'output', index: 7 } }],
+      ['gnd', { subtype: 'gnd', sourceType: ENodeSourceType.Current }],
+    ])
+
+
+
+state:
+Just to disambiguate and make it clear to you those components are called Input because from the user's viewpoint they are input switches allowing to dynamically control the circuit, however from the circuit's viewport those components only have outputs and no niputs : they are controlled only by users interactions.
+Following the validated convention for upper level components (more than one logic output) states correspond to the outputs expressed in hexadecimal.
+State range will vary according to each component :
+OneInput : 0-1
+TwoInput : 0-3
+FourInput : 0-F
+EightInput : 00 - FF
+
+Also this state parameters map will be used to record ongoing transitions at any time.
+
+Guards:
+vcc guard: if pin vcc has not voltage a vcc guard clause like in LogicGateBehaviorMixin should bring the state to '0000' immediately
+nonLogicInputGuard: NOT necessary : there are no inputs so no way to have non logical inputs, hence the indeterminate state is not necessary here.
+
+Transitions :
+these components will never handle transitions from inputs (empty onPinsChange) but instead will change states with the onUserCommand function.
+The command will always be of type 'toggle_input' with command.parameter = Map([['index': '{i}']]) with i the index of the switch (and hence output) that was toggled by the user.
+
+events:
+To simplify handling concurrent user events in this case when component has any switch moving its state will be simply `moving`.
+when all pending changes have resolved if will return to the output hexadecimal value.
+State parameter map will be used to keep track of ongoing changes.
+
+the state and nextState in the behavior result will be the primary source of information for animations.
+For animations needs the state previous the currentOne can be saved as state parameter prevState.
+
+behavior:
+Behavior will be straightforward.
+From example with a 4 input (simplified example) :
+t=0 : state = 8
+t=1: user toggle switch 1 : state don't go immediately to C : instead it goes to `moving`, its parameters map is updated with a new key '1' (index of the toggled switch): '1-47-49' (respectively target state of this switch, start and end tick for animation) and an event switchChanged is emitted with as parameter the index of the concerned switch and its target state (0 or 1).
+t=1+span: no new user command: event switchChanged resolves : output 1 pinState is changed, the state parameter key '1' is deleted and state goes to `C`.
+
+Handling concurrent events :
+Cases when user toggle several switches of the component at close times should be well handled.
+Hence the design proposed above aims to give flexibility : keeping tracks of each switch ongoing changes in parameter map allo to use it as source of information for behavior and animation.
+behaviorResult should have shouldCancelPending: false (except for guards) : User can at tick 1 toggle a switch and then at tick 2 toggle another (before the first change has completed).
+However if a switch is already changing behavior should discard a new toggle_input event on that exact same switch (debouncing).
+
+
+
+Visual Factory:
+
+Visual representation envelope will be a IceBoxGeometry from src/scene/shared/utils/GeometryUtils.ts ( with as much holes as switch needed per component).
+Let's start with a constant width of 2.4, and an height of 1.4 for the 1 input, 2.4 for the two input, 4.4 for the 4 input and 8.4 for the 8 input
+vcc and gnd pin will be centered respectively at the top and bottom and output pins will be on the right evenly spaced (you can take inspiration from src/scene/shared/components/arithmetic/EightBitOnesComplementVisualFactory.ts).
+each switch hole should have a width of 1.6 and an height of 0.8.
+
+animations:
+switch holes will be home to switch boxes representing each switch button. When a switch is off (emitting logic 0) it will appear up( +0.35) on the y axis while when on (emitting logic 1) it will be down ( 0.05).
+During simulation these y position changes should be animated and also the switch material will change color from blue to red: in edition mode color can be the standard DARK_GRAY.

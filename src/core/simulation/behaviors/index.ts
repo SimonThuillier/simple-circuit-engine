@@ -35,3 +35,15 @@ export { HalfAdderBehavior } from './arithmetic/HalfAdderBehavior';
 export { AdderBehavior } from './arithmetic/AdderBehavior';
 export { EightBitAdderBehavior } from './arithmetic/EightBitAdderBehavior';
 export { EightBitOnesComplementBehavior } from './arithmetic/EightBitOnesComplementBehavior';
+
+// interface
+export { InputBehaviorMixin } from './interface/InputBehaviorMixin';
+export { OneInputBehavior } from './interface/OneInputBehavior';
+export { TwoInputBehavior } from './interface/TwoInputBehavior';
+export { FourInputBehavior } from './interface/FourInputBehavior';
+export { EightInputBehavior } from './interface/EightInputBehavior';
+export { LightBehaviorMixin } from './interface/LightBehaviorMixin';
+export { OneLightBehavior } from './interface/OneLightBehavior';
+export { TwoLightBehavior } from './interface/TwoLightBehavior';
+export { FourLightBehavior } from './interface/FourLightBehavior';
+export { EightLightBehavior } from './interface/EightLightBehavior';

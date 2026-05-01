@@ -45,6 +45,7 @@ export function controllerOptions(
     mapControls: mapControlsOptions(),
     simulationSpeed: 3,
     simulationAutoPlay: false,
+    multiWiring: false,
   };
 
   if (!options) return defaultOptions;
@@ -61,6 +62,7 @@ export function engineOptions(options: EngineOptions | undefined = undefined): E
     initialMode: 'edit',
     controllerOptions: controllerOptions(),
     runnerOptions: { enableHistory: false, historyLimit: 1 },
+    widgets: { enabled: true },
   };
 
   if (!options) return defaultOptions;

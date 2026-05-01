@@ -179,7 +179,8 @@ export class Circuit {
         pinLabel,
         undefined, // Pin position derived from component
         pinMeta.sourceType,
-        pinMeta.subtype
+        pinMeta.subtype,
+        pinMeta.logicPinData
       );
 
       // Add ENode to circuit
@@ -397,7 +398,9 @@ export class Circuit {
       undefined,
       undefined,
       position,
-      sourceType
+      sourceType,
+        undefined,
+        undefined,
     );
 
     // Add ENode to circuit
