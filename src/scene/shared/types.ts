@@ -398,12 +398,23 @@ export interface ModeChangedEvent {
 }
 
 /**
+ * Event emitted when the user requests help via the in-scene HelpWidget.
+ * Library-neutral: consumers decide how to render help (modal, sidebar, etc.).
+ */
+export interface HelpRequestedEvent {
+  /** Mode the engine was in when help was requested */
+  mode: EngineMode;
+}
+
+/**
  * Combined event map for CircuitEngine.
  * Includes all controller events plus controller-specific events.
  */
 export interface CircuitEngineEventMap extends ControllerEventMap {
   /** Emitted after mode transition completes */
   modeChanged: ModeChangedEvent;
+  /** Emitted when the user clicks the help button in the integrated HelpWidget */
+  helpRequested: HelpRequestedEvent;
 }
 
 /**

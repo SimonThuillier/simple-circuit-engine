@@ -632,6 +632,21 @@ export class CircuitEngine extends EventEmitter<CircuitEngineEventMap> {
   }
 
   /**
+   * Request help for the current mode. Emits `helpRequested` with the active
+   * mode as payload; consumers decide how to render help (modal, sidebar, etc.).
+   *
+   * @example
+   * ```typescript
+   * engine.on('helpRequested', ({ mode }) => {
+   *   openHelpDialog(mode);
+   * });
+   * ```
+   */
+  requestHelp(): void {
+    this.emit('helpRequested', { mode: this._mode });
+  }
+
+  /**
    * Check if simulation is currently playing
    */
   get isPlaying(): boolean {

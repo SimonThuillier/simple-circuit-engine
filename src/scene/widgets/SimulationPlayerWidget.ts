@@ -87,6 +87,10 @@ export class SimulationPlayerWidget {
     this._root.style.display = visible ? 'flex' : 'none';
   }
 
+  setPosition(top: number, left: number): void {
+    applyWidgetRoot(this._root, top, left);
+  }
+
   setSpeed(tps: number): void {
     if (Number(this._slider.value) !== tps) {
       this._slider.value = String(tps);

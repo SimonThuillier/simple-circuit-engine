@@ -12,10 +12,19 @@
  */
 
 import type { EngineMode, ToolType } from '../shared/types';
+import { HelpWidget } from './HelpWidget';
 import { ModeWidget } from './ModeWidget';
 import { MultiWiringWidget } from './MultiWiringWidget';
 import { SimulationPlayerWidget } from './SimulationPlayerWidget';
+import { LAYOUT } from './styles';
 import { ToolsWidget } from './ToolsWidget';
+
+/**
+ * Container width below which the simulation player widget cannot fit on the
+ * same row as the mode pill (player is ~350px wide and starts at PLAYER_LEFT).
+ * Below this threshold the player drops to a second row.
+ */
+const PLAYER_RESPONSIVE_BREAKPOINT_PX = 520;
 
 /**
  * Minimal slice of CircuitEngine the manager depends on. Defined as an
@@ -39,6 +48,7 @@ export interface IEngineForWidgets {
   pause(): void;
   step(): void;
   stop(): void;
+  requestHelp(): void;
 
   on(event: any, callback: (payload: any) => void): void;
   off(event: any, callback: (payload: any) => void): void;
@@ -53,9 +63,11 @@ export class WidgetsManager {
   private readonly _toolsWidget: ToolsWidget;
   private readonly _multiWiringWidget: MultiWiringWidget;
   private readonly _playerWidget: SimulationPlayerWidget;
+  private readonly _helpWidget: HelpWidget;
 
   private readonly _subscriptions: Array<() => void> = [];
   private _disposed = false;
+  private _resizeObserver: ResizeObserver | null = null;
 
   constructor(engine: IEngineForWidgets, container: HTMLElement) {
     this._engine = engine;
@@ -101,12 +113,17 @@ export class WidgetsManager {
       },
     );
 
+    this._helpWidget = new HelpWidget(engine.mode, () => this._handleHelpRequested());
+
     this._modeWidget.mount(this._root);
     this._toolsWidget.mount(this._root);
     this._multiWiringWidget.mount(this._root);
     this._playerWidget.mount(this._root);
+    this._helpWidget.mount(this._root);
 
     this._applyModeVisibility(engine.mode);
+    this._applyResponsivePlayerLayout();
+    this._observeContainerResize();
     this._subscribeToEngine();
   }
 
@@ -118,11 +135,17 @@ export class WidgetsManager {
     this._toolsWidget.setLanguage(lng);
     this._multiWiringWidget.setLanguage(lng);
     this._playerWidget.setLanguage(lng);
+    this._helpWidget.setLanguage(lng);
   }
 
   dispose(): void {
     if (this._disposed) return;
     this._disposed = true;
+
+    if (this._resizeObserver) {
+      this._resizeObserver.disconnect();
+      this._resizeObserver = null;
+    }
 
     for (const off of this._subscriptions) off();
     this._subscriptions.length = 0;
@@ -131,6 +154,7 @@ export class WidgetsManager {
     this._toolsWidget.dispose();
     this._multiWiringWidget.dispose();
     this._playerWidget.dispose();
+    this._helpWidget.dispose();
 
     this._root.remove();
   }
@@ -143,6 +167,16 @@ export class WidgetsManager {
   /** Test/debug accessor. */
   get container(): HTMLElement {
     return this._container;
+  }
+
+  /** Test/debug accessor. */
+  get helpWidget(): HelpWidget {
+    return this._helpWidget;
+  }
+
+  /** Test/debug accessor. */
+  get playerWidget(): SimulationPlayerWidget {
+    return this._playerWidget;
   }
 
   private _subscribeToEngine(): void {
@@ -200,6 +234,7 @@ export class WidgetsManager {
     this._toolsWidget.setVisible(editing);
     this._multiWiringWidget.setVisible(editing);
     this._playerWidget.setVisible(!editing);
+    this._helpWidget.setMode(mode);
   }
 
   private _handleModeToggle(): void {
@@ -220,6 +255,25 @@ export class WidgetsManager {
     this._safeCall(() => {
       this._engine.setMultiWiring(!this._engine.multiWiring);
     });
+  }
+
+  private _handleHelpRequested(): void {
+    this._safeCall(() => this._engine.requestHelp());
+  }
+
+  private _applyResponsivePlayerLayout(): void {
+    const width = this._container.clientWidth;
+    if (width > 0 && width < PLAYER_RESPONSIVE_BREAKPOINT_PX) {
+      this._playerWidget.setPosition(LAYOUT.PLAYER_RESPONSIVE_TOP, LAYOUT.PLAYER_RESPONSIVE_LEFT);
+      return;
+    }
+    this._playerWidget.setPosition(LAYOUT.PLAYER_TOP, LAYOUT.PLAYER_LEFT);
+  }
+
+  private _observeContainerResize(): void {
+    if (typeof ResizeObserver === 'undefined') return;
+    this._resizeObserver = new ResizeObserver(() => this._applyResponsivePlayerLayout());
+    this._resizeObserver.observe(this._container);
   }
 
   private _safeCall(fn: () => void): void {

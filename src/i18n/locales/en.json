@@ -355,6 +355,9 @@
       "speed": "{{tps}} TPS",
       "step": "Step by step",
       "staticStep": "Step {{tick}}"
+    },
+    "help": {
+      "title": "Help"
     }
   }
 }

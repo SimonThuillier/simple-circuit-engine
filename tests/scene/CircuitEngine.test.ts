@@ -429,6 +429,37 @@ describe('CircuitEngine - Phase 3: User Story 1 (Edit to Simulation Mode Switch)
       expect(() => engine.stop()).toThrow(/not in simulation mode/i);
     });
   });
+
+  describe('requestHelp() emits helpRequested with current mode', () => {
+    it('emits with mode "edit" while in edit mode', () => {
+      engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
+      engine.initialize(container, createMockRenderer());
+
+      const handler = vi.fn();
+      engine.on('helpRequested', handler);
+
+      engine.requestHelp();
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(handler).toHaveBeenCalledWith({ mode: 'edit' });
+    });
+
+    it('emits with mode "simulation" after switching mode', () => {
+      engine = new CircuitEngine(factoryRegistry, behaviorRegistry);
+      engine.initialize(container, createMockRenderer());
+
+      const circuit = createTestCircuit();
+      engine.setCircuit(circuit);
+      engine.setMode('simulation');
+
+      const handler = vi.fn();
+      engine.on('helpRequested', handler);
+
+      engine.requestHelp();
+
+      expect(handler).toHaveBeenCalledWith({ mode: 'simulation' });
+    });
+  });
 });
 
 // ============================================================================

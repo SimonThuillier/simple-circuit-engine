@@ -52,6 +52,9 @@ class FakeEngine implements IEngineForWidgets {
     this.isPlaying = false;
     this._fire('simulationStopped', { tick: 0 });
   });
+  requestHelp = vi.fn(() => {
+    this._fire('helpRequested', { mode: this.mode });
+  });
 
   private _listeners = new Map<string, Set<(p: any) => void>>();
   on(event: string, cb: (p: any) => void): void {
@@ -141,6 +144,41 @@ describe('WidgetsManager', () => {
     )!;
     mwBtn.click();
     expect(engine.setMultiWiring).toHaveBeenCalledWith(true);
+  });
+
+  it('mounts a help widget that calls engine.requestHelp on click', () => {
+    const helpBtn = manager.helpWidget.element;
+    expect(container.contains(helpBtn)).toBe(true);
+    helpBtn.click();
+    expect(engine.requestHelp).toHaveBeenCalledTimes(1);
+  });
+
+  it('repositions the help widget when mode changes', () => {
+    const helpBtn = manager.helpWidget.element;
+    expect(helpBtn.style.left).toBe('100px');
+    expect(helpBtn.style.top).toBe('10px');
+    engine.mode = 'simulation';
+    engine._fire('modeChanged', { mode: 'simulation' });
+    expect(helpBtn.style.left).toBe('130px');
+    expect(helpBtn.style.top).toBe('10px');
+  });
+
+  it('places the simulation player at the standard position on wide containers', () => {
+    Object.defineProperty(container, 'clientWidth', { value: 800, configurable: true });
+    manager.dispose();
+    manager = new WidgetsManager(engine, container);
+    const playerRoot = manager.playerWidget.element;
+    expect(playerRoot.style.left).toBe('170px');
+    expect(playerRoot.style.top).toBe('8px');
+  });
+
+  it('drops the simulation player to a second row on narrow containers', () => {
+    Object.defineProperty(container, 'clientWidth', { value: 400, configurable: true });
+    manager.dispose();
+    manager = new WidgetsManager(engine, container);
+    const playerRoot = manager.playerWidget.element;
+    expect(playerRoot.style.left).toBe('12px');
+    expect(playerRoot.style.top).toBe('60px');
   });
 
   it('removes its DOM on dispose and unsubscribes', () => {
